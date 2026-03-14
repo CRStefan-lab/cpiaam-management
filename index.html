@@ -1154,6 +1154,42 @@ function hideWizard(){
   document.getElementById('app-sb').style.display='flex';
   document.getElementById('app-mn').style.display='block';
 }
+function wizSkipImport(){
+  // Try File System Access API first, fallback to file input
+  if(window.showOpenFilePicker){
+    window.showOpenFilePicker({types:[{description:'JSON',accept:{'application/json':['.json']}}]}).then(async([fh])=>{
+      const file=await fh.getFile();const text=await file.text();
+      try{
+        const d=JSON.parse(text);
+        // Import config
+        if(d.config){Object.assign(CFG,d.config);CFG.setup_complete=true;await saveCfg()}
+        // Import all data stores
+        const storeMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines',events:'events',audits:'audits',trainings:'trainings',atp:'atp',uvcheck:'uvcheck'};
+        for(const[key,store] of Object.entries(storeMap)){if(d[key])for(const r of d[key])await pt(store,r)}
+        // Also try direct store names (from full backup)
+        for(const s of ST){if(d[s]&&Array.isArray(d[s]))for(const r of d[s])await pt(s,r)}
+        // Set file handle for future sync
+        _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();
+        localStorage.setItem('cpiaam_had_data','true');
+        alert('Date importate cu succes!');location.reload();
+      }catch(e){alert('Eroare la import: '+e.message)}
+    }).catch(e=>{if(e.name!=='AbortError')alert('Eroare: '+e.message)});
+  }else{
+    // Fallback: file input
+    const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+    inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;
+      try{
+        const d=JSON.parse(await f.text());
+        if(d.config){Object.assign(CFG,d.config);CFG.setup_complete=true;await saveCfg()}
+        for(const s of ST){if(d[s]&&Array.isArray(d[s])){await cl(s);for(const r of d[s])await pt(s,r)}}
+        const storeMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
+        for(const[key,store] of Object.entries(storeMap)){if(d[key])for(const r of d[key])await pt(store,r)}
+        localStorage.setItem('cpiaam_had_data','true');
+        alert('Date importate cu succes!');location.reload();
+      }catch(e){alert('Eroare import: '+e.message)}};
+    inp.click();
+  }
+}
 
 function renderWizStep(step){
   const c=document.getElementById('wiz-card');
@@ -1169,7 +1205,11 @@ function renderWizStep(step){
       '</div>'+
       '<div class="fg"><label>Denumirea spitalului</label><input id="wz-hosp" value="'+WZ.hospital_name+'" placeholder="ex: Spitalul Municipal ..."></div>'+
       '<div class="fg"><label>Denumirea compartimentului</label><input id="wz-cpiaam" value="'+WZ.cpiaam_name+'" placeholder="C.P.I.A.A.M."></div>'+
-      '<div class="wiz-nav"><div></div><button class="btn bp" onclick="wizNext(1)">Continua &#8594;</button></div>';
+      '<div class="wiz-nav"><div></div><button class="btn bp" onclick="wizNext(1)">Continua &#8594;</button></div>'+
+      '<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--brd);text-align:center">'+
+        '<p style="font-size:12px;color:var(--txtL);margin-bottom:10px">Ai deja un backup JSON salvat anterior?</p>'+
+        '<button class="btn bo" onclick="wizSkipImport()" style="font-size:13px">&#128193; Sari peste wizard \u2014 Incarca datele salvate</button>'+
+      '</div>';
   }
   else if(step===2){
     let rows=WZ.sections.map((s,i)=>
@@ -3503,6 +3543,7 @@ async function rCfg(el){
     '<div class="fg"><label>Cod spital PPS</label><input id="c-code" value="'+(CFG.hospital_code||'')+'"></div></div>'+
     '<div class="fr"><div class="fg"><label>Limita bugetara biocide (lei/an)</label><input type="number" id="c-bb" value="'+(CFG.biocide_budget||'')+'"></div>'+
     '<div class="fg"><label>Format data</label><select id="c-datefmt"><option value="dd/mm/yyyy"'+((CFG.dateFormat||'dd/mm/yyyy')==='dd/mm/yyyy'?' selected':'')+'>dd/mm/yyyy</option><option value="mm/dd/yyyy"'+((CFG.dateFormat)==='mm/dd/yyyy'?' selected':'')+'>mm/dd/yyyy</option><option value="yyyy-mm-dd"'+((CFG.dateFormat)==='yyyy-mm-dd'?' selected':'')+'>yyyy-mm-dd</option></select></div></div>'+
+    '<div class="fr"><div class="fg"><label>Reminder backup (zile)</label><input type="number" id="c-bkpint" value="'+(CFG.backup_interval_days||7)+'" min="1" max="90" style="width:80px"><span style="font-size:11px;color:var(--txtL);margin-left:6px">Primesti notificare daca nu ai facut backup in acest interval</span></div></div>'+
     '<button class="btn bp" onclick="saveCfgForm()" style="margin-top:8px">Salveaza</button>'+
   '</div></div>'+
 
@@ -3625,6 +3666,7 @@ async function saveCfgForm(){
   const v=s=>document.getElementById(s).value;
   CFG.hospital_name=v('c-name');CFG.hospital_short=v('c-short');CFG.cpiaam_name=v('c-cpiaam');
   CFG.hospital_code=v('c-code');CFG.biocide_budget=+v('c-bb')||0;CFG.dateFormat=v('c-datefmt');
+  const bkpEl=document.getElementById('c-bkpint');if(bkpEl)CFG.backup_interval_days=+bkpEl.value||7;
   await saveCfg();alert('Setari salvate!');render();
 }
 
@@ -3898,9 +3940,16 @@ var _fileHandle=null;
 function updateSyncIndicator(){
   const el=document.getElementById('sync-indicator');if(!el)return;
   if(!_fileHandle){
-    el.innerHTML='&#128308; '+T('sync_neconectat');
-    el.title=T('sync_datele_locale');
-    el.style.color='#C0392B';
+    if(CFG.sync_file_name){
+      // File was connected before but handle lost on refresh
+      el.innerHTML='&#128993; Reconecteaza: '+CFG.sync_file_name;
+      el.title='Fisierul de sincronizare trebuie reconectat dupa reincarcarea paginii. Click pentru a reconecta.';
+      el.style.color='#D4A017';
+    } else {
+      el.innerHTML='&#128308; '+T('sync_neconectat');
+      el.title=T('sync_datele_locale');
+      el.style.color='#C0392B';
+    }
   } else {
     const loc=CFG.file_location||'';
     if(loc==='cloud'){
@@ -3916,7 +3965,11 @@ function updateSyncIndicator(){
 async function syncPickFile(){
   if(!window.showSaveFilePicker){alert('Browserul tau nu suporta File System Access API. Foloseste Chrome sau Edge.');return}
   try{_fileHandle=await window.showSaveFilePicker({suggestedName:'CPIAAM_data.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]});
-    await syncWrite();showFileLocationModal();updateSyncIndicator()}catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}}
+    CFG.sync_file_name=_fileHandle.name;await saveCfg();
+    await syncWrite();updateSyncIndicator();
+    // Show location modal after a short delay to avoid focus conflict with file picker
+    setTimeout(()=>showFileLocationModal(),300);
+  }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}}
 function showFileLocationModal(){
   const isEN=CFG.lang==='en';
   const cur=CFG.file_location||'';

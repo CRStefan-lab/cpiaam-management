@@ -1,14 +1,14 @@
 {
-  "version": "5.8",
+  "version": "5.9",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Fix: ensureConfigIds() apelat la startup pentru config existente",
-    "Fix: categorii documente goale la utilizatori cu config veche",
-    "Dashboard modernizat: KPI cards, charts, quick actions, activity feed",
-    "Trend indicators cu badge colorat (pastila verde/rosie)",
-    "Quick actions cu butoane pill si iconite",
-    "Interfata responsive: desktop, tablet, mobil",
-    "Meniu hamburger pe mobil cu sidebar slide-in",
-    "URL descarcare corectat pentru GitHub Pages"
+    "Modul Audituri: 4 tipuri (Igiena Mainilor OMS, Curatenie, Izolare, Custom)",
+    "Audituri: KPI cards, filtre, tabel, modal formular, checklist interactiv",
+    "Audituri: generare PV Word profesionist cu rezultate si scor",
+    "Modul Instruire Personal: formular, participanti, durata, observatii",
+    "Instruire: KPI personal instruit, alerta >12 luni neinstruiti",
+    "Instruire: generare PV Word cu lista participanti si semnaturi",
+    "Cautare/filtrare adaugata in IAAM, Biocide, Documente, Termene",
+    "Dashboard: KPI audituri si instruiri, quick action Audit Nou"
   ]
 }

@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v5.8</title>
+<title>CPIAAM — Sistem de Management v5.9</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
-:root{--navy:#1B3A6B;--teal:#0F7B6C;--amber:#D4A017;--red:#C0392B;--blue:#2563B0;--green:#27AE60;
---bg:#F0F2F5;--card:#fff;--sb:#0F1B2D;--txt:#1E293B;--txtL:#64748B;--brd:#E2E8F0;
+:root{--navy:#4338CA;--teal:#0EA5E9;--amber:#F59E0B;--red:#EF4444;--blue:#6366F1;--green:#10B981;
+--bg:#F8FAFC;--card:#ffffff;--sb:#1E293B;--txt:#0F172A;--txtL:#64748B;--brd:#E2E8F0;
 --sh:0 1px 3px rgba(0,0,0,.08);--shL:0 4px 6px rgba(0,0,0,.07);--r:8px;--rL:12px;--f:'Segoe UI',system-ui,sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min-height:100vh}
@@ -28,7 +28,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .ns{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.3);padding:14px 12px 6px;font-weight:600}
 .ni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.65);text-decoration:none;transition:.15s}
 .ni:hover{background:rgba(255,255,255,.08);color:#fff}
-.ni.a{background:var(--blue);color:#fff;font-weight:600}
+.ni.a{background:#6366F1;color:#fff;font-weight:600}
 .ni svg{width:18px;height:18px;flex-shrink:0}
 .sb-bk{padding:8px 16px}
 .sb-bk button{width:100%;padding:8px;border:none;border-radius:6px;background:var(--amber);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--f);transition:.15s}
@@ -84,7 +84,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 
 /* ── Tables ── */
 .dt{width:100%;border-collapse:collapse;font-size:12.5px}
-.dt th{background:var(--navy);color:#fff;padding:9px 10px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.dt th{background:#1E293B;color:#fff;padding:9px 10px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
 .dt td{padding:8px 10px;border-bottom:1px solid var(--brd)}
 .dt tr:nth-child(even){background:#F8FAFC}.dt tr:hover{background:#EEF2FF}
 .dt .act{white-space:nowrap}.dt .act button{background:none;border:none;cursor:pointer;padding:2px 5px;border-radius:4px;font-size:12px}
@@ -106,7 +106,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 /* Matrix */
 .ac-matrix{overflow-x:auto;margin-bottom:14px;border:1px solid var(--brd);border-radius:8px}
 .ac-matrix table{border-collapse:collapse;width:100%;font-size:11px;table-layout:auto}
-.ac-matrix th{background:var(--navy);color:#fff;padding:5px 4px;text-align:center;font-weight:600;white-space:nowrap;font-size:9.5px;letter-spacing:.2px;max-width:90px;overflow:hidden;text-overflow:ellipsis}
+.ac-matrix th{background:#1E293B;color:#fff;padding:5px 4px;text-align:center;font-weight:600;white-space:nowrap;font-size:9.5px;letter-spacing:.2px;max-width:90px;overflow:hidden;text-overflow:ellipsis}
 .ac-matrix th:first-child{text-align:left;min-width:120px;max-width:160px;padding-left:8px}
 .ac-matrix td{padding:4px 3px;text-align:center;border:1px solid var(--brd);font-weight:700;font-size:11px;transition:.15s;min-width:32px}
 .ac-matrix td:first-child{text-align:left;font-weight:500;background:#F8FAFC;cursor:default;white-space:nowrap;padding-left:8px;font-size:11px}
@@ -515,6 +515,9 @@ body{display:block!important;background:#fff!important}
     <a class="ni" data-p="documente" onclick="nav('documente')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg><span data-t="sb_documente">Documente</span></a>
     <a class="ni" data-p="termene" onclick="nav('termene')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span data-t="sb_termene">Raportari/Termene</span></a>
     <a class="ni" data-p="calendar" onclick="nav('calendar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="1"/><circle cx="12" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg><span data-t="sb_calendar">Calendar</span></a>
+    <div class="ns">Calitate</div>
+    <a class="ni" data-p="audituri" onclick="nav('audituri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg><span>Audituri</span></a>
+    <a class="ni" data-p="instruire" onclick="nav('instruire')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Instruire Personal</span></a>
     <div class="ns" data-t="sb_rapoarte">Rapoarte</div>
     <a class="ni" data-p="rapoarte" onclick="nav('rapoarte')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg><span data-t="sb_gen_rapoarte">Generare Rapoarte</span></a>
     <div class="ns" data-t="sb_sistem">Sistem</div>
@@ -571,7 +574,7 @@ body{display:block!important;background:#fff!important}
 // ═══════════════════════════════════════════════════════════════
 // DATABASE
 // ═══════════════════════════════════════════════════════════════
-const DB='CPIAAM4',VER=2,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events'];
+const DB='CPIAAM4',VER=3,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings'];
 function odb(){return new Promise((ok,no)=>{const r=indexedDB.open(DB,VER);r.onupgradeneeded=e=>{const d=e.target.result;ST.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id',autoIncrement:true})})};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function ga(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function pt(s,i){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).put(i);r.onsuccess=()=>{ok(r.result);_syncDebounce()};r.onerror=()=>no(r.error)})}
@@ -591,7 +594,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='5.8';
+const APP_VERSION='5.9';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -610,7 +613,8 @@ ro:{
   // Page titles
   pt_dashboard:'Dashboard',pt_iaam:'IAAM / Anchete Epidemiologice',pt_autocontrol:'Autocontrol Microbiologic',
   pt_deseuri:'Deseuri Medicale',pt_biocide:'Gestiune Biocide',pt_pps:'PPS / Farmacovigilenta — Antibiotice',
-  pt_documente:'Documente / Autorizatii',pt_termene:'Raportari / Termene',pt_calendar:'Calendar',pt_rapoarte:'Generare Rapoarte',
+  pt_documente:'Documente / Autorizatii',pt_termene:'Raportari / Termene',pt_calendar:'Calendar',
+  pt_audituri:'Audituri',pt_instruire:'Instruire Personal',pt_rapoarte:'Generare Rapoarte',
   pt_config:'Configurare Sistem',pt_ajutor:'Ajutor / FAQ',pt_changelog:'Istoric Versiuni',
   pt_despre:'Despre',pt_terms:'Termeni si Conditii',
   // Calendar
@@ -693,7 +697,8 @@ en:{
   sb_backup:'Save Backup',sb_termeni:'Terms and Conditions',
   pt_dashboard:'Dashboard',pt_iaam:'HAI / Epidemiological Investigations',pt_autocontrol:'Microbiological Quality Control',
   pt_deseuri:'Medical Waste Management',pt_biocide:'Biocide Management',pt_pps:'PPS / Pharmacovigilance — Antibiotics',
-  pt_documente:'Documents / Authorizations',pt_termene:'Reports / Deadlines',pt_calendar:'Calendar',pt_rapoarte:'Generate Reports',
+  pt_documente:'Documents / Authorizations',pt_termene:'Reports / Deadlines',pt_calendar:'Calendar',
+  pt_audituri:'Audits',pt_instruire:'Staff Training',pt_rapoarte:'Generate Reports',
   pt_config:'System Settings',pt_ajutor:'Help / FAQ',pt_changelog:'Version History',
   pt_despre:'About',pt_terms:'Terms and Conditions',
   cal_today:'Today',cal_add_event:'Add Event',cal_events:'Events',cal_deadline:'Reporting deadline',
@@ -1234,6 +1239,7 @@ async function renderPage(p){const el=document.getElementById('pc');dch();switch
   case'dashboard':return rDash(el);case'iaam':return rIAAM(el);case'autocontrol':return rAuto(el);
   case'deseuri':return rDes(el);case'biocide':return rBio(el);case'pps':return rPPS(el);
   case'documente':return rDoc(el);case'termene':return rTerm(el);case'calendar':return rCalendar(el);
+  case'audituri':return rAudit(el);case'instruire':return rInstr(el);
   case'rapoarte':return rRap(el);case'config':return rCfg(el);case'ajutor':return rAjutor(el);
   case'changelog':return rChangelog(el);case'about':return rAbout(el);case'terms':return rTerms(el);
   default:el.innerHTML='<p>Pagina nu exista.</p>'}}
@@ -1316,10 +1322,22 @@ async function rDash(el){
       (docsExpired>0?'<div class="kc rd"><div class="kl">'+(isEN?'EXPIRED DOCUMENTS':'DOCUMENTE EXPIRATE')+'</div><div class="kv">'+docsExpired+'</div></div>':'')+
       '<div class="kc am"><div class="kl">'+T('kpi_rap_30z')+'</div><div class="kv">'+dlsUp+'</div><div class="ks"><a href="#" onclick="nav(\'termene\');return false" style="color:var(--amber);font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
     '</div>'}
+  // Audituri + Instruire KPI
+  const audits=(await ga('audits')).filter(r=>r.year===y);
+  const trains=(await ga('trainings')).filter(r=>r.year===y);
+  if(audits.length>0||trains.length>0){
+    const avgCompl=audits.length>0?Math.round(audits.reduce((s,r)=>s+(r.compliance_pct||0),0)/audits.length*10)/10:0;
+    const trainedNames=new Set();trains.forEach(r=>(r.participants||[]).filter(p=>p.signed).forEach(p=>trainedNames.add(p.name)));
+    const trainedPct=(CFG.personnel||[]).length>0?Math.round(trainedNames.size/(CFG.personnel||[]).length*100):0;
+    h+='<div class="kg">'+
+      '<div class="kc tl"><div class="kl">'+(isEN?'Audits':'Audituri')+'</div><div class="kv">'+audits.length+'</div><div class="ks">'+(isEN?'Avg compliance':'Conformitate medie')+': '+avgCompl+'%</div></div>'+
+      '<div class="kc bl"><div class="kl">'+(isEN?'Trainings':'Instruiri')+'</div><div class="kv">'+trains.length+'</div><div class="ks">'+(isEN?'Staff trained':'Personal instruit')+': '+trainedPct+'%</div></div>'+
+    '</div>'}
   // Quick actions row
   h+='<div class="dash-quick">'+
     '<button onclick="nav(\'iaam\');setTimeout(()=>editIAAM(),100)"><span class="qicon">&#128737;</span> '+(isEN?'IAAM Case':'Caz IAAM')+'</button>'+
     '<button onclick="nav(\'autocontrol\');setTimeout(()=>editAuto(),100)"><span class="qicon">&#128300;</span> '+(isEN?'Sample':'Proba Autocontrol')+'</button>'+
+    '<button onclick="nav(\'audituri\');setTimeout(()=>editAudit(),100)"><span class="qicon">&#128203;</span> '+(isEN?'New Audit':'Audit Nou')+'</button>'+
     '<button onclick="nav(\'rapoarte\')"><span class="qicon">&#128196;</span> '+(isEN?'Generate Report':'Genereaza Raport')+'</button>'+
     '<button onclick="expAll()"><span class="qicon">&#128190;</span> '+(isEN?'Save Backup':'Salveaza Backup')+'</button>'+
   '</div>';
@@ -1367,18 +1385,38 @@ async function rDash(el){
 // ═══════════════════════════════════════════════════════════════
 // IAAM MODULE — cu data externarii (cerinta 1)
 // ═══════════════════════════════════════════════════════════════
+var _iaamFilters={search:'',sec:'',mdr:''};
 async function rIAAM(el){
-  const data=(await ga('iaam')).filter(r=>r.year===A.year).sort((a,b)=>a.month-b.month);
-  const mdr=data.filter(r=>r.mdr).length;
-  el.innerHTML='<div class="kg">'+
-    '<div class="kc rd"><div class="kl">Total Cazuri</div><div class="kv">'+data.length+'</div></div>'+
-    '<div class="kc am"><div class="kl">MDR</div><div class="kv">'+mdr+'</div><div class="ks">'+fp(mdr,data.length)+'</div></div>'+
-  '</div>'+
-  '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'+
+  const allData=(await ga('iaam')).filter(r=>r.year===A.year).sort((a,b)=>a.month-b.month);
+  const f=_iaamFilters;
+  const data=allData.filter(r=>{
+    if(f.sec&&r.section!==f.sec)return false;
+    if(f.mdr==='da'&&!r.mdr)return false;
+    if(f.mdr==='nu'&&r.mdr)return false;
+    if(f.search){const q=f.search.toLowerCase();
+      const fields=[r.patient||'',rSec(r.section),rInf(r.infection_type),r.organism||'',detLabel(r.detection),r.date_discharge||''];
+      if(!fields.some(x=>x.toLowerCase().includes(q)))return false}
+    return true;
+  });
+  const mdr=allData.filter(r=>r.mdr).length;
+  let h='<div class="kg">'+
+    '<div class="kc rd"><div class="kl">Total Cazuri</div><div class="kv">'+allData.length+'</div></div>'+
+    '<div class="kc am"><div class="kl">MDR</div><div class="kv">'+mdr+'</div><div class="ks">'+fp(mdr,allData.length)+'</div></div>'+
+  '</div>';
+  // Filter bar
+  h+='<div class="ac-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">'+
+    '<input type="text" placeholder="Cauta..." value="'+esc(f.search)+'" oninput="_iaamFilters.search=this.value;render()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px">'+
+    '<select onchange="_iaamFilters.sec=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+      '<option value="">Toate sectiile</option>'+secOpts(f.sec)+'</select>'+
+    '<select onchange="_iaamFilters.mdr=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+      '<option value="">MDR: Toate</option><option value="da"'+(f.mdr==='da'?' selected':'')+'>Doar MDR</option><option value="nu"'+(f.mdr==='nu'?' selected':'')+'>Non-MDR</option></select>'+
+    '<button class="btn bo bsm" onclick="_iaamFilters={search:\'\',sec:\'\',mdr:\'\'};render()">Reset</button>'+
+  '</div>';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'+
     '<div class="bg"><button class="btn bo bsm" onclick="exportIAAM()">Export JSON</button></div>'+
     '<button class="btn bp" onclick="editIAAM()">+ Caz IAAM Nou</button></div>'+
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
-  (data.length===0?'<div class="es"><p>Niciun caz IAAM pentru '+A.year+'.</p><button class="btn bp" onclick="editIAAM()">Adauga primul caz</button></div>':
+  (data.length===0?'<div class="es"><p>Niciun caz IAAM '+(f.search||f.sec||f.mdr?'gasit cu filtrele selectate':'pentru '+A.year)+'.</p><button class="btn bp" onclick="editIAAM()">Adauga primul caz</button></div>':
     '<table class="dt"><thead><tr><th>#</th><th>Luna</th><th>Pacient</th><th>Sectie</th><th>Tip infectie</th><th>Germen</th><th>MDR</th><th>Depistare</th><th>Externare</th><th>Actiuni</th></tr></thead><tbody>'+
     data.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+(MO[r.month-1]||'?')+'</td><td>'+(r.patient||'—')+'</td><td>'+rSec(r.section)+'</td>'+
       '<td>'+rInf(r.infection_type)+'</td><td><strong>'+(r.organism||'—')+'</strong></td>'+
@@ -1388,6 +1426,7 @@ async function rIAAM(el){
       '<td class="act"><button onclick="editIAAM('+r.id+')" title="Editeaza">&#9998;</button><button onclick="genAnchetaWord('+r.id+')" title="Ancheta Word">&#128196;</button><button onclick="delRec(\'iaam\','+r.id+')" title="Sterge">&#128465;</button></td></tr>').join('')+
     '</tbody></table>')+
   '</div></div>';
+  el.innerHTML=h;
 }
 
 async function editIAAM(id){
@@ -2026,19 +2065,38 @@ async function sDes(month,field,value){
 // ═══════════════════════════════════════════════════════════════
 // BIOCIDE MODULE
 // ═══════════════════════════════════════════════════════════════
+var _bioFilters={search:'',type:'',month:''};
 async function rBio(el){
-  const data=(await ga('biocide')).filter(r=>r.year===A.year).sort((a,b)=>{const an=a.product_id?rBioProd(a.product_id):a.product_name||'';const bn=b.product_id?rBioProd(b.product_id):b.product_name||'';return an.localeCompare(bn)});
-  const si=data.filter(b=>b.type==='stoc_initial').reduce((s,b)=>s+(+b.value_lei||0),0);
-  const intr=data.filter(b=>b.type==='intrare').reduce((s,b)=>s+(+b.value_lei||0),0);
-  const ies=data.filter(b=>b.type==='iesire').reduce((s,b)=>s+(+b.value_lei||0),0);
-  el.innerHTML='<div class="kg">'+
+  const allData=(await ga('biocide')).filter(r=>r.year===A.year).sort((a,b)=>{const an=a.product_id?rBioProd(a.product_id):a.product_name||'';const bn=b.product_id?rBioProd(b.product_id):b.product_name||'';return an.localeCompare(bn)});
+  const bf=_bioFilters;
+  const data=allData.filter(r=>{
+    if(bf.type&&r.type!==bf.type)return false;
+    if(bf.month&&r.month!==+bf.month)return false;
+    if(bf.search){const q=bf.search.toLowerCase();
+      const pName=r.product_id?rBioProd(r.product_id):r.product_name||'';
+      if(!pName.toLowerCase().includes(q)&&!(r.lot||'').toLowerCase().includes(q))return false}
+    return true;
+  });
+  const si=allData.filter(b=>b.type==='stoc_initial').reduce((s,b)=>s+(+b.value_lei||0),0);
+  const intr=allData.filter(b=>b.type==='intrare').reduce((s,b)=>s+(+b.value_lei||0),0);
+  const ies=allData.filter(b=>b.type==='iesire').reduce((s,b)=>s+(+b.value_lei||0),0);
+  let h='<div class="kg">'+
     '<div class="kc bl"><div class="kl">Stoc Initial</div><div class="kv">'+fn(Math.round(si))+' lei</div></div>'+
     '<div class="kc gn"><div class="kl">Intrari</div><div class="kv">'+fn(Math.round(intr))+' lei</div></div>'+
     '<div class="kc am"><div class="kl">Consum</div><div class="kv">'+fn(Math.round(ies))+' lei</div></div>'+
-    '<div class="kc tl"><div class="kl">Stoc Final</div><div class="kv">'+fn(Math.round(si+intr-ies))+' lei</div></div></div>'+
-  '<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn bp" onclick="editBio()">+ Inregistrare</button></div>'+
+    '<div class="kc tl"><div class="kl">Stoc Final</div><div class="kv">'+fn(Math.round(si+intr-ies))+' lei</div></div></div>';
+  // Filter bar
+  h+='<div class="ac-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">'+
+    '<input type="text" placeholder="Cauta produs..." value="'+esc(bf.search)+'" oninput="_bioFilters.search=this.value;render()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px">'+
+    '<select onchange="_bioFilters.type=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+      '<option value="">Toate tipurile</option><option value="stoc_initial"'+(bf.type==='stoc_initial'?' selected':'')+'>Stoc initial</option><option value="intrare"'+(bf.type==='intrare'?' selected':'')+'>Intrare</option><option value="iesire"'+(bf.type==='iesire'?' selected':'')+'>Iesire</option></select>'+
+    '<select onchange="_bioFilters.month=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+      '<option value="">Toate lunile</option>'+MO.map((m,i)=>'<option value="'+(i+1)+'"'+(bf.month===(i+1)+''?' selected':'')+'>'+m+'</option>').join('')+'</select>'+
+    '<button class="btn bo bsm" onclick="_bioFilters={search:\'\',type:\'\',month:\'\'};render()">Reset</button>'+
+  '</div>';
+  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn bp" onclick="editBio()">+ Inregistrare</button></div>'+
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
-  (data.length===0?'<div class="es"><p>Nicio inregistrare biocide.</p></div>':
+  (data.length===0?'<div class="es"><p>Nicio inregistrare biocide'+(bf.search||bf.type||bf.month?' cu filtrele selectate':'')+'.</p></div>':
     '<table class="dt"><thead><tr><th>#</th><th>Produs</th><th>UM</th><th>Tip</th><th>Luna</th><th style="text-align:right">Cant.</th><th style="text-align:right">Valoare</th><th>Docs</th><th>Actiuni</th></tr></thead><tbody>'+
     data.map((r,i)=>'<tr><td>'+(i+1)+'</td><td><strong>'+(r.product_id?rBioProd(r.product_id):r.product_name||'—')+'</strong></td><td>'+(r.unit||'')+'</td>'+
       '<td><span class="bdg '+(r.type==='intrare'?'bdg-g':r.type==='iesire'?'bdg-a':'bdg-b')+'">'+(r.type==='stoc_initial'?'Stoc initial':r.type==='intrare'?'Intrare':'Iesire')+'</span></td>'+
@@ -2047,6 +2105,7 @@ async function rBio(el){
       '<td class="act"><button onclick="editBio('+r.id+')">&#9998;</button><button onclick="delRec(\'biocide\','+r.id+')">&#128465;</button></td></tr>').join('')+
     '</tbody></table>')+
   '</div></div>';
+  el.innerHTML=h;
 }
 var _editBioRec=null;
 async function editBio(id){
@@ -2249,17 +2308,40 @@ function docStatus(d){
   if(diff<=30)return{cls:'bdg-a',text:diff+' zile',icon:'&#128993;'};
   return{cls:'bdg-g',text:diff+' zile',icon:'&#128994;'};
 }
+var _docFilters={search:'',cat:'',status:''};
 async function rDoc(el){
-  const data=(await ga('documents')).sort((a,b)=>{
+  const allData=(await ga('documents')).sort((a,b)=>{
     if(!a.date_expiry)return 1;if(!b.date_expiry)return-1;return new Date(a.date_expiry)-new Date(b.date_expiry)});
-  const valid=data.filter(d=>{if(!d.date_expiry)return true;return new Date(d.date_expiry)>=new Date()}).length;
-  const expSoon=data.filter(d=>{if(!d.date_expiry)return false;const diff=Math.ceil((new Date(d.date_expiry)-new Date())/864e5);return diff>=0&&diff<=30}).length;
-  const expired=data.filter(d=>{if(!d.date_expiry)return false;return new Date(d.date_expiry)<new Date()}).length;
-  el.innerHTML='<div class="kg">'+
+  const df=_docFilters;
+  const data=allData.filter(d=>{
+    if(df.cat&&d.category!==df.cat)return false;
+    if(df.status){const st=docStatus(d);
+      if(df.status==='valid'&&st.text==='Expirat')return false;
+      if(df.status==='expSoon'&&!(st.cls==='bdg-a'))return false;
+      if(df.status==='expired'&&!st.text.startsWith('Expirat'))return false;
+    }
+    if(df.search){const q=df.search.toLowerCase();
+      const fields=[d.name||'',d.number||'',rDocCat(d.category),d.observations||''];
+      if(!fields.some(x=>x.toLowerCase().includes(q)))return false}
+    return true;
+  });
+  const valid=allData.filter(d=>{if(!d.date_expiry)return true;return new Date(d.date_expiry)>=new Date()}).length;
+  const expSoon=allData.filter(d=>{if(!d.date_expiry)return false;const diff=Math.ceil((new Date(d.date_expiry)-new Date())/864e5);return diff>=0&&diff<=30}).length;
+  const expired=allData.filter(d=>{if(!d.date_expiry)return false;return new Date(d.date_expiry)<new Date()}).length;
+  let h='<div class="kg">'+
     '<div class="kc gn"><div class="kl">Valabile</div><div class="kv">'+valid+'</div></div>'+
     '<div class="kc am"><div class="kl">Expira Curand</div><div class="kv">'+expSoon+'</div></div>'+
-    '<div class="kc rd"><div class="kl">Expirate</div><div class="kv">'+expired+'</div></div></div>'+
-  '<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn bp" onclick="editDoc()">+ Adauga Document</button></div>'+
+    '<div class="kc rd"><div class="kl">Expirate</div><div class="kv">'+expired+'</div></div></div>';
+  // Filter bar
+  h+='<div class="ac-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">'+
+    '<input type="text" placeholder="Cauta..." value="'+esc(df.search)+'" oninput="_docFilters.search=this.value;render()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px">'+
+    '<select onchange="_docFilters.cat=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+      '<option value="">Toate categoriile</option>'+getDocCats().map(c=>'<option value="'+c.id+'"'+(df.cat===c.id?' selected':'')+'>'+c.name+'</option>').join('')+'</select>'+
+    '<select onchange="_docFilters.status=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+      '<option value="">Toate statusurile</option><option value="valid"'+(df.status==='valid'?' selected':'')+'>Valabile</option><option value="expSoon"'+(df.status==='expSoon'?' selected':'')+'>Expira curand</option><option value="expired"'+(df.status==='expired'?' selected':'')+'>Expirate</option></select>'+
+    '<button class="btn bo bsm" onclick="_docFilters={search:\'\',cat:\'\',status:\'\'};render()">Reset</button>'+
+  '</div>';
+  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn bp" onclick="editDoc()">+ Adauga Document</button></div>'+
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
   (data.length===0?'<div class="es"><p>Niciun document adaugat.</p></div>':
     '<table class="dt"><thead><tr><th>Categorie</th><th>Denumire / Nr.</th><th>Emitere</th><th>Expirare</th><th>Status</th><th>Fisier</th><th>Actiuni</th></tr></thead><tbody>'+
@@ -2270,6 +2352,7 @@ async function rDoc(el){
       '<td class="act"><button onclick="editDoc('+d.id+')">&#9998;</button><button onclick="delRec(\'documents\','+d.id+')">&#128465;</button></td></tr>'}).join('')+
     '</tbody></table>')+
   '</div></div>';
+  el.innerHTML=h;
 }
 async function editDoc(id){
   let r=id?(await ga('documents')).find(x=>x.id===id):{category:''};if(!r)r={category:''};
@@ -2315,17 +2398,34 @@ function deadlineStatus(d){
   if(diff<=30)return{cls:'bdg-a',text:diff+' zile',icon:'&#128993;'};
   return{cls:'bdg-g',text:diff+' zile',icon:'&#128994;'};
 }
+var _termFilters={search:'',dest:'',status:''};
 async function rTerm(el){
-  const data=(await ga('deadlines')).sort((a,b)=>{if(!a.due_date)return 1;if(!b.due_date)return-1;return new Date(a.due_date)-new Date(b.due_date)});
-  const upcoming=data.filter(d=>{if(!d.due_date||d.status==='trimis')return false;const diff=Math.ceil((new Date(d.due_date)-new Date())/864e5);return diff>=0&&diff<=30}).length;
-  const overdue=data.filter(d=>{if(!d.due_date||d.status==='trimis')return false;return new Date(d.due_date)<new Date()}).length;
-  el.innerHTML='<div class="kg">'+
+  const allData=(await ga('deadlines')).sort((a,b)=>{if(!a.due_date)return 1;if(!b.due_date)return-1;return new Date(a.due_date)-new Date(b.due_date)});
+  const tf=_termFilters;
+  const data=allData.filter(d=>{
+    if(tf.dest){const q=tf.dest.toLowerCase();if(!(d.recipient||'').toLowerCase().includes(q))return false}
+    if(tf.status&&d.status!==tf.status)return false;
+    if(tf.search){const q=tf.search.toLowerCase();
+      const fields=[d.name||'',d.recipient||'',d.due_date||'',d.observations||''];
+      if(!fields.some(x=>x.toLowerCase().includes(q)))return false}
+    return true;
+  });
+  const upcoming=allData.filter(d=>{if(!d.due_date||d.status==='trimis')return false;const diff=Math.ceil((new Date(d.due_date)-new Date())/864e5);return diff>=0&&diff<=30}).length;
+  const overdue=allData.filter(d=>{if(!d.due_date||d.status==='trimis')return false;return new Date(d.due_date)<new Date()}).length;
+  let h='<div class="kg">'+
     '<div class="kc am"><div class="kl">Urmatoarele 30 Zile</div><div class="kv">'+upcoming+'</div></div>'+
     '<div class="kc rd"><div class="kl">Depasite</div><div class="kv">'+overdue+'</div></div>'+
-    '<div class="kc bl"><div class="kl">Total Raportari</div><div class="kv">'+data.length+'</div></div></div>'+
-  '<div style="display:flex;justify-content:flex-end;margin-bottom:14px;gap:8px"><button class="btn bo" onclick="genRecurringDeadlines()">Genereaza Instante Anuale</button><button class="btn bp" onclick="editDeadline()">+ Adauga Raportare</button></div>'+
+    '<div class="kc bl"><div class="kl">Total Raportari</div><div class="kv">'+allData.length+'</div></div></div>';
+  // Filter bar
+  h+='<div class="ac-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">'+
+    '<input type="text" placeholder="Cauta..." value="'+esc(tf.search)+'" oninput="_termFilters.search=this.value;render()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px">'+
+    '<select onchange="_termFilters.status=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+      '<option value="">Toate statusurile</option><option value="neinceput"'+(tf.status==='neinceput'?' selected':'')+'>Neinceput</option><option value="in_lucru"'+(tf.status==='in_lucru'?' selected':'')+'>In lucru</option><option value="finalizat"'+(tf.status==='finalizat'?' selected':'')+'>Finalizat</option><option value="trimis"'+(tf.status==='trimis'?' selected':'')+'>Trimis</option></select>'+
+    '<button class="btn bo bsm" onclick="_termFilters={search:\'\',dest:\'\',status:\'\'};render()">Reset</button>'+
+  '</div>';
+  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px;gap:8px"><button class="btn bo" onclick="genRecurringDeadlines()">Genereaza Instante Anuale</button><button class="btn bp" onclick="editDeadline()">+ Adauga Raportare</button></div>'+
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
-  (data.length===0?'<div class="es"><p>Nicio raportare definita.</p></div>':
+  (data.length===0?'<div class="es"><p>Nicio raportare '+(tf.search||tf.status?'gasita cu filtrele selectate':'definita')+'.</p></div>':
     '<table class="dt"><thead><tr><th>Denumire</th><th>Destinatar</th><th>Frecventa</th><th>Termen</th><th>Status</th><th>Actiuni</th></tr></thead><tbody>'+
     data.map(d=>{const st=deadlineStatus(d);return '<tr><td><strong>'+d.name+'</strong></td><td>'+(d.recipient||'—')+'</td>'+
       '<td><span class="bdg bdg-b">'+(d.frequency==='lunar'?'Lunar':d.frequency==='trimestrial'?'Trim.':d.frequency==='anual'?'Anual':d.frequency==='singulara'?'O data':'Perioada def.')+'</span></td>'+
@@ -2338,6 +2438,7 @@ async function rTerm(el){
       '<td class="act"><button onclick="editDeadline('+d.id+')">&#9998;</button><button onclick="delRec(\'deadlines\','+d.id+')">&#128465;</button></td></tr>'}).join('')+
     '</tbody></table>')+
   '</div></div>';
+  el.innerHTML=h;
 }
 async function editDeadline(id){
   let r=id?(await ga('deadlines')).find(x=>x.id===id):{frequency:'singulara',status:'neinceput'};if(!r)r={frequency:'singulara',status:'neinceput'};
@@ -2548,6 +2649,419 @@ async function renderDashCalendar(){
       '<a href="#" onclick="event.preventDefault();event.stopPropagation();nav(\'calendar\')" style="font-size:11px;color:var(--blue)">'+(isEN?'Full calendar':'Calendar complet')+' →</a></div>'+
       '<div class="cal-grid">'+grid+'</div></div>'+
     '<div class="dash-cal-upcoming"><h4>'+T('cal_next_7')+'</h4>'+upHtml+'</div></div>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUDITURI MODULE
+// ═══════════════════════════════════════════════════════════════
+var _auditFilters={type:'',sec:'',dateFrom:'',dateTo:'',search:''};
+const AUDIT_TYPES=[
+  {id:'igm',name:'Igiena Mainilor (OMS 5 Momente)',icon:'🖐️'},
+  {id:'curat',name:'Curatenie / Dezinfectie',icon:'🧹'},
+  {id:'izol',name:'Precautiuni Izolare',icon:'🛡️'},
+  {id:'custom',name:'Audit Custom',icon:'📋'}
+];
+const OMS5=[
+  'Inainte de contactul cu pacientul',
+  'Inainte de procedura aseptica',
+  'Dupa expunerea la fluide corporale',
+  'Dupa contactul cu pacientul',
+  'Dupa contactul cu mediul pacientului'
+];
+const CLEAN_ITEMS=[
+  'Pardoseala — curatenie generala','Pardoseala — dezinfectie','Suprafete de lucru',
+  'Paturi — cadru metalic','Paturi — saltele','Paturi — lenjerie','Noptiere/mesute',
+  'Echipamente medicale','Baie/grup sanitar — pardoseala','Baie — obiecte sanitare',
+  'Baie — dozatoare sapun/dezinfectant','Manere usi','Intrerupatoare','Cos deseuri',
+  'Lift/brancarda','Statie asistente — suprafete','Frigider medicamente',
+  'Dispensere prosoape','Zona preparare medicamente','Zona curata/murdara separata'
+];
+const IZOL_ITEMS=[
+  'Semnalizare usa (tip izolare)','Echipament protectie disponibil','Halat/sort disponibil',
+  'Manusi disponibile','Masca FFP2/chirurgicala','Viziera/ochelari protectie',
+  'Dezinfectant maini la intrare','Eliminare corecta deseuri infectioase',
+  'Lenjerie separata','Instrumentar dedicat','Curatenie dedicata',
+  'Limitare acces vizitatori','Instructaj personal realizat','Transport pacient — masuri',
+  'Documentatie izolare in foaia de observatie'
+];
+
+function auditTypeName(id){const t=AUDIT_TYPES.find(x=>x.id===id);return t?t.name:id}
+function auditTypeIcon(id){const t=AUDIT_TYPES.find(x=>x.id===id);return t?t.icon:'📋'}
+
+async function rAudit(el){
+  const allData=(await ga('audits')).filter(r=>r.year===A.year);
+  const f=_auditFilters;
+  const data=allData.filter(r=>{
+    if(f.type&&r.audit_type!==f.type)return false;
+    if(f.sec&&r.section!==f.sec)return false;
+    if(f.dateFrom&&r.date<f.dateFrom)return false;
+    if(f.dateTo&&r.date>f.dateTo)return false;
+    if(f.search){const q=f.search.toLowerCase();
+      const fields=[auditTypeName(r.audit_type),rSec(r.section),r.evaluator||'',r.date||'',r.observations||''];
+      if(!fields.some(x=>x.toLowerCase().includes(q)))return false}
+    return true;
+  }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
+  // KPIs
+  const total=allData.length;
+  const avgCompl=total>0?Math.round(allData.reduce((s,r)=>s+(r.compliance_pct||0),0)/total*10)/10:0;
+  const byType={};AUDIT_TYPES.forEach(t=>{byType[t.id]=allData.filter(r=>r.audit_type===t.id).length});
+
+  let h='<div class="kg">'+
+    '<div class="kc bl"><div class="kl">Total Audituri</div><div class="kv">'+total+'</div></div>'+
+    '<div class="kc '+(avgCompl>=80?'gn':avgCompl>=60?'am':'rd')+'"><div class="kl">Conformitate Medie</div><div class="kv">'+avgCompl+'%</div></div>'+
+    AUDIT_TYPES.map(t=>'<div class="kc tl"><div class="kl">'+t.icon+' '+t.name.split('(')[0].trim()+'</div><div class="kv">'+(byType[t.id]||0)+'</div></div>').join('')+
+  '</div>';
+
+  // Filter bar
+  h+='<div class="ac-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">'+
+    '<input type="text" placeholder="Cauta..." value="'+esc(f.search)+'" oninput="_auditFilters.search=this.value;render()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px">'+
+    '<select onchange="_auditFilters.type=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+      '<option value="">Toate tipurile</option>'+AUDIT_TYPES.map(t=>'<option value="'+t.id+'"'+(f.type===t.id?' selected':'')+'>'+t.name+'</option>').join('')+'</select>'+
+    '<select onchange="_auditFilters.sec=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+      '<option value="">Toate sectiile</option>'+secOpts(f.sec)+'</select>'+
+    '<input type="date" value="'+esc(f.dateFrom)+'" onchange="_auditFilters.dateFrom=this.value;render()" title="De la" style="padding:5px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+    '<input type="date" value="'+esc(f.dateTo)+'" onchange="_auditFilters.dateTo=this.value;render()" title="Pana la" style="padding:5px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+    '<button class="btn bo bsm" onclick="_auditFilters={type:\'\',sec:\'\',dateFrom:\'\',dateTo:\'\',search:\'\'};render()">Reset</button>'+
+  '</div>';
+
+  // Action bar
+  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px">'+
+    '<button class="btn bp" onclick="editAudit()">+ Audit Nou</button></div>';
+
+  // Table
+  h+='<div class="pn"><div class="pb" style="overflow-x:auto">';
+  if(data.length===0){
+    h+='<div class="es"><p>Niciun audit '+(f.type||f.sec||f.search?'gasit cu filtrele selectate':'pentru '+A.year)+'.</p>'+
+      '<button class="btn bp" onclick="editAudit()">Adauga primul audit</button></div>';
+  } else {
+    h+='<table class="dt"><thead><tr><th>#</th><th>Data</th><th>Tip</th><th>Sectie</th><th>Evaluator</th><th>Scor %</th><th>Actiuni</th></tr></thead><tbody>'+
+    data.map((r,i)=>{
+      const pct=r.compliance_pct||0;const pCls=pct>=80?'bdg-g':pct>=60?'bdg-a':'bdg-r';
+      return '<tr><td>'+(i+1)+'</td><td>'+(r.date||'—')+'</td>'+
+        '<td>'+auditTypeIcon(r.audit_type)+' '+auditTypeName(r.audit_type)+'</td>'+
+        '<td>'+rSec(r.section)+'</td><td>'+(r.evaluator||'—')+'</td>'+
+        '<td><span class="bdg '+pCls+'">'+pct+'%</span></td>'+
+        '<td class="act"><button onclick="editAudit('+r.id+')" title="Editeaza">&#9998;</button>'+
+          '<button onclick="genAuditWord('+r.id+')" title="Raport Word">&#128196;</button>'+
+          '<button onclick="delRec(\'audits\','+r.id+')" title="Sterge">&#128465;</button></td></tr>';
+    }).join('')+
+    '</tbody></table>';
+  }
+  h+='</div></div>';
+  el.innerHTML=h;
+}
+
+function getAuditDefItems(type,izoTip){
+  if(type==='igm')return OMS5.map(l=>({label:l,result:'',note:''}));
+  if(type==='curat')return CLEAN_ITEMS.map(l=>({label:l,result:'',note:''}));
+  if(type==='izol')return IZOL_ITEMS.map(l=>({label:l,result:'',note:''}));
+  return [{label:'',result:'',note:''}];
+}
+
+var _auditEditItems=[];
+var _auditEditType='';
+
+async function editAudit(id){
+  let r=id?(await ga('audits')).find(x=>x.id===id):null;
+  if(!r)r={year:A.year,audit_type:'',section:'',date:new Date().toISOString().slice(0,10),evaluator:getCoord()?getCoord().name:'',
+    items:[],compliance_pct:0,total_items:0,conform_items:0,observations:'',recommendations:''};
+  _auditEditType=r.audit_type;
+  _auditEditItems=r.items&&r.items.length?JSON.parse(JSON.stringify(r.items)):[];
+
+  openM(id?'Editare Audit':'Audit Nou',
+    '<div class="fr"><div class="fg"><label>Tip Audit</label><select id="f-atype" onchange="onAuditTypeChange(this.value)">'+
+      '<option value="">— Alege tipul —</option>'+AUDIT_TYPES.map(t=>'<option value="'+t.id+'"'+(r.audit_type===t.id?' selected':'')+'>'+t.icon+' '+t.name+'</option>').join('')+
+    '</select></div>'+
+    '<div class="fg"><label>Data</label><input type="date" id="f-adate" value="'+(r.date||'')+'"></div></div>'+
+    '<div class="fr"><div class="fg"><label>Sectia</label><select id="f-asec"><option value="">—</option>'+secOpts(r.section)+'</select></div>'+
+    '<div class="fg"><label>Evaluator</label><input id="f-aeval" value="'+(r.evaluator||'')+'"></div></div>'+
+    (r.audit_type==='izol'?'<div class="fg"><label>Tip izolare</label><select id="f-aizol">'+
+      '<option value="contact"'+(r.isolation_type==='contact'?' selected':'')+'>Contact</option>'+
+      '<option value="aerogen"'+(r.isolation_type==='aerogen'?' selected':'')+'>Aerogen</option>'+
+      '<option value="picaturi"'+(r.isolation_type==='picaturi'?' selected':'')+'>Picaturi</option></select></div>':'')+
+    '<div id="audit-items-container">'+renderAuditItemsHTML()+'</div>'+
+    '<div class="fr"><div class="fg"><label>Observatii</label><textarea id="f-aobs" rows="2">'+(r.observations||'')+'</textarea></div>'+
+    '<div class="fg"><label>Recomandari</label><textarea id="f-arec" rows="2">'+(r.recommendations||'')+'</textarea></div></div>',
+  '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" onclick="saveAudit('+(id||'null')+')">Salveaza</button>');
+}
+
+function onAuditTypeChange(type){
+  _auditEditType=type;
+  _auditEditItems=getAuditDefItems(type);
+  document.getElementById('audit-items-container').innerHTML=renderAuditItemsHTML();
+  // Toggle isolation type field
+  const existing=document.getElementById('f-aizol');
+  if(type==='izol'&&!existing){
+    const evalDiv=document.getElementById('f-aeval').closest('.fr');
+    if(evalDiv){const d=document.createElement('div');d.className='fg';d.innerHTML='<label>Tip izolare</label><select id="f-aizol"><option value="contact">Contact</option><option value="aerogen">Aerogen</option><option value="picaturi">Picaturi</option></select>';
+      evalDiv.parentNode.insertBefore(d,evalDiv.nextSibling)}
+  }
+}
+
+function renderAuditItemsHTML(){
+  if(!_auditEditType)return '<div class="ib inf" style="margin:10px 0">Selecteaza tipul de audit pentru a vedea checklist-ul.</div>';
+  const isCustom=_auditEditType==='custom';
+  const isIgm=_auditEditType==='igm';
+  let h='<div style="margin:12px 0"><h4 style="color:var(--navy);font-size:13px;margin-bottom:8px">'+(isIgm?'Observatii Igiena Mainilor':'Checklist Audit')+'</h4>';
+  h+='<table class="dt" style="font-size:12px"><thead><tr><th style="width:40%">Item</th>';
+  if(isIgm){h+='<th>Oportunitate</th><th>Actiune corecta</th>';}
+  else {h+='<th>Conform</th><th>Neconform</th><th>N/A</th>';}
+  h+='<th>Observatii</th>';
+  if(isCustom)h+='<th style="width:40px"></th>';
+  h+='</tr></thead><tbody>';
+  _auditEditItems.forEach((it,i)=>{
+    h+='<tr><td>'+(isCustom?'<input value="'+esc(it.label)+'" onchange="_auditEditItems['+i+'].label=this.value" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:12px">':it.label)+'</td>';
+    if(isIgm){
+      h+='<td style="text-align:center"><input type="checkbox" '+(it.result==='OP'||it.result==='C'?'checked':'')+' onchange="setAuditItem('+i+',\'opp\',this.checked)"></td>';
+      h+='<td style="text-align:center"><input type="checkbox" '+(it.result==='C'?'checked':'')+' onchange="setAuditItem('+i+',\'act\',this.checked)"></td>';
+    } else {
+      h+='<td style="text-align:center"><input type="radio" name="ai'+i+'" '+(it.result==='C'?'checked':'')+' onchange="_auditEditItems['+i+'].result=\'C\'"></td>';
+      h+='<td style="text-align:center"><input type="radio" name="ai'+i+'" '+(it.result==='NC'?'checked':'')+' onchange="_auditEditItems['+i+'].result=\'NC\'"></td>';
+      h+='<td style="text-align:center"><input type="radio" name="ai'+i+'" '+(it.result==='NA'?'checked':'')+' onchange="_auditEditItems['+i+'].result=\'NA\'"></td>';
+    }
+    h+='<td><input value="'+esc(it.note||'')+'" onchange="_auditEditItems['+i+'].note=this.value" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>';
+    if(isCustom)h+='<td><button onclick="removeAuditItem('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px">&#10005;</button></td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  if(isCustom)h+='<button class="btn bo bsm" onclick="addAuditItem()" style="margin-top:6px">+ Adauga item</button>';
+  h+='</div>';
+  return h;
+}
+
+function setAuditItem(i,field,val){
+  if(field==='opp')_auditEditItems[i].result=val?'OP':'';
+  else if(field==='act')_auditEditItems[i].result=val?'C':'OP';
+}
+function addAuditItem(){_auditEditItems.push({label:'',result:'',note:''});document.getElementById('audit-items-container').innerHTML=renderAuditItemsHTML()}
+function removeAuditItem(i){_auditEditItems.splice(i,1);document.getElementById('audit-items-container').innerHTML=renderAuditItemsHTML()}
+
+async function saveAudit(id){
+  const v=s=>document.getElementById(s)?document.getElementById(s).value:'';
+  const type=v('f-atype');if(!type){alert('Selecteaza tipul de audit.');return}
+  const sec=v('f-asec');if(!sec){alert('Selecteaza sectia.');return}
+  const items=_auditEditItems.filter(it=>it.label);
+  // Calculate compliance
+  let totalEval=0,conform=0;
+  if(type==='igm'){
+    items.forEach(it=>{if(it.result==='OP'||it.result==='C'){totalEval++;if(it.result==='C')conform++}});
+  } else {
+    items.forEach(it=>{if(it.result==='C'||it.result==='NC'){totalEval++;if(it.result==='C')conform++}});
+  }
+  const pct=totalEval>0?Math.round(conform/totalEval*1000)/10:0;
+  const rec={year:A.year,audit_type:type,section:sec,date:v('f-adate'),evaluator:v('f-aeval').trim(),
+    isolation_type:type==='izol'?v('f-aizol'):'',
+    items,compliance_pct:pct,total_items:totalEval,conform_items:conform,
+    observations:v('f-aobs').trim(),recommendations:v('f-arec').trim()};
+  if(id)rec.id=id;await pt('audits',rec);
+  logActivity((id?'Editat':'Adaugat')+' audit '+auditTypeName(type)+' — '+rSec(sec));
+  closeM();render();
+}
+
+async function genAuditWord(id){
+  const r=(await ga('audits')).find(x=>x.id===id);if(!r)return;
+  showGen('Se genereaza PV Audit...');
+  try{
+    const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,AlignmentType,ShadingType,BorderStyle,VerticalAlign}=docx;
+    const items=r.items||[];
+    const tW=[5000,1500,1500,1500,2000];
+    const isIgm=r.audit_type==='igm';
+    const headCells=isIgm?['Item','Oportunitate','Actiune OK','','Observatii']:['Item','C','NC','N/A','Observatii'];
+
+    const rows=[wTblHead(headCells,tW)];
+    items.forEach((it,i)=>{
+      let rCls=it.result==='C'?'27AE60':it.result==='NC'?'C0392B':it.result==='NA'?'95A5A6':'FFFFFF';
+      if(isIgm)rCls=it.result==='C'?'27AE60':it.result==='OP'?'D4A017':'95A5A6';
+      const vals=isIgm?
+        [it.label,it.result==='OP'||it.result==='C'?'DA':'—',it.result==='C'?'DA':'—','',it.note||'']:
+        [it.label,it.result==='C'?'✓':'',it.result==='NC'?'✗':'',it.result==='NA'?'—':'',it.note||''];
+      rows.push(wTblRow(vals,tW,i%2===1));
+    });
+
+    const children=[
+      ...wCover('RAPORT AUDIT\n'+auditTypeName(r.audit_type),CFG.hospital_name+' — '+r.date,WC.navy),
+      wH1('DATE GENERALE'),
+      wP('Tip audit: '+auditTypeName(r.audit_type)),
+      wP('Data: '+(r.date||'—')),
+      wP('Sectia: '+rSec(r.section)),
+      wP('Evaluator: '+(r.evaluator||'—')),
+      ...(r.audit_type==='izol'?[wP('Tip izolare: '+(r.isolation_type||'—'))]:[]),
+      wH1('REZULTATE EVALUARE'),
+      new Table({rows,width:{size:11000,type:WidthType.DXA}}),
+      wSp(100),
+      wH2('SCOR CONFORMITATE'),
+      wP('Total itemi evaluati: '+r.total_items,{bold:true}),
+      wP('Conformi: '+r.conform_items,{bold:true,color:'27AE60'}),
+      wP('Scor: '+r.compliance_pct+'%',{bold:true,size:24,color:r.compliance_pct>=80?'27AE60':r.compliance_pct>=60?'D4A017':'C0392B'}),
+      ...(r.observations?[wH2('OBSERVATII'),wP(r.observations)]:[]),
+      ...(r.recommendations?[wH2('RECOMANDARI'),wP(r.recommendations)]:[]),
+      ...wSigBlock()
+    ];
+    const doc=makeDoc(children,'Audit — '+rSec(r.section),'Audit_'+r.date);
+    await saveDocx(doc,'Audit_'+auditTypeName(r.audit_type).replace(/[^a-zA-Z0-9]/g,'_')+'_'+r.date+'.docx');
+  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  finally{hideGen()}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INSTRUIRE PERSONAL MODULE
+// ═══════════════════════════════════════════════════════════════
+var _instrFilters={sec:'',dateFrom:'',dateTo:'',search:''};
+var _instrParticipants=[];
+
+async function rInstr(el){
+  const allData=(await ga('trainings')).filter(r=>r.year===A.year);
+  const f=_instrFilters;
+  const data=allData.filter(r=>{
+    if(f.sec&&r.section!==f.sec)return false;
+    if(f.dateFrom&&r.date<f.dateFrom)return false;
+    if(f.dateTo&&r.date>f.dateTo)return false;
+    if(f.search){const q=f.search.toLowerCase();
+      const fields=[r.topic||'',rSec(r.section),r.trainer||'',r.date||''];
+      if(!fields.some(x=>x.toLowerCase().includes(q)))return false}
+    return true;
+  }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
+  const total=allData.length;
+  const totalPart=allData.reduce((s,r)=>s+(r.participants||[]).length,0);
+  // Unique trained personnel names
+  const trainedNames=new Set();allData.forEach(r=>(r.participants||[]).filter(p=>p.signed).forEach(p=>trainedNames.add(p.name)));
+  const allPersonnel=CFG.personnel||[];
+  const trainedPct=allPersonnel.length>0?Math.round(trainedNames.size/allPersonnel.length*100):0;
+
+  let h='<div class="kg">'+
+    '<div class="kc bl"><div class="kl">Total Instruiri</div><div class="kv">'+total+'</div></div>'+
+    '<div class="kc tl"><div class="kl">Total Participanti</div><div class="kv">'+totalPart+'</div></div>'+
+    '<div class="kc '+(trainedPct>=80?'gn':trainedPct>=50?'am':'rd')+'"><div class="kl">Personal Instruit</div><div class="kv">'+trainedPct+'%</div><div class="ks">'+trainedNames.size+'/'+allPersonnel.length+'</div></div>'+
+  '</div>';
+
+  // Alert: untrained >12 months
+  const oneYearAgo=new Date();oneYearAgo.setFullYear(oneYearAgo.getFullYear()-1);
+  const lastTrainDate={};allData.forEach(r=>(r.participants||[]).filter(p=>p.signed).forEach(p=>{
+    if(!lastTrainDate[p.name]||r.date>lastTrainDate[p.name])lastTrainDate[p.name]=r.date;
+  }));
+  const untrained=allPersonnel.filter(p=>!lastTrainDate[p.name]||lastTrainDate[p.name]<oneYearAgo.toISOString().slice(0,10));
+  if(untrained.length>0){
+    h+='<div class="ib warn" style="margin-bottom:14px">&#128308; <strong>'+untrained.length+' persoane</strong> neinstruite in ultimele 12 luni: '+
+      untrained.slice(0,5).map(p=>p.name).join(', ')+(untrained.length>5?' ...':'')+'</div>';
+  }
+
+  // Filter bar
+  h+='<div class="ac-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">'+
+    '<input type="text" placeholder="Cauta..." value="'+esc(f.search)+'" oninput="_instrFilters.search=this.value;render()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px">'+
+    '<select onchange="_instrFilters.sec=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+      '<option value="">Toate sectiile</option>'+secOpts(f.sec)+'</select>'+
+    '<input type="date" value="'+esc(f.dateFrom)+'" onchange="_instrFilters.dateFrom=this.value;render()" title="De la" style="padding:5px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+    '<input type="date" value="'+esc(f.dateTo)+'" onchange="_instrFilters.dateTo=this.value;render()" title="Pana la" style="padding:5px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+    '<button class="btn bo bsm" onclick="_instrFilters={sec:\'\',dateFrom:\'\',dateTo:\'\',search:\'\'};render()">Reset</button>'+
+  '</div>';
+
+  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px">'+
+    '<button class="btn bp" onclick="editTraining()">+ Instruire Noua</button></div>';
+
+  h+='<div class="pn"><div class="pb" style="overflow-x:auto">';
+  if(data.length===0){
+    h+='<div class="es"><p>Nicio instruire '+(f.sec||f.search?'gasita cu filtrele selectate':'pentru '+A.year)+'.</p>'+
+      '<button class="btn bp" onclick="editTraining()">Adauga prima instruire</button></div>';
+  } else {
+    h+='<table class="dt"><thead><tr><th>#</th><th>Data</th><th>Tema</th><th>Sectie</th><th>Formator</th><th>Participanti</th><th>Durata</th><th>Actiuni</th></tr></thead><tbody>'+
+    data.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+(r.date||'—')+'</td>'+
+      '<td>'+(r.topic||'—')+'</td><td>'+rSec(r.section)+'</td>'+
+      '<td>'+(r.trainer||'—')+'</td><td>'+(r.participants||[]).length+'</td>'+
+      '<td>'+(r.duration_hours||'—')+' h</td>'+
+      '<td class="act"><button onclick="editTraining('+r.id+')" title="Editeaza">&#9998;</button>'+
+        '<button onclick="genTrainingWord('+r.id+')" title="PV Word">&#128196;</button>'+
+        '<button onclick="delRec(\'trainings\','+r.id+')" title="Sterge">&#128465;</button></td></tr>').join('')+
+    '</tbody></table>';
+  }
+  h+='</div></div>';
+  el.innerHTML=h;
+}
+
+async function editTraining(id){
+  let r=id?(await ga('trainings')).find(x=>x.id===id):null;
+  if(!r)r={year:A.year,date:new Date().toISOString().slice(0,10),topic:'',section:'',
+    trainer:getCoord()?getCoord().name:'',participants:[],duration_hours:1,observations:''};
+  _instrParticipants=r.participants&&r.participants.length?JSON.parse(JSON.stringify(r.participants)):[];
+
+  openM(id?'Editare Instruire':'Instruire Noua',
+    '<div class="fr"><div class="fg"><label>Data</label><input type="date" id="f-tdate" value="'+(r.date||'')+'"></div>'+
+    '<div class="fg"><label>Durata (ore)</label><input type="number" id="f-tdur" value="'+(r.duration_hours||1)+'" min="0.5" step="0.5"></div></div>'+
+    '<div class="fg"><label>Tema / Subiect</label><input id="f-ttopic" value="'+esc(r.topic||'')+'"></div>'+
+    '<div class="fr"><div class="fg"><label>Sectia</label><select id="f-tsec"><option value="">— Toate / General —</option>'+secOpts(r.section)+'</select></div>'+
+    '<div class="fg"><label>Formator</label><input id="f-ttrainer" value="'+esc(r.trainer||'')+'"></div></div>'+
+    '<div style="margin:12px 0"><h4 style="color:var(--navy);font-size:13px;margin-bottom:8px">Participanti</h4>'+
+    '<button class="btn bo bsm" onclick="loadPersonnelToTraining()" style="margin-bottom:8px">Incarca din personal</button>'+
+    '<div id="train-part-container">'+renderTrainParticipants()+'</div>'+
+    '<button class="btn bo bsm" onclick="addTrainParticipant()" style="margin-top:6px">+ Adauga participant</button></div>'+
+    '<div class="fg"><label>Observatii</label><textarea id="f-tobs" rows="2">'+(r.observations||'')+'</textarea></div>',
+  '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" onclick="saveTraining('+(id||'null')+')">Salveaza</button>');
+}
+
+function renderTrainParticipants(){
+  if(_instrParticipants.length===0)return '<div style="color:var(--txtL);font-size:12px;padding:6px">Niciun participant adaugat.</div>';
+  let h='<table class="dt" style="font-size:12px"><thead><tr><th>Nume</th><th>Functie</th><th>Semnatura</th><th style="width:40px"></th></tr></thead><tbody>';
+  _instrParticipants.forEach((p,i)=>{
+    h+='<tr><td><input value="'+esc(p.name||'')+'" onchange="_instrParticipants['+i+'].name=this.value" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:12px"></td>'+
+    '<td><input value="'+esc(p.title||'')+'" onchange="_instrParticipants['+i+'].title=this.value" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:12px"></td>'+
+    '<td style="text-align:center"><input type="checkbox" '+(p.signed?'checked':'')+' onchange="_instrParticipants['+i+'].signed=this.checked"></td>'+
+    '<td><button onclick="removeTrainParticipant('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px">&#10005;</button></td></tr>';
+  });
+  return h+'</tbody></table>';
+}
+function addTrainParticipant(){_instrParticipants.push({name:'',title:'',signed:false});document.getElementById('train-part-container').innerHTML=renderTrainParticipants()}
+function removeTrainParticipant(i){_instrParticipants.splice(i,1);document.getElementById('train-part-container').innerHTML=renderTrainParticipants()}
+function loadPersonnelToTraining(){
+  const existing=new Set(_instrParticipants.map(p=>p.name));
+  (CFG.personnel||[]).forEach(p=>{if(!existing.has(p.name))_instrParticipants.push({name:p.name,title:p.title||p.role||'',signed:false})});
+  document.getElementById('train-part-container').innerHTML=renderTrainParticipants();
+}
+
+async function saveTraining(id){
+  const v=s=>document.getElementById(s)?document.getElementById(s).value:'';
+  const topic=v('f-ttopic').trim();if(!topic){alert('Completeaza tema instruirii.');return}
+  const participants=_instrParticipants.filter(p=>p.name);
+  const rec={year:A.year,date:v('f-tdate'),topic,section:v('f-tsec'),
+    trainer:v('f-ttrainer').trim(),participants,
+    duration_hours:parseFloat(v('f-tdur'))||1,observations:v('f-tobs').trim()};
+  if(id)rec.id=id;await pt('trainings',rec);
+  logActivity((id?'Editata':'Adaugata')+' instruire — '+topic);
+  closeM();render();
+}
+
+async function genTrainingWord(id){
+  const r=(await ga('trainings')).find(x=>x.id===id);if(!r)return;
+  showGen('Se genereaza PV Instruire...');
+  try{
+    const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,AlignmentType,ShadingType,BorderStyle,VerticalAlign}=docx;
+    const parts=r.participants||[];
+    const pW=[500,3500,3000,2000,2000];
+    const rows=[wTblHead(['Nr.','Nume si prenume','Functia','Semnatura','Observatii'],pW)];
+    parts.forEach((p,i)=>{
+      rows.push(wTblRow([String(i+1),p.name||'',p.title||'',p.signed?'Da':'',''/*obs*/],pW,i%2===1));
+    });
+
+    const children=[
+      ...wCover('PROCES-VERBAL\nINSTRUIRE PERSONAL',CFG.hospital_name+' — '+r.date,WC.navy),
+      wH1('DETALII INSTRUIRE'),
+      wP('Data: '+(r.date||'—')),
+      wP('Tema: '+(r.topic||'—'),{bold:true}),
+      wP('Sectia: '+rSec(r.section)),
+      wP('Formator: '+(r.trainer||'—')),
+      wP('Durata: '+(r.duration_hours||'—')+' ore'),
+      wH1('LISTA PARTICIPANTI'),
+      new Table({rows,width:{size:11000,type:WidthType.DXA}}),
+      wSp(100),
+      wP('Total participanti: '+parts.length,{bold:true}),
+      wP('Au semnat: '+parts.filter(p=>p.signed).length,{bold:true}),
+      ...(r.observations?[wH2('OBSERVATII'),wP(r.observations)]:[]),
+      ...wSigBlock()
+    ];
+    const doc=makeDoc(children,'PV Instruire — '+rSec(r.section),'Instruire_'+r.date);
+    await saveDocx(doc,'PV_Instruire_'+r.date+'_'+(r.topic||'').replace(/[^a-zA-Z0-9]/g,'_').slice(0,30)+'.docx');
+  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  finally{hideGen()}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2872,7 +3386,8 @@ function updateLangUI(){
   document.getElementById('pt').textContent=getPageTitle(A.page);}
 function getPageTitle(p){
   const map={dashboard:'pt_dashboard',iaam:'pt_iaam',autocontrol:'pt_autocontrol',deseuri:'pt_deseuri',
-    biocide:'pt_biocide',pps:'pt_pps',documente:'pt_documente',termene:'pt_termene',calendar:'pt_calendar',rapoarte:'pt_rapoarte',
+    biocide:'pt_biocide',pps:'pt_pps',documente:'pt_documente',termene:'pt_termene',calendar:'pt_calendar',
+    audituri:'pt_audituri',instruire:'pt_instruire',rapoarte:'pt_rapoarte',
     config:'pt_config',ajutor:'pt_ajutor',changelog:'pt_changelog',about:'pt_despre',terms:'pt_terms'};
   return T(map[p]||'pt_dashboard')}
 function applyDark(){

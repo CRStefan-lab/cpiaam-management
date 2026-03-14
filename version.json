@@ -1,17 +1,17 @@
 {
-  "version": "5.6",
+  "version": "5.7",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
+    "Dashboard modernizat: KPI cards cu shadow si border-radius 16px",
+    "Trend indicators cu badge colorat (pastila verde/rosie)",
+    "Quick actions cu butoane pill si iconite",
+    "Charts cu accent bar sub titlu si padding crescut",
+    "Activity feed cu timeline dots",
+    "Widget config bar intr-o pastila compacta",
+    "Calendar si upcoming cu shadow subtil fara border",
+    "Urgent banner cu gradient si shadow colorat",
     "Interfata responsive: desktop, tablet, mobil",
     "Meniu hamburger pe mobil cu sidebar slide-in",
-    "URL descarcare corectat pentru GitHub Pages",
-    "Indicator sincronizare 3 stari in toolbar",
-    "Modal locatie fisier dupa conectare",
-    "Setare locatie fisier editabila in Configurare",
-    "Ghid complet date, backup si sincronizare",
-    "Sistem auto-update cu banner si descarcare",
-    "Restructurare completa modul Autocontrol",
-    "Matrice acoperire cu click pe celula",
-    "Planificator recoltare cu integrare Calendar"
+    "URL descarcare corectat pentru GitHub Pages"
   ]
 }

@@ -363,6 +363,7 @@ body{display:block!important;background:#fff!important}
       <span id="sync-indicator" style="font-size:11px;cursor:pointer;white-space:nowrap" onclick="syncPickFile()" title="Click pentru a conecta un fisier JSON">&#128308; Neconectat</span>
       <button class="tb-icon" onclick="syncPickFile()" title="Conecteaza la fisier JSON">&#128193;</button>
       <button class="tb-icon" onclick="printDashboard()" title="Printeaza dashboard" id="btn-print">&#128424;</button>
+      <button class="tb-icon" onclick="downloadApp()" title="Descarca aplicatia / Download app" style="font-size:12px">&#11015;&#65039;</button>
       <div style="position:relative">
         <button class="tb-icon" onclick="toggleNotif()" title="Notificari" id="btn-notif">&#128276;<span class="notif-badge" id="notif-badge" style="display:none">0</span></button>
         <div class="notif-dd" id="notif-dd"></div>
@@ -700,6 +701,10 @@ function renderWizStep(step){
   if(step===1){
     c.innerHTML=bar+
       '<h2>Bun venit!</h2><p class="wiz-sub">Configureaza-ti spitalul pentru a incepe lucrul cu CPIAAM Manager.</p>'+
+      '<div style="background:#EBF5FB;border:2px solid #2563B0;border-radius:8px;padding:14px;margin-bottom:16px;text-align:center">'+
+        '<button onclick="downloadApp()" style="background:#2563B0;color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">&#128190; Descarca aplicatia pe calculator</button>'+
+        '<p style="font-size:12px;color:#1B3A6B;line-height:1.5;margin:0">Pentru functionalitate completa (sincronizare date, backup automat, lucru offline), descarca aplicatia si pune-o intr-un folder pe calculator (recomandat in OneDrive sau Google Drive). Poti folosi aplicatia si direct din browser, dar datele vor fi doar locale si se pierd la stergerea datelor de navigare.</p>'+
+      '</div>'+
       '<div class="fg"><label>Denumirea spitalului</label><input id="wz-hosp" value="'+WZ.hospital_name+'" placeholder="ex: Spitalul Municipal ..."></div>'+
       '<div class="fg"><label>Denumirea compartimentului</label><input id="wz-cpiaam" value="'+WZ.cpiaam_name+'" placeholder="C.P.I.A.A.M."></div>'+
       '<div class="wiz-nav"><div></div><button class="btn bp" onclick="wizNext(1)">Continua &#8594;</button></div>';
@@ -2224,7 +2229,11 @@ function rAjutor(el){
     '<div class="pn" style="margin-top:14px"><div class="ph"><h3>'+(isEN?'Useful Shortcuts':'Scurtaturi utile')+'</h3></div><div class="pb">'+
     '<table class="dt"><thead><tr><th>'+(isEN?'Action':'Actiune')+'</th><th>'+(isEN?'Location':'Locatie')+'</th></tr></thead><tbody>'+
     shortcuts.map(([a,l])=>'<tr><td>'+a+'</td><td>'+l+'</td></tr>').join('')+
-    '</tbody></table></div></div>'}
+    '</tbody></table></div></div>'+
+    '<div class="pn" style="margin-top:14px"><div class="ph"><h3>'+(isEN?'Download Application':'Descarca Aplicatia')+'</h3></div><div class="pb" style="text-align:center;padding:20px">'+
+      '<button onclick="downloadApp()" style="background:#2563B0;color:#fff;border:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px">&#128190; '+(isEN?'Download application to computer':'Descarca aplicatia pe calculator')+'</button>'+
+      '<p style="font-size:12.5px;color:var(--txt);line-height:1.6;max-width:600px;margin:0 auto">'+(isEN?'For full functionality (data sync, automatic backup, offline work), download the app and place it in a folder on your computer (recommended in OneDrive or Google Drive). You can also use the app directly from the browser, but the data will be local only and will be lost when clearing browsing data.':'Pentru functionalitate completa (sincronizare date, backup automat, lucru offline), descarca aplicatia si pune-o intr-un folder pe calculator (recomandat in OneDrive sau Google Drive). Poti folosi aplicatia si direct din browser, dar datele vor fi doar locale si se pierd la stergerea datelor de navigare.')+'</p>'+
+    '</div></div>'}
 
 // ═══════════════════════════════════════════════════════════════
 // CHANGELOG PAGE (cerinta E)
@@ -2606,6 +2615,11 @@ async function genPVCPIAAM(){
 // ═══════════════════════════════════════════════════════════════
 // BACKUP — export / import
 // ═══════════════════════════════════════════════════════════════
+function downloadApp(){
+  const html='<!DOCTYPE html>'+document.documentElement.outerHTML;
+  saveAs(new Blob([html],{type:'text/html;charset=utf-8'}),'CPIAAM_Management.html');
+  logActivity('Descarcat aplicatia pe calculator');
+}
 async function expAll(){const d={};for(const s of ST)d[s]=await ga(s);
   CFG.last_backup=new Date().toISOString();await saveCfg();
   saveAs(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),'CPIAAM_Backup_'+A.year+'_'+new Date().toISOString().slice(0,10)+'.json');logActivity('Backup exportat')}

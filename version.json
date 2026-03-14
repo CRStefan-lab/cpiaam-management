@@ -1,14 +1,15 @@
 {
-  "version": "5.9",
+  "version": "6.0",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Modul Audituri: 4 tipuri (Igiena Mainilor OMS, Curatenie, Izolare, Custom)",
-    "Audituri: KPI cards, filtre, tabel, modal formular, checklist interactiv",
-    "Audituri: generare PV Word profesionist cu rezultate si scor",
-    "Modul Instruire Personal: formular, participanti, durata, observatii",
-    "Instruire: KPI personal instruit, alerta >12 luni neinstruiti",
-    "Instruire: generare PV Word cu lista participanti si semnaturi",
-    "Cautare/filtrare adaugata in IAAM, Biocide, Documente, Termene",
-    "Dashboard: KPI audituri si instruiri, quick action Audit Nou"
+    "Fisa IAAM Word: generare conform Ordinul 1101/2016 (10 sectiuni, antibiotice, germeni MDR, semnaturi)",
+    "Calendar: editare evenimente existente (titlu, categorie, date start/stop, descriere, observatii)",
+    "Calendar: 7 categorii evenimente cu culori diferite pe punctele calendarului",
+    "Calendar: suport evenimente multi-zi (date start + date end)",
+    "Autocontrol: 3 tab-uri tip (Probe Microbiologice, Probe ATP, Testare UV Check)",
+    "Probe ATP: suprafete configurabile cu praguri RLU, citire initiala + repetitie, conformitate automata",
+    "Testare UV Check: verificare curatenie cu markeri fluorescenti, Pass/Fail per sectie/suprafata",
+    "Biocide: butoane colorate pentru documente (verde Aviz, albastru Fisa tehnica, portocaliu SDS)",
+    "Biocide: zone upload colorate cu bordura punctata in formularul de editare"
   ]
 }

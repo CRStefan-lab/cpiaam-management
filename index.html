@@ -3485,7 +3485,7 @@ function showUpdateBanner(d){
   else document.body.insertBefore(b,document.body.firstChild);
 }
 function downloadUpdate(url){
-  const a=document.createElement('a');a.href=url;a.download='CPIAAM_Management.html';a.click();
+  const a=document.createElement('a');a.href=url;a.download='CPIAAM_Management_v'+APP_VERSION+'.html';a.click();
   setTimeout(()=>{
     alert('Fisierul a fost descarcat.\n\nInlocuieste fisierul vechi cu cel nou si redeschide aplicatia.');
     dismissUpdate();

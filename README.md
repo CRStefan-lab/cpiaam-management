@@ -2,6 +2,7 @@
 # CPIAAM Management
 
 Aplicație gratuită de management pentru compartimentele C.P.I.A.A.M. (Prevenirea și Controlul Infecțiilor Asociate Activității Medicale) din unitățile sanitare.
+🌐 **Demo live:** [https://crstefan-lab.github.io/cpiaam-management/](https://crstefan-lab.github.io/cpiaam-management/)
 
 ## Ce face
 

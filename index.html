@@ -163,6 +163,20 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .ac-pag button{padding:4px 12px;border:1px solid var(--brd);border-radius:4px;background:var(--card);cursor:pointer;font-size:11px}
 .ac-pag button:hover{border-color:var(--teal)}
 .ac-pag button:disabled{opacity:.4;cursor:default}
+.ghid-state{display:flex;gap:12px;padding:12px 14px;border-radius:8px;border:1px solid;margin-bottom:8px}
+.ghid-state-red{border-color:#F09595;background:#FCEBEB}
+.ghid-state-yellow{border-color:#FAC775;background:#FAEEDA}
+.ghid-state-green{border-color:#9FE1CB;background:#E1F5EE}
+.ghid-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:4px;margin-top:5px;font-weight:500}
+.ghid-tag-red{background:#F7C1C1;color:#501313}
+.ghid-tag-yellow{background:#FAC775;color:#412402}
+.ghid-tag-green{background:#97C459;color:#173404}
+.ghid-diff{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.ghid-diff-box{border-radius:8px;border:1px solid var(--brd);padding:12px 14px}
+.ghid-badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+.ghid-badge-live{background:#97C459;color:#173404}
+.ghid-badge-snap{background:#85B7EB;color:#042C53}
+.ghid-warning{background:#FAEEDA;border:1px solid #FAC775;border-radius:8px;padding:10px 14px;margin-top:12px;font-size:13px;color:#412402}
 .ac-kpi-bar{height:6px;border-radius:3px;background:#E5E7EB;overflow:hidden;margin-top:4px;width:100%}
 .ac-kpi-fill{height:100%;border-radius:3px;transition:width .3s}
 
@@ -491,7 +505,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='5.4';
+const APP_VERSION='5.5';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -547,7 +561,14 @@ ro:{
   rap_analiza_des:'Analiza Deseuri',rap_ancheta:'Ancheta Epidemiologica',rap_pv:'PV CPIAAM',
   rap_trimestrial:'Raport Trimestrial',rap_autocontrol_xlsx:'Autocontrol XLSX',
   // Sync
-  sync_conectat:'Conectat',sync_neconectat:'Neconectat',sync_datele_locale:'datele sunt doar locale',
+  sync_conectat:'Conectat',sync_neconectat:'Nesincronizat',sync_datele_locale:'Datele sunt salvate doar in browserul acestui calculator. Risc de pierdere la reinstalare. Conecteaza un fisier de date.',
+  sync_salvat_local:'Salvat local',sync_sincronizat:'Sincronizat',
+  sync_tip_local:'Datele se salveaza automat pe acest calculator. Nu poti lucra de pe alt calculator.',
+  sync_tip_cloud:'Datele se salveaza automat in cloud. Accesibil de pe orice calculator.',
+  sync_unde_fisier:'Unde este salvat acest fisier?',sync_doar_pc:'Doar pe acest calculator (fara sincronizare cloud)',
+  sync_cloud:'Intr-un folder OneDrive sau Google Drive (sincronizare automata)',sync_nu_stiu:'Nu stiu sigur',
+  sync_nota_cloud:'Daca fisierul este in OneDrive sau Google Drive, datele tale sunt protejate in cloud si poti lucra de pe orice calculator.',
+  sync_locatie_fisier:'Locatia fisierului de date',
   // Word report — Annual
   w_raport_anual_titlu:'RAPORT ANUAL DE ACTIVITATE',
   w_capitol_iaam:'I. INFECTII ASOCIATE ASISTENTEI MEDICALE (IAAM)',
@@ -615,7 +636,14 @@ en:{
   rap_raport_anual:'Annual Report',rap_analiza_iaam:'HAI Analysis',rap_analiza_auto:'QC Analysis',
   rap_analiza_des:'Waste Analysis',rap_ancheta:'Epidemiological Investigation',rap_pv:'Minutes CPIAAM',
   rap_trimestrial:'Quarterly Report',rap_autocontrol_xlsx:'QC XLSX',
-  sync_conectat:'Connected',sync_neconectat:'Disconnected',sync_datele_locale:'data is local only',
+  sync_conectat:'Connected',sync_neconectat:'Not synced',sync_datele_locale:'Data is saved only in this computer\'s browser. Risk of loss on reinstall. Connect a data file.',
+  sync_salvat_local:'Saved locally',sync_sincronizat:'Synced',
+  sync_tip_local:'Data is automatically saved on this computer. You cannot work from another computer.',
+  sync_tip_cloud:'Data is automatically saved to cloud. Accessible from any computer.',
+  sync_unde_fisier:'Where is this file saved?',sync_doar_pc:'Only on this computer (no cloud sync)',
+  sync_cloud:'In a OneDrive or Google Drive folder (automatic sync)',sync_nu_stiu:'I\'m not sure',
+  sync_nota_cloud:'If the file is in OneDrive or Google Drive, your data is protected in the cloud and you can work from any computer.',
+  sync_locatie_fisier:'Data file location',
   w_raport_anual_titlu:'ANNUAL ACTIVITY REPORT',
   w_capitol_iaam:'I. HEALTHCARE-ASSOCIATED INFECTIONS (HAI)',
   w_capitol_auto:'II. MICROBIOLOGICAL QUALITY CONTROL',
@@ -678,7 +706,7 @@ var CFG={
   biocide_budget:0, biocide_products:[],
   ai_provider:'', ai_api_key:'', ai_model:'', ai_endpoint:'',
   backup_interval_days:7, last_backup:null, setup_complete:false, tutorial_shown:false, lang:'ro',
-  dark_mode:false, changelog:[], dash_widgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}
+  dark_mode:false, file_location:'', changelog:[], dash_widgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}
 };
 
 // Section templates for wizard
@@ -1060,6 +1088,7 @@ function renderPWStep(step){
             '<li>'+(isEN?'Click the <strong>&#128193; Connect to data file</strong> button in the toolbar and choose a file in your OneDrive or Google Drive folder. This way your data is saved automatically and you can access it from any computer.':'Apasa butonul <strong>&#128193; Conecteaza la fisier de date</strong> din toolbar si alege un fisier din folderul tau OneDrive sau Google Drive. Astfel datele se salveaza automat si le poti accesa de pe orice calculator.')+'</li>'+
             '<li>'+(isEN?'If you don\'t use OneDrive/Google Drive, periodically click the <strong>&#128190; Save Backup</strong> button to download a copy of your data.':'Daca nu folosesti OneDrive/Google Drive, apasa periodic butonul <strong>&#128190; Salveaza Backup</strong> pentru a descarca o copie a datelor.')+'</li>'+
           '</ul>'+
+          '<p style="font-size:12px;margin-top:8px">&#8594; <a href="#ghid-sincronizare" onclick="nav(\'ajutor\');setTimeout(function(){var el=document.getElementById(\'ghid-sincronizare\');if(el)el.scrollIntoView({behavior:\'smooth\'})},200)" style="color:var(--blue);text-decoration:underline;cursor:pointer">'+(isEN?'See the complete guide on data and synchronization':'Vezi ghidul complet despre date si sincronizare')+'</a></p>'+
         '</div>'+
         '<div style="background:var(--bg);border-radius:10px;padding:14px;border-left:4px solid var(--teal)">'+
           '<h4 style="font-size:13px;color:var(--navy);margin-bottom:6px">&#127760; '+(isEN?'Tip 2 — Recommended Browser':'Sfat 2 — Browser recomandat')+'</h4>'+
@@ -2474,6 +2503,16 @@ async function rCfg(el){
     '<button class="btn bp" onclick="saveCfgForm()" style="margin-top:8px">Salveaza</button>'+
   '</div></div>'+
 
+  // ── File Location Config ──
+  '<div class="pn"><div class="ph"><h3>'+T('sync_locatie_fisier')+'</h3></div><div class="pb">'+
+    '<div style="display:flex;flex-direction:column;gap:8px">'+
+    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);background:var(--bg)"><input type="radio" name="cfg-floc" value="local"'+(CFG.file_location==='local'?' checked':'')+' onchange="saveFileLocationCfg(this.value)" style="accent-color:var(--navy)"> '+T('sync_doar_pc')+'</label>'+
+    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);background:var(--bg)"><input type="radio" name="cfg-floc" value="cloud"'+(CFG.file_location==='cloud'?' checked':'')+' onchange="saveFileLocationCfg(this.value)" style="accent-color:var(--navy)"> '+T('sync_cloud')+'</label>'+
+    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);background:var(--bg)"><input type="radio" name="cfg-floc" value="unknown"'+(CFG.file_location==='unknown'?' checked':'')+' onchange="saveFileLocationCfg(this.value)" style="accent-color:var(--navy)"> '+T('sync_nu_stiu')+'</label>'+
+    '</div>'+
+    '<p style="font-size:11px;color:var(--txtL);margin-top:8px">'+T('sync_nota_cloud')+'</p>'+
+  '</div></div>'+
+
   '<div class="pn"><div class="ph"><h3>Personal / Semnatari</h3><button class="btn bp bsm" onclick="CFG.personnel.push({id:genId(\'pers\'),name:\'\',title:\'\',role:\'other\',sign:true});saveCfg();render()">+ Adauga persoana</button></div><div class="pb">'+
     '<div class="ib inf">Persoanele cu „Semneaza" bifat apar pe documentele Word generate.</div>'+
     '<table class="dt"><thead><tr><th>Nume</th><th>Titlu / Functie</th><th style="width:120px">Rol</th><th style="width:60px">Semn.</th><th style="width:50px">&#215;</th></tr></thead>'+
@@ -2846,12 +2885,45 @@ function dashCfgBar(){
 var _fileHandle=null;
 function updateSyncIndicator(){
   const el=document.getElementById('sync-indicator');if(!el)return;
-  if(_fileHandle){el.innerHTML='&#128994; '+T('sync_conectat')+': '+_fileHandle.name;el.title=T('sync_conectat')+' — '+_fileHandle.name}
-  else{el.innerHTML='&#128308; '+T('sync_neconectat');el.title=T('sync_datele_locale')}}
+  if(!_fileHandle){
+    el.innerHTML='&#128308; '+T('sync_neconectat');
+    el.title=T('sync_datele_locale');
+    el.style.color='#C0392B';
+  } else {
+    const loc=CFG.file_location||'';
+    if(loc==='cloud'){
+      el.innerHTML='&#128994; '+T('sync_sincronizat')+' — '+_fileHandle.name;
+      el.title=T('sync_tip_cloud');
+      el.style.color='#27AE60';
+    } else {
+      el.innerHTML='&#128993; '+T('sync_salvat_local')+' — '+_fileHandle.name;
+      el.title=T('sync_tip_local');
+      el.style.color='#D4A017';
+    }
+  }}
 async function syncPickFile(){
   if(!window.showSaveFilePicker){alert('Browserul tau nu suporta File System Access API. Foloseste Chrome sau Edge.');return}
   try{_fileHandle=await window.showSaveFilePicker({suggestedName:'CPIAAM_data.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]});
-    updateSyncIndicator();await syncWrite();alert('Fisier conectat: '+_fileHandle.name)}catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}}
+    await syncWrite();showFileLocationModal();updateSyncIndicator()}catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}}
+function showFileLocationModal(){
+  const isEN=CFG.lang==='en';
+  const cur=CFG.file_location||'';
+  const body='<p style="font-size:13px;margin-bottom:14px">'+T('sync_unde_fisier')+'</p>'+
+    '<div style="display:flex;flex-direction:column;gap:10px">'+
+    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);background:var(--bg)"><input type="radio" name="floc" value="local"'+(cur==='local'?' checked':'')+' style="accent-color:var(--navy)"> '+T('sync_doar_pc')+'</label>'+
+    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);background:var(--bg)"><input type="radio" name="floc" value="cloud"'+(cur==='cloud'?' checked':'')+' style="accent-color:var(--navy)"> '+T('sync_cloud')+'</label>'+
+    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);background:var(--bg)"><input type="radio" name="floc" value="unknown"'+(cur==='unknown'?' checked':'')+' style="accent-color:var(--navy)"> '+T('sync_nu_stiu')+'</label>'+
+    '</div>'+
+    '<p style="font-size:11px;color:var(--txtL);margin-top:10px">'+T('sync_nota_cloud')+'</p>';
+  openM(T('sync_locatie_fisier'),body,
+    '<button class="btn bp" onclick="saveFileLocation()">OK</button>');
+}
+async function saveFileLocation(){
+  const sel=document.querySelector('input[name=floc]:checked');
+  if(sel){CFG.file_location=sel.value;await saveCfg();updateSyncIndicator()}
+  closeM()}
+async function saveFileLocationCfg(v){
+  CFG.file_location=v;await saveCfg();updateSyncIndicator()}
 async function syncWrite(){
   if(!_fileHandle)return;try{const data=await collectAllData();const wr=await _fileHandle.createWritable();
     await wr.write(JSON.stringify({version:APP_VERSION,exported:new Date().toISOString(),config:CFG,...data},null,2));
@@ -2917,7 +2989,46 @@ function rAjutor(el){
     ['Printeaza dashboard','Iconita printer din toolbar'],
     ['Ruleaza setup din nou','Configurare sau pagina Despre']
   ];
-  el.innerHTML='<div class="print-header"></div><div class="pn"><div class="ph"><h3>'+(isEN?'Help / Frequently Asked Questions':'Ajutor / Intrebari Frecvente')+'</h3></div><div class="pb">'+
+  // ── Ghid Sincronizare Section ──
+  const ghidSync=
+    '<div class="pn" id="ghid-sincronizare"><div class="ph"><h3>'+(isEN?'Data, backup and synchronization':'Date, backup si sincronizare')+'</h3></div><div class="pb">'+
+    '<h4 style="font-size:13px;color:var(--navy);margin-bottom:10px">'+(isEN?'The 3 application states':'Cele 3 stari ale aplicatiei')+'</h4>'+
+    '<div class="ghid-state ghid-state-red"><div><strong>&#128308; '+(isEN?'Not synced — data only in browser':'Nesincronizat — date doar in browser')+'</strong>'+
+      '<p style="font-size:12px;line-height:1.5;margin:4px 0">'+(isEN?'Data is saved only in this computer\'s browser. If you reinstall the browser, clear its data or work from another computer — the data is not accessible.':'Datele sunt salvate doar in browserul acestui calculator. Daca reinstalezi browserul, stergi datele lui sau lucrezi de pe alt calculator — datele nu sunt accesibile.')+'</p>'+
+      '<span class="ghid-tag ghid-tag-red">'+(isEN?'Connect a data file or do manual backup':'Conecteaza un fisier de date sau fa backup manual')+'</span></div></div>'+
+    '<div class="ghid-state ghid-state-yellow"><div><strong>&#128993; '+(isEN?'Saved locally — file on this PC':'Salvat local — fisier pe acest PC')+'</strong>'+
+      '<p style="font-size:12px;line-height:1.5;margin:4px 0">'+(isEN?'Data is automatically saved to a file on this computer. You are protected from browser issues, but you cannot work from another computer.':'Datele se salveaza automat intr-un fisier pe acest calculator. Esti protejat fata de probleme de browser, dar nu poti lucra de pe alt calculator.')+'</p>'+
+      '<span class="ghid-tag ghid-tag-yellow">'+(isEN?'Ok for a single PC. Move the file to OneDrive for multi-PC access.':'Ok pentru un singur PC. Muta fisierul in OneDrive pentru acces multi-PC.')+'</span></div></div>'+
+    '<div class="ghid-state ghid-state-green"><div><strong>&#128994; '+(isEN?'Synced — file in OneDrive / Google Drive':'Sincronizat — fisier in OneDrive / Google Drive')+'</strong>'+
+      '<p style="font-size:12px;line-height:1.5;margin:4px 0">'+(isEN?'Data is automatically saved to a cloud file. Accessible from any computer, fully protected.':'Datele se salveaza automat intr-un fisier in cloud. Accesibil de pe orice calculator, protejat complet.')+'</p>'+
+      '<span class="ghid-tag ghid-tag-green">'+(isEN?'Optimal. Work from anywhere, data is safe.':'Optim. Lucrezi de oriunde, datele sunt in siguranta.')+'</span></div></div>'+
+
+    '<h4 style="font-size:13px;color:var(--navy);margin:16px 0 10px">'+(isEN?'Live data file vs. manual backup — what\'s the difference?':'Fisier de date live vs. backup manual — care e diferenta?')+'</h4>'+
+    '<div class="ghid-diff">'+
+      '<div class="ghid-diff-box"><strong>CPIAAM_data.json <span class="ghid-badge ghid-badge-live">live</span></strong><ul style="font-size:12px;line-height:1.7;margin:8px 0 0 16px;padding:0">'+
+        '<li><strong>'+(isEN?'What:':'Ce e:')+'</strong> '+(isEN?'main data source, always up to date':'sursa principala de date, mereu actualizata')+'</li>'+
+        '<li><strong>'+(isEN?'When saved:':'Cand se salveaza:')+'</strong> '+(isEN?'automatically, on every change':'automat, la orice modificare')+'</li>'+
+        '<li><strong>'+(isEN?'How to use:':'Cum se foloseste:')+'</strong> '+(isEN?'connect once, the app writes automatically':'conectezi o singura data, aplicatia scrie singura')+'</li>'+
+        '<li><strong>'+(isEN?'Purpose:':'Scop:')+'</strong> '+(isEN?'sync between computers':'sincronizare intre calculatoare')+'</li></ul></div>'+
+      '<div class="ghid-diff-box"><strong>&#128190; '+(isEN?'Manual Backup':'Backup manual')+' <span class="ghid-badge ghid-badge-snap">'+(isEN?'copy':'copie')+'</span></strong><ul style="font-size:12px;line-height:1.7;margin:8px 0 0 16px;padding:0">'+
+        '<li><strong>'+(isEN?'What:':'Ce e:')+'</strong> '+(isEN?'a copy of the data at a given moment':'o copie a datelor la un moment dat')+'</li>'+
+        '<li><strong>'+(isEN?'When saved:':'Cand se salveaza:')+'</strong> '+(isEN?'only when you press the button':'doar cand apesi butonul')+'</li>'+
+        '<li><strong>'+(isEN?'How to use:':'Cum se foloseste:')+'</strong> '+(isEN?'download the file, keep it safe':'descarci fisierul, il pastrezi in siguranta')+'</li>'+
+        '<li><strong>'+(isEN?'Purpose:':'Scop:')+'</strong> '+(isEN?'safety net, data recovery':'plasa de siguranta, recuperare date')+'</li></ul></div>'+
+    '</div>'+
+
+    '<h4 style="font-size:13px;color:var(--navy);margin:16px 0 10px">'+(isEN?'How to get updates':'Cum primesti update-uri')+'</h4>'+
+    '<p style="font-size:12px;line-height:1.5">'+(isEN?'When a new version is available, the app automatically shows a yellow banner at the top. Steps:':'Cand exista o versiune noua, aplicatia afiseaza automat un banner galben in partea de sus. Pasi:')+'</p>'+
+    '<ol style="font-size:12px;line-height:1.8;margin:8px 0 0 20px;padding:0">'+
+      '<li>'+(isEN?'Click "Download now" — the new HTML file downloads':'Click pe "Descarca acum" — fisierul HTML nou se descarca')+'</li>'+
+      '<li>'+(isEN?'Move the new file to <strong>the same folder with the same name</strong> — replace the old one':'Muta fisierul nou in <strong>acelasi folder cu acelasi nume</strong> — inlocuieste cel vechi')+'</li>'+
+      '<li>'+(isEN?'Reopen the app — your data is there, nothing is lost':'Redeschide aplicatia — datele tale sunt acolo, nimic nu s-a pierdut')+'</li></ol>'+
+
+    '<div class="ghid-warning">&#9888;&#65039; <strong>'+(isEN?'Important rule:':'Regula importanta:')+'</strong> '+(isEN?'ALWAYS open the app from the same folder and with the same file name. If you open a copy from another folder, the browser won\'t find the data — they\'re not lost, they\'re linked to the original location.':'Deschide aplicatia INTOTDEAUNA din acelasi folder si cu acelasi nume de fisier. Daca deschizi o copie din alt folder, browserul nu gaseste datele — nu sunt pierdute, sunt legate de locatia originala.')+'</div>'+
+    '</div></div>';
+
+  el.innerHTML='<div class="print-header"></div>'+ghidSync+
+    '<div class="pn"><div class="ph"><h3>'+(isEN?'Help / Frequently Asked Questions':'Ajutor / Intrebari Frecvente')+'</h3></div><div class="pb">'+
     faq.map(([q,a])=>'<details style="margin-bottom:10px;border-bottom:1px solid var(--brd);padding-bottom:10px"><summary style="cursor:pointer;font-weight:600;font-size:13px;color:var(--navy);padding:4px 0">'+q+'</summary><p style="font-size:12.5px;color:var(--txt);line-height:1.6;margin-top:6px;padding-left:12px">'+a+'</p></details>').join('')+
     '</div></div>'+
     '<div class="pn" style="margin-top:14px"><div class="ph"><h3>'+(isEN?'Useful Shortcuts':'Scurtaturi utile')+'</h3></div><div class="pb">'+
@@ -2933,6 +3044,7 @@ function rAjutor(el){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'5.5.0',date:'2026-03-14',notes:'Adaugat: Indicator sincronizare 3 stari in toolbar — rosu (nesincronizat), galben (salvat local), verde (sincronizat cloud)\nAdaugat: Modal locatie fisier dupa conectare — intrebare local/cloud/nu stiu\nAdaugat: Setare locatie fisier editabila in Configurare\nAdaugat: Sectiune ghid complet "Date, backup si sincronizare" in Ajutor/FAQ — cele 3 stari, diferenta live vs backup, cum primesti update-uri\nAdaugat: Link spre ghid sincronizare in tutorialul post-wizard (Sfat 1)\nAdaugat: Traduceri bilingve RO/EN pentru toate elementele noi\nActualizat: Versiune 5.5'},
   {version:'5.4.0',date:'2026-03-14',notes:'Adaugat: Sistem auto-update — verificare versiune noua la pornire de pe GitHub\nAdaugat: Banner update galben-amber cu changelog si buton Descarca acum\nAdaugat: Dismiss banner cu sessionStorage (nu reapare in aceeasi sesiune)\nAdaugat: Download direct fisier HTML nou la click pe Descarca acum\nAdaugat: Fisier version.json separat pentru controlul versiunilor\nActualizat: Versiune 5.4'},
   {version:'5.3.1',date:'2026-03-14',notes:'Imbunatatit: Sumar zone netestate — layout compact, tipurile complet netestate grupate cu pills rosii, partial netestate in tabel cu pills gri mici, scroll vertical max 300px\nImbunatatit: Matrice acoperire — headere sectii trunchiate cu ellipsis, celule compacte, border-radius container, lizibil cu 11+ sectii\nCorectat: ensureConfigIds normalizeArr — recuperare automata denumiri din defaults cand obiectele pierd campul name\nCorectat: Display config robust — sn() helper universal, typeof check pe probe_types/infection_types/biocide_products\nActualizat: Versiune 5.3.1'},
   {version:'5.3.0',date:'2026-03-14',notes:'Restructurare completa modul Autocontrol — 3 tab-uri principale:\n• Tab Prezentare: sumar colapsabil zone netestate (banner amber, tabel cu pills), matrice acoperire cu culori noi (#C0DD97 verde, #FAEEDA galben, #F7C1C1 rosu), click pe celula → popup detalii probe, legenda fixa, grafic colapsabil bar chart stacked per tip proba\n• Tab Planificare: 3 sectiuni automate (nerecoltat, neconformitati → re-testare, >6 luni netestat), checkbox cu tag + subtitlu, la bifare apar campuri data start/deadline, buton salvare in Calendar\n• Tab Probe: 5 filtre (sectie, tip, rezultat, data start/sfarsit), tabel sortabil pe orice coloana, paginare 50/pagina, camp neconformitati detaliate in modal\nSub-tab-uri perioada persistente (Anul complet | T1-T4) deasupra tuturor tab-urilor\nActualizat: Versiune 5.3'},

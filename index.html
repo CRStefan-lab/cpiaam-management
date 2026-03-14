@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v5.7</title>
+<title>CPIAAM — Sistem de Management v5.8</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
@@ -591,7 +591,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='5.7';
+const APP_VERSION='5.8';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -3607,6 +3607,7 @@ function checkEmptyDB(){
   document.getElementById('app-loading').style.display='none';
   if(configs.length>0&&configs[0].setup_complete){
     Object.assign(CFG,configs[0]);
+    if(ensureConfigIds()){saveCfg()}
     A.darkMode=!!CFG.dark_mode;applyDark();
     updateMO();
     document.getElementById('btn-lang').textContent=CFG.lang==='en'?'EN':'RO';

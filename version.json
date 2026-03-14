@@ -1,0 +1,12 @@
+{
+  "version": "5.3.1",
+  "url": "https://crstefan-lab.github.io/cpiaam-management/CPIAAM_Management.html",
+  "changelog": [
+    "Sistem ID-uri pentru toate elementele configurabile",
+    "Restructurare completă modul Autocontrol",
+    "Matrice acoperire cu click pe celulă",
+    "Planificator recoltare cu integrare Calendar",
+    "Sumar zone netestate compact cu pills",
+    "Filtre avansate și paginare în tab Probe"
+  ]
+}

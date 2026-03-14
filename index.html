@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v5.1</title>
+<title>CPIAAM — Sistem de Management v5.6</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
@@ -390,11 +390,91 @@ body{display:block!important;background:#fff!important}
 }
 .print-header{display:none}
 
-/* ── Responsive ── */
+/* ── Hamburger ── */
+.sb-ham{display:none;background:none;border:none;cursor:pointer;font-size:22px;padding:4px 8px;color:var(--navy);line-height:1}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
+
+/* ── Responsive: Small Desktop ≤1024px ── */
+@media(max-width:1024px){
+  .sb{width:200px}.mn{margin-left:200px}
+  .sb-h{padding:14px 12px}.sb-h h1{font-size:13px}
+  .ni{font-size:12px;padding:8px 10px}
+  .cr{grid-template-columns:1fr 1fr}
+  .fr4{grid-template-columns:1fr 1fr}
+  .ct{padding:16px 18px}
+  .kg{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+  .kc .kv{font-size:22px}
+  .ghid-diff{grid-template-columns:1fr}
+}
+
+/* ── Responsive: Tablet ≤768px ── */
 @media(max-width:768px){
-  .sb{width:60px}.sb-h h1,.sb-h small,.ns,.ni span,.sb-f div,.sb-bk{display:none}
+  .sb{width:60px}.sb-h h1,.sb-h small,.ns,.ni span,.sb-f div:not(:first-child),.sb-bk{display:none}
+  .sb-f{font-size:8px;text-align:center;padding:6px 4px}
   .ni{justify-content:center;padding:12px}.mn{margin-left:60px}
-  .cr{grid-template-columns:1fr}.fr,.fr3,.fr4{grid-template-columns:1fr}
+  .cr{grid-template-columns:1fr}
+  .fr,.fr3,.fr4{grid-template-columns:1fr}
+  .tb{padding:10px 14px;gap:8px;flex-wrap:wrap}
+  .tb h2{font-size:14px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tb-actions{gap:4px;flex-wrap:wrap;justify-content:flex-end}
+  .tb-icon{font-size:16px;padding:4px}
+  .yr-sel label{display:none}
+  .yr-sel input[type=number]{width:60px;font-size:12px}
+  .ct{padding:14px 12px}
+  .kg{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+  .kc{padding:14px}.kc .kv{font-size:20px}.kc .kl{font-size:10px}
+  .md{width:95vw;max-height:95vh}
+  .mb{padding:14px}.mh{padding:12px 14px}
+  .wiz-card{padding:24px;width:95vw}
+  .cal-year-grid{grid-template-columns:repeat(2,1fr)}
+  .ac-main-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .ac-mtab{padding:8px 14px;font-size:12px;white-space:nowrap}
+  .ac-filters{flex-direction:column}.ac-filters .fg{max-width:100%}
+  .rg{grid-template-columns:1fr}
+  .ghid-diff{grid-template-columns:1fr}
+}
+
+/* ── Responsive: Mobile ≤480px ── */
+@media(max-width:480px){
+  .sb-ham{display:block}
+  .sb{width:260px!important;transform:translateX(-100%);transition:transform .25s ease;z-index:200}
+  .sb .sb-h h1,.sb .sb-h small,.sb .ns,.sb .ni span,.sb .sb-f div:not(:first-child),.sb .sb-bk{display:block}
+  .sb .ns{display:block}.sb .ni{justify-content:flex-start;padding:9px 12px}
+  .sb .ni span{display:inline}
+  .sb.sb-open{transform:translateX(0)}
+  .sb-overlay.sb-show{display:block;z-index:199}
+  .mn{margin-left:0!important}
+  .tb{padding:8px 10px}
+  .tb h2{font-size:13px}
+  .tb-actions{gap:2px}
+  .tb-icon{font-size:14px;padding:3px}
+  .yr-sel{gap:3px}
+  .yr-sel input[type=number]{width:54px;font-size:11px;padding:4px}
+  .btn.bo.bsm{padding:3px 6px;font-size:10px}
+  .ct{padding:10px 8px}
+  .kg{grid-template-columns:1fr 1fr;gap:8px}
+  .kc{padding:10px;border-radius:8px}.kc .kv{font-size:18px}.kc .kl{font-size:9px}.kc .ks{font-size:10px}
+  .cc{height:180px}
+  .pn{border-radius:8px;margin-bottom:12px}
+  .ph{padding:10px 12px;flex-wrap:wrap;gap:6px}.ph h3{font-size:13px}
+  .pb{padding:12px}
+  .dt{font-size:11px}
+  .dt th{padding:6px 5px;font-size:9.5px}.dt td{padding:6px 5px}
+  .btn{padding:6px 10px;font-size:11.5px}
+  .md{border-radius:8px}
+  .mb{padding:10px 12px}.mh{padding:10px 12px}.mf{padding:10px 12px}
+  .fg label{font-size:10.5px}
+  .fg input,.fg select,.fg textarea{font-size:12px;padding:7px 8px}
+  .wiz-card{padding:20px 16px;border-radius:12px}
+  .wiz-card h2{font-size:18px}
+  .ac-period-tabs{gap:3px}
+  .ac-ptab{padding:5px 10px;font-size:11px}
+  .ac-legend{font-size:10px;gap:8px}
+  .mini-cal{font-size:10px}
+  .notif-dd{right:-60px;width:280px}
+  #sync-indicator{display:none}
+  .dash-cfg{font-size:10px;gap:6px}
+  .dash-cfg label{gap:3px}
 }
 </style>
 </head>
@@ -444,8 +524,10 @@ body{display:block!important;background:#fff!important}
 </nav>
 
 <!-- ═══ Main Content ═══ -->
+<div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
 <div class="mn" id="app-mn" style="display:none">
   <div class="tb">
+    <button class="sb-ham" id="sb-ham" onclick="toggleSidebar()" title="Menu">&#9776;</button>
     <h2 id="pt">Dashboard</h2>
     <div class="tb-actions">
       <span id="sync-indicator" style="font-size:11px;cursor:pointer;white-space:nowrap" onclick="syncPickFile()" title="Click pentru a conecta un fisier JSON">&#128308; Neconectat</span>
@@ -505,7 +587,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='5.5';
+const APP_VERSION='5.6';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1128,7 +1210,7 @@ const PT={dashboard:'Dashboard',iaam:'IAAM / Anchete Epidemiologice',autocontrol
   rapoarte:'Generare Rapoarte',config:'Configurare Sistem',ajutor:'Ajutor / FAQ',changelog:'Istoric Versiuni',about:'Despre',terms:'Termeni si Conditii'};
 
 function nav(p){A.page=p;document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('a',n.dataset.p===p));
-  document.getElementById('pt').textContent=getPageTitle(p);dch();render()}
+  document.getElementById('pt').textContent=getPageTitle(p);closeSidebar();dch();render()}
 function dch(){Object.values(A.charts).forEach(c=>{try{c.destroy()}catch(e){}});A.charts={}}
 function render(){renderPage(A.page)}
 function changeYear(d){A.year+=d;document.getElementById('ys').value=A.year;render()}
@@ -2768,6 +2850,14 @@ function anonymizeForAI(data){
 // ═══════════════════════════════════════════════════════════════
 // 5A.1 — DARK MODE
 // ═══════════════════════════════════════════════════════════════
+function toggleSidebar(){
+  const sb=document.getElementById('app-sb'),ov=document.getElementById('sb-overlay');
+  sb.classList.toggle('sb-open');ov.classList.toggle('sb-show');
+}
+function closeSidebar(){
+  const sb=document.getElementById('app-sb'),ov=document.getElementById('sb-overlay');
+  sb.classList.remove('sb-open');ov.classList.remove('sb-show');
+}
 function toggleDark(){
   A.darkMode=!A.darkMode;CFG.dark_mode=A.darkMode;saveCfg();applyDark()}
 async function toggleLang(){

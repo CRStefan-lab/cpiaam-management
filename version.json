@@ -1,15 +1,17 @@
 {
-  "version": "5.5",
+  "version": "5.6",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Indicator sincronizare 3 stări în toolbar (roșu/galben/verde)",
-    "Modal locație fișier după conectare (local/cloud/nu știu)",
-    "Setare locație fișier editabilă în Configurare",
-    "Ghid complet date, backup și sincronizare în Ajutor/FAQ",
-    "Link spre ghid sincronizare în tutorial post-wizard",
-    "Sistem auto-update cu banner și descărcare",
-    "Restructurare completă modul Autocontrol",
-    "Matrice acoperire cu click pe celulă",
+    "Interfata responsive: desktop, tablet, mobil",
+    "Meniu hamburger pe mobil cu sidebar slide-in",
+    "URL descarcare corectat pentru GitHub Pages",
+    "Indicator sincronizare 3 stari in toolbar",
+    "Modal locatie fisier dupa conectare",
+    "Setare locatie fisier editabila in Configurare",
+    "Ghid complet date, backup si sincronizare",
+    "Sistem auto-update cu banner si descarcare",
+    "Restructurare completa modul Autocontrol",
+    "Matrice acoperire cu click pe celula",
     "Planificator recoltare cu integrare Calendar"
   ]
 }

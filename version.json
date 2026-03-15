@@ -1,10 +1,12 @@
 {
-  "version": "6.9",
+  "version": "7.0",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "IAAM: Fisa IAAM generata conform Ordinul MS 1101/2016 Figura 2 — format oficial identic",
-    "Courier New 9pt monospace, chenare ASCII box-drawing, checkbox-uri, campuri completate automat",
-    "Varsta calculata automat din data nasterii",
-    "US Letter (12240x15840), margini 1 inch — identic cu documentul oficial"
+    "Manual de Utilizare complet integrat in aplicatie — 16 capitole bilingve RO/EN",
+    "Cuprins interactiv cu navigare la fiecare sectiune",
+    "Butoane 'Deschide modulul' pentru navigare directa din manual",
+    "Casete sfat si avertizare pentru informatii importante",
+    "Pasi numerotati vizual pentru toate procedurile",
+    "Functionalitate printare manual (CSS @media print optimizat)"
   ]
 }

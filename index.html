@@ -586,7 +586,50 @@ body{display:block!important;background:#fff!important}
   #sync-indicator{display:none}
   .dash-cfg{font-size:10px;gap:6px}
   .dash-cfg label{gap:3px}
+  .man-toc{columns:2}
+  .man-img{max-width:100%}
 }
+
+/* ── Manual de Utilizare ── */
+.man-toc{list-style:none;padding:0;columns:2;column-gap:24px}
+.man-toc li{padding:6px 0;border-bottom:1px dashed var(--brd)}
+.man-toc a{color:var(--navy);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px}
+.man-toc a:hover{color:var(--blue);text-decoration:underline}
+.man-toc .toc-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:10px;font-weight:700;flex-shrink:0}
+.man-sec{scroll-margin-top:70px}
+.man-sec h3{font-size:16px;font-weight:700;color:var(--navy);margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid var(--navy);display:flex;align-items:center;gap:8px}
+.man-sec h3 .sec-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+.man-sec h4{font-size:13.5px;font-weight:700;color:var(--txt);margin:16px 0 8px}
+.man-sec p,.man-sec li{font-size:13px;line-height:1.7;color:var(--txt)}
+.man-sec ul,.man-sec ol{padding-left:20px;margin:8px 0}
+.man-sec li{margin-bottom:4px}
+.man-top{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--txtL);cursor:pointer;margin-top:16px;padding:4px 10px;border:1px solid var(--brd);border-radius:6px;text-decoration:none}
+.man-top:hover{background:var(--bg);color:var(--navy);border-color:var(--navy)}
+.man-tip{background:#EEF2FF;border-left:4px solid var(--blue);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:12.5px;line-height:1.6}
+.man-warn{background:#FEF3C7;border-left:4px solid var(--amber);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:12.5px;line-height:1.6}
+.man-step{display:flex;gap:12px;align-items:flex-start;margin:10px 0}
+.man-step .step-n{display:flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:700;flex-shrink:0;margin-top:2px}
+.man-step .step-t{font-size:13px;line-height:1.6}
+.man-img{max-width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.12);margin:12px 0;border:1px solid var(--brd)}
+.man-cap{font-size:11px;color:var(--txtL);text-align:center;margin:-6px 0 14px;font-style:italic}
+.man-keys{display:inline-block;padding:2px 7px;background:var(--bg);border:1px solid var(--brd);border-radius:4px;font-family:monospace;font-size:11px}
+.man-print{margin-bottom:16px}
+.dark .man-toc a{color:#818CF8}
+.dark .man-toc .toc-num,.dark .man-sec h3 .sec-num{background:#818CF8}
+.dark .man-sec h3{color:#E2E8F0;border-color:#818CF8}
+.dark .man-tip{background:#1E293B;border-color:#818CF8}
+.dark .man-warn{background:#1E293B;border-color:#F59E0B}
+.dark .man-step .step-n{background:#818CF8}
+.dark .man-top{border-color:#475569;color:#94A3B8}.dark .man-top:hover{color:#818CF8;border-color:#818CF8;background:#1E293B}
+.man-go{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;font-family:var(--f);margin:10px 0}
+.man-go:hover{background:var(--blue);transform:translateY(-1px)}
+.dark .man-go{background:#818CF8}.dark .man-go:hover{background:#6366F1}
+.man-vis{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.man-vis-item{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid var(--brd)}
+.man-vis-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.man-matrix{display:inline-grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:10px 0}
+.man-matrix span{width:36px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+@media print{.sb,.tb,.man-print,.man-top{display:none!important}.mn{margin-left:0!important}.man-sec{page-break-inside:avoid}.ct{padding:10px!important}}
 </style>
 </head>
 <body>
@@ -630,6 +673,7 @@ body{display:block!important;background:#fff!important}
     <div class="ns" data-t="sb_sistem">Sistem</div>
     <a class="ni" data-p="config" onclick="nav('config')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span data-t="sb_config">Configurare</span></a>
     <a class="ni" data-p="ajutor" onclick="nav('ajutor')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span data-t="sb_ajutor">Ajutor / FAQ</span></a>
+    <a class="ni" data-p="manual" onclick="nav('manual')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg><span data-t="sb_manual">Manual de Utilizare</span></a>
     <a class="ni" data-p="changelog" onclick="nav('changelog')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg><span>Versiuni</span></a>
     <a class="ni" data-p="about" onclick="nav('about')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span data-t="sb_despre">Despre</span></a>
   </div>
@@ -828,7 +872,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='6.9';
+const APP_VERSION='7.0';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -843,13 +887,13 @@ ro:{
   sb_biocide:'Biocide',sb_pps:'PPS / Antibiotice',sb_documente:'Documente',sb_termene:'Raportari/Termene',
   sb_calendar:'Calendar',
   sb_gen_rapoarte:'Generare Rapoarte',sb_config:'Configurare',sb_despre:'Despre',sb_ajutor:'Ajutor / FAQ',
-  sb_backup:'Salveaza Backup',sb_termeni:'Termeni si Conditii',
+  sb_manual:'Manual de Utilizare',sb_backup:'Salveaza Backup',sb_termeni:'Termeni si Conditii',
   // Page titles
   pt_dashboard:'Dashboard',pt_iaam:'IAAM / Anchete Epidemiologice',pt_autocontrol:'Autocontrol Microbiologic',
   pt_deseuri:'Deseuri Medicale',pt_biocide:'Gestiune Biocide',pt_pps:'PPS / Farmacovigilenta — Antibiotice',
   pt_documente:'Documente / Autorizatii',pt_termene:'Raportari / Termene',pt_calendar:'Calendar',
   pt_audituri:'Audituri',pt_instruire:'Instruire Personal',pt_rapoarte:'Generare Rapoarte',
-  pt_config:'Configurare Sistem',pt_ajutor:'Ajutor / FAQ',pt_changelog:'Istoric Versiuni',
+  pt_config:'Configurare Sistem',pt_ajutor:'Ajutor / FAQ',pt_manual:'Manual de Utilizare',pt_changelog:'Istoric Versiuni',
   pt_despre:'Despre',pt_terms:'Termeni si Conditii',
   // Calendar
   cal_today:'Astazi',cal_add_event:'Adauga Eveniment',cal_events:'Evenimente',cal_deadline:'Termen raportare',
@@ -928,12 +972,12 @@ en:{
   sb_biocide:'Biocides',sb_pps:'PPS / Antibiotics',sb_documente:'Documents',sb_termene:'Deadlines',
   sb_calendar:'Calendar',
   sb_gen_rapoarte:'Generate Reports',sb_config:'Settings',sb_despre:'About',sb_ajutor:'Help / FAQ',
-  sb_backup:'Save Backup',sb_termeni:'Terms and Conditions',
+  sb_manual:'User Manual',sb_backup:'Save Backup',sb_termeni:'Terms and Conditions',
   pt_dashboard:'Dashboard',pt_iaam:'HAI / Epidemiological Investigations',pt_autocontrol:'Microbiological Quality Control',
   pt_deseuri:'Medical Waste Management',pt_biocide:'Biocide Management',pt_pps:'PPS / Pharmacovigilance — Antibiotics',
   pt_documente:'Documents / Authorizations',pt_termene:'Reports / Deadlines',pt_calendar:'Calendar',
   pt_audituri:'Audits',pt_instruire:'Staff Training',pt_rapoarte:'Generate Reports',
-  pt_config:'System Settings',pt_ajutor:'Help / FAQ',pt_changelog:'Version History',
+  pt_config:'System Settings',pt_ajutor:'Help / FAQ',pt_manual:'User Manual',pt_changelog:'Version History',
   pt_despre:'About',pt_terms:'Terms and Conditions',
   cal_today:'Today',cal_add_event:'Add Event',cal_events:'Events',cal_deadline:'Reporting deadline',
   cal_doc_expiry:'Document expires',cal_manual:'Event',cal_no_events:'No events on this day',
@@ -1744,7 +1788,7 @@ async function renderPage(p){const el=document.getElementById('pc');dch();switch
   case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
   case'audituri':return rAudit(el);case'instruire':return rInstr(el);
   case'rapoarte':return rRap(el);case'config':return rCfg(el);case'ajutor':return rAjutor(el);
-  case'changelog':return rChangelog(el);case'about':return rAbout(el);case'terms':return rTerms(el);
+  case'manual':return rManual(el);case'changelog':return rChangelog(el);case'about':return rAbout(el);case'terms':return rTerms(el);
   default:el.innerHTML='<p>Pagina nu exista.</p>'}}
 
 // ═══════════════════════════════════════════════════════════════
@@ -4742,7 +4786,7 @@ function getPageTitle(p){
   const map={dashboard:'pt_dashboard',iaam:'pt_iaam',autocontrol:'pt_autocontrol',deseuri:'pt_deseuri',
     biocide:'pt_biocide',pps:'pt_pps',documente:'pt_documente',termene:'pt_termene',calendar:'pt_calendar',
     audituri:'pt_audituri',instruire:'pt_instruire',rapoarte:'pt_rapoarte',
-    config:'pt_config',ajutor:'pt_ajutor',changelog:'pt_changelog',about:'pt_despre',terms:'pt_terms'};
+    config:'pt_config',ajutor:'pt_ajutor',manual:'pt_manual',changelog:'pt_changelog',about:'pt_despre',terms:'pt_terms'};
   return T(map[p]||'pt_dashboard')}
 function applyDark(){
   document.body.classList.toggle('dark',A.darkMode);
@@ -4967,6 +5011,756 @@ async function _importFromHandle(fh,skipReload){
 }
 
 // ═══════════════════════════════════════════════════════════════
+// USER MANUAL PAGE
+// ═══════════════════════════════════════════════════════════════
+function rManual(el){
+  const E=CFG.lang==='en';
+  const topBtnBase='<a class="man-top" href="#man-top" onclick="document.getElementById(\'man-top\').scrollIntoView({behavior:\'smooth\'});return false">&#9650; '+(E?'Back to contents':'Inapoi la cuprins')+'</a>';
+  function goBtn(page,label){return '<button class="man-go" onclick="nav(\''+page+'\')">&#9654; '+(E?'Open: ':'Deschide: ')+label+'</button>'}
+  const topBtn=topBtnBase;
+
+  // ── Table of Contents ──
+  const tocItems=E?[
+    ['Introduction','What is CPIAAM, who is it for, system requirements'],
+    ['Installation & First Setup','Download, Setup Wizard, post-setup tutorial'],
+    ['General Interface','Sidebar, toolbar, navigation, dark mode, language'],
+    ['Dashboard','Quick actions, KPIs, charts, mini-calendar, notifications'],
+    ['IAAM / Epidemiological Investigations','Case list, 10-section wizard, Word reports'],
+    ['Microbiological Quality Control','Coverage matrix, planning, sample management'],
+    ['Medical Waste','Monthly data entry by waste codes, auto-totals'],
+    ['Biocide Management','Products with attachments, monthly entries/exits'],
+    ['PPS / Antibiotics','Prescription recording, HelicsWin import'],
+    ['Documents / Authorizations','Categories, expiry alerts, attachments'],
+    ['Calendar & Reporting Deadlines','Monthly/yearly calendar, recurring deadlines'],
+    ['Audits','Hand hygiene, cleaning, isolation, custom checklists'],
+    ['Staff Training','Training sessions with participants, Word reports'],
+    ['Report Generation','Annual, quarterly, analysis, epidemiological investigation'],
+    ['System Settings','Hospital, data entry, backup, AI configuration'],
+    ['Synchronization & Backup','3 states, live file vs manual backup, updates']
+  ]:[
+    ['Introducere','Ce este CPIAAM, pentru cine, cerinte de sistem'],
+    ['Instalare si Prima Configurare','Descarcare, Setup Wizard, tutorial post-configurare'],
+    ['Interfata Generala','Sidebar, toolbar, navigare, mod noapte, limba'],
+    ['Dashboard','Actiuni rapide, KPI-uri, grafice, mini-calendar, notificari'],
+    ['IAAM / Anchete Epidemiologice','Lista cazuri, wizard 10 sectiuni, rapoarte Word'],
+    ['Autocontrol Microbiologic','Matrice acoperire, planificare, gestiune probe'],
+    ['Deseuri Medicale','Introducere lunara pe coduri, totaluri automate'],
+    ['Gestiune Biocide','Produse cu atasamente, intrari/iesiri lunare'],
+    ['PPS / Antibiotice','Inregistrare prescriptii, import HelicsWin'],
+    ['Documente / Autorizatii','Categorii, alerte expirare, atasamente'],
+    ['Calendar si Termene Raportare','Calendar lunar/anual, termene recurente'],
+    ['Audituri','Igiena mainilor, curatenie, izolare, checklist-uri custom'],
+    ['Instruire Personal','Sesiuni cu participanti, rapoarte Word'],
+    ['Generare Rapoarte','Raport anual, trimestrial, analize, ancheta epidemiologica'],
+    ['Configurare Sistem','Spital, introducere date, backup, AI'],
+    ['Sincronizare si Backup','Cele 3 stari, fisier live vs backup manual, update-uri']
+  ];
+
+  let h='<div id="man-top" class="man-print" style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px">'+
+    '<button class="btn bo bsm" onclick="window.print()">&#128424; '+(E?'Print Manual':'Printeaza Manualul')+'</button></div>';
+
+  // TOC
+  h+='<div class="pn"><div class="ph"><h3>&#128214; '+(E?'Table of Contents':'Cuprins')+'</h3></div><div class="pb">'+
+    '<ul class="man-toc">'+tocItems.map((t,i)=>'<li><a href="#man-s'+i+'" onclick="document.getElementById(\'man-s'+i+'\').scrollIntoView({behavior:\'smooth\'});return false"><span class="toc-num">'+(i+1)+'</span> '+t[0]+'<span style="flex:1"></span><span style="font-size:11px;color:var(--txtL)">'+t[1]+'</span></a></li>').join('')+'</ul></div></div>';
+
+  // ── SECTION 0: Introduction ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s0">'+
+    '<h3><span class="sec-num">1</span> '+(E?'Introduction':'Introducere')+'</h3>';
+  if(E){
+    h+='<p><strong>CPIAAM Manager</strong> is a complete management application for the <strong>Committee for Prevention and Control of Healthcare-Associated Infections</strong> (C.P.I.A.A.M.) in Romanian hospitals.</p>'+
+    '<h4>Who is it for?</h4>'+
+    '<ul><li>CPIAAM coordinators and hospital epidemiologists</li><li>Infection prevention and control nurses</li><li>Hospital managers responsible for CPIAAM reporting</li></ul>'+
+    '<h4>What can it do?</h4>'+
+    '<ul><li>Record and analyze healthcare-associated infections (HAI/IAAM)</li>'+
+    '<li>Manage microbiological quality control (autocontrol) with coverage matrix and planning</li>'+
+    '<li>Track medical waste by waste code with monthly reports</li>'+
+    '<li>Manage biocide products with regulatory attachments</li>'+
+    '<li>Record and analyze PPS (Point Prevalence Survey) data with HelicsWin import</li>'+
+    '<li>Track hospital documents/authorizations with expiry alerts</li>'+
+    '<li>Manage reporting deadlines with automatic recurrence</li>'+
+    '<li>Conduct audits (hand hygiene, cleaning, isolation, custom)</li>'+
+    '<li>Track staff training sessions with attendance</li>'+
+    '<li>Generate professional Word documents (.docx): annual reports, analyses, epidemiological investigations, minutes</li>'+
+    '<li>Optional AI-powered analysis (Gemini, Claude, OpenAI, Ollama) with personal data protection</li></ul>'+
+    '<h4>System Requirements</h4>'+
+    '<ul><li><strong>Browser:</strong> Google Chrome or Microsoft Edge (recommended — needed for File System Access API)</li>'+
+    '<li><strong>Internet:</strong> Not required (except for AI analysis and auto-updates)</li>'+
+    '<li><strong>Storage:</strong> All data is stored locally in the browser (IndexedDB)</li>'+
+    '<li><strong>Operating system:</strong> Windows, macOS, or Linux</li></ul>'+
+    '<div class="man-tip"><strong>Tip:</strong> For best experience, place the HTML file in a folder synced with OneDrive or Google Drive. This enables automatic backup and multi-computer access.</div>';
+  } else {
+    h+='<p><strong>CPIAAM Manager</strong> este o aplicatie completa de management pentru <strong>Compartimentul de Prevenire si Control al Infectiilor Asociate Asistentei Medicale</strong> (C.P.I.A.A.M.) din spitalele din Romania.</p>'+
+    '<h4>Pentru cine este?</h4>'+
+    '<ul><li>Coordonatori CPIAAM si epidemiologi de spital</li><li>Asistenti responsabili cu prevenirea si controlul infectiilor</li><li>Manageri de spital responsabili cu raportarile CPIAAM</li></ul>'+
+    '<h4>Ce poate face?</h4>'+
+    '<ul><li>Inregistrare si analiza infectii asociate asistentei medicale (IAAM)</li>'+
+    '<li>Gestiune autocontrol microbiologic cu matrice acoperire si planificare</li>'+
+    '<li>Urmarire deseuri medicale pe coduri cu rapoarte lunare</li>'+
+    '<li>Gestiune produse biocide cu atasamente reglementare</li>'+
+    '<li>Inregistrare si analiza date PPS (Studiu de Prevalenta de Moment) cu import din HelicsWin</li>'+
+    '<li>Urmarire documente/autorizatii spital cu alerte de expirare</li>'+
+    '<li>Gestionare termene raportare cu recurenta automata</li>'+
+    '<li>Realizare audituri (igiena mainilor, curatenie, izolare, custom)</li>'+
+    '<li>Evidenta sesiuni instruire personal cu prezenta</li>'+
+    '<li>Generare documente Word (.docx) profesioniste: rapoarte anuale, analize, anchete epidemiologice, procese-verbale</li>'+
+    '<li>Analiza optionala cu AI (Gemini, Claude, OpenAI, Ollama) cu protectia datelor personale</li></ul>'+
+    '<h4>Cerinte de Sistem</h4>'+
+    '<ul><li><strong>Browser:</strong> Google Chrome sau Microsoft Edge (recomandat — necesar pentru sincronizare fisier)</li>'+
+    '<li><strong>Internet:</strong> Nu este necesar (doar pentru analiza AI si actualizari automate)</li>'+
+    '<li><strong>Stocare:</strong> Toate datele sunt stocate local in browser (IndexedDB)</li>'+
+    '<li><strong>Sistem de operare:</strong> Windows, macOS sau Linux</li></ul>'+
+    '<div class="man-tip"><strong>Sfat:</strong> Pentru experienta optima, plaseaza fisierul HTML intr-un folder sincronizat cu OneDrive sau Google Drive. Astfel ai backup automat si acces de pe mai multe calculatoare.</div>';
+  }
+  h+=topBtn+'</div></div>';
+
+  // ── SECTION 1: Installation & Setup ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s1">'+
+    '<h3><span class="sec-num">2</span> '+(E?'Installation & First Setup':'Instalare si Prima Configurare')+'</h3>';
+  if(E){
+    h+='<h4>Downloading the Application</h4>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t">Download the HTML file from the distribution source (GitHub, email, or shared folder)</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t">Place it in a folder on your computer — ideally inside OneDrive or Google Drive for automatic cloud backup</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t">Double-click the file to open it in your default browser (Chrome or Edge recommended)</span></div>'+
+    '<div class="man-warn"><strong>Important:</strong> Always open the app from the same folder and with the same file name. The browser links your data to the file location. Opening from a different folder will show an empty database.</div>'+
+    '<h4>Setup Wizard (5 steps)</h4>'+
+    '<p>On first launch (empty database), the Setup Wizard appears automatically:</p>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t"><strong>Hospital:</strong> Enter your hospital name and CPIAAM compartment name. These appear on all generated documents.</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t"><strong>Sections/Wards:</strong> Add your hospital sections manually, or choose a template (municipal hospital, county hospital) for quick setup. For each section: name, bed count, optional waste code.</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t"><strong>Staff:</strong> Add personnel who will appear on generated documents: name, title, role (coordinator/manager/member), and whether they sign documents.</span></div>'+
+    '<div class="man-step"><span class="step-n">4</span><span class="step-t"><strong>Author:</strong> Your name — it appears in the application credits ("Developed by [name] in collaboration with Claude AI").</span></div>'+
+    '<div class="man-step"><span class="step-n">5</span><span class="step-t"><strong>Terms:</strong> Read and accept the Terms of Use. Required to proceed.</span></div>'+
+    '<div class="man-tip"><strong>Tip:</strong> After the wizard, a short tutorial with useful tips appears. You can rerun the wizard anytime from Settings or the About page.</div>';
+  } else {
+    h+='<h4>Descarcarea Aplicatiei</h4>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t">Descarca fisierul HTML din sursa de distributie (GitHub, email sau folder partajat)</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t">Plaseaza-l intr-un folder pe calculator — ideal in OneDrive sau Google Drive pentru backup automat in cloud</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t">Dublu-click pe fisier pentru a-l deschide in browserul implicit (Chrome sau Edge recomandat)</span></div>'+
+    '<div class="man-warn"><strong>Important:</strong> Deschide aplicatia intotdeauna din acelasi folder si cu acelasi nume de fisier. Browserul leaga datele de locatia fisierului. Daca deschizi din alt folder, vei vedea o baza de date goala.</div>'+
+    '<h4>Setup Wizard (5 pasi)</h4>'+
+    '<p>La prima deschidere (baza de date goala), Setup Wizard-ul apare automat:</p>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t"><strong>Spital:</strong> Introdu denumirea spitalului si a compartimentului CPIAAM. Acestea apar pe toate documentele generate.</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t"><strong>Sectii:</strong> Adauga sectiile spitalului manual, sau alege un template (spital municipal, spital judetean) pentru configurare rapida. Pentru fiecare sectie: denumire, numar paturi, cod deseu optional.</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t"><strong>Personal:</strong> Adauga personalul care apare pe documentele generate: nume, functie, rol (coordonator/manager/membru), si daca semneaza documente.</span></div>'+
+    '<div class="man-step"><span class="step-n">4</span><span class="step-t"><strong>Autor:</strong> Numele tau — apare in creditele aplicatiei ("Dezvoltat de [nume] in colaborare cu Claude AI").</span></div>'+
+    '<div class="man-step"><span class="step-n">5</span><span class="step-t"><strong>Termeni:</strong> Citeste si accepta Termenii de Utilizare. Obligatoriu pentru a continua.</span></div>'+
+    '<div class="man-tip"><strong>Sfat:</strong> Dupa wizard, apare un scurt tutorial cu sfaturi utile. Poti rerula wizard-ul oricand din Configurare sau pagina Despre.</div>';
+  }
+  h+=topBtn+'</div></div>';
+
+  // ── SECTION 2: General Interface ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s2">'+
+    '<h3><span class="sec-num">3</span> '+(E?'General Interface':'Interfata Generala')+'</h3>';
+  if(E){
+    h+='<h4>Sidebar (Left Navigation)</h4>'+
+    '<p>The sidebar contains all application modules organized in groups:</p>'+
+    '<ul><li><strong>Main:</strong> Dashboard — overview with KPIs, charts, and quick actions</li>'+
+    '<li><strong>Data Modules:</strong> IAAM, Quality Control, Waste, Biocides, PPS, Documents, Calendar</li>'+
+    '<li><strong>Quality:</strong> Audits, Staff Training</li>'+
+    '<li><strong>Reports:</strong> Word document generation</li>'+
+    '<li><strong>System:</strong> Settings, Help/FAQ, Manual, Version History, About</li></ul>'+
+    '<p>On mobile screens, the sidebar collapses into a hamburger menu (&#9776;) in the top-left corner.</p>'+
+    '<h4>Toolbar (Top Bar)</h4>'+
+    '<p>The toolbar contains:</p>'+
+    '<ul><li><strong>Page title</strong> — shows current module name</li>'+
+    '<li><strong>Year selector</strong> — buttons &#9664; &#9654; and direct input to change the working year</li>'+
+    '<li><strong>Sync indicator</strong> — colored pill showing sync status (red/yellow/green). Click for sync options.</li>'+
+    '<li><strong>Notification bell</strong> — shows alerts for expiring documents, overdue deadlines, backup reminders</li>'+
+    '<li><strong>Dark mode toggle</strong> — &#9728;/&#127769; switches between light and dark themes</li>'+
+    '<li><strong>Language toggle</strong> — RO/EN switches the interface language</li>'+
+    '<li><strong>Print button</strong> — prints the current page</li></ul>'+
+    '<h4>Common Interface Elements</h4>'+
+    '<ul><li><strong>KPI Cards:</strong> Colored cards showing key metrics with trend indicators (&#8593;&#8595;)</li>'+
+    '<li><strong>Tables:</strong> Sortable data tables with action buttons (edit, delete, generate report)</li>'+
+    '<li><strong>Modals:</strong> Popup forms for data entry and editing</li>'+
+    '<li><strong>Panels:</strong> White cards with header and content area</li>'+
+    '<li><strong>Badges:</strong> Colored pills for status (green=OK, yellow=warning, red=alert)</li></ul>';
+  } else {
+    h+='<h4>Sidebar (Navigare Stanga)</h4>'+
+    '<p>Sidebar-ul contine toate modulele aplicatiei organizate in grupuri:</p>'+
+    '<ul><li><strong>Principal:</strong> Dashboard — prezentare generala cu KPI-uri, grafice si actiuni rapide</li>'+
+    '<li><strong>Module Date:</strong> IAAM, Autocontrol, Deseuri, Biocide, PPS, Documente, Calendar</li>'+
+    '<li><strong>Calitate:</strong> Audituri, Instruire Personal</li>'+
+    '<li><strong>Rapoarte:</strong> Generare documente Word</li>'+
+    '<li><strong>Sistem:</strong> Configurare, Ajutor/FAQ, Manual, Versiuni, Despre</li></ul>'+
+    '<p>Pe ecrane mici, sidebar-ul se colpseaza intr-un meniu hamburger (&#9776;) in coltul din stanga-sus.</p>'+
+    '<h4>Toolbar (Bara de Sus)</h4>'+
+    '<p>Toolbar-ul contine:</p>'+
+    '<ul><li><strong>Titlu pagina</strong> — afiseaza numele modulului curent</li>'+
+    '<li><strong>Selector an</strong> — butoane &#9664; &#9654; si input direct pentru schimbarea anului de lucru</li>'+
+    '<li><strong>Indicator sincronizare</strong> — pastila colorata (rosu/galben/verde). Click pentru optiuni sync.</li>'+
+    '<li><strong>Clopotel notificari</strong> — arata alerte pentru documente ce expira, termene depasite, reminder backup</li>'+
+    '<li><strong>Comutator mod noapte</strong> — &#9728;/&#127769; comuta intre tema luminoasa si intunecata</li>'+
+    '<li><strong>Comutator limba</strong> — RO/EN schimba limba interfetei</li>'+
+    '<li><strong>Buton printare</strong> — printeaza pagina curenta</li></ul>'+
+    '<h4>Elemente Comune de Interfata</h4>'+
+    '<ul><li><strong>Carduri KPI:</strong> Carduri colorate cu metrici cheie si indicatori trend (&#8593;&#8595;)</li>'+
+    '<li><strong>Tabele:</strong> Tabele de date sortabile cu butoane actiune (editare, stergere, generare raport)</li>'+
+    '<li><strong>Modale:</strong> Formulare popup pentru introducere si editare date</li>'+
+    '<li><strong>Panouri:</strong> Carduri albe cu header si zona de continut</li>'+
+    '<li><strong>Badge-uri:</strong> Pastile colorate pentru status (verde=OK, galben=atentie, rosu=alerta)</li></ul>';
+  }
+  h+=topBtn+'</div></div>';
+
+  // ── SECTION 3: Dashboard ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s3">'+
+    '<h3><span class="sec-num">4</span> Dashboard</h3>';
+  if(E){
+    h+='<p>The Dashboard is the main overview page, showing the most important information at a glance.</p>'+
+    '<h4>Quick Actions</h4>'+
+    '<p>Buttons at the top for the most common operations:</p>'+
+    '<ul><li><strong>+ HAI Case</strong> — opens the IAAM case entry form</li>'+
+    '<li><strong>+ Sample</strong> — opens the quality control sample entry form</li>'+
+    '<li><strong>+ Audit</strong> — starts a new audit</li>'+
+    '<li><strong>Generate Report</strong> — navigates to the report generation page</li>'+
+    '<li><strong>Backup</strong> — triggers a JSON data backup</li></ul>'+
+    '<h4>KPI Cards</h4>'+
+    '<p>Color-coded summary cards showing:</p>'+
+    '<ul><li><strong>HAI Cases</strong> (red) — total cases for the current year, with HAI rate ‰</li>'+
+    '<li><strong>QC Samples</strong> (green) — total samples with compliance percentage</li>'+
+    '<li><strong>Waste</strong> (amber) — total kg of waste for the year</li>'+
+    '<li><strong>Biocide Usage</strong> (blue) — consumption summary</li>'+
+    '<li><strong>Weighted Beds</strong> — total capacity considering variable bed periods</li>'+
+    '<li><strong>Valid Documents</strong> — how many documents/authorizations are current</li>'+
+    '<li><strong>Deadlines ≤ 30 days</strong> — upcoming reporting deadlines</li></ul>'+
+    '<p>Each card shows a trend arrow (&#8593;green or &#8595;red) comparing with the previous year.</p>'+
+    '<h4>Configurable Sections</h4>'+
+    '<p>Click the dropdown arrow below the toolbar to show/hide individual dashboard sections: mini-calendar, urgent alerts, KPIs, charts, activity feed.</p>'+
+    '<h4>Mini-Calendar & Events</h4>'+
+    '<p>A small calendar showing the current month with colored dots for events. Below it: the next 7 days of upcoming events (deadlines, document expirations, manual events).</p>'+
+    '<h4>Charts</h4>'+
+    '<p>Four charts: HAI monthly trend, QC compliance, waste evolution, HAI by ward. Charts are interactive — hover for details.</p>';
+  } else {
+    h+='<p>Dashboard-ul este pagina principala de prezentare generala, afisand cele mai importante informatii dintr-o privire.</p>'+
+    '<h4>Actiuni Rapide</h4>'+
+    '<p>Butoane in partea de sus pentru operatiunile cele mai frecvente:</p>'+
+    '<ul><li><strong>+ Caz IAAM</strong> — deschide formularul de inregistrare caz IAAM</li>'+
+    '<li><strong>+ Proba</strong> — deschide formularul de inregistrare proba autocontrol</li>'+
+    '<li><strong>+ Audit</strong> — incepe un audit nou</li>'+
+    '<li><strong>Genereaza Raport</strong> — navigheaza la pagina de generare rapoarte</li>'+
+    '<li><strong>Backup</strong> — declanseaza un backup JSON al datelor</li></ul>'+
+    '<h4>Carduri KPI</h4>'+
+    '<p>Carduri sumarizatoare cu cod de culori:</p>'+
+    '<ul><li><strong>Cazuri IAAM</strong> (rosu) — total cazuri pentru anul curent, cu rata IAAM ‰</li>'+
+    '<li><strong>Probe Autocontrol</strong> (verde) — total probe cu procentaj conformitate</li>'+
+    '<li><strong>Deseuri</strong> (amber) — total kg deseuri pe an</li>'+
+    '<li><strong>Consum Biocide</strong> (albastru) — sumar consum</li>'+
+    '<li><strong>Paturi Ponderate</strong> — capacitate totala tinand cont de perioadele variabile</li>'+
+    '<li><strong>Documente Valabile</strong> — cate documente/autorizatii sunt in termen</li>'+
+    '<li><strong>Termene ≤ 30 zile</strong> — termene de raportare viitoare</li></ul>'+
+    '<p>Fiecare card arata un indicator de trend (&#8593;verde sau &#8595;rosu) fata de anul anterior.</p>'+
+    '<h4>Sectiuni Configurabile</h4>'+
+    '<p>Click pe sageata dropdown de sub toolbar pentru a ascunde/afisa individual sectiunile dashboard-ului: mini-calendar, alerte urgente, KPI-uri, grafice, activitate recenta.</p>'+
+    '<h4>Mini-Calendar si Evenimente</h4>'+
+    '<p>Un calendar mic aratand luna curenta cu buline colorate pentru evenimente. Dedesubt: urmatoarele 7 zile de evenimente (termene, expirari documente, evenimente manuale).</p>'+
+    '<h4>Grafice</h4>'+
+    '<p>Patru grafice: trend lunar IAAM, conformitate autocontrol, evolutie deseuri, IAAM pe sectii. Graficele sunt interactive — hover pentru detalii.</p>';
+  }
+  h+=goBtn('dashboard','Dashboard')+topBtn+'</div></div>';
+
+  // ── SECTION 4: IAAM ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s4">'+
+    '<h3><span class="sec-num">5</span> '+(E?'IAAM / Epidemiological Investigations':'IAAM / Anchete Epidemiologice')+'</h3>';
+  if(E){
+    h+='<p>The IAAM module is the core of the application — it manages healthcare-associated infection (HAI) case records.</p>'+
+    '<h4>Case List</h4>'+
+    '<p>The main page shows all cases for the selected year with:</p>'+
+    '<ul><li><strong>Filters:</strong> search text, ward, month, MDR status, completion level (complete/incomplete)</li>'+
+    '<li><strong>Completion indicator:</strong> each case shows a % completion badge — green (≥80%), yellow (50-79%), red (&lt;50%)</li>'+
+    '<li><strong>Actions per case:</strong> Edit (&#9998;), Duplicate, Generate Investigation Report (&#128196;), Generate IAAM Data Sheet, Delete (&#128465;)</li></ul>'+
+    '<div class="man-tip"><strong>Tip:</strong> Use the "Duplicate" button to quickly create a similar case — it copies the ward, doctor, and month but clears patient data.</div>'+
+    '<h4>Case Entry — 10-Section Wizard</h4>'+
+    '<p>Clicking "+ New Entry" or "Edit" opens a multi-section wizard with left-side navigation:</p>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t"><strong>Patient Data:</strong> Initials, date of birth (auto-calculates age), sex, registration number, observation sheet number</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t"><strong>Hospitalization:</strong> Ward, admission date, detection mode (active/passive/PPS/screening), days of hospitalization (auto-calculated)</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t"><strong>Infection:</strong> IAAM category (ECDC or custom), month, colonization/active infection toggle</span></div>'+
+    '<div class="man-step"><span class="step-n">4</span><span class="step-t"><strong>Etiology:</strong> Pathogen selection (searchable dropdown, max 3), MDR status (ESBL, CRE, MRSA, VRE, etc.)</span></div>'+
+    '<div class="man-step"><span class="step-n">5</span><span class="step-t"><strong>Risk Factors:</strong> Checkboxes for common factors (pinned) + dropdown for additional factors. Configurable in Settings.</span></div>'+
+    '<div class="man-step"><span class="step-n">6</span><span class="step-t"><strong>Antibiotic Treatment:</strong> One or more antibiotics (searchable by name/ATC), or "No antibiotic treatment" option</span></div>'+
+    '<div class="man-step"><span class="step-n">7</span><span class="step-t"><strong>Clinical History:</strong> Background diseases, surgeries, relevant history</span></div>'+
+    '<div class="man-step"><span class="step-n">8</span><span class="step-t"><strong>Contacts/Outbreak:</strong> Contact tracking and outbreak information</span></div>'+
+    '<div class="man-step"><span class="step-n">9</span><span class="step-t"><strong>Measures/Causality:</strong> Implemented control measures and causality assessment</span></div>'+
+    '<div class="man-step"><span class="step-n">10</span><span class="step-t"><strong>Discharge/Classification:</strong> Discharge date, outcome, final classification</span></div>'+
+    '<h4>Word Reports from IAAM</h4>'+
+    '<ul><li><strong>Epidemiological Investigation</strong> — complete 12-section investigation form per case</li>'+
+    '<li><strong>IAAM Data Sheet</strong> — official format per Order MS 1101/2016 Figure 2</li></ul>'+
+    '<div class="man-warn"><strong>Note:</strong> If cases are incomplete (< 80% filled), the app warns you before generating reports and offers to list the incomplete cases.</div>';
+  } else {
+    h+='<p>Modulul IAAM este nucleul aplicatiei — gestioneaza inregistrarile cazurilor de infectii asociate asistentei medicale.</p>'+
+    '<h4>Lista Cazuri</h4>'+
+    '<p>Pagina principala afiseaza toate cazurile pentru anul selectat cu:</p>'+
+    '<ul><li><strong>Filtre:</strong> text cautare, sectie, luna, status MDR, nivel completare (complete/incomplete)</li>'+
+    '<li><strong>Indicator completare:</strong> fiecare caz arata un badge cu % completare — verde (≥80%), galben (50-79%), rosu (&lt;50%)</li>'+
+    '<li><strong>Actiuni per caz:</strong> Editare (&#9998;), Duplicare, Generare Ancheta (&#128196;), Generare Fisa IAAM, Stergere (&#128465;)</li></ul>'+
+    '<div class="man-tip"><strong>Sfat:</strong> Foloseste butonul "Duplicare" pentru a crea rapid un caz similar — copiaza sectia, medicul si luna dar goleste datele pacientului.</div>'+
+    '<h4>Introducere Caz — Wizard 10 Sectiuni</h4>'+
+    '<p>Click pe "+ Inregistrare" sau "Editeaza" deschide un wizard cu navigare laterala:</p>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t"><strong>Date Pacient:</strong> Initiale, data nasterii (calculeaza automat varsta), sex, nr. inregistrare, nr. foaie observatie</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t"><strong>Spitalizare:</strong> Sectie, data internarii, mod depistare (activa/pasiva/PPS/screening), zile spitalizare (calculate automat)</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t"><strong>Infectie:</strong> Categorie IAAM (ECDC sau personalizata), luna, colonizare/infectie activa</span></div>'+
+    '<div class="man-step"><span class="step-n">4</span><span class="step-t"><strong>Etiologie:</strong> Selectie germen (dropdown cu cautare, max 3), status MDR (ESBL, CRE, MRSA, VRE, etc.)</span></div>'+
+    '<div class="man-step"><span class="step-n">5</span><span class="step-t"><strong>Factori de Risc:</strong> Checkbox-uri pentru factori comuni (fixati) + dropdown pentru factori suplimentari. Configurabili in Configurare.</span></div>'+
+    '<div class="man-step"><span class="step-n">6</span><span class="step-t"><strong>Tratament Antibiotic:</strong> Unul sau mai multe antibiotice (cautare dupa nume/ATC), sau optiunea "Fara tratament antibiotic"</span></div>'+
+    '<div class="man-step"><span class="step-n">7</span><span class="step-t"><strong>Istoric Clinic:</strong> Boli de fond, interventii chirurgicale, istoric relevant</span></div>'+
+    '<div class="man-step"><span class="step-n">8</span><span class="step-t"><strong>Contacti/Focar:</strong> Urmarire contacti si informatii focar</span></div>'+
+    '<div class="man-step"><span class="step-n">9</span><span class="step-t"><strong>Masuri/Cauzalitate:</strong> Masuri de control implementate si evaluare cauzalitate</span></div>'+
+    '<div class="man-step"><span class="step-n">10</span><span class="step-t"><strong>Externare/Clasificare:</strong> Data externarii, evolutie, clasificare finala</span></div>'+
+    '<h4>Rapoarte Word din IAAM</h4>'+
+    '<ul><li><strong>Ancheta Epidemiologica</strong> — formular complet de investigare in 12 sectiuni per caz</li>'+
+    '<li><strong>Fisa IAAM</strong> — format oficial conform Ordinul MS 1101/2016 Figura 2</li></ul>'+
+    '<div class="man-warn"><strong>Atentie:</strong> Daca exista cazuri incomplete (sub 80% completate), aplicatia avertizeaza inainte de generarea rapoartelor si ofera sa listeze cazurile incomplete.</div>';
+  }
+  h+=goBtn('iaam',E?'IAAM / Investigations':'IAAM / Anchete')+topBtn+'</div></div>';
+
+  // ── SECTION 5: Autocontrol ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s5">'+
+    '<h3><span class="sec-num">6</span> '+(E?'Microbiological Quality Control':'Autocontrol Microbiologic')+'</h3>';
+  if(E){
+    h+='<p>The Quality Control module manages microbiological sampling with three specialized tabs and period filtering.</p>'+
+    '<h4>Period Filter</h4>'+
+    '<p>Above all tabs, pill-shaped buttons let you filter by: <strong>Full Year | Q1 | Q2 | Q3 | Q4</strong>. All data, matrix, and planning update accordingly.</p>'+
+    '<h4>Tab 1: Presentation</h4>'+
+    '<ul><li><strong>Coverage Matrix:</strong> A grid with rows = probe types and columns = wards. Each cell is color-coded:<br>'+
+    '&#128994; Dark green = all samples compliant<br>&#128993; Yellow = has non-conformities<br>&#128308; Red = >25% non-conformities<br>&#9898; Grey = NOT SAMPLED (most important!)</li>'+
+    '<li><strong>Cell click:</strong> Opens a popup with details of samples for that probe/ward combination</li>'+
+    '<li><strong>Untested zones summary:</strong> A collapsible panel listing which probe types have not been tested in which wards</li>'+
+    '<li><strong>Chart:</strong> Stacked bar chart showing compliant vs non-compliant per probe type</li></ul>'+
+    '<h4>Tab 2: Planning</h4>'+
+    '<p>Automatic checklist for the next quarter:</p>'+
+    '<ul><li>What was NOT sampled (grey cells from the matrix)</li>'+
+    '<li>Non-conformities requiring re-testing</li>'+
+    '<li>Wards not tested for >6 months</li></ul>'+
+    '<p>Check items to plan them, set dates, and optionally save to the Calendar.</p>'+
+    '<h4>Tab 3: Samples</h4>'+
+    '<p>The data entry and viewing tab:</p>'+
+    '<ul><li><strong>Filters:</strong> Ward, probe type, result (compliant/non-compliant), date range</li>'+
+    '<li><strong>Sortable table:</strong> Click any column header to sort</li>'+
+    '<li><strong>Pagination:</strong> 50 samples per page</li>'+
+    '<li><strong>ATP/UV Check:</strong> Specialized forms for rapid tests with automatic result calculation based on threshold</li></ul>'+
+    '<h4>Word + Excel Generation</h4>'+
+    '<ul><li><strong>Word report:</strong> Narrative analysis with tables and recommendations</li>'+
+    '<li><strong>Excel report:</strong> Raw data, pivot by type, pivot by ward, totals</li></ul>';
+  } else {
+    h+='<p>Modulul Autocontrol gestioneaza prelevarea microbiologica cu trei tab-uri specializate si filtrare pe perioade.</p>'+
+    '<h4>Filtru Perioada</h4>'+
+    '<p>Deasupra tuturor tab-urilor, butoane tip pastila permit filtrarea pe: <strong>Anul complet | T1 | T2 | T3 | T4</strong>. Toate datele, matricea si planificarea se actualizeaza corespunzator.</p>'+
+    '<h4>Tab 1: Prezentare</h4>'+
+    '<ul><li><strong>Matrice Acoperire:</strong> Un grid cu randuri = tipuri probe si coloane = sectii. Fiecare celula are cod de culori:<br>'+
+    '&#128994; Verde inchis = toate probele conforme<br>&#128993; Galben = exista neconformitati<br>&#128308; Rosu = >25% neconformitati<br>&#9898; Gri = NERECOLTAT (cel mai important!)</li>'+
+    '<li><strong>Click celula:</strong> Deschide un popup cu detaliile probelor pentru acea combinatie tip proba/sectie</li>'+
+    '<li><strong>Sumar zone netestate:</strong> Un panou colapsabil listand ce tipuri de probe nu au fost testate in ce sectii</li>'+
+    '<li><strong>Grafic:</strong> Bar chart stacked aratand conforme vs neconforme per tip proba</li></ul>'+
+    '<h4>Tab 2: Planificare</h4>'+
+    '<p>Checklist automat pentru trimestrul urmator:</p>'+
+    '<ul><li>Ce NU s-a recoltat (celulele gri din matrice)</li>'+
+    '<li>Neconformitati care necesita re-testare</li>'+
+    '<li>Sectii netestate de >6 luni</li></ul>'+
+    '<p>Bifeaza elementele pentru a le planifica, seteaza datele, si optional salveaza in Calendar.</p>'+
+    '<h4>Tab 3: Probe</h4>'+
+    '<p>Tab-ul de introducere si vizualizare date:</p>'+
+    '<ul><li><strong>Filtre:</strong> Sectie, tip proba, rezultat (conform/neconform), interval date</li>'+
+    '<li><strong>Tabel sortabil:</strong> Click pe orice header de coloana pentru a sorta</li>'+
+    '<li><strong>Paginare:</strong> 50 probe pe pagina</li>'+
+    '<li><strong>ATP/UV Check:</strong> Formulare specializate pentru teste rapide cu calcul automat rezultat pe baza pragului</li></ul>'+
+    '<h4>Generare Word + Excel</h4>'+
+    '<ul><li><strong>Raport Word:</strong> Analiza narativa cu tabele si recomandari</li>'+
+    '<li><strong>Raport Excel:</strong> Date brute, pivot pe tipuri, pivot pe sectii, totaluri</li></ul>';
+  }
+  h+=goBtn('autocontrol',E?'Quality Control':'Autocontrol')+topBtn+'</div></div>';
+
+  // ── SECTION 6: Waste ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s6">'+
+    '<h3><span class="sec-num">7</span> '+(E?'Medical Waste':'Deseuri Medicale')+'</h3>';
+  if(E){
+    h+='<p>Monthly tracking of medical waste by waste code (per Romanian waste legislation).</p>'+
+    '<h4>Data Entry</h4>'+
+    '<ul><li>Select the month from the tabs at the top</li>'+
+    '<li>For each waste code: enter the quantity in <strong>kg</strong></li>'+
+    '<li>Totals are auto-calculated per waste code category and overall</li>'+
+    '<li>Dangerous vs non-dangerous waste is automatically classified based on waste code</li></ul>'+
+    '<h4>Waste Codes</h4>'+
+    '<p>Waste codes are configured in Settings > Data Entry > Waste Codes. Default codes are predefined per Romanian legislation (18 01 01 through 18 02 06). You can add custom codes.</p>'+
+    '<div class="man-tip"><strong>Tip:</strong> The unit is always <strong>kg</strong>. Enter decimal values with a dot (e.g., 12.5).</div>';
+  } else {
+    h+='<p>Urmarire lunara a deseurilor medicale pe coduri de deseuri (conform legislatiei romanesti).</p>'+
+    '<h4>Introducere Date</h4>'+
+    '<ul><li>Selecteaza luna din tab-urile de sus</li>'+
+    '<li>Pentru fiecare cod deseu: introdu cantitatea in <strong>kg</strong></li>'+
+    '<li>Totalurile se calculeaza automat per categorie si per total</li>'+
+    '<li>Deseuri periculoase vs nepericuloase sunt clasificate automat pe baza codului</li></ul>'+
+    '<h4>Coduri Deseuri</h4>'+
+    '<p>Codurile de deseuri se configureaza in Configurare > Introducere date > Coduri deseuri. Codurile implicite sunt predefinite conform legislatiei (18 01 01 pana la 18 02 06). Poti adauga coduri personalizate.</p>'+
+    '<div class="man-tip"><strong>Sfat:</strong> Unitatea de masura este intotdeauna <strong>kg</strong>. Introdu valori zecimale cu punct (ex: 12.5).</div>';
+  }
+  h+=goBtn('deseuri',E?'Medical Waste':'Deseuri Medicale')+topBtn+'</div></div>';
+
+  // ── SECTION 7: Biocide ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s7">'+
+    '<h3><span class="sec-num">8</span> '+(E?'Biocide Management':'Gestiune Biocide')+'</h3>';
+  if(E){
+    h+='<p>Manage biocide products used in the hospital, including regulatory attachments and monthly usage tracking.</p>'+
+    '<h4>Product List</h4>'+
+    '<ul><li>Each product shows name, type, and attachment icons</li>'+
+    '<li>Attachment icons: &#128203; Authorization, &#128196; Technical sheet, &#9888; Safety Data Sheet (SDS), &#128206; Other</li>'+
+    '<li>&#128994; Green icon = document attached (click to download/preview)</li>'+
+    '<li>&#9898; Grey icon = document missing (click to upload)</li></ul>'+
+    '<h4>Attachments</h4>'+
+    '<p>Each biocide product can have (all optional):</p>'+
+    '<ul><li><strong>Biocide authorization</strong> — market placement permit</li>'+
+    '<li><strong>Technical sheet</strong> — product specifications</li>'+
+    '<li><strong>Safety Data Sheet (SDS/FDS)</strong> — safety information</li>'+
+    '<li><strong>Other documents</strong> — any additional files</li></ul>'+
+    '<p>Files can be stored as base64 in IndexedDB or on disk (via File System Access API, configured in Settings).</p>'+
+    '<h4>Monthly Usage</h4>'+
+    '<p>Track monthly entries (purchases) and exits (usage) per product.</p>';
+  } else {
+    h+='<p>Gestionare produse biocide utilizate in spital, inclusiv atasamente reglementare si urmarire consum lunar.</p>'+
+    '<h4>Lista Produse</h4>'+
+    '<ul><li>Fiecare produs afiseaza numele, tipul si iconite atasamente</li>'+
+    '<li>Iconite atasamente: &#128203; Aviz, &#128196; Fisa tehnica, &#9888; Fisa date securitate (FDS), &#128206; Altele</li>'+
+    '<li>&#128994; Iconita verde = document atasat (click pentru descarcare/previzualizare)</li>'+
+    '<li>&#9898; Iconita gri = document lipsa (click pentru upload)</li></ul>'+
+    '<h4>Atasamente</h4>'+
+    '<p>Fiecare produs biocid poate avea (toate optionale):</p>'+
+    '<ul><li><strong>Aviz biocid</strong> — autorizatie punere pe piata</li>'+
+    '<li><strong>Fisa tehnica</strong> — specificatii produs</li>'+
+    '<li><strong>Fisa date securitate (SDS/FDS)</strong> — informatii de siguranta</li>'+
+    '<li><strong>Alte documente</strong> — orice fisiere suplimentare</li></ul>'+
+    '<p>Fisierele pot fi stocate ca base64 in IndexedDB sau pe disc (prin File System Access API, configurat in Configurare).</p>'+
+    '<h4>Consum Lunar</h4>'+
+    '<p>Urmarire intrari (achizitii) si iesiri (consum) lunare per produs.</p>';
+  }
+  h+=goBtn('biocide',E?'Biocide Management':'Gestiune Biocide')+topBtn+'</div></div>';
+
+  // ── SECTION 8: PPS ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s8">'+
+    '<h3><span class="sec-num">9</span> '+(E?'PPS / Antibiotics':'PPS / Antibiotice')+'</h3>';
+  if(E){
+    h+='<p>The PPS module records Point Prevalence Survey (antimicrobial use) data.</p>'+
+    '<h4>Data Entry</h4>'+
+    '<ul><li>Record prescriptions: patient initials, ward, antibiotic, indication, route of administration</li>'+
+    '<li>ATC classification support</li></ul>'+
+    '<h4>HelicsWin Import</h4>'+
+    '<p>If you use the HelicsWin application (helicswin.net) for your PPS study:</p>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t">Export data from HelicsWin as CSV or Excel</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t">Click "Import from HelicsWin" in the PPS module</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t">Select the exported file</span></div>'+
+    '<div class="man-step"><span class="step-n">4</span><span class="step-t">Map HelicsWin wards to your configured wards (if names differ)</span></div>'+
+    '<div class="man-tip"><strong>Tip:</strong> This avoids entering PPS data twice — once in HelicsWin and once here.</div>';
+  } else {
+    h+='<p>Modulul PPS inregistreaza datele Studiului de Prevalenta de Moment (utilizare antimicrobiene).</p>'+
+    '<h4>Introducere Date</h4>'+
+    '<ul><li>Inregistrare prescriptii: initiale pacient, sectie, antibiotic, indicatie, cale de administrare</li>'+
+    '<li>Suport clasificare ATC</li></ul>'+
+    '<h4>Import din HelicsWin</h4>'+
+    '<p>Daca folosesti aplicatia HelicsWin (helicswin.net) pentru studiul PPS:</p>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t">Exporta datele din HelicsWin ca CSV sau Excel</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t">Click "Import din HelicsWin" in modulul PPS</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t">Selecteaza fisierul exportat</span></div>'+
+    '<div class="man-step"><span class="step-n">4</span><span class="step-t">Mapeaza sectiile din HelicsWin la sectiile configurate (daca numele difera)</span></div>'+
+    '<div class="man-tip"><strong>Sfat:</strong> Astfel eviti introducerea dubla a datelor PPS — o data in HelicsWin si o data aici.</div>';
+  }
+  h+=goBtn('pps','PPS / '+(E?'Antibiotics':'Antibiotice'))+topBtn+'</div></div>';
+
+  // ── SECTION 9: Documents ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s9">'+
+    '<h3><span class="sec-num">10</span> '+(E?'Documents / Authorizations':'Documente / Autorizatii')+'</h3>';
+  if(E){
+    h+='<p>Digital hospital dossier for inspections — track all authorizations and regulatory documents.</p>'+
+    '<h4>Predefined Categories</h4>'+
+    '<ul><li>Operating Health Authorization</li><li>DSP (Public Health Directorate) Permit</li>'+
+    '<li>ISU (Fire Safety) Permit</li><li>Environmental Authorization</li>'+
+    '<li>Compliance Plan</li><li>DSP Inspection Report</li>'+
+    '<li>ANMCS Accreditation</li><li>Other Documents (generic)</li></ul>'+
+    '<p>Categories are editable in Settings. You can add custom categories.</p>'+
+    '<h4>Expiry Alerts</h4>'+
+    '<p>Each document shows a color-coded indicator:</p>'+
+    '<ul><li>&#128994; Green — valid, more than 30 days until expiry</li>'+
+    '<li>&#128993; Yellow — expires within 30 days</li>'+
+    '<li>&#128308; Red — expires within 7 days</li>'+
+    '<li>&#9899; Black — expired</li></ul>'+
+    '<p>The Dashboard KPI shows: "X valid / Y expiring soon / Z expired".</p>'+
+    '<h4>Document Attachments</h4>'+
+    '<p>Each document can have one or more files attached (scanned copies, PDFs). Click to preview or download.</p>';
+  } else {
+    h+='<p>Dosar digital al spitalului pentru inspectii — urmarire autorizatii si documente reglementare.</p>'+
+    '<h4>Categorii Predefinite</h4>'+
+    '<ul><li>Autorizatie Sanitara de Functionare</li><li>Aviz DSP</li>'+
+    '<li>Aviz ISU</li><li>Autorizatie de Mediu</li>'+
+    '<li>Plan de Conformare</li><li>Proces-verbal control DSP</li>'+
+    '<li>Acreditare ANMCS</li><li>Alte documente (categorie generica)</li></ul>'+
+    '<p>Categoriile sunt editabile in Configurare. Poti adauga categorii personalizate.</p>'+
+    '<h4>Alerte Expirare</h4>'+
+    '<p>Fiecare document afiseaza un indicator colorat:</p>'+
+    '<ul><li>&#128994; Verde — valabil, peste 30 de zile pana la expirare</li>'+
+    '<li>&#128993; Galben — expira in urmatoarele 30 de zile</li>'+
+    '<li>&#128308; Rosu — expira in urmatoarele 7 zile</li>'+
+    '<li>&#9899; Negru — expirat</li></ul>'+
+    '<p>KPI-ul pe Dashboard afiseaza: "X valabile / Y expira curand / Z expirate".</p>'+
+    '<h4>Atasamente Documente</h4>'+
+    '<p>Fiecare document poate avea unul sau mai multe fisiere atasate (copii scanate, PDF-uri). Click pentru previzualizare sau descarcare.</p>';
+  }
+  h+=goBtn('documente',E?'Documents':'Documente')+topBtn+'</div></div>';
+
+  // ── SECTION 10: Calendar ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s10">'+
+    '<h3><span class="sec-num">11</span> '+(E?'Calendar & Reporting Deadlines':'Calendar si Termene Raportare')+'</h3>';
+  if(E){
+    h+='<p>Visual calendar with reporting deadline management.</p>'+
+    '<h4>Calendar Views</h4>'+
+    '<ul><li><strong>Monthly view:</strong> Full-page calendar with colored dots for events. Click a day to see/add events.</li>'+
+    '<li><strong>Yearly view:</strong> 12 mini-months in a 4-column grid for annual overview</li></ul>'+
+    '<h4>Event Types (colored dots)</h4>'+
+    '<ul><li>&#128308; Red = reporting deadlines</li>'+
+    '<li>&#128993; Yellow = document expirations</li>'+
+    '<li>&#128309; Blue = manual events (custom)</li></ul>'+
+    '<h4>Reporting Deadlines Tab</h4>'+
+    '<p>Manage reporting obligations within the Calendar page:</p>'+
+    '<ul><li><strong>Name:</strong> Report name (e.g., "Monthly IAAM report to DSP")</li>'+
+    '<li><strong>Recipient:</strong> DSP, APM, ANMCS, Manager, etc.</li>'+
+    '<li><strong>Frequency:</strong> One-time, monthly, quarterly, or annually recurring</li>'+
+    '<li><strong>Due date</strong> with graduated alerts: &#128994; >30d, &#128993; ≤30d, &#128308; ≤7d, &#9899; overdue</li>'+
+    '<li><strong>Status:</strong> Not started → In progress → Completed → Sent</li>'+
+    '<li><strong>Links:</strong> Attached template files, generator links, external URLs</li></ul>'+
+    '<div class="man-tip"><strong>Tip:</strong> Recurring deadlines are auto-generated at the start of each year. You don\'t need to re-create them manually.</div>';
+  } else {
+    h+='<p>Calendar vizual cu gestionare termene de raportare.</p>'+
+    '<h4>Vizualizari Calendar</h4>'+
+    '<ul><li><strong>Vizualizare lunara:</strong> Calendar pagina completa cu buline colorate pentru evenimente. Click pe o zi pentru a vedea/adauga evenimente.</li>'+
+    '<li><strong>Vizualizare anuala:</strong> 12 mini-luni intr-un grid cu 4 coloane pentru prezentare anuala</li></ul>'+
+    '<h4>Tipuri Evenimente (buline colorate)</h4>'+
+    '<ul><li>&#128308; Rosu = termene raportare</li>'+
+    '<li>&#128993; Galben = expirari documente</li>'+
+    '<li>&#128309; Albastru = evenimente manuale (personalizate)</li></ul>'+
+    '<h4>Tab Termene Raportare</h4>'+
+    '<p>Gestionare obligatii de raportare in cadrul paginii Calendar:</p>'+
+    '<ul><li><strong>Denumire:</strong> Numele raportarii (ex: "Raport lunar IAAM catre DSP")</li>'+
+    '<li><strong>Destinatar:</strong> DSP, APM, ANMCS, Manager, etc.</li>'+
+    '<li><strong>Frecventa:</strong> Singulara, lunara, trimestriala sau anuala recurenta</li>'+
+    '<li><strong>Termen limita</strong> cu alerte gradate: &#128994; >30z, &#128993; ≤30z, &#128308; ≤7z, &#9899; depasit</li>'+
+    '<li><strong>Status:</strong> Neinceput → In lucru → Finalizat → Trimis</li>'+
+    '<li><strong>Link-uri:</strong> Fisiere model atasate, link-uri generator, URL-uri externe</li></ul>'+
+    '<div class="man-tip"><strong>Sfat:</strong> Termenele recurente se genereaza automat la inceputul fiecarui an. Nu trebuie sa le recreezi manual.</div>';
+  }
+  h+=goBtn('calendar','Calendar')+topBtn+'</div></div>';
+
+  // ── SECTION 11: Audits ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s11">'+
+    '<h3><span class="sec-num">12</span> '+(E?'Audits':'Audituri')+'</h3>';
+  if(E){
+    h+='<p>Conduct and track quality audits with predefined or custom checklists.</p>'+
+    '<h4>Audit Types</h4>'+
+    '<ul><li><strong>Hand Hygiene (WHO 5 Moments):</strong> Observation-based compliance audit following the WHO 5 Moments for Hand Hygiene</li>'+
+    '<li><strong>Cleaning/Disinfection:</strong> Checklist-based audit of cleaning quality</li>'+
+    '<li><strong>Isolation Precautions:</strong> Audit of isolation measures compliance</li>'+
+    '<li><strong>Custom Audit:</strong> User-defined checklist for any audit type</li></ul>'+
+    '<h4>How to Conduct an Audit</h4>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t">Click "+ New Audit" and select the audit type</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t">Select the ward and enter the evaluator name</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t">Fill in the checklist — each item is scored</span></div>'+
+    '<div class="man-step"><span class="step-n">4</span><span class="step-t">The compliance score is auto-calculated</span></div>'+
+    '<div class="man-step"><span class="step-n">5</span><span class="step-t">Save, then optionally generate a Word report</span></div>'+
+    '<h4>KPIs</h4>'+
+    '<p>The audit page shows: total audits, average compliance %, and count per type.</p>';
+  } else {
+    h+='<p>Realizare si urmarire audituri de calitate cu checklist-uri predefinite sau personalizate.</p>'+
+    '<h4>Tipuri de Audit</h4>'+
+    '<ul><li><strong>Igiena Mainilor (OMS 5 Momente):</strong> Audit de conformitate bazat pe observatie, urmarind cele 5 Momente OMS</li>'+
+    '<li><strong>Curatenie/Dezinfectie:</strong> Audit checklist al calitatii curateniei</li>'+
+    '<li><strong>Precautiuni Izolare:</strong> Audit conformitate masuri de izolare</li>'+
+    '<li><strong>Audit Personalizat:</strong> Checklist definit de utilizator pentru orice tip de audit</li></ul>'+
+    '<h4>Cum se Realizeaza un Audit</h4>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t">Click "+ Audit Nou" si selecteaza tipul de audit</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t">Selecteaza sectia si introdu numele evaluatorului</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t">Completeaza checklist-ul — fiecare element este punctat</span></div>'+
+    '<div class="man-step"><span class="step-n">4</span><span class="step-t">Scorul de conformitate se calculeaza automat</span></div>'+
+    '<div class="man-step"><span class="step-n">5</span><span class="step-t">Salveaza, apoi optional genereaza un raport Word</span></div>'+
+    '<h4>KPI-uri</h4>'+
+    '<p>Pagina de audituri afiseaza: total audituri, conformitate medie %, si numar per tip.</p>';
+  }
+  h+=goBtn('audituri',E?'Audits':'Audituri')+topBtn+'</div></div>';
+
+  // ── SECTION 12: Training ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s12">'+
+    '<h3><span class="sec-num">13</span> '+(E?'Staff Training':'Instruire Personal')+'</h3>';
+  if(E){
+    h+='<p>Track staff training sessions with participant management and Word report generation.</p>'+
+    '<h4>Recording a Training Session</h4>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t">Click "+ New Training" — enter topic, date, ward, trainer name</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t">Add participants — select from configured personnel or enter manually</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t">Save the training record</span></div>'+
+    '<h4>Word Report</h4>'+
+    '<p>Click the report icon (&#128196;) on a training entry to generate a professional Training Minutes document (PV Instruire) with participant list and signatures.</p>'+
+    '<h4>KPIs</h4>'+
+    '<ul><li>Total training sessions for the year</li>'+
+    '<li>Total participants</li>'+
+    '<li>Training count per ward</li></ul>';
+  } else {
+    h+='<p>Evidenta sesiuni de instruire personal cu gestiune participanti si generare rapoarte Word.</p>'+
+    '<h4>Inregistrarea unei Sesiuni de Instruire</h4>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t">Click "+ Instruire Noua" — introdu tema, data, sectia, numele formatorului</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t">Adauga participanti — selecteaza din personalul configurat sau introdu manual</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t">Salveaza inregistrarea de instruire</span></div>'+
+    '<h4>Raport Word</h4>'+
+    '<p>Click pe iconita raport (&#128196;) de pe o inregistrare de instruire pentru a genera un document profesionist Proces-verbal de Instruire cu lista participanti si semnaturi.</p>'+
+    '<h4>KPI-uri</h4>'+
+    '<ul><li>Total sesiuni instruire pentru anul curent</li>'+
+    '<li>Total participanti</li>'+
+    '<li>Numar instruiri per sectie</li></ul>';
+  }
+  h+=goBtn('instruire',E?'Staff Training':'Instruire Personal')+topBtn+'</div></div>';
+
+  // ── SECTION 13: Reports ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s13">'+
+    '<h3><span class="sec-num">14</span> '+(E?'Report Generation':'Generare Rapoarte')+'</h3>';
+  if(E){
+    h+='<p>Generate professional Word documents (.docx) from your data. All reports use consistent formatting with hospital branding.</p>'+
+    '<h4>Available Reports</h4>'+
+    '<ul><li><strong>Annual Report</strong> — comprehensive year-end report covering all modules: IAAM, QC, waste, biocides, PPS, conclusions</li>'+
+    '<li><strong>IAAM Analysis</strong> — detailed HAI analysis with trends, ward breakdown, MDR analysis</li>'+
+    '<li><strong>QC Analysis</strong> — quality control analysis with coverage and compliance data</li>'+
+    '<li><strong>Waste Analysis</strong> — waste management analysis with trends and kg/person-day calculations</li>'+
+    '<li><strong>Epidemiological Investigation</strong> — per-case investigation form (also accessible from IAAM module)</li>'+
+    '<li><strong>CPIAAM Minutes (PV)</strong> — meeting minutes template with agenda</li>'+
+    '<li><strong>Quarterly Report</strong> — select quarter (Q1-Q4) for a period-specific report</li>'+
+    '<li><strong>QC Excel</strong> — raw data export with pivot tables</li></ul>'+
+    '<h4>Report Features</h4>'+
+    '<ul><li>A4 format with professional margins and fonts (Arial)</li>'+
+    '<li>Cover page with hospital name and report title</li>'+
+    '<li>Color-coded headers (navy for sections, teal for QC, amber for waste)</li>'+
+    '<li>Info and alert boxes for highlights</li>'+
+    '<li>Configurable signature blocks</li>'+
+    '<li>Confidentiality footer on every page</li>'+
+    '<li>Optional AI-powered narrative analysis</li></ul>'+
+    '<div class="man-tip"><strong>Tip:</strong> All reports download automatically as .docx files that open in Microsoft Word, Google Docs, or LibreOffice.</div>';
+  } else {
+    h+='<p>Genereaza documente Word (.docx) profesioniste din datele tale. Toate rapoartele folosesc formatare consistenta cu branding-ul spitalului.</p>'+
+    '<h4>Rapoarte Disponibile</h4>'+
+    '<ul><li><strong>Raport Anual</strong> — raport comprehensiv de sfarsit de an acoperind toate modulele: IAAM, autocontrol, deseuri, biocide, PPS, concluzii</li>'+
+    '<li><strong>Analiza IAAM</strong> — analiza detaliata IAAM cu trenduri, repartizare pe sectii, analiza MDR</li>'+
+    '<li><strong>Analiza Autocontrol</strong> — analiza autocontrol cu date acoperire si conformitate</li>'+
+    '<li><strong>Analiza Deseuri</strong> — analiza gestiune deseuri cu trenduri si calcule kg/om-zi</li>'+
+    '<li><strong>Ancheta Epidemiologica</strong> — formular investigare per caz (accesibil si din modulul IAAM)</li>'+
+    '<li><strong>PV CPIAAM</strong> — sablon proces-verbal sedinta cu ordine de zi</li>'+
+    '<li><strong>Raport Trimestrial</strong> — selecteaza trimestrul (T1-T4) pentru raport pe perioada</li>'+
+    '<li><strong>Autocontrol Excel</strong> — export date brute cu tabele pivot</li></ul>'+
+    '<h4>Caracteristici Rapoarte</h4>'+
+    '<ul><li>Format A4 cu margini si fonturi profesioniste (Arial)</li>'+
+    '<li>Pagina coperta cu numele spitalului si titlul raportului</li>'+
+    '<li>Headere cu cod de culori (navy pentru sectiuni, teal pentru autocontrol, amber pentru deseuri)</li>'+
+    '<li>Casete informative si de alerta pentru evidentierea elementelor importante</li>'+
+    '<li>Blocuri semnaturi configurabile</li>'+
+    '<li>Footer confidentialitate pe fiecare pagina</li>'+
+    '<li>Analiza narativa optionala cu AI</li></ul>'+
+    '<div class="man-tip"><strong>Sfat:</strong> Toate rapoartele se descarca automat ca fisiere .docx care se deschid in Microsoft Word, Google Docs sau LibreOffice.</div>';
+  }
+  h+=goBtn('rapoarte',E?'Generate Reports':'Generare Rapoarte')+topBtn+'</div></div>';
+
+  // ── SECTION 14: Settings ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s14">'+
+    '<h3><span class="sec-num">15</span> '+(E?'System Settings':'Configurare Sistem')+'</h3>';
+  if(E){
+    h+='<p>Settings is organized in 4 tabs:</p>'+
+    '<h4>Tab 1: Hospital</h4>'+
+    '<ul><li><strong>Hospital info:</strong> Name, CPIAAM compartment name, author</li>'+
+    '<li><strong>Sections/Wards:</strong> Add, edit, delete sections. Each section has: name, bed count, optional waste code</li>'+
+    '<li><strong>Variable bed periods:</strong> Click "Bed periods" on a section to define multiple periods within a year (e.g., 35 beds Jan-Sep, 55 beds Oct-Dec due to renovation). The app auto-calculates the weighted average.</li>'+
+    '<li><strong>Personnel:</strong> Staff table with name, title, role (coordinator/manager/member), and signature flag</li></ul>'+
+    '<h4>Tab 2: Data Entry</h4>'+
+    '<ul><li><strong>Probe types:</strong> Microbiological sample categories (surface, air, sterile, hands, etc.)</li>'+
+    '<li><strong>IAAM categories:</strong> ECDC predefined (non-deletable) + custom categories</li>'+
+    '<li><strong>Risk factors:</strong> Configurable risk factor list with pinned/unpinned toggle</li>'+
+    '<li><strong>Waste codes:</strong> Municipal waste code definitions</li>'+
+    '<li><strong>Biocide products:</strong> Product names for the biocide module</li>'+
+    '<li><strong>ATP/UV surface types:</strong> Surface categories for rapid testing with configurable thresholds</li></ul>'+
+    '<h4>Tab 3: Data & Backup</h4>'+
+    '<ul><li><strong>Date format:</strong> dd.mm.yyyy (Romanian default), mm/dd/yyyy, yyyy-mm-dd, or dd/mm/yyyy</li>'+
+    '<li><strong>Language:</strong> Romanian or English</li>'+
+    '<li><strong>File synchronization:</strong> Connect to a JSON data file for automatic sync</li>'+
+    '<li><strong>Attachment storage:</strong> Choose between IndexedDB or disk folder for file attachments</li>'+
+    '<li><strong>Backup interval:</strong> Days between backup reminders (default 7)</li>'+
+    '<li><strong>Import/Export:</strong> Buttons for full data import and export</li>'+
+    '<li><strong>Complete reset:</strong> Ctrl+click to wipe all data (double confirmation required)</li></ul>'+
+    '<h4>Tab 4: AI (Artificial Intelligence)</h4>'+
+    '<ul><li><strong>Provider:</strong> Dropdown with 5 options — Google Gemini (free, recommended), Claude, OpenAI, Ollama (local), Custom</li>'+
+    '<li><strong>API key:</strong> Password field for the provider API key</li>'+
+    '<li><strong>Model:</strong> Suggested default model per provider</li>'+
+    '<li><strong>Test connection:</strong> Button to verify the API key works</li>'+
+    '<li><strong>Tutorial:</strong> Each provider has step-by-step instructions and a direct link to get the API key</li></ul>'+
+    '<div class="man-warn"><strong>Data protection:</strong> When using AI, ONLY anonymized data is sent: patient initials, age, ward, pathogen, infection type, aggregate statistics. NEVER sent: doctor name, address, personal data.</div>';
+  } else {
+    h+='<p>Configurarea este organizata in 4 tab-uri:</p>'+
+    '<h4>Tab 1: Spital</h4>'+
+    '<ul><li><strong>Informatii spital:</strong> Denumire, compartiment CPIAAM, autor</li>'+
+    '<li><strong>Sectii:</strong> Adauga, editeaza, sterge sectii. Fiecare sectie are: denumire, numar paturi, cod deseu optional</li>'+
+    '<li><strong>Perioade paturi variabile:</strong> Click "Perioade paturi" pe o sectie pentru a defini mai multe perioade intr-un an (ex: 35 paturi Ian-Sep, 55 paturi Oct-Dec din cauza renovarii). Aplicatia calculeaza automat media ponderata.</li>'+
+    '<li><strong>Personal:</strong> Tabel personal cu nume, functie, rol (coordonator/manager/membru), si indicator semnatura</li></ul>'+
+    '<h4>Tab 2: Introducere Date</h4>'+
+    '<ul><li><strong>Tipuri probe:</strong> Categorii probe microbiologice (suprafete, aer, sterile, maini, etc.)</li>'+
+    '<li><strong>Categorii IAAM:</strong> Predefinite ECDC (non-stergibile) + categorii personalizate</li>'+
+    '<li><strong>Factori de risc:</strong> Lista configurabila de factori de risc cu comutare fixat/nefixat</li>'+
+    '<li><strong>Coduri deseuri:</strong> Definitii coduri deseuri municipale</li>'+
+    '<li><strong>Produse biocide:</strong> Denumiri produse pentru modulul biocide</li>'+
+    '<li><strong>Suprafete ATP/UV:</strong> Categorii suprafete pentru testare rapida cu praguri configurabile</li></ul>'+
+    '<h4>Tab 3: Date si Backup</h4>'+
+    '<ul><li><strong>Format data:</strong> dd.mm.yyyy (implicit romanesc), mm/dd/yyyy, yyyy-mm-dd, sau dd/mm/yyyy</li>'+
+    '<li><strong>Limba:</strong> Romana sau Engleza</li>'+
+    '<li><strong>Sincronizare fisier:</strong> Conectare la un fisier JSON de date pentru sincronizare automata</li>'+
+    '<li><strong>Stocare atasamente:</strong> Alege intre IndexedDB sau folder pe disc pentru atasamente fisiere</li>'+
+    '<li><strong>Interval backup:</strong> Zile intre reminder-uri de backup (implicit 7)</li>'+
+    '<li><strong>Import/Export:</strong> Butoane pentru import si export complet de date</li>'+
+    '<li><strong>Resetare completa:</strong> Ctrl+click pentru stergerea tuturor datelor (dubla confirmare necesara)</li></ul>'+
+    '<h4>Tab 4: AI (Inteligenta Artificiala)</h4>'+
+    '<ul><li><strong>Provider:</strong> Dropdown cu 5 optiuni — Google Gemini (gratuit, recomandat), Claude, OpenAI, Ollama (local), Personalizat</li>'+
+    '<li><strong>Cheie API:</strong> Camp parola pentru cheia API a providerului</li>'+
+    '<li><strong>Model:</strong> Model default sugerat per provider</li>'+
+    '<li><strong>Test conexiune:</strong> Buton pentru verificarea functionarii cheii API</li>'+
+    '<li><strong>Tutorial:</strong> Fiecare provider are instructiuni pas cu pas si link direct pentru obtinerea cheii API</li></ul>'+
+    '<div class="man-warn"><strong>Protectie date:</strong> Cand se foloseste AI, se trimit DOAR date anonimizate: initiale pacient, varsta, sectie, germen, tip infectie, statistici agregate. NU se trimit NICIODATA: nume doctor, domiciliu, date personale.</div>';
+  }
+  h+=goBtn('config',E?'System Settings':'Configurare Sistem')+topBtn+'</div></div>';
+
+  // ── SECTION 15: Sync & Backup ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s15">'+
+    '<h3><span class="sec-num">16</span> '+(E?'Synchronization & Backup':'Sincronizare si Backup')+'</h3>';
+  if(E){
+    h+='<h4>The 3 Application States</h4>'+
+    '<div class="man-step"><span class="step-n" style="background:var(--red)">&#128308;</span><span class="step-t"><strong>Not synced</strong> — data only in the browser. If you reinstall the browser or clear data, everything is lost. Save to a JSON file or do manual backup.</span></div>'+
+    '<div class="man-step"><span class="step-n" style="background:var(--amber)">&#128993;</span><span class="step-t"><strong>Saved locally</strong> — data is auto-saved to a file on this PC. Protected from browser issues, but no multi-computer access.</span></div>'+
+    '<div class="man-step"><span class="step-n" style="background:var(--green)">&#128994;</span><span class="step-t"><strong>Synced to cloud</strong> — data file is in OneDrive/Google Drive. Accessible from any computer, fully protected.</span></div>'+
+    '<h4>Live File vs Manual Backup</h4>'+
+    '<ul><li><strong>Live file (CPIAAM_data.json):</strong> Main data source, always up to date, writes automatically on every change. Connect once, app writes automatically.</li>'+
+    '<li><strong>Manual backup:</strong> A snapshot copy at a given moment. Only saves when you press the button. Use as a safety net.</li></ul>'+
+    '<h4>How to Connect a Data File</h4>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t">Click the sync indicator (colored pill) in the toolbar</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t">Select "Connect to JSON file" or "Create new file"</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t">Choose a location — ideally in a OneDrive or Google Drive folder</span></div>'+
+    '<div class="man-step"><span class="step-n">4</span><span class="step-t">The indicator turns green if the file is in a cloud-synced folder</span></div>'+
+    '<h4>Automatic Updates</h4>'+
+    '<p>When a new version is available, a yellow banner appears at the top of the page. Click "Download now" to get the new HTML file. Replace the old file with the new one in the same folder. Your data is preserved (stored separately from the HTML file).</p>'+
+    '<div class="man-warn"><strong>Important rule:</strong> ALWAYS open the app from the same folder and with the same file name. If you open from a different folder, the browser won\'t find your data.</div>';
+  } else {
+    h+='<h4>Cele 3 Stari ale Aplicatiei</h4>'+
+    '<div class="man-step"><span class="step-n" style="background:var(--red)">&#128308;</span><span class="step-t"><strong>Nesincronizat</strong> — date doar in browser. Daca reinstalezi browserul sau stergi datele, totul se pierde. Salveaza intr-un fisier JSON sau fa backup manual.</span></div>'+
+    '<div class="man-step"><span class="step-n" style="background:var(--amber)">&#128993;</span><span class="step-t"><strong>Salvat local</strong> — datele se salveaza automat intr-un fisier pe acest PC. Protejat de probleme browser, dar fara acces multi-calculator.</span></div>'+
+    '<div class="man-step"><span class="step-n" style="background:var(--green)">&#128994;</span><span class="step-t"><strong>Sincronizat in cloud</strong> — fisierul de date este in OneDrive/Google Drive. Accesibil de pe orice calculator, complet protejat.</span></div>'+
+    '<h4>Fisier Live vs Backup Manual</h4>'+
+    '<ul><li><strong>Fisier live (CPIAAM_data.json):</strong> Sursa principala de date, mereu actualizata, se scrie automat la orice modificare. Conectezi o singura data, aplicatia scrie singura.</li>'+
+    '<li><strong>Backup manual:</strong> O copie snapshot la un moment dat. Se salveaza doar cand apesi butonul. Foloseste ca plasa de siguranta.</li></ul>'+
+    '<h4>Cum se Conecteaza un Fisier de Date</h4>'+
+    '<div class="man-step"><span class="step-n">1</span><span class="step-t">Click pe indicatorul de sincronizare (pastila colorata) din toolbar</span></div>'+
+    '<div class="man-step"><span class="step-n">2</span><span class="step-t">Selecteaza "Conecteaza fisier JSON" sau "Creeaza fisier nou"</span></div>'+
+    '<div class="man-step"><span class="step-n">3</span><span class="step-t">Alege locatia — ideal intr-un folder OneDrive sau Google Drive</span></div>'+
+    '<div class="man-step"><span class="step-n">4</span><span class="step-t">Indicatorul devine verde daca fisierul este intr-un folder sincronizat cloud</span></div>'+
+    '<h4>Actualizari Automate</h4>'+
+    '<p>Cand e disponibila o versiune noua, apare un banner galben in partea de sus a paginii. Click "Descarca acum" pentru a obtine noul fisier HTML. Inlocuieste fisierul vechi cu cel nou in acelasi folder. Datele tale se pastreaza (stocate separat de fisierul HTML).</p>'+
+    '<div class="man-warn"><strong>Regula importanta:</strong> Deschide aplicatia INTOTDEAUNA din acelasi folder si cu acelasi nume de fisier. Daca deschizi din alt folder, browserul nu va gasi datele tale.</div>';
+  }
+  h+=topBtn+'</div></div>';
+
+  el.innerHTML=h;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // HELP / FAQ PAGE (cerinta D)
 // ═══════════════════════════════════════════════════════════════
 function rAjutor(el){
@@ -5068,6 +5862,7 @@ function rAjutor(el){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'7.0',date:'2026-03-15',notes:'Manual de Utilizare complet integrat in aplicatie — 16 capitole bilingve RO/EN\nCuprins interactiv cu navigare la fiecare sectiune\nButoane "Deschide modulul" pentru navigare directa din manual\nCasete sfat (albastru) si avertizare (galben) pentru informatii importante\nPasi numerotati vizual pentru toate procedurile\nFunctionalitate printare manual (CSS @media print optimizat)\nSectiuni: Introducere, Instalare, Interfata, Dashboard, IAAM, Autocontrol, Deseuri, Biocide, PPS, Documente, Calendar, Audituri, Instruire, Rapoarte, Configurare, Sincronizare'},
   {version:'6.9',date:'2026-03-15',notes:'IAAM: Fisa IAAM generata conform Ordinul MS 1101/2016 Figura 2 — format oficial identic\nCourier New 9pt monospace, chenare ASCII box-drawing, checkbox-uri, campuri completate automat\nVarsta calculata automat din data nasterii\nUS Letter (12240x15840), margini 1 inch — identic cu documentul oficial'},
   {version:'6.8.3',date:'2026-03-15',notes:'Autocontrol: Fix dark mode sumar zone netestate (text alb pe fundal deschis)\nIAAM: Sectiunile ATB, Contacti, Masuri, Externare marcate obligatorii\nIAAM: Optiune "Fara tratament antibiotic" in sectiunea ATB\nDashboard: KPI trend ascuns cand anul anterior nu are date\nDashboard: Sparkline pe KPI biocide\nDashboard: KPI ATP/UV cu indicator neconformitati\nDashboard: KPI labels nu se mai trunchiaza\nIAAM: Fix FO duplicat in coloana Pacient\nBiocide: Dropdown selectie produs + input manual fallback\nConfig: Fix denumire spital cu ghilimele se trunchia\nDate test: JSON complet 2 ani pentru toate modulele'},
   {version:'6.8',date:'2026-03-15',notes:'IAAM Module restructurat complet:\nFormular wizard cu 10 sectiuni si navigare laterala (Date pacient, Spitalizare, Infectie, Etiologie, Factori de risc, Tratament ATB, Istoric clinic, Contacti/focar, Masuri/cauzalitate, Externare/clasificare)\nFactori de risc ca checkbox-uri (pinned) + dropdown + chips (inlocuieste textarea)\nCalcul completare % per caz — indicator vizual in lista si in wizard nav\nLista cazuri redesignata: coloane noi (indicator, sectie+categorie 2 linii, germen+MDR tag, completare %, actiuni cu duplicare)\nFiltre noi: luna, completare (complete/incomplete), cautare extinsa\nFunctie duplicare caz — copiaza sectia/medicul/luna, goleste datele pacient\nSmart defaults la caz nou (ultima sectie, luna curenta)\nAlerta rapoarte: dialog pentru cazuri incomplete inainte de generare Word\nConfig factori de risc in Configurare > Introducere date\nKPI completare medie pe pagina IAAM'},

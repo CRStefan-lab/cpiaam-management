@@ -1,5 +1,5 @@
 {
-  "version": "6.2",
+  "version": "6.4",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
     "CRITIC: syncWrite salveaza acum TOATE cele 13 store-uri (inainte pierdea events, audits, trainings, etc.)",
@@ -8,6 +8,14 @@
     "Indicator galben Reconecteaza deschide fisierul existent (nu mai creaza fisier nou)",
     "Stocare atasamente pe disc (File System Access API) — folder configurabil",
     "Format data dd.mm.yyyy (romanesc) ca default + 4 optiuni configurabile",
-    "Buton sync redenumit Salveaza JSON"
+    "Buton sync redenumit Salveaza JSON",
+    "Configurare reorganizata cu 3 tab-uri: Spital, Date & Backup, AI",
+    "Butoane salvare/import mutate din Despre in Configurare > Date & Backup",
+    "Dark mode fix: text vizibil in Autocontrol Microbiologic Prezentare",
+    "Dashboard: buton Incarca Backup langa Salveaza Backup",
+    "Configurator praguri ATP: 17 tipuri suprafete cu prag RLU, rezultat calculat automat (Conform/Neconform)",
+    "Configurator suprafete UV Check: 5 tipuri predefinite, dropdown in formular UV",
+    "Sectiune Autocontrol — Tipuri Suprafete in Configurare (tab Spital)",
+    "Preview format data sub fiecare input type=date din formulare (arata data in formatul ales)"
   ]
 }

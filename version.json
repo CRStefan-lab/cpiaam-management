@@ -1,13 +1,14 @@
 {
-  "version": "6.8",
+  "version": "6.8.2",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "IAAM: Formular wizard cu 10 sectiuni si navigare laterala",
-    "IAAM: Factori de risc ca checkbox-uri + dropdown + chips",
-    "IAAM: Calcul completare % per caz cu indicator vizual",
-    "IAAM: Lista redesignata cu coloane noi si filtre extinse",
-    "IAAM: Functie duplicare caz",
-    "IAAM: Alerta rapoarte pentru cazuri incomplete",
-    "Config: Factori de risc editabili in Introducere date"
+    "Dashboard: KPI trend ascuns cand anul anterior nu are date",
+    "Dashboard: Sparkline pe KPI biocide",
+    "Dashboard: KPI ATP/UV cu indicator neconformitati",
+    "Dashboard: KPI labels nu se mai trunchează",
+    "IAAM: Fix FO duplicat in coloana Pacient",
+    "Biocide: Dropdown selectie produs + input manual fallback",
+    "Config: Fix denumire spital cu ghilimele se trunchia",
+    "Date test: JSON complet 2 ani pentru toate modulele"
   ]
 }

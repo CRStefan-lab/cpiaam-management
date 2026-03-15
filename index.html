@@ -54,7 +54,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .kc{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:5px solid var(--navy);transition:all .2s ease;position:relative;overflow:hidden}
 .kc::after{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;opacity:.04;transform:translate(20px,-20px);pointer-events:none}
 .kc:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
-.kc .kl{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--txtL);font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.kc .kl{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--txtL);font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}.kc .kl span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kc .kv{font-size:30px;font-weight:800;color:var(--navy);line-height:1;letter-spacing:-.5px}
 .kc .ks{font-size:11px;color:var(--txtL);margin-top:6px}
 .kc .kpi-icon{font-size:20px;opacity:.7;flex-shrink:0}
@@ -828,7 +828,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='6.8';
+const APP_VERSION='6.8.2';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1769,7 +1769,8 @@ async function rDash(el){
     pTotD=pDe.reduce((s,r)=>s+CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0),0),
     pConsBio=pBi.filter(b=>b.type==='iesire').reduce((s,b)=>s+(+b.value_lei||0),0);
   // Trend helper: returns HTML for trend arrow. lessIsBetter=true means decrease is good
-  function kpiTrend(cur,prev,lessIsBetter){
+  function kpiTrend(cur,prev,lessIsBetter,prevHasData){
+    if(prevHasData===false)return '';
     if(prev===0&&cur===0)return '';
     const diff=cur-prev;if(diff===0)return '<div class="kpi-trend neutral">= vs '+(y-1)+'</div>';
     const up=diff>0,arrow=up?'&#8593;':'&#8595;',sign=up?'+':'';
@@ -1777,6 +1778,7 @@ async function rDash(el){
     return '<div class="kpi-trend '+cls+'">'+arrow+' '+sign+diff+' vs '+(y-1)+'</div>';
   }
   function kpiTrendPct(curN,curD,prevN,prevD){
+    if(prevD===0)return '';
     if(curD===0&&prevD===0)return '';
     const curP=curD?Math.round(curN/curD*100):0,prevP=prevD?Math.round(prevN/prevD*100):0;
     const diff=curP-prevP;if(diff===0)return '<div class="kpi-trend neutral">= vs '+(y-1)+'</div>';
@@ -1793,6 +1795,7 @@ async function rDash(el){
   const ncm=Array(12).fill(0);au.filter(p=>p.result==='neconform').forEach(r=>{if(r.month>=1&&r.month<=12)ncm[r.month-1]++});
   // Sparkline data: deseuri per month
   const dbm=Array(12).fill(0);de.forEach(r=>{if(r.month>=1&&r.month<=12)dbm[r.month-1]+=CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0)});
+  const bbm=Array(12).fill(0);bi.filter(b=>b.type==='iesire').forEach(r=>{if(r.month>=1&&r.month<=12)bbm[r.month-1]+=(+r.value_lei||0)});
 
   const isEN=CFG.lang==='en';
   // Urgent items: expired docs + overdue deadlines
@@ -1803,7 +1806,7 @@ async function rDash(el){
   let h='<div class="print-header"></div>';
   // 1. CONFIG BAR — line under toolbar with arrow
   const _dw=CFG.dash_widgets||{};
-  const _dwItems=[['kpi','KPI-uri principale'],['docsKpi','Documente & Raportari'],['audKpi','Audituri & Instruiri'],['miniCal','Calendar & Evenimente'],['activity','Activitate Recenta'],['charts','Grafice IAAM/Auto'],['desChart','Grafice Deseuri/Sectii']];
+  const _dwItems=[['kpi','KPI-uri principale'],['docsKpi','Documente & Raportari'],['audKpi','Audituri & Instruiri'],['atpKpi','ATP / UV'],['miniCal','Calendar & Evenimente'],['activity','Activitate Recenta'],['charts','Grafice IAAM/Auto'],['desChart','Grafice Deseuri/Sectii']];
   h+='<div class="dash-cfg-bar"><button id="dash-cfg-btn" onclick="toggleDashCfg()" title="'+(isEN?'Configure sections':'Configureaza sectiuni')+'">'+(isEN?'Customize dashboard':'Personalizeaza dashboard')+' &#9660;</button></div>';
   h+='<div id="dash-cfg-panel" class="dash-cfg-panel">';
   _dwItems.forEach(([k,l])=>{h+='<label><input type="checkbox" '+(_dw[k]!==false?'checked':'')+' onchange="toggleWidget(\''+k+'\')"> '+l+'</label>'});
@@ -1823,10 +1826,10 @@ async function rDash(el){
   '</div>';
   // 4. KPI cards
   h+='<div class="dash-section'+(_dw.kpi===false?' hidden':'')+'" data-dw="kpi"><div class="kg">'+
-    '<div class="kc rd"><div class="kl"><span>'+T('kpi_iaam')+'</span>'+sparkSVG(ibm,50,16,'#C0392B')+'</div><div class="kv">'+ia.length+'</div><div class="ks">'+y+'</div>'+kpiTrend(ia.length,pIaC,true)+'</div>'+
+    '<div class="kc rd"><div class="kl"><span>'+T('kpi_iaam')+'</span>'+sparkSVG(ibm,50,16,'#C0392B')+'</div><div class="kv">'+ia.length+'</div><div class="ks">'+y+'</div>'+kpiTrend(ia.length,pIaC,true,pIa.length>0)+'</div>'+
     '<div class="kc tl"><div class="kl"><span>'+T('kpi_autocontrol')+'</span>'+sparkSVG(ncm,50,16,'#0F7B6C')+'</div><div class="kv">'+totP+'</div><div class="ks">'+T('kpi_conf')+': '+fp(conf,totP)+'</div>'+kpiTrendPct(conf,totP,pConf,pAuC)+'</div>'+
-    '<div class="kc am"><div class="kl"><span>'+T('kpi_deseuri')+'</span>'+sparkSVG(dbm,50,16,'#D4A017')+'</div><div class="kv">'+fn(Math.round(totD))+' kg</div><div class="ks">'+y+'</div>'+kpiTrend(Math.round(totD),Math.round(pTotD),true)+'</div>'+
-    '<div class="kc bl"><div class="kl"><span>'+T('kpi_biocide')+'</span></div><div class="kv">'+fn(Math.round(consBio))+' lei</div><div class="ks">'+y+'</div>'+kpiTrend(Math.round(consBio),Math.round(pConsBio),true)+'</div>'+
+    '<div class="kc am"><div class="kl"><span>'+T('kpi_deseuri')+'</span>'+sparkSVG(dbm,50,16,'#D4A017')+'</div><div class="kv">'+fn(Math.round(totD))+' kg</div><div class="ks">'+y+'</div>'+kpiTrend(Math.round(totD),Math.round(pTotD),true,pDe.length>0)+'</div>'+
+    '<div class="kc bl"><div class="kl"><span>'+T('kpi_biocide')+'</span>'+sparkSVG(bbm,50,16,'#2563B0')+'</div><div class="kv">'+fn(Math.round(consBio))+' lei</div><div class="ks">'+y+'</div>'+kpiTrend(Math.round(consBio),Math.round(pConsBio),true,pBi.length>0)+'</div>'+
     '<div class="kc gn"><div class="kl"><span>'+T('kpi_paturi')+'</span></div><div class="kv">'+wb.toFixed(0)+'</div><div class="ks">'+T('kpi_capacitate')+' '+y+'</div></div>'+
   '</div></div>';
   // Docs & deadlines KPI
@@ -1845,6 +1848,17 @@ async function rDash(el){
     '<div class="kc tl"><div class="kl">'+(isEN?'Audits':'Audituri')+'</div><div class="kv">'+audits.length+'</div><div class="ks">'+(isEN?'Avg compliance':'Conformitate medie')+': '+avgCompl+'%</div></div>'+
     '<div class="kc bl"><div class="kl">'+(isEN?'Trainings':'Instruiri')+'</div><div class="kv">'+trains.length+'</div><div class="ks">'+(isEN?'Staff trained':'Personal instruit')+': '+trainedPct+'%</div></div>'+
   '</div></div>';
+  // ATP/UV KPI
+  const atpData=(await ga('atp')).filter(r=>r.year===y);
+  const uvData=(await ga('uvcheck')).filter(r=>r.year===y);
+  const atpNC=atpData.filter(r=>{const st=CFG.atp_surface_types.find(s=>s.id===r.surface_type);return st&&(+r.rlu_value)>(+st.threshold)}).length;
+  const uvNC=uvData.filter(r=>r.result==='neconform').length;
+  if(atpData.length>0||uvData.length>0){
+    h+='<div class="dash-section'+(_dw.atpKpi===false?' hidden':'')+'" data-dw="atpKpi"><div class="kg">'+
+      (atpData.length>0?'<div class="kc tl"><div class="kl"><span>ATP / Bioluminescenta</span></div><div class="kv">'+atpData.length+'</div><div class="ks">'+(atpNC>0?'<span style="color:var(--red)">'+atpNC+' neconforme</span>':'Toate conforme')+'</div></div>':'')+
+      (uvData.length>0?'<div class="kc bl"><div class="kl"><span>UV / Fluorescenta</span></div><div class="kv">'+uvData.length+'</div><div class="ks">'+(uvNC>0?'<span style="color:var(--red)">'+uvNC+' neconforme</span>':'Toate conforme')+'</div></div>':'')+
+    '</div></div>';
+  }
   // Mini-calendar — visible by default
   h+='<div class="dash-section'+(_dw.miniCal===false?' hidden':'')+'" data-dw="miniCal"><div id="dash-mini-cal"></div></div>';
   // Activity feed
@@ -1905,11 +1919,11 @@ const IAAM_SECTIONS=[
   {key:'infection',name:'Infectie',nameEN:'Infection',req:true},
   {key:'etiology',name:'Etiologie',nameEN:'Etiology',req:true},
   {key:'risk',name:'Factori de risc',nameEN:'Risk factors',req:false},
-  {key:'antibiotics',name:'Tratament ATB',nameEN:'ATB Treatment',req:false},
+  {key:'antibiotics',name:'Tratament ATB',nameEN:'ATB Treatment',req:true},
   {key:'history',name:'Istoric clinic',nameEN:'Clinical history',req:false},
-  {key:'contacts',name:'Contacti si focar',nameEN:'Contacts & outbreak',req:false},
-  {key:'measures',name:'Masuri si cauzalitate',nameEN:'Measures & causality',req:false},
-  {key:'discharge',name:'Externare si clasificare',nameEN:'Discharge & classification',req:false}
+  {key:'contacts',name:'Contacti si focar',nameEN:'Contacts & outbreak',req:true},
+  {key:'measures',name:'Masuri si cauzalitate',nameEN:'Measures & causality',req:true},
+  {key:'discharge',name:'Externare si clasificare',nameEN:'Discharge & classification',req:true}
 ];
 var _iaamFilters={search:'',sec:'',mdr:'',compl:'',month:''};
 var _iaamGermeni=[];// [{code,name,mdr}]
@@ -1972,7 +1986,7 @@ async function rIAAM(el){
         '<td>'+(MO[r.month-1]||'?')+'</td>'+
         '<td><strong>'+rSec(r.section)+'</strong><br><span style="font-size:11px;color:var(--txtL)">'+rInf(r.iaam_category||r.infection_type)+'</span></td>'+
         '<td><strong>'+esc(germs)+'</strong>'+(r.mdr?' <span class="bdg bdg-r" style="font-size:9px">MDR</span>':'')+'</td>'+
-        '<td style="font-size:12px">'+(r.patient_initials||r.patient||'—')+(r.fo_number?'<br><span style="font-size:10px;color:var(--txtL)">FO: '+esc(r.fo_number)+'</span>':'')+'</td>'+
+        '<td style="font-size:12px">'+(r.patient_initials||r.patient||'—')+(r.fo_number?'<br><span style="font-size:10px;color:var(--txtL)">'+(r.fo_number.toUpperCase().startsWith('FO')?'':'FO: ')+esc(r.fo_number)+'</span>':'')+'</td>'+
         '<td><span class="compl-badge '+complCls+'">'+comp+'%</span></td>'+
         '<td class="act"><button onclick="editIAAM('+r.id+')" title="'+(isEN?'Edit':'Editeaza')+'">&#9998;</button>'+
         '<button onclick="genFisaIAAM('+r.id+')" title="'+(isEN?'IAAM Sheet':'Fisa IAAM')+'">&#128203;</button>'+
@@ -1993,7 +2007,7 @@ function calcIaamCompletion(d){
     [!!(d.iaam_category&&d.detection), !!(d.iaam_category||d.detection||d.date_confirmed)],
     [!!((d.germeni&&d.germeni.length>0)||(d.organism)), !!((d.germeni&&d.germeni.length>0)||d.organism)],
     [!!(d.risk_factors&&d.risk_factors.length>0), !!(d.risk_factors&&d.risk_factors.length>0)],
-    [!!(d.antibiotics&&d.antibiotics.length>0), !!(d.antibiotics&&d.antibiotics.length>0)],
+    [!!(d.no_antibiotic||(d.antibiotics&&d.antibiotics.length>0)), !!(d.no_antibiotic||(d.antibiotics&&d.antibiotics.length>0))],
     [!!(d.clinical_history), !!(d.clinical_history||d.comorbidities||d.procedures)],
     [!!(d.contacts), !!(d.contacts||d.outbreak)],
     [!!(d.measures&&d.measures.length>0), !!(d.measures&&d.measures.length>0||d.suspected_source)],
@@ -2053,7 +2067,7 @@ function renderIaamSection(step){
       '<div class="fg"><label>Medic curant</label><input id="f-doc" value="'+esc(d.doctor||'')+'"></div>'+
       '<div class="fr3"><div class="fg"><label>Data internarii</label><input type="date" id="f-dint" value="'+(d.date_admission||'')+'" onchange="autoCalcDays()" oninput="autoCalcDays()"></div>'+
       '<div class="fg"><label>Data externarii</label><input type="date" id="f-dext" value="'+(d.date_discharge||'')+'" onchange="autoCalcDays()" oninput="autoCalcDays()"></div>'+
-      '<div class="fg"><label>Nr. zile internare</label><input type="number" id="f-nzi" value="'+(d.days||'')+'" min="0" style="background:#f1f5f9"><div id="f-days-info" style="font-size:11px;color:var(--txtL);margin-top:2px">'+(d.date_admission&&d.date_discharge?'Calculat automat: '+calcDays(d.date_admission,d.date_discharge)+' zile (editabil)':'')+'</div></div></div>'+
+      '<div class="fg"><label>Nr. zile internare</label><input type="number" id="f-nzi" value="'+(d.days||'')+'" min="0" style="background:var(--bg)"><div id="f-days-info" style="font-size:11px;color:var(--txtL);margin-top:2px">'+(d.date_admission&&d.date_discharge?'Calculat automat: '+calcDays(d.date_admission,d.date_discharge)+' zile (editabil)':'')+'</div></div></div>'+
       '<div class="fg"><label>Diagnostic internare</label><textarea id="f-dgi" rows="2">'+esc(d.diag_admission||'')+'</textarea></div>'+
       '<div class="fg"><label>Diagnostic externare</label><textarea id="f-dge" rows="2">'+esc(d.diag_discharge||'')+'</textarea></div>'+
       '<div class="fg"><label>Internari anterioare (ultimele 6 luni)</label><textarea id="f-prev" rows="2">'+esc(d.prev_admissions||'')+'</textarea></div>';
@@ -2077,8 +2091,10 @@ function renderIaamSection(step){
     h=renderRiskSection();
     break;
   case 5: // ATB Treatment
-    h='<div class="fg"><div style="display:flex;gap:6px;margin-bottom:8px"><select id="f-atb-sel" style="flex:1">'+atbOpts()+'</select><select id="f-atb-route" style="width:130px">'+ATB_ROUTES.map(r=>'<option value="'+r.v+'">'+r.n+'</option>').join('')+'</select><button class="btn bo bsm" onclick="addIaamAtb()">+ Adauga</button></div>'+
-      '<div id="f-atb-rows">'+renderAtbRows()+'</div></div>';
+    h='<div class="fg" style="margin-bottom:14px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="f-no-atb" '+(d.no_antibiotic?'checked':'')+' onchange="toggleNoAtb(this.checked)" style="accent-color:#6366F1;width:16px;height:16px"> <span style="font-size:13px;font-weight:600">'+(isEN?'No antibiotic treatment':'Fara tratament antibiotic')+'</span></label></div>'+
+      '<div id="f-atb-block" style="'+(d.no_antibiotic?'opacity:0.4;pointer-events:none':'')+'">'+
+      '<div class="fg"><div style="display:flex;gap:6px;margin-bottom:8px"><select id="f-atb-sel" style="flex:1">'+atbOpts()+'</select><select id="f-atb-route" style="width:130px">'+ATB_ROUTES.map(r=>'<option value="'+r.v+'">'+r.n+'</option>').join('')+'</select><button class="btn bo bsm" onclick="addIaamAtb()">+ Adauga</button></div>'+
+      '<div id="f-atb-rows">'+renderAtbRows()+'</div></div></div>';
     break;
   case 6: // Clinical history
     h='<div class="fg"><label>Istoric clinic (narativ)</label><textarea id="f-hist" rows="4">'+esc(d.clinical_history||'')+'</textarea></div>'+
@@ -2160,6 +2176,7 @@ function collectIaamSection(step){
     // risk_factors collected via toggleRiskFactor/addRiskFromDropdown/removeRiskChip — already in _iaamDraft
     break;
   case 5:
+    d.no_antibiotic=!!document.getElementById('f-no-atb')?.checked;
     d.antibiotics=JSON.parse(JSON.stringify(_iaamAtb));
     d.prev_antibiotics=_iaamAtb.map(a=>a.name).join(', ');
     break;
@@ -2253,6 +2270,12 @@ function removeRiskChip(name){
   _iaamDraft.risk_factors=_iaamDraft.risk_factors.filter(n=>n!==name);
   markFormDirty();
   const content=document.getElementById('iw-content');if(content)content.innerHTML=renderRiskSection();
+}
+
+function toggleNoAtb(checked){
+  _iaamDraft.no_antibiotic=checked;markFormDirty();
+  const block=document.getElementById('f-atb-block');
+  if(block){block.style.opacity=checked?'0.4':'';block.style.pointerEvents=checked?'none':''}
 }
 
 // ═══ IAAM Wizard — editIAAM (rewritten) ═══
@@ -3246,7 +3269,8 @@ async function editBio(id){
   let r=id?(await ga('biocide')).find(x=>x.id===id):{year:A.year,type:'iesire',month:new Date().getMonth()+1};
   if(!r)r={year:A.year,type:'iesire',month:new Date().getMonth()+1};
   _editBioRec=r;
-  const prods=CFG.biocide_products.map(p=>'<option value="'+p.id+'">'+sn(p)+'</option>').join('');
+  const selProd=r.product_id||'';
+  const prods=CFG.biocide_products.map(p=>'<option value="'+p.id+'"'+(p.id===selProd?' selected':'')+'>'+sn(p)+'</option>').join('');
   let attHtml='';
   if(id){
     attHtml='<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)"><label style="font-size:13px;font-weight:700;color:var(--navy);display:block;margin-bottom:10px">Documente ata\u0219ate</label>';
@@ -3273,9 +3297,8 @@ async function editBio(id){
     attHtml='<div class="ib inf" style="margin-top:14px;font-size:11px">Documentele (aviz, fisa tehnica, SDS) pot fi atasate dupa salvarea produsului.</div>';
   }
   openM(id?'Editare':'Inregistrare Noua',
-    '<div class="fr"><div class="fg"><label>Produs</label><input id="f-prod" value="'+(r.product_id||r.product_name||'')+'" list="bp-list" placeholder="Selecteaza produs"></div>'+
+    '<div class="fr"><div class="fg"><label>Produs</label><select id="f-prod"><option value="">— Selecteaza produs —</option>'+prods+'</select><div style="margin-top:4px"><input id="f-prod-custom" placeholder="sau introdu manual un produs nou" value="'+(CFG.biocide_products.find(p=>p.id===(r.product_id||r.product_name))?'':esc(r.product_name||''))+'" style="font-size:11px"></div></div>'+
     '<div class="fg"><label>UM</label><input id="f-um" value="'+(r.unit||'')+'" placeholder="buc 0.5L"></div></div>'+
-    '<datalist id="bp-list">'+prods+'</datalist>'+
     '<div class="fr3"><div class="fg"><label>Tip</label><select id="f-tp"><option value="stoc_initial" '+(r.type==='stoc_initial'?'selected':'')+'>Stoc initial</option><option value="intrare" '+(r.type==='intrare'?'selected':'')+'>Intrare</option><option value="iesire" '+(r.type==='iesire'?'selected':'')+'>Iesire</option></select></div>'+
     '<div class="fg"><label>Luna</label><select id="f-mo"><option value="">—</option>'+moOpts(r.month)+'</select></div>'+
     '<div class="fg"><label>Lot</label><input id="f-lot" value="'+(r.lot||'')+'"></div></div>'+
@@ -3312,11 +3335,12 @@ function removeBioAttModal(key){
 }
 async function saveBio(id){
   const v=s=>document.getElementById(s).value;
-  const prodVal=v('f-prod').trim();
+  const selVal=v('f-prod').trim();
+  const customVal=(document.getElementById('f-prod-custom')?.value||'').trim();
+  const prodVal=selVal||customVal;
   if(!prodVal){alert('Completeaza produsul.');return}
-  // Check if value is an ID or a name
   const prodObj=CFG.biocide_products.find(p=>p.id===prodVal)||CFG.biocide_products.find(p=>p.name===prodVal);
-  const rec={year:A.year,product_id:prodObj?prodObj.id:prodVal,product_name:prodObj?prodObj.name:prodVal,unit:v('f-um').trim(),type:v('f-tp'),month:+v('f-mo')||null,lot:v('f-lot').trim(),quantity:+v('f-qty')||0,value_lei:+v('f-val')||0};
+  const rec={year:A.year,product_id:prodObj?prodObj.id:prodVal,product_name:prodObj?prodObj.name:(customVal||prodVal),unit:v('f-um').trim(),type:v('f-tp'),month:+v('f-mo')||null,lot:v('f-lot').trim(),quantity:+v('f-qty')||0,value_lei:+v('f-val')||0};
   if(id){const old=(await ga('biocide')).find(x=>x.id===id);if(old?.attachments)rec.attachments=old.attachments;rec.id=id}
   await pt('biocide',rec);logActivity((id?'Editat':'Adaugat')+' biocid — '+rec.product_name);closeM();render();
 }
@@ -4326,9 +4350,9 @@ async function rCfg(el){
   if(_cfgTab==='spital'){
   h+=
   '<div class="pn"><div class="ph"><h3>Informatii Spital</h3></div><div class="pb">'+
-    '<div class="fr"><div class="fg"><label>Denumire spital</label><input id="c-name" value="'+CFG.hospital_name+'"></div>'+
+    '<div class="fr"><div class="fg"><label>Denumire spital</label><input id="c-name" value="'+esc(CFG.hospital_name)+'"></div>'+
     '<div class="fg"><label>Denumire scurta</label><input id="c-short" value="'+(CFG.hospital_short||'')+'"></div></div>'+
-    '<div class="fr"><div class="fg"><label>Nume compartiment</label><input id="c-cpiaam" value="'+CFG.cpiaam_name+'"></div>'+
+    '<div class="fr"><div class="fg"><label>Nume compartiment</label><input id="c-cpiaam" value="'+esc(CFG.cpiaam_name)+'"></div>'+
     '<div class="fg"><label>Cod spital PPS</label><input id="c-code" value="'+(CFG.hospital_code||'')+'"></div></div>'+
     '<div class="fr"><div class="fg"><label>Limita bugetara biocide (lei/an)</label><input type="number" id="c-bb" value="'+(CFG.biocide_budget||'')+'"></div>'+
     '<div class="fg"></div></div>'+

@@ -73,21 +73,25 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .cc{position:relative;height:270px}
 
 /* ── Buttons ── */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:none;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.15s;font-family:var(--f)}
-.bp{background:var(--blue);color:#fff}.bp:hover{background:var(--navy)}
-.bs{background:var(--teal);color:#fff}.bs:hover{background:#0A6558}
-.bd{background:var(--red);color:#fff}.bd:hover{background:#A93226}
-.bw{background:var(--amber);color:#fff}.bw:hover{background:#B8890F}
-.bo{background:transparent;border:1px solid var(--brd);color:var(--txt)}.bo:hover{background:var(--bg)}
-.bsm{padding:4px 9px;font-size:11.5px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 18px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s ease;font-family:var(--f);line-height:1.3}
+.bp{background:#6366F1;color:#fff}.bp:hover{background:#4F46E5;transform:translateY(-1px)}
+.bs{background:#10B981;color:#fff}.bs:hover{background:#059669;transform:translateY(-1px)}
+.bd{background:#EF4444;color:#fff}.bd:hover{background:#DC2626;transform:translateY(-1px)}
+.bw{background:#F59E0B;color:#fff}.bw:hover{background:#D97706;transform:translateY(-1px)}
+.bo{background:transparent;border:1px solid var(--brd);color:var(--txt)}.bo:hover{background:var(--bg);border-color:#6366F1}
+.bsm{padding:4px 10px;font-size:11.5px}
 .bg{display:flex;gap:7px;flex-wrap:wrap}
+.btn-x{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;width:28px;height:28px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s ease;padding:0}.btn-x:hover{background:var(--bg)}
+.btn-dl{background:#6366F1;color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;font-family:var(--f);transition:all .15s ease}.btn-dl:hover{background:#4F46E5;transform:translateY(-1px)}
+.dark .btn-x:hover{background:#334155}
+.dark .btn-dl{background:#818CF8}.dark .btn-dl:hover{background:#6366F1}
 
 /* ── Tables ── */
 .dt{width:100%;border-collapse:collapse;font-size:12.5px}
 .dt th{background:#1E293B;color:#fff;padding:9px 10px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
 .dt td{padding:8px 10px;border-bottom:1px solid var(--brd)}
 .dt tr:nth-child(even){background:#F8FAFC}.dt tr:hover{background:#EEF2FF}
-.dt .act{white-space:nowrap}.dt .act button{background:none;border:none;cursor:pointer;padding:2px 5px;border-radius:4px;font-size:12px}
+.dt .act{white-space:nowrap}.dt .act button{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:6px;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s ease}.dt .act button:hover{background:var(--bg)}
 
 /* ── Badges ── */
 .bdg{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10.5px;font-weight:600}
@@ -257,15 +261,25 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dark .bdg-g{background:#064E3B;color:#6EE7B7}.dark .bdg-r{background:#450A0A;color:#FCA5A5}
 .dark .bdg-a{background:#422006;color:#FCD34D}.dark .bdg-b{background:#1E3A5F;color:#93C5FD}
 .dark .fg input,.dark .fg select,.dark .fg textarea{background:#0F172A;border-color:#334155;color:#E2E8F0}
-.dark .bo{border-color:#475569;color:#CBD5E1}.dark .bo:hover{background:#334155}
+.dark .bo{border-color:#475569;color:#CBD5E1}.dark .bo:hover{background:#334155;border-color:#818CF8}
+.dark .bp{background:#818CF8;color:#fff}.dark .bp:hover{background:#6366F1}
+.dark .bs{background:#34D399;color:#064E3B}.dark .bs:hover{background:#10B981}
+.dark .bd{background:#FCA5A5;color:#450A0A}.dark .bd:hover{background:#EF4444;color:#fff}
+.dark .bw{background:#FBBF24;color:#422006}.dark .bw:hover{background:#F59E0B}
 .dark .wiz-card{background:#1E293B}
 .dark .rc{border-color:#334155}
 .dark .tag{background:#1E3A5F;border-color:#2563B0;color:#93C5FD}
 .dark .wiz-note{background:#422006;border-color:#92400E;color:#FCD34D}
 .dark .notif-dd-h{color:#93C5FD}
 .dark .notif-item:hover{background:#0F172A}
-.dark .sb-bk button{background:#B8890F;color:#fff}
-.dark .bp{background:#3B82F6}.dark .bp:hover{background:#2563B0}
+.dark .sb-bk button{background:#FBBF24;color:#422006}.dark .sb-bk button:hover{background:#F59E0B}
+.dark .dash-quick button{background:#1E293B;border-color:#475569;color:#CBD5E1}
+.dark .dash-quick button:hover{background:#6366F1;border-color:#6366F1;color:#fff}
+.dark .tb-icon:hover{background:#334155}
+.dark .dt .act button:hover{background:#334155}
+.dark .dash-cfg-toggle button{color:#94A3B8}.dark .dash-cfg-toggle button:hover{background:#334155;color:#E2E8F0}
+.dark .dash-cfg-panel label{color:#94A3B8}
+.dark .cal-nav button{border-color:#475569;color:#CBD5E1}.dark .cal-nav button:hover{background:#334155;border-color:#818CF8}
 .dark .ac-cell-gn{background:#1A3D1A;color:#86EFAC}.dark .ac-cell-yl{background:#3D2E0A;color:#FCD34D}
 .dark .ac-cell-rd{background:#450A0A;color:#FCA5A5}.dark .ac-cell-gr{background:#1E293B;color:#64748B}
 .dark .ac-matrix td:first-child{background:#0F172A;color:#CBD5E1}
@@ -274,9 +288,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 
 /* ── Toolbar extras ── */
 .tb-actions{display:flex;align-items:center;gap:10px}
-.tb-icon{background:none;border:none;cursor:pointer;font-size:18px;padding:4px 6px;border-radius:6px;color:var(--txtL);position:relative;transition:.15s}
+.tb-icon{background:none;border:none;cursor:pointer;font-size:18px;width:34px;height:34px;border-radius:8px;color:var(--txtL);position:relative;transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center}
 .tb-icon:hover{background:var(--bg);color:var(--txt)}
-.tb-icon .notif-badge{position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;line-height:1}
+.tb-icon .notif-badge{position:absolute;top:-2px;right:-2px;background:#EF4444;color:#fff;font-size:10px;font-weight:600;min-width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1}
 
 /* ── Notification Dropdown ── */
 .notif-dd{position:absolute;top:100%;right:0;width:340px;background:var(--card);border:1px solid var(--brd);border-radius:var(--rL);box-shadow:var(--shL);z-index:60;display:none;max-height:400px;overflow-y:auto}
@@ -297,8 +311,8 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 
 /* ── Calendar ── */
 .cal-nav{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
-.cal-nav button{background:none;border:1px solid var(--brd);border-radius:var(--r);padding:6px 12px;cursor:pointer;font-size:14px;color:var(--txt);font-family:var(--f)}
-.cal-nav button:hover{background:var(--bg)}
+.cal-nav button{background:none;border:1px solid var(--brd);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:14px;color:var(--txt);font-family:var(--f);transition:all .15s ease;font-weight:500}
+.cal-nav button:hover{background:var(--bg);border-color:#6366F1}
 .cal-nav .cal-title{font-size:18px;font-weight:700;color:var(--navy);min-width:180px;text-align:center}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--brd);border:1px solid var(--brd);border-radius:var(--r);overflow:hidden}
 .cal-hdr{background:var(--navy);color:#fff;padding:8px 4px;text-align:center;font-size:12px;font-weight:700}
@@ -371,14 +385,18 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .kpi-trend.neutral{color:var(--txtL);background:var(--bg)}
 /* Quick actions */
 .dash-quick{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap}
-.dash-quick button{display:flex;align-items:center;gap:7px;padding:10px 18px;border:1px solid var(--brd);border-radius:24px;background:var(--card);color:var(--txt);font-size:12.5px;font-weight:600;font-family:var(--f);cursor:pointer;transition:all .2s ease;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.dash-quick button:hover{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(37,99,176,.25);transform:translateY(-1px)}
+.dash-quick button{display:flex;align-items:center;gap:7px;padding:10px 18px;border:1px solid var(--brd);border-radius:24px;background:var(--card);color:var(--txt);font-size:12.5px;font-weight:500;font-family:var(--f);cursor:pointer;transition:all .15s ease}
+.dash-quick button:hover{background:#6366F1;border-color:#6366F1;color:#fff;transform:translateY(-1px)}
 .dash-quick button .qicon{font-size:15px}
-.dash-toggle{display:flex;justify-content:center;padding:8px 0;margin:4px 0}
-.dash-toggle button{background:none;border:1px solid var(--brd);border-radius:20px;padding:6px 20px;cursor:pointer;color:var(--txtL);font-size:12px;font-family:var(--f);transition:.2s}
-.dash-toggle button:hover{background:var(--bg);color:var(--navy)}
-#dash-details{overflow:hidden;transition:max-height .4s ease;max-height:0}
-#dash-details.open{max-height:4000px}
+.dash-cfg-toggle{display:flex;justify-content:center;padding:2px 0;margin:0}
+.dash-cfg-toggle button{background:none;border:none;cursor:pointer;color:var(--txtL);font-size:16px;width:32px;height:20px;border-radius:10px;transition:.2s;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.dash-cfg-toggle button:hover{color:var(--navy);background:var(--bg)}
+.dash-cfg-panel{overflow:hidden;max-height:0;transition:max-height .3s ease;display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:center;padding:0 12px}
+.dash-cfg-panel.open{max-height:120px;padding:8px 12px}
+.dash-cfg-panel label{font-size:11.5px;color:var(--txtL);cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;user-select:none}
+.dash-cfg-panel input[type="checkbox"]{accent-color:#6366F1;margin:0;cursor:pointer}
+.dash-section{transition:opacity .3s ease,max-height .3s ease;overflow:hidden}
+.dash-section.hidden{max-height:0!important;opacity:0;padding:0!important;margin:0!important}
 /* Activity feed */
 .dash-activity{background:var(--card);border:none;border-radius:16px;padding:16px 20px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .dash-activity strong{font-size:13px;color:var(--navy);display:block;margin-bottom:10px}
@@ -553,10 +571,10 @@ body{display:block!important;background:#fff!important}
     <h2 id="pt">Dashboard</h2>
     <div class="tb-actions">
       <div style="position:relative"><span id="sync-indicator" style="font-size:11px;cursor:pointer;white-space:nowrap;padding:4px 10px;border-radius:12px" onclick="toggleSyncMenu()" title="Click pentru optiuni sincronizare">&#128308; Neconectat</span>
-      <div id="sync-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--card);border:1px solid var(--brd);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:240px;z-index:60;padding:4px 0">
-        <button onclick="syncReadFile();closeSyncMenu()" style="display:block;width:100%;text-align:left;padding:8px 14px;border:none;background:none;font-size:12px;cursor:pointer;font-family:var(--f)">&#128194; Reconecteaza la fisierul existent</button>
-        <button onclick="syncPickFile();closeSyncMenu()" style="display:block;width:100%;text-align:left;padding:8px 14px;border:none;background:none;font-size:12px;cursor:pointer;font-family:var(--f)">&#128190; Conecteaza fisier nou</button>
-        <button onclick="disconnectSync();closeSyncMenu()" style="display:block;width:100%;text-align:left;padding:8px 14px;border:none;background:none;font-size:12px;cursor:pointer;font-family:var(--f);color:var(--red)">&#128683; Deconecteaza fisierul</button>
+      <div id="sync-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--card);border:1px solid var(--brd);border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:240px;z-index:60;padding:6px">
+        <button onclick="syncReadFile();closeSyncMenu()" style="display:block;width:100%;text-align:left;padding:10px 14px;border:none;background:none;font-size:12px;cursor:pointer;font-family:var(--f);border-radius:8px;transition:background .15s;color:var(--txt)" onmouseenter="this.style.background='var(--bg)'" onmouseleave="this.style.background='none'">&#128194; Reconecteaza la fisierul existent</button>
+        <button onclick="syncPickFile();closeSyncMenu()" style="display:block;width:100%;text-align:left;padding:10px 14px;border:none;background:none;font-size:12px;cursor:pointer;font-family:var(--f);border-radius:8px;transition:background .15s;color:var(--txt)" onmouseenter="this.style.background='var(--bg)'" onmouseleave="this.style.background='none'">&#128190; Conecteaza fisier nou</button>
+        <button onclick="disconnectSync();closeSyncMenu()" style="display:block;width:100%;text-align:left;padding:10px 14px;border:none;background:none;font-size:12px;cursor:pointer;font-family:var(--f);border-radius:8px;transition:background .15s;color:var(--red)" onmouseenter="this.style.background='var(--bg)'" onmouseleave="this.style.background='none'">&#128683; Deconecteaza fisierul</button>
       </div></div>
       <div style="width:1px;height:18px;background:var(--brd);margin:0 4px"></div>
       <div style="position:relative">
@@ -731,7 +749,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='6.6.2';
+const APP_VERSION='6.7.1';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1079,7 +1097,7 @@ function renderGermeniCards(){if(_iaamGermeni.length===0)return '<div style="col
   h+='<strong style="font-size:12px">'+esc(g.name)+' ('+esc(g.code)+')</strong>';
   if(needsMDRo(g.code)){h+='<select onchange="_iaamGermeni['+i+'].mdr=this.value" style="padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'+MDR_OPTS.map(o=>'<option'+(g.mdr===o?' selected':'')+'>'+o+'</option>').join('')+'</select>'}
   if(needsCustomName(g.code)){h+='<input placeholder="Specifica (optional)" value="'+esc(g.name_custom||'')+'" onchange="_iaamGermeni['+i+'].name_custom=this.value;markFormDirty()" style="width:140px;padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'}
-  h+='<button onclick="removeIaamGermen('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">&times;</button></div>';return h}).join('')}
+  h+='<button onclick="removeIaamGermen('+i+')" class="btn-x">&times;</button></div>';return h}).join('')}
 function addIaamGermen(){const sel=document.getElementById('f-germ-sel');if(!sel||!sel.value)return;if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}if(_iaamGermeni.find(g=>g.code===sel.value))return;const name=germenName(sel.value);_iaamGermeni.push({code:sel.value,name,mdr:'Nu'});sel.value='';document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
 function selectGermenFromDD(code){if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}if(_iaamGermeni.find(g=>g.code===code))return;const name=germenName(code);_iaamGermeni.push({code,name,mdr:needsMDRo(code)?'Nu':''});markFormDirty();const si=document.getElementById('f-germ-search');if(si)si.value='';hideGermeniDD();document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
 function addGermenManual(){if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}const name=prompt('Numele germenului:');if(!name||!name.trim())return;_iaamGermeni.push({code:'MANUAL',name:name.trim(),mdr:'Nu'});markFormDirty();document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
@@ -1093,7 +1111,7 @@ function filterGermeniDropdown(q){const dd=document.getElementById('f-germ-dd');
     h+='<div onclick="selectGermenFromDD(\''+it.c+'\')" style="padding:5px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--bg)" onmouseenter="this.style.background=\'var(--bg)\'" onmouseleave="this.style.background=\'\'">'+esc(it.n)+' <span style="color:var(--txtL);font-size:10px">('+it.c+')</span></div>'});
   dd.innerHTML=h;dd.style.display='block'}
 function removeIaamGermen(i){_iaamGermeni.splice(i,1);document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
-function renderAtbRows(){if(_iaamAtb.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun antibiotic adaugat.</div>';let h='<table class="dt" style="font-size:12px"><thead><tr><th>Antibiotic</th><th>Cale</th><th>Start</th><th>Stop</th><th>Zile</th><th style="width:30px"></th></tr></thead><tbody>';_iaamAtb.forEach((a,i)=>{const days=calcDays(a.date_start,a.date_stop);h+='<tr><td><strong>'+a.name+'</strong><br><span style="font-size:10px;color:var(--txtL)">'+a.atc+'</span></td><td>'+a.route+'</td><td><input type="date" value="'+(a.date_start||'')+'" onchange="_iaamAtb['+i+'].date_start=this.value;document.getElementById(\'f-atb-rows\').innerHTML=renderAtbRows()" style="font-size:11px;padding:2px;border:1px solid var(--brd);border-radius:4px"></td><td><input type="date" value="'+(a.date_stop||'')+'" onchange="_iaamAtb['+i+'].date_stop=this.value;document.getElementById(\'f-atb-rows\').innerHTML=renderAtbRows()" style="font-size:11px;padding:2px;border:1px solid var(--brd);border-radius:4px"></td><td>'+(days||'—')+'</td><td><button onclick="removeIaamAtb('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">&times;</button></td></tr>'});h+='</tbody></table>';return h}
+function renderAtbRows(){if(_iaamAtb.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun antibiotic adaugat.</div>';let h='<table class="dt" style="font-size:12px"><thead><tr><th>Antibiotic</th><th>Cale</th><th>Start</th><th>Stop</th><th>Zile</th><th style="width:30px"></th></tr></thead><tbody>';_iaamAtb.forEach((a,i)=>{const days=calcDays(a.date_start,a.date_stop);h+='<tr><td><strong>'+a.name+'</strong><br><span style="font-size:10px;color:var(--txtL)">'+a.atc+'</span></td><td>'+a.route+'</td><td><input type="date" value="'+(a.date_start||'')+'" onchange="_iaamAtb['+i+'].date_start=this.value;document.getElementById(\'f-atb-rows\').innerHTML=renderAtbRows()" style="font-size:11px;padding:2px;border:1px solid var(--brd);border-radius:4px"></td><td><input type="date" value="'+(a.date_stop||'')+'" onchange="_iaamAtb['+i+'].date_stop=this.value;document.getElementById(\'f-atb-rows\').innerHTML=renderAtbRows()" style="font-size:11px;padding:2px;border:1px solid var(--brd);border-radius:4px"></td><td>'+(days||'—')+'</td><td><button onclick="removeIaamAtb('+i+')" class="btn-x">&times;</button></td></tr>'});h+='</tbody></table>';return h}
 function addIaamAtb(){const sel=document.getElementById('f-atb-sel'),route=document.getElementById('f-atb-route');if(!sel||!sel.value)return;const opt=sel.options[sel.selectedIndex];_iaamAtb.push({atc:sel.value,name:opt.text.split(' (')[0],route:route?route.value:'IV',date_start:'',date_stop:''});sel.value='';document.getElementById('f-atb-rows').innerHTML=renderAtbRows()}
 function removeIaamAtb(i){_iaamAtb.splice(i,1);document.getElementById('f-atb-rows').innerHTML=renderAtbRows()}
 const IAAM_CATS=[
@@ -1413,7 +1431,7 @@ function renderWizStep(step){
     c.innerHTML=bar+
       '<h2>Bun venit!</h2><p class="wiz-sub">Configureaza-ti spitalul pentru a incepe lucrul cu CPIAAM Manager.</p>'+
       '<div style="background:#EBF5FB;border:2px solid #2563B0;border-radius:8px;padding:14px;margin-bottom:16px;text-align:center">'+
-        '<button onclick="downloadApp()" style="background:#2563B0;color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">&#128190; Descarca aplicatia pe calculator</button>'+
+        '<button class="btn-dl" onclick="downloadApp()" style="margin-bottom:10px">&#128190; Descarca aplicatia pe calculator</button>'+
         '<p style="font-size:12px;color:#1B3A6B;line-height:1.5;margin:0">Pentru functionalitate completa (sincronizare date, backup automat, lucru offline), descarca aplicatia si pune-o intr-un folder pe calculator (recomandat in OneDrive sau Google Drive). Poti folosi aplicatia si direct din browser, dar datele vor fi doar locale si se pierd la stergerea datelor de navigare.</p>'+
       '</div>'+
       '<div class="fg"><label>Denumirea spitalului</label><input id="wz-hosp" value="'+WZ.hospital_name+'" placeholder="ex: Spitalul Municipal ..."></div>'+
@@ -1705,41 +1723,42 @@ async function rDash(el){
     '<button onclick="nav(\'audituri\');setTimeout(()=>editAudit(),100)"><span class="qicon">&#128203;</span> '+(isEN?'New Audit':'Audit Nou')+'</button>'+
     '<button onclick="nav(\'rapoarte\')"><span class="qicon">&#128196;</span> '+(isEN?'Generate Report':'Genereaza Raport')+'</button>'+
   '</div>';
-  // 3. KPI cards
-  if(widgetVisible('kpi')){
-    h+='<div class="kg">'+
-      '<div class="kc rd"><div class="kl"><span>'+T('kpi_iaam')+'</span>'+sparkSVG(ibm,50,16,'#C0392B')+'</div><div class="kv">'+ia.length+'</div><div class="ks">'+y+'</div>'+kpiTrend(ia.length,pIaC,true)+'</div>'+
-      '<div class="kc tl"><div class="kl"><span>'+T('kpi_autocontrol')+'</span>'+sparkSVG(ncm,50,16,'#0F7B6C')+'</div><div class="kv">'+totP+'</div><div class="ks">'+T('kpi_conf')+': '+fp(conf,totP)+'</div>'+kpiTrendPct(conf,totP,pConf,pAuC)+'</div>'+
-      '<div class="kc am"><div class="kl"><span>'+T('kpi_deseuri')+'</span>'+sparkSVG(dbm,50,16,'#D4A017')+'</div><div class="kv">'+fn(Math.round(totD))+' kg</div><div class="ks">'+y+'</div>'+kpiTrend(Math.round(totD),Math.round(pTotD),true)+'</div>'+
-      '<div class="kc bl"><div class="kl"><span>'+T('kpi_biocide')+'</span></div><div class="kv">'+fn(Math.round(consBio))+' lei</div><div class="ks">'+y+'</div>'+kpiTrend(Math.round(consBio),Math.round(pConsBio),true)+'</div>'+
-      '<div class="kc gn"><div class="kl"><span>'+T('kpi_paturi')+'</span></div><div class="kv">'+wb.toFixed(0)+'</div><div class="ks">'+T('kpi_capacitate')+' '+y+'</div></div>'+
-    '</div>'}
+  // 3. CONFIG DROPDOWN (arrow + checkboxes)
+  const _dw=CFG.dash_widgets||{};
+  const _dwItems=[['kpi','KPI-uri principale'],['docsKpi','Documente & Raportari'],['audKpi','Audituri & Instruiri'],['miniCal','Calendar & Evenimente'],['activity','Activitate Recenta'],['charts','Grafice IAAM/Auto'],['desChart','Grafice Deseuri/Sectii']];
+  h+='<div class="dash-cfg-toggle"><button id="dash-cfg-btn" onclick="toggleDashCfg()" title="'+(isEN?'Configure sections':'Configureaza sectiuni')+'">&#9660;</button></div>';
+  h+='<div id="dash-cfg-panel" class="dash-cfg-panel">';
+  _dwItems.forEach(([k,l])=>{h+='<label><input type="checkbox" '+(_dw[k]!==false?'checked':'')+' onchange="toggleWidget(\''+k+'\')"> '+l+'</label>'});
+  h+='</div>';
+  // 4. KPI cards
+  h+='<div class="dash-section'+(_dw.kpi===false?' hidden':'')+'" data-dw="kpi"><div class="kg">'+
+    '<div class="kc rd"><div class="kl"><span>'+T('kpi_iaam')+'</span>'+sparkSVG(ibm,50,16,'#C0392B')+'</div><div class="kv">'+ia.length+'</div><div class="ks">'+y+'</div>'+kpiTrend(ia.length,pIaC,true)+'</div>'+
+    '<div class="kc tl"><div class="kl"><span>'+T('kpi_autocontrol')+'</span>'+sparkSVG(ncm,50,16,'#0F7B6C')+'</div><div class="kv">'+totP+'</div><div class="ks">'+T('kpi_conf')+': '+fp(conf,totP)+'</div>'+kpiTrendPct(conf,totP,pConf,pAuC)+'</div>'+
+    '<div class="kc am"><div class="kl"><span>'+T('kpi_deseuri')+'</span>'+sparkSVG(dbm,50,16,'#D4A017')+'</div><div class="kv">'+fn(Math.round(totD))+' kg</div><div class="ks">'+y+'</div>'+kpiTrend(Math.round(totD),Math.round(pTotD),true)+'</div>'+
+    '<div class="kc bl"><div class="kl"><span>'+T('kpi_biocide')+'</span></div><div class="kv">'+fn(Math.round(consBio))+' lei</div><div class="ks">'+y+'</div>'+kpiTrend(Math.round(consBio),Math.round(pConsBio),true)+'</div>'+
+    '<div class="kc gn"><div class="kl"><span>'+T('kpi_paturi')+'</span></div><div class="kv">'+wb.toFixed(0)+'</div><div class="ks">'+T('kpi_capacitate')+' '+y+'</div></div>'+
+  '</div></div>';
   // Docs & deadlines KPI
-  if(widgetVisible('docsKpi')){
-    h+='<div class="kg">'+
-      '<div class="kc gn"><div class="kl">'+T('kpi_docs_val')+'</div><div class="kv">'+docsValid+'</div><div class="ks">'+(docsExpSoon>0?docsExpSoon+(isEN?' expiring soon':' expira curand'):T('kpi_ok'))+'</div></div>'+
-      (docsExpired>0?'<div class="kc rd"><div class="kl">'+(isEN?'EXPIRED DOCUMENTS':'DOCUMENTE EXPIRATE')+'</div><div class="kv">'+docsExpired+'</div></div>':'')+
-      '<div class="kc am"><div class="kl">'+T('kpi_rap_30z')+'</div><div class="kv">'+dlsUp+'</div><div class="ks"><a href="#" onclick="nav(\'termene\');return false" style="color:var(--amber);font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
-    '</div>'}
+  h+='<div class="dash-section'+(_dw.docsKpi===false?' hidden':'')+'" data-dw="docsKpi"><div class="kg">'+
+    '<div class="kc gn"><div class="kl">'+T('kpi_docs_val')+'</div><div class="kv">'+docsValid+'</div><div class="ks">'+(docsExpSoon>0?docsExpSoon+(isEN?' expiring soon':' expira curand'):T('kpi_ok'))+'</div></div>'+
+    (docsExpired>0?'<div class="kc rd"><div class="kl">'+(isEN?'EXPIRED DOCUMENTS':'DOCUMENTE EXPIRATE')+'</div><div class="kv">'+docsExpired+'</div></div>':'')+
+    '<div class="kc am"><div class="kl">'+T('kpi_rap_30z')+'</div><div class="kv">'+dlsUp+'</div><div class="ks"><a href="#" onclick="nav(\'termene\');return false" style="color:var(--amber);font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
+  '</div></div>';
   // Audituri + Instruire KPI
   const audits=(await ga('audits')).filter(r=>r.year===y);
   const trains=(await ga('trainings')).filter(r=>r.year===y);
-  if(audits.length>0||trains.length>0){
-    const avgCompl=audits.length>0?Math.round(audits.reduce((s,r)=>s+(r.compliance_pct||0),0)/audits.length*10)/10:0;
-    const trainedNames=new Set();trains.forEach(r=>(r.participants||[]).filter(p=>p.signed).forEach(p=>trainedNames.add(p.name)));
-    const trainedPct=(CFG.personnel||[]).length>0?Math.round(trainedNames.size/(CFG.personnel||[]).length*100):0;
-    h+='<div class="kg">'+
-      '<div class="kc tl"><div class="kl">'+(isEN?'Audits':'Audituri')+'</div><div class="kv">'+audits.length+'</div><div class="ks">'+(isEN?'Avg compliance':'Conformitate medie')+': '+avgCompl+'%</div></div>'+
-      '<div class="kc bl"><div class="kl">'+(isEN?'Trainings':'Instruiri')+'</div><div class="kv">'+trains.length+'</div><div class="ks">'+(isEN?'Staff trained':'Personal instruit')+': '+trainedPct+'%</div></div>'+
-    '</div>'}
-  // 4. TOGGLE button for details
-  h+='<div class="dash-toggle"><button id="dash-details-btn" onclick="toggleDashDetails()">'+(_dashDetails?'&#9650; '+(isEN?'Hide details':'Ascunde detalii'):'&#9660; '+(isEN?'Show details':'Arata detalii'))+'</button></div>';
-  // 5. DETAILS wrapper (hidden by default)
-  h+='<div id="dash-details"'+(_dashDetails?' class="open"':'')+'>';
-  // Mini-calendar
-  if(widgetVisible('miniCal')){h+='<div id="dash-mini-cal"></div>'}
+  const avgCompl=audits.length>0?Math.round(audits.reduce((s,r)=>s+(r.compliance_pct||0),0)/audits.length*10)/10:0;
+  const trainedNames=new Set();trains.forEach(r=>(r.participants||[]).filter(p=>p.signed).forEach(p=>trainedNames.add(p.name)));
+  const trainedPct=(CFG.personnel||[]).length>0?Math.round(trainedNames.size/(CFG.personnel||[]).length*100):0;
+  h+='<div class="dash-section'+(_dw.audKpi===false?' hidden':'')+'" data-dw="audKpi"><div class="kg">'+
+    '<div class="kc tl"><div class="kl">'+(isEN?'Audits':'Audituri')+'</div><div class="kv">'+audits.length+'</div><div class="ks">'+(isEN?'Avg compliance':'Conformitate medie')+': '+avgCompl+'%</div></div>'+
+    '<div class="kc bl"><div class="kl">'+(isEN?'Trainings':'Instruiri')+'</div><div class="kv">'+trains.length+'</div><div class="ks">'+(isEN?'Staff trained':'Personal instruit')+': '+trainedPct+'%</div></div>'+
+  '</div></div>';
+  // Mini-calendar — visible by default
+  h+='<div class="dash-section'+(_dw.miniCal===false?' hidden':'')+'" data-dw="miniCal"><div id="dash-mini-cal"></div></div>';
   // Activity feed
   const actLog=getActivityLog();
+  h+='<div class="dash-section'+(_dw.activity===false?' hidden':'')+'" data-dw="activity">';
   if(actLog.length>0){
     h+='<div class="dash-activity"><strong>'+(isEN?'Recent Activity':'Activitate Recenta')+'</strong>';
     actLog.slice(0,5).forEach(a=>{
@@ -1748,27 +1767,26 @@ async function rDash(el){
     });
     h+='</div>';
   }
-  // Charts
-  if(widgetVisible('charts')){
-    h+='<div class="cr">'+
-      '<div class="cb"><h4>'+T('ch_iaam_lunar')+'</h4><div class="cc"><canvas id="c1"></canvas></div></div>'+
-      '<div class="cb"><h4>'+T('ch_auto_conf')+'</h4><div class="cc"><canvas id="c2"></canvas></div></div>'+
-    '</div>'}
-  if(widgetVisible('desChart')){
-    h+='<div class="cr">'+
-      '<div class="cb"><h4>'+T('ch_deseuri_lunar')+'</h4><div class="cc"><canvas id="c3"></canvas></div></div>'+
-      '<div class="cb"><h4>'+T('ch_iaam_sectii')+'</h4><div class="cc"><canvas id="c4"></canvas></div></div>'+
-    '</div>'}
-  h+='</div>'; // close #dash-details
+  h+='</div>';
+  // Charts IAAM/Auto
+  h+='<div class="dash-section'+(_dw.charts===false?' hidden':'')+'" data-dw="charts"><div class="cr">'+
+    '<div class="cb"><h4>'+T('ch_iaam_lunar')+'</h4><div class="cc"><canvas id="c1"></canvas></div></div>'+
+    '<div class="cb"><h4>'+T('ch_auto_conf')+'</h4><div class="cc"><canvas id="c2"></canvas></div></div>'+
+  '</div></div>';
+  // Charts Deseuri/Sectii
+  h+='<div class="dash-section'+(_dw.desChart===false?' hidden':'')+'" data-dw="desChart"><div class="cr">'+
+    '<div class="cb"><h4>'+T('ch_deseuri_lunar')+'</h4><div class="cc"><canvas id="c3"></canvas></div></div>'+
+    '<div class="cb"><h4>'+T('ch_iaam_sectii')+'</h4><div class="cc"><canvas id="c4"></canvas></div></div>'+
+  '</div></div>';
   el.innerHTML=h;
   // Store chart data for lazy init
   A._dashChartData={ibm,conf,totP,dbm,ia,MO};
-  // Build charts only if details already open
-  if(_dashDetails)initDashCharts();
+  // Build charts if visible
+  if(_dw.charts!==false||_dw.desChart!==false)initDashCharts();
   // Build notifications
   buildNotifications();
-  // Mini-calendar + upcoming 7 days
-  if(_dashDetails&&widgetVisible('miniCal')){const mc=document.getElementById('dash-mini-cal');if(mc)renderDashCalendar().then(html=>{mc.innerHTML=html})}
+  // Mini-calendar
+  if(_dw.miniCal!==false){const mc=document.getElementById('dash-mini-cal');if(mc)renderDashCalendar().then(html=>{mc.innerHTML=html})}
 }
 function initDashCharts(){
   const d=A._dashChartData;if(!d)return;
@@ -1905,7 +1923,7 @@ async function editIAAM(id){
     '<div class="fg"><label>Clasificare finala</label><textarea id="f-class" rows="2">'+(r.classification||'')+'</textarea></div>'+
     '<h4 style="color:var(--navy);margin:16px 0 10px;font-size:13px">XII. CONCLUZII</h4>'+
     '<div class="fg"><label>Concluzii si recomandari</label><textarea id="f-concl" rows="3">'+(r.conclusions||'')+'</textarea></div>',
-  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button>'+(id?'<button class="btn" style="background:var(--blue);color:#fff" onclick="genFisaIAAM('+id+')">&#128203; Genera Fisa IAAM</button>':'')+
+  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button>'+(id?'<button class="btn bp" onclick="genFisaIAAM('+id+')">&#128203; Genera Fisa IAAM</button>':'')+
   '<button class="btn bp" onclick="saveIAAM('+(id||'null')+')">Salveaza</button>');
   setTimeout(()=>{addDatePreview('f-dob');addDatePreview('f-dint');addDatePreview('f-dext');addDatePreview('f-deces-date');addDatePreview('f-dconf');attachDirtyTracking()},50);
 }
@@ -3336,8 +3354,8 @@ async function rCalendar(el){
   const isEN=CFG.lang==='en';
   // Tab bar: Calendar | Raportari
   let tabs_h='<div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--brd)">'+
-    '<button onclick="_calTab=\'calendar\';render()" style="padding:8px 20px;border:none;cursor:pointer;font-weight:600;font-size:14px;background:none;border-bottom:3px solid '+(_calTab==='calendar'?'var(--navy)':'transparent')+';color:'+(_calTab==='calendar'?'var(--navy)':'var(--txtL)')+'">&#128197; '+(isEN?'Calendar':'Calendar')+'</button>'+
-    '<button onclick="_calTab=\'termene\';render()" style="padding:8px 20px;border:none;cursor:pointer;font-weight:600;font-size:14px;background:none;border-bottom:3px solid '+(_calTab==='termene'?'var(--navy)':'transparent')+';color:'+(_calTab==='termene'?'var(--navy)':'var(--txtL)')+'">&#128203; '+(isEN?'Reporting Deadlines':'Raportari / Termene')+'</button>'+
+    '<button onclick="_calTab=\'calendar\';render()" style="padding:8px 20px;border:none;cursor:pointer;font-weight:500;font-size:14px;background:none;border-bottom:3px solid '+(_calTab==='calendar'?'#6366F1':'transparent')+';color:'+(_calTab==='calendar'?'#6366F1':'var(--txtL)')+';transition:all .15s ease;font-family:var(--f)">&#128197; '+(isEN?'Calendar':'Calendar')+'</button>'+
+    '<button onclick="_calTab=\'termene\';render()" style="padding:8px 20px;border:none;cursor:pointer;font-weight:500;font-size:14px;background:none;border-bottom:3px solid '+(_calTab==='termene'?'#6366F1':'transparent')+';color:'+(_calTab==='termene'?'#6366F1':'var(--txtL)')+';transition:all .15s ease;font-family:var(--f)">&#128203; '+(isEN?'Reporting Deadlines':'Raportari / Termene')+'</button>'+
   '</div>';
   if(_calTab==='termene'){el.innerHTML=tabs_h;const termDiv=document.createElement('div');el.appendChild(termDiv);return rTerm(termDiv)}
   const y=_calYear,m=_calMonth;
@@ -3386,7 +3404,7 @@ async function calDayClick(dateStr){
   const mNames=isEN?LANG.en.months:MO;
   const pop=document.getElementById('cal-pop'),ov=document.getElementById('cal-pop-ov');
   let h='<div class="cal-popup-h"><span>'+day+' '+mNames[parseInt(dateStr.slice(5,7))-1]+' '+dateStr.slice(0,4)+'</span>'+
-    '<button style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--txtL)" onclick="closeCalPopup()">&times;</button></div>'+
+    '<button class="btn-x" style="font-size:18px" onclick="closeCalPopup()">&times;</button></div>'+
     '<div class="cal-popup-body">';
   if(!dayEvts.length){h+='<p style="color:var(--txtL);text-align:center;padding:16px">'+T('cal_no_events')+'</p>'}
   else{dayEvts.forEach(ev=>{
@@ -3418,7 +3436,7 @@ async function editCalEvent(id,prefillDate){
     '<div class="fg"><label>'+(isEN?'Description':'Descriere')+'</label><textarea id="f-evt-desc" rows="3">'+((r.description||'').replace(/</g,'&lt;'))+'</textarea></div>'+
     '<div class="fg"><label>'+(isEN?'Notes':'Observatii')+'</label><textarea id="f-evt-notes" rows="2">'+((r.notes||'').replace(/</g,'&lt;'))+'</textarea></div>',
     '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaza')+'</button>'+
-    (id?'<button class="btn" style="background:var(--red);color:#fff" onclick="deleteCalEvent('+id+');closeM()">'+(isEN?'Delete':'Sterge')+'</button>':'')+
+    (id?'<button class="btn bd" onclick="deleteCalEvent('+id+');closeM()">'+(isEN?'Delete':'Sterge')+'</button>':'')+
     '<button class="btn bp" onclick="saveCalEvent('+(id||'null')+')">'+(isEN?'Save':'Salveaza')+'</button>');
   setTimeout(()=>{addDatePreview('f-evt-date');addDatePreview('f-evt-date-end');attachDirtyTracking()},50);
 }
@@ -3641,7 +3659,7 @@ function renderAuditItemsHTML(){
       h+='<td style="text-align:center"><input type="radio" name="ai'+i+'" '+(it.result==='NA'?'checked':'')+' onchange="_auditEditItems['+i+'].result=\'NA\'"></td>';
     }
     h+='<td><input value="'+esc(it.note||'')+'" onchange="_auditEditItems['+i+'].note=this.value" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>';
-    if(isCustom)h+='<td><button onclick="removeAuditItem('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px">&#10005;</button></td>';
+    if(isCustom)h+='<td><button onclick="removeAuditItem('+i+')" class="btn-x" style="font-size:16px">&#10005;</button></td>';
     h+='</tr>';
   });
   h+='</tbody></table>';
@@ -3827,7 +3845,7 @@ function renderTrainParticipants(){
     h+='<tr><td><input value="'+esc(p.name||'')+'" onchange="_instrParticipants['+i+'].name=this.value" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:12px"></td>'+
     '<td><input value="'+esc(p.title||'')+'" onchange="_instrParticipants['+i+'].title=this.value" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:12px"></td>'+
     '<td style="text-align:center"><input type="checkbox" '+(p.signed?'checked':'')+' onchange="_instrParticipants['+i+'].signed=this.checked"></td>'+
-    '<td><button onclick="removeTrainParticipant('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px">&#10005;</button></td></tr>';
+    '<td><button onclick="removeTrainParticipant('+i+')" class="btn-x" style="font-size:16px">&#10005;</button></td></tr>';
   });
   return h+'</tbody></table>';
 }
@@ -4041,7 +4059,7 @@ async function rCfg(el){
   '</div></div>'+
   // ── Sincronizare ──
   '<div class="pn"><div class="ph"><h3>Sincronizare Fisier JSON</h3></div><div class="pb">'+
-    '<div style="padding:10px 14px;border-radius:8px;background:'+(_fileHandle?'#D1FAE5;border:1px solid #86EFAC':'#FEE2E2;border:1px solid #FCA5A5')+';margin-bottom:12px;font-size:13px">'+
+    '<div class="ib '+(_fileHandle?'suc':'wrn')+'" style="margin-bottom:12px;font-size:13px">'+
     (_fileHandle?'&#128994; <strong>Conectat:</strong> '+esc(_fileHandle.name)+' — salvare automata la fiecare modificare':'&#128308; <strong>Neconectat</strong> — datele se salveaza doar in browser (IndexedDB)')+'</div>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
       '<button class="btn bp" onclick="syncReadFile()">&#128194; Reconecteaza la fisier existent</button>'+
@@ -4092,7 +4110,7 @@ async function rCfg(el){
     '</div>'+
     '<div id="cfg-reset-full" style="display:none;margin-top:16px;padding-top:16px;border-top:2px solid var(--red)">'+
       '<div class="ib wrn" style="border-color:var(--red);background:#FEE2E2">&#9888; Zona de testare — actiuni distructive!</div>'+
-      '<button class="btn bd" onclick="fullReset()" style="background:var(--red);color:#fff;padding:10px 20px;font-size:13px;margin-top:8px">&#128260; Resetare completa (mod testare)</button>'+
+      '<button class="btn bd" onclick="fullReset()" style="margin-top:8px">&#128260; Resetare completa (mod testare)</button>'+
     '</div>'+
   '</div></div>'+
 
@@ -4396,21 +4414,20 @@ function sparkSVG(data,w,h,color){
 // 5A.5 — DASHBOARD WIDGET CONFIG
 // ═══════════════════════════════════════════════════════════════
 function toggleWidget(key){
-  const w=CFG.dash_widgets||{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true,miniCal:true};
-  w[key]=!w[key];CFG.dash_widgets=w;saveCfg();render()}
+  const w=CFG.dash_widgets||{};
+  w[key]=w[key]===false?true:false;CFG.dash_widgets=w;saveCfg();
+  const sec=document.querySelector('[data-dw="'+key+'"]');
+  if(sec){sec.classList.toggle('hidden',w[key]===false)}
+  if((key==='charts'||key==='desChart')&&w[key]!==false)setTimeout(()=>initDashCharts(),50);
+  if(key==='miniCal'&&w[key]!==false){const mc=document.getElementById('dash-mini-cal');if(mc&&!mc.innerHTML)renderDashCalendar().then(html=>{mc.innerHTML=html})}
+}
 function widgetVisible(key){return(CFG.dash_widgets||{})[key]!==false}
-function dashCfgBar(){
-  const w=CFG.dash_widgets||{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true,miniCal:true};
-  const items=[['kpi','KPI-uri'],['charts','Grafice IAAM/Auto'],['docsKpi','Documente'],['termKpi','Raportari'],['desChart','Deseuri'],['iaamSec','IAAM Sectii'],['miniCal','Calendar']];
-  return '<div class="dash-cfg">'+items.map(([k,l])=>'<label><input type="checkbox" '+(w[k]!==false?'checked':'')+' onchange="toggleWidget(\''+k+'\')"> '+l+'</label>').join('')+'</div>'}
-var _dashDetails=false;
-function toggleDashDetails(){
-  _dashDetails=!_dashDetails;
-  const el=document.getElementById('dash-details'),btn=document.getElementById('dash-details-btn');
-  if(el){if(_dashDetails)el.classList.add('open');else el.classList.remove('open')}
-  if(btn)btn.innerHTML=_dashDetails?'&#9650; '+(CFG.lang==='en'?'Hide details':'Ascunde detalii'):'&#9660; '+(CFG.lang==='en'?'Show details':'Arata detalii');
-  // Init charts if expanding for first time
-  if(_dashDetails&&el)setTimeout(()=>initDashCharts(),50);
+var _dashCfgOpen=false;
+function toggleDashCfg(){
+  _dashCfgOpen=!_dashCfgOpen;
+  const panel=document.getElementById('dash-cfg-panel'),btn=document.getElementById('dash-cfg-btn');
+  if(panel)panel.classList.toggle('open',_dashCfgOpen);
+  if(btn)btn.innerHTML=_dashCfgOpen?'&#9650;':'&#9660;';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -4419,20 +4436,22 @@ function toggleDashDetails(){
 var _fileHandle=null;
 function updateSyncIndicator(){
   const el=document.getElementById('sync-indicator');if(!el)return;
+  const dk=A.darkMode;
+  const base='font-size:11px;cursor:pointer;white-space:nowrap;padding:4px 10px;border-radius:12px;transition:all .15s ease;';
   if(!_fileHandle){
     if(CFG.sync_file_name){
       el.innerHTML='&#128993; Reconecteaza: '+esc(CFG.sync_file_name);
       el.title='Click pentru optiuni sincronizare';
-      el.style.cssText='font-size:11px;cursor:pointer;white-space:nowrap;padding:4px 10px;border-radius:12px;background:#FEF3C7;color:#92400E;border:1px solid #F59E0B';
+      el.style.cssText=base+(dk?'background:rgba(245,158,11,0.15);color:#FCD34D;border:1px solid rgba(245,158,11,0.3)':'background:#FEF3C7;color:#92400E;border:1px solid #F59E0B');
     } else {
       el.innerHTML='&#128308; '+T('sync_neconectat');
       el.title='Click pentru optiuni sincronizare';
-      el.style.cssText='font-size:11px;cursor:pointer;white-space:nowrap;padding:4px 10px;border-radius:12px;background:#FEE2E2;color:#991B1B;border:1px solid #EF4444';
+      el.style.cssText=base+(dk?'background:rgba(239,68,68,0.15);color:#FCA5A5;border:1px solid rgba(239,68,68,0.3)':'background:#FEE2E2;color:#991B1B;border:1px solid #EF4444');
     }
   } else {
     el.innerHTML='&#128994; '+esc(_fileHandle.name);
     el.title='Click pentru optiuni sincronizare';
-    el.style.cssText='font-size:11px;cursor:pointer;white-space:nowrap;padding:4px 10px;border-radius:12px;background:#D1FAE5;color:#065F46;border:1px solid #10B981';
+    el.style.cssText=base+(dk?'background:rgba(16,185,129,0.15);color:#6EE7B7;border:1px solid rgba(16,185,129,0.3)':'background:#D1FAE5;color:#065F46;border:1px solid #10B981');
   }}
 function syncIndicatorClick(){
   if(!_fileHandle&&CFG.sync_file_name){syncReconnect();return}
@@ -4622,7 +4641,7 @@ function rAjutor(el){
     shortcuts.map(([a,l])=>'<tr><td>'+a+'</td><td>'+l+'</td></tr>').join('')+
     '</tbody></table></div></div>'+
     '<div class="pn" style="margin-top:14px"><div class="ph"><h3>'+(isEN?'Download Application':'Descarca Aplicatia')+'</h3></div><div class="pb" style="text-align:center;padding:20px">'+
-      '<button onclick="downloadApp()" style="background:#2563B0;color:#fff;border:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px">&#128190; '+(isEN?'Download application to computer':'Descarca aplicatia pe calculator')+'</button>'+
+      '<button class="btn-dl" onclick="downloadApp()" style="margin-bottom:12px;padding:14px 32px;font-size:16px">&#128190; '+(isEN?'Download application to computer':'Descarca aplicatia pe calculator')+'</button>'+
       '<p style="font-size:12.5px;color:var(--txt);line-height:1.6;max-width:600px;margin:0 auto">'+(isEN?'For full functionality (data sync, automatic backup, offline work), download the app and place it in a folder on your computer (recommended in OneDrive or Google Drive). You can also use the app directly from the browser, but the data will be local only and will be lost when clearing browsing data.':'Pentru functionalitate completa (sincronizare date, backup automat, lucru offline), descarca aplicatia si pune-o intr-un folder pe calculator (recomandat in OneDrive sau Google Drive). Poti folosi aplicatia si direct din browser, dar datele vor fi doar locale si se pierd la stergerea datelor de navigare.')+'</p>'+
     '</div></div>'}
 
@@ -4630,6 +4649,9 @@ function rAjutor(el){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'6.7.1',date:'2026-03-15',notes:'Dashboard: sectiuni configurabile individual — sageata dropdown sub toolbar cu checkboxuri per sectiune\nCalendar si Evenimente vizibile implicit (nu mai sunt ascunse)\nFiecare sectiune se poate ascunde/arata independent, selectia salvata persistent\nEliminat toggle global "Arata detalii" — inlocuit cu configurare granulara'},
+  {version:'6.7',date:'2026-03-15',notes:'Visual refresh complet butoane — aspect modern consistent in toata aplicatia\nButoane primare (#6366F1 indigo), secundare (outline), succes, danger, amber — toate cu border-radius 8px\nDark mode: culori adaptate pentru toate tipurile de butoane\nToolbar icons: dimensiune fixa 34px, border-radius 8px, badge notificari redesignat\nTable action buttons: 28x28px cu hover vizibil\nQuick actions dashboard: hover indigo, fara box-shadow\nSync pill: culori dark mode (semi-transparente)\nPopup sync: border-radius 12px, optiuni cu hover\nCalendar: butoane navigare cu hover indigo\nClasa .btn-x pentru butoanele de stergere (×) — hover vizibil\nClasa .btn-dl pentru butoanele de download mari\nEliminat inline styles hardcodate de pe ~20 butoane'},
+  {version:'6.6.3',date:'2026-03-15',notes:'FIX: Zile internare — autoCalcDays tratat 0 zile ca falsy + adaugat oninput pe langa onchange\nModificat: Nr. inregistrare label generic "registru" (nu mai mentioneaza CPIAAM — structurile difera intre spitale)'},
   {version:'6.6.2',date:'2026-03-15',notes:'Dashboard restructurat: Quick Actions mutate sus (primul element vizibil)\nKPI-uri sub quick actions\nButon global "Arata detalii" ascunde/arata widgeturile secundare (grafice, calendar, activitate)\nGrafice initializate lazy — doar cand detaliile sunt deschise'},
   {version:'6.6.1',date:'2026-03-15',notes:'FIX: Sync reconectare ramanea pe galben dupa import — location.reload() pierdea _fileHandle din memorie\nFIX: syncReadFile si syncReconnect nu mai fac reload, ci render() pastrand _fileHandle activ'},
   {version:'6.6',date:'2026-03-15',notes:'Restructurare pagina Configurare in 4 tab-uri: Spital, Introducere date, Date & Backup, AI\nToolbar simplificat — indicator sync pill cu meniu popup (3 stari: rosu/galben/verde)\nDeseu: totaluri auto-calculate + afisare unitati "kg"\nIAAM: zile spitalizare auto-calculate + camp editabil\nIAAM: campuri noi Nr. inregistrare (reg_number) si Nr. foaie observatie (fo_number)\nIAAM: initiale pacient + matching automat cazuri anterioare din toti anii\nCalendar: Raportari/Termene integrat ca tab in pagina Calendar\nEliminat butoane backup din sidebar si dashboard (sync prin toolbar)'},
@@ -5304,8 +5326,8 @@ function showUpdateBanner(d){
   b.innerHTML='<div style="flex:1;min-width:200px"><strong>Versiune noua disponibila (v'+esc(d.version)+')</strong>'+
     (cl?' — <span style="font-size:12px">'+esc(cl)+'</span>':'')+
     '</div><div style="display:flex;gap:6px;flex-shrink:0">'+
-    '<button onclick="downloadUpdate(\''+esc(d.url)+'\',\''+esc(d.version)+'\')" style="background:#854F0B;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Descarca acum</button>'+
-    '<button onclick="dismissUpdate()" style="background:none;border:1px solid #C9A84C;color:#854F0B;padding:6px 10px;border-radius:6px;font-size:14px;cursor:pointer;line-height:1">&times;</button></div>';
+    '<button class="btn bp bsm" onclick="downloadUpdate(\''+esc(d.url)+'\',\''+esc(d.version)+'\')">Descarca acum</button>'+
+    '<button class="btn bo bsm" onclick="dismissUpdate()" style="line-height:1">&times;</button></div>';
   const mn=document.getElementById('app-mn');
   if(mn)mn.insertBefore(b,mn.firstChild);
   else document.body.insertBefore(b,document.body.firstChild);

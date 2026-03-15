@@ -1,10 +1,11 @@
 {
-  "version": "6.6.2",
+  "version": "6.7.1",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Dashboard restructurat: Quick Actions mutate sus (primul element vizibil)",
-    "KPI-uri sub quick actions",
-    "Buton global Arata detalii ascunde/arata widgeturile secundare (grafice, calendar, activitate)",
-    "Grafice initializate lazy — doar cand detaliile sunt deschise"
+    "Dashboard: sectiuni configurabile individual cu checkboxuri",
+    "Sageata dropdown sub toolbar — selectie per sectiune",
+    "Calendar si Evenimente vizibile implicit",
+    "Selectia sectiunilor salvata persistent in config",
+    "Eliminat toggle global — inlocuit cu configurare granulara"
   ]
 }

@@ -1,17 +1,10 @@
 {
-  "version": "6.8.3",
+  "version": "6.9",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Autocontrol: Fix dark mode sumar zone netestate (text alb pe fundal deschis)",
-    "IAAM: Sectiunile ATB, Contacti, Masuri, Externare marcate obligatorii",
-    "IAAM: Optiune Fara tratament antibiotic in sectiunea ATB",
-    "Dashboard: KPI trend ascuns cand anul anterior nu are date",
-    "Dashboard: Sparkline pe KPI biocide",
-    "Dashboard: KPI ATP/UV cu indicator neconformitati",
-    "Dashboard: KPI labels nu se mai trunchiaza",
-    "IAAM: Fix FO duplicat in coloana Pacient",
-    "Biocide: Dropdown selectie produs + input manual fallback",
-    "Config: Fix denumire spital cu ghilimele se trunchia",
-    "Date test: JSON complet 2 ani pentru toate modulele"
+    "IAAM: Fisa IAAM generata conform Ordinul MS 1101/2016 Figura 2 — format oficial identic",
+    "Courier New 9pt monospace, chenare ASCII box-drawing, checkbox-uri, campuri completate automat",
+    "Varsta calculata automat din data nasterii",
+    "US Letter (12240x15840), margini 1 inch — identic cu documentul oficial"
   ]
 }

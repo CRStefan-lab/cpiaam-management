@@ -828,7 +828,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='6.8.3';
+const APP_VERSION='6.9';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -5068,6 +5068,7 @@ function rAjutor(el){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'6.9',date:'2026-03-15',notes:'IAAM: Fisa IAAM generata conform Ordinul MS 1101/2016 Figura 2 — format oficial identic\nCourier New 9pt monospace, chenare ASCII box-drawing, checkbox-uri, campuri completate automat\nVarsta calculata automat din data nasterii\nUS Letter (12240x15840), margini 1 inch — identic cu documentul oficial'},
   {version:'6.8.3',date:'2026-03-15',notes:'Autocontrol: Fix dark mode sumar zone netestate (text alb pe fundal deschis)\nIAAM: Sectiunile ATB, Contacti, Masuri, Externare marcate obligatorii\nIAAM: Optiune "Fara tratament antibiotic" in sectiunea ATB\nDashboard: KPI trend ascuns cand anul anterior nu are date\nDashboard: Sparkline pe KPI biocide\nDashboard: KPI ATP/UV cu indicator neconformitati\nDashboard: KPI labels nu se mai trunchiaza\nIAAM: Fix FO duplicat in coloana Pacient\nBiocide: Dropdown selectie produs + input manual fallback\nConfig: Fix denumire spital cu ghilimele se trunchia\nDate test: JSON complet 2 ani pentru toate modulele'},
   {version:'6.8',date:'2026-03-15',notes:'IAAM Module restructurat complet:\nFormular wizard cu 10 sectiuni si navigare laterala (Date pacient, Spitalizare, Infectie, Etiologie, Factori de risc, Tratament ATB, Istoric clinic, Contacti/focar, Masuri/cauzalitate, Externare/clasificare)\nFactori de risc ca checkbox-uri (pinned) + dropdown + chips (inlocuieste textarea)\nCalcul completare % per caz — indicator vizual in lista si in wizard nav\nLista cazuri redesignata: coloane noi (indicator, sectie+categorie 2 linii, germen+MDR tag, completare %, actiuni cu duplicare)\nFiltre noi: luna, completare (complete/incomplete), cautare extinsa\nFunctie duplicare caz — copiaza sectia/medicul/luna, goleste datele pacient\nSmart defaults la caz nou (ultima sectie, luna curenta)\nAlerta rapoarte: dialog pentru cazuri incomplete inainte de generare Word\nConfig factori de risc in Configurare > Introducere date\nKPI completare medie pe pagina IAAM'},
   {version:'6.7.2',date:'2026-03-15',notes:'Toolbar redesign complet: sync pill stilizat cu dot+text+clase CSS, separatoare mai vizibile (.tb-sep), toolbar icons cu border transparent+hover, badge notificari cu border 2px, butoane an compacte (.yr-nav 26x26px), meniu sync modern cu descrieri sub fiecare optiune, eliminat toate inline styles din toolbar'},
@@ -5323,183 +5324,175 @@ async function genAnchetaWord(id){
 // ── Fisa IAAM (conform Ordinul 1101/2016 — Fisa de inregistrare a IAAM) ──
 async function genFisaIAAM(id){
   const r=(await ga('iaam')).find(x=>x.id===id);if(!r){alert('Caz negasit.');return}
-  const W2=[3200,5826];const W3=[2600,3200,3226];const W4=[2200,2200,2200,2426];
-  function kvRow(k,val){return wTblRow([{text:k,bold:true},{text:val||'\u2014'}],W2)}
-  function kvTbl(rows){return new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W2,rows:rows})}
-  // Germeni info
+  // ═══ FORMAT OFICIAL — Ordinul MS 1101/2016, Figura 2 ═══
+  // Courier New 9pt monospace, chenare ASCII box-drawing
+  const CN='Courier New',SZ=18,LH=220;// 9pt = 18 half-pt
+  const LN=76;// chars per line inside box
+  function cR(t,o={}){return new TextRun({text:t,font:CN,size:o.sz||SZ,bold:o.b,color:'000000'})}
+  function cP(t,o={}){const runs=typeof t==='string'?[cR(t,o)]:(Array.isArray(t)?t:[cR(t,o)]);
+    return new Paragraph({children:runs,spacing:{before:0,after:0,line:LH},alignment:o.center?AlignmentType.CENTER:AlignmentType.LEFT})}
+  function pad(s,n){s=s||'';return s.length>=n?s.substring(0,n):s+'.'.repeat(n-s.length)}
+  function padS(s,n){s=s||'';return s.length>=n?s.substring(0,n):s+' '.repeat(n-s.length)}
+  function dots(n){return '.'.repeat(n)}
+  function box(t){return '\u250C'+'\u2500'.repeat(LN)+'\u2510'}
+  function boxB(){return '\u2514'+'\u2500'.repeat(LN)+'\u2518'}
+  function boxL(t){t=t||'';if(t.length>LN)t=t.substring(0,LN);return '\u2502'+padS(t,LN)+'\u2502'}
+  function boxE(){return '\u2502'+' '.repeat(LN)+'\u2502'}
+  // Data helpers
+  // Calc age from DOB if not stored
+  let ageVal=r.age;
+  if(!ageVal&&r.date_of_birth){const bd=new Date(r.date_of_birth);const ref=r.date_admission?new Date(r.date_admission):new Date();ageVal=Math.floor((ref-bd)/(365.25*86400000))}
+  const dob=r.date_of_birth?r.date_of_birth.split('-'):null;
+  const dobStr=dob?(dob[2]+'/'+dob[1]+'/'+dob[0]):'__/__/____';
+  const admD=r.date_admission?r.date_admission.split('-'):null;
+  const admStr=admD?(admD[2]+'/'+admD[1]+'/'+admD[0]):'__/__/____';
+  const extD=r.date_discharge?r.date_discharge.split('-'):null;
+  const extStr=extD?(extD[2]+'/'+extD[1]+'/'+extD[0]):'___/___/____';
+  const devD=r.date_device?r.date_device.split('-'):null;
+  const devStr=devD?(devD[2]+'/'+devD[1]+'/'+devD[0]):'__/__/____';
+  const decD=r.date_deces?r.date_deces.split('-'):null;
+  const decStr=decD?(decD[2]+'/'+decD[1]+'/'+decD[0]):'___/___/____';
+  const sex=r.sex||'';
+  const sexM=sex==='M'||sex==='Masculin'?'X':' ';
+  const sexF=sex==='F'||sex==='Feminin'?'X':' ';
+  const mediu=r.mediu||'Urban';
+  const medU=mediu==='Urban'?'X':' ';
+  const medR=mediu==='Rural'?'X':' ';
+  const secName=rSec(r.section);
   const gList=r.germeni&&r.germeni.length?r.germeni:(r.organism?[{name:r.organism,mdr:r.mdr?'DA':'Nu'}]:[]);
-  // Antibiotics info
   const aList=r.antibiotics&&r.antibiotics.length?r.antibiotics:[];
-  // Status externare
-  const statusExt=r.status_externare||'';
-  const decesInfo=statusExt==='Decedat'?'DA — Data deces: '+(fmtDate(r.date_deces)||'\u2014')+', Cauza: '+(r.cauza_deces||'\u2014'):'NU';
+  const riskStr=(r.risk_factors&&r.risk_factors.length)?r.risk_factors.join(', '):'';
+  const pName=r.patient_initials||r.patient||'';
+  const statusExt=(r.status_externare||'').toLowerCase();
+  const stVind=statusExt==='vindecat'?'X':' ';
+  const stAmel=statusExt==='ameliorat'?'X':' ';
+  const stTrans=statusExt==='transferat'?'X':' ';
+  const stDec=statusExt==='decedat'?'X':' ';
+  const isDec=statusExt==='decedat';
+  const cauzaDec=r.cauza_deces||'';
+  const cdIaam=cauzaDec==='IAAM'?'X':' ';
+  const cdPos=cauzaDec==='Posibil IAAM'||cauzaDec.indexOf('posibil')>=0?'X':' ';
+  const cdFara=cauzaDec==='Fara legatura'||cauzaDec.indexOf('legatur')>=0?'X':' ';
+  const cdNec=cauzaDec==='Necunoscut'||cauzaDec.indexOf('necunoscut')>=0?'X':' ';
+  // Origine
+  const orig=r.origin||'';
+  const origSR=orig==='spital_raportor'||orig.indexOf('raportor')>=0?'X':' ';
+  const origAS=orig==='alt_spital'||orig.indexOf('alt ')>=0?'X':' ';
+  const origCr=orig==='cronici'||orig.indexOf('cronici')>=0||orig.indexOf('vârstnici')>=0?'X':' ';
+  const origAlt=orig==='alte'||orig.indexOf('alte')>=0?'X':' ';
+  // ATB info
+  const atbStr=aList.length>0?aList.map(a=>{
+    const routeObj=ATB_ROUTES.find(x=>x.v===a.route);
+    const routeN=routeObj?routeObj.n:(a.route||'');
+    const period=(a.date_start?fmtDate(a.date_start):'')+(a.date_stop?(' - '+fmtDate(a.date_stop)):'');
+    return (a.name||'')+(routeN?', '+routeN:'')+(period?', '+period:'');
+  }).join('; '):(r.no_antibiotic?'Fara tratament antibiotic':'');
+  // Izolat / Contacti
+  const izolat=r.isolated||'';
+  const izoStr=izolat==='da'?'da':(izolat==='nu'?'nu':'......');
+  const contacti=r.contacts||'';
+  const contStr=contacti?'da: '+contacti:'nu';
+  const atitudine=r.attitude||r.measures_text||'';
+
+  // Diagnistic IAAM
+  const diagIaam=r.iaam_category?iaamCatLabel(r.iaam_category):(r.infection_type?rInf(r.infection_type):'');
+  const diagAdm=r.diag_admission||'';
+  const tipInterventie=r.intervention_type||r.procedures||'';
+  // Germeni + rezistenta
+  const germStr=gList.map(g=>g.name||'').join(', ')||'';
+  const rezStr=gList.filter(g=>g.mdr&&g.mdr!=='Nu').map(g=>(g.name||'')+': '+g.mdr).join(', ')||'';
+  // Now date
+  const nowD=new Date();
+  const nowStr=(nowD.getDate()<10?'0':'')+nowD.getDate()+'/'+((nowD.getMonth()+1)<10?'0':'')+(nowD.getMonth()+1)+'/'+nowD.getFullYear();
 
   const children=[
-    // ═══ TITLU ═══
-    wP([wTR(CFG.hospital_name||'Unitatea Sanitara',{bold:true,size:22,color:WC.navy})],{align:AlignmentType.CENTER}),
-    wP([wTR(CFG.cpiaam_name||'C.P.I.A.A.M.',{size:20,color:WC.gray})],{align:AlignmentType.CENTER}),wSp(60),
-    wP([wTR('FI\u0218A DE \u00CENREGISTRARE',{bold:true,size:28,color:WC.navy})],{align:AlignmentType.CENTER}),
-    wP([wTR('A INFEC\u021AIEI ASOCIATE ASISTEN\u021AEI MEDICALE',{bold:true,size:24,color:WC.navy})],{align:AlignmentType.CENTER}),
-    wP([wTR('(conform Ordinul 1101/2016)',{italic:true,size:18,color:WC.gray})],{align:AlignmentType.CENTER}),wSp(40),
-    wP([wTR('Nr. \u00cenregistrare: ',{size:20,color:WC.gray}),wTR(String(r.id||''),{size:20,bold:true}),
-      wTR('          Data complet\u0103rii: ',{size:20,color:WC.gray}),wTR(fmtDateNow(),{size:20,bold:true})]),wSp(80),
-
-    // ═══ I. DATE DE IDENTIFICARE PACIENT ═══
-    wH1('I. DATE DE IDENTIFICARE PACIENT',WC.blue),wSp(40),
-    kvTbl([
-      kvRow('Ini\u021Biale pacient',r.patient||'\u2014'),
-      kvRow('Data na\u0219terii',fmtDate(r.date_of_birth)),
-      kvRow('V\u00E2rsta',r.age?(r.age+' ani'):'\u2014'),
-      kvRow('Sex',r.sex||'\u2014'),
-      kvRow('Mediu de provenienta',r.mediu||'Urban'),
-      kvRow('Sec\u021Bia',rSec(r.section)),
-      kvRow('Medic curant','...............................................................'),
-      kvRow('CNP','...............................................................'),
-    ]),wSp(80),
-
-    // ═══ II. DATE CLINICE ═══
-    wH1('II. DATE CLINICE',WC.blue),wSp(40),
-    kvTbl([
-      kvRow('Data intern\u0103rii',fmtDate(r.date_admission)),
-      kvRow('Data extern\u0103rii',r.date_discharge?fmtDate(r.date_discharge):'Pacient \u00EEnc\u0103 internat'),
-      kvRow('Durata spitaliz\u0103rii',r.days?(r.days+' zile'):'\u2014'),
-      kvRow('Diagnostic la internare',r.diag_admission||'\u2014'),
-      kvRow('Diagnostic la externare',r.diag_discharge||'\u2014'),
-      kvRow('Intern\u0103ri anterioare (ultimele 6 luni)',r.prev_admissions||'Nu'),
-    ]),wSp(40),
-    wH3('Antecedente medicale'),
-    wP(r.clinical_history||'\u2014',{size:20}),wSp(20),
-    wH3('Comorbidit\u0103\u021Bi'),
-    wP(r.comorbidities||'\u2014',{size:20}),wSp(20),
-    wH3('Proceduri invazive'),
-    wP(r.procedures||'\u2014',{size:20}),wSp(80),
-
-    // ═══ III. DIAGNOSTICUL IAAM ═══
-    wH1('III. DIAGNOSTICUL IAAM',WC.blue),wSp(40),
-    kvTbl([
-      kvRow('Categorie ECDC (Anexa 9)',r.iaam_category?iaamCatLabel(r.iaam_category):'\u2014'),
-      kvRow('Tip infec\u021Bie',rInf(r.infection_type)),
-      kvRow('Localizare',r.localization||'\u2014'),
-      kvRow('Data confirm\u0103rii',fmtDate(r.date_confirmed)),
-      kvRow('Nr. buletin analize',r.bulletin_nr||'\u2014'),
-      kvRow('Mod depistare',detLabel(r.detection)),
-      kvRow('Tip',r.active_type==='colonizare'?'Colonizare':'Infec\u021Bie activ\u0103'),
-    ]),wSp(80),
-
-    // ═══ IV. TRATAMENT ANTIBIOTIC ═══
-    wH1('IV. TRATAMENT ANTIBIOTIC',WC.blue),wSp(40),
+    // Figura 2
+    cP('Figura 2',{center:true}),
+    cP('Fi\u0219a cazului de infec\u021Bie asociat\u0103 asisten\u021Bei medicale',{center:true}),
+    cP(' '),
+    cP(' FI\u0218A cazului de infec\u021Bie asociat\u0103 asisten\u021Bei medicale (IAAM) Codul pacient/'),
+    cP(' FO '+(r.fo_number||dots(9))),
+    cP(' '),
+    cP(' '+padS('Jude\u021Bul'+dots(10),20)+' '+padS('Spitalul '+pad(CFG.hospital_name||'',15),30)+'  '+padS('Sec\u021Bia '+pad(secName,8),18)+'  Specialitatea'+dots(8)),
+    cP(' '),
+    cP(' Se completeaz\u0103 \u0219i se semneaz\u0103 de medicul curant din unitatea sanitar\u0103'),
+    cP(' raportoare:'),
+    cP(' '),
+    // DATE DE IDENTITATE
+    cP(' DATE DE IDENTITATE'),
+    cP(' '+box()),
+    cP(' '+boxL('Nume'+dots(11)+' Prenume '+dots(10)+' Data nasterii '+dobStr+' Varsta :'+(ageVal||'...')+' ani;')),
+    cP(' '+boxL('dac\u0103 v\u00E2rsta < 1 an'+dots(4)+' luni    Sex:['+sexM+'] M ['+sexF+']F Domiciliu ['+medU+'] urban ['+medR+'] rural')),
+    cP(' '+boxB()),
+    cP(' '),
+    // DATE CLINICE
+    cP(' DATE CLINICE:'),
+    cP(' '+box()),
+    cP(' '+boxL('Data intern\u0103rii '+admStr+'  Data extern\u0103rii '+extStr)),
+    cP(' '+boxL('Diagnosticul la internare '+pad(diagAdm,47))),
+    cP(' '+boxL('Diagnosticul infec\u021Biei asociate asisten\u021Bei medicale (IAAM)')),
+    cP(' '+boxL(padS(diagIaam,LN))),
+    cP(' '+boxL('Data aplic\u0103rii dispozitivului medical/interven\u021Biei chirurgicale '+devStr)),
+    cP(' '+boxL('Tipul interven\u021Biei '+padS(tipInterventie,LN-19))),
+    cP(' '+boxL('Tratamentul antibiotic: (antibiotic, cale de administrare, perioad\u0103)')),
+    cP(' '+boxL(padS(atbStr,LN))),
+    cP(' '+boxL('Izolat '+padS(izoStr,10)+'Contac\u021Bi:'+padS(contStr,15)+'  Atitudine: '+padS(atitudine,20))),
+    cP(' '+boxL('Statusul la externare:')),
+    cP(' '+boxL('['+stVind+'] vindecat ['+stAmel+'] ameliorat ['+stTrans+'] transferat ['+stDec+'] decedat, dac\u0103 DA:')),
+    cP(' '+boxL('Data decesului '+(isDec?decStr:'___/___/____'))),
+    cP(' '+boxL('Cauza decesului ['+cdIaam+'] IAAM ['+cdPos+'] posibil cauzata de infectia IAAM ['+cdFara+'] fara legatura')),
+    cP(' '+boxL('cu IAAM ['+cdNec+'] necunoscut')),
+    cP(' '+boxB()),
+    cP(' '),
+    // FACTORI DE RISC ASOCIATI
+    cP('  FACTORI DE RISC ASOCIA\u021AI'),
+    cP(' '+box()),
+    cP(' '+boxL(padS(riskStr.substring(0,LN),LN))),
   ];
-
-  // Tabel antibiotice
-  if(aList.length>0){
-    const atbW=[2000,1400,1400,1800,1200,1226];
-    const atbRows=[wTblHead(['Antibiotic','Cod ATC','Cale adm.','Data \u00EEncepere','Data oprire','Zile'],atbW)];
-    aList.forEach((a,i)=>{
-      const days=calcDays(a.date_start,a.date_stop);
-      atbRows.push(wTblRow([{text:a.name||'\u2014'},{text:a.atc||'\u2014'},{text:ATB_ROUTES.find(x=>x.v===a.route)?ATB_ROUTES.find(x=>x.v===a.route).n:(a.route||'\u2014')},
-        {text:fmtDate(a.date_start)},{text:fmtDate(a.date_stop)},{text:days?days+' zile':'\u2014'}],atbW,i%2===1));
-    });
-    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:atbW,rows:atbRows}));
-  }else{
-    children.push(wP('Nu s-a \u00EEnregistrat tratament antibiotic.',{size:20,italic:true,color:WC.gray}));
+  // If risk factors text is longer, add more lines
+  if(riskStr.length>LN){
+    let rem=riskStr.substring(LN);
+    while(rem.length>0){
+      children.push(cP(' '+boxL(padS(rem.substring(0,LN),LN))));
+      rem=rem.substring(LN);
+    }
+  }else if(!riskStr){
+    children.push(cP(' '+boxE()));
   }
-  children.push(wSp(80));
+  children.push(
+    cP(' '+boxB()),
+    cP(' '),
+    // DATE DE LABORATOR
+    cP(' DATE DE LABORATOR:'),
+    cP(' '+box()),
+    cP(' '+boxL('Etiologia: Germene / germeni \u00EEn situa\u021Bia infec\u021Biilor cu etiologie multipl\u0103')),
+    cP(' '+boxL(padS(germStr,LN))),
+    cP(' '+boxL('Rezisten\u021Ba microbian\u0103')),
+    cP(' '+boxL(padS(rezStr,LN))),
+    cP(' '+boxB()),
+    cP(' '),
+    // CLASIFICAREA CAZULUI - originea
+    cP(' CLASIFICAREA CAZULUI - originea:'),
+    cP(' '+box()),
+    cP(' '+boxL(' ['+origSR+'] Din spitalul raportor                  ['+origAS+'] Din alt spital')),
+    cP(' '+boxL(' ['+origCr+'] Unit\u0103\u021Bi de \u00EEngrijire cronici/v\u00E2rstnici ['+origAlt+'] Alte tipuri de \u00EEngrijiri')),
+    cP(' '+boxL('                                            medicale')),
+    cP(' '+boxB()),
+    cP(' '),
+    cP(' Semn\u0103tura \u0219i parafa medicului curant:              Data complet\u0103rii:'),
+    cP('  '+dots(36)+'              '+nowStr),
+    cP(' '),
+    cP(' Data valid\u0103rii Fi\u0219ei de \u0219eful serviciului de prevenire a infec\u021Biilor asociate'),
+    cP(' asisten\u021Bei .../.../..... Semn\u0103tura \u0219i parafa: '+(getCoord().name||dots(20))),
+  );
 
-  // ═══ V. PRECAU\u021AII IZOLARE ═══
-  children.push(wH1('V. PRECAU\u021AII IZOLARE / M\u0102SURI CONTROL',WC.blue),wSp(40));
-  if(r.measures&&r.measures.length>0){
-    r.measures.forEach((m,i)=>children.push(wP((i+1)+'. '+m,{size:20,before:40})));
-  }else{
-    children.push(wP('Nu s-au consemnat m\u0103suri specifice.',{size:20,italic:true,color:WC.gray}));
-  }
-  children.push(wSp(80));
-
-  // ═══ VI. STATUS EXTERNARE ═══
-  children.push(wH1('VI. STATUS EXTERNARE',WC.blue),wSp(40));
-  children.push(kvTbl([
-    kvRow('Status la externare',statusExt||'\u2014'),
-    kvRow('Deces',decesInfo),
-  ]));
-  children.push(wSp(80));
-
-  // ═══ VII. FACTORI DE RISC ═══
-  children.push(wH1('VII. FACTORI DE RISC',WC.blue),wSp(40));
-  if(r.risk_factors&&r.risk_factors.length>0){
-    r.risk_factors.forEach((f,i)=>children.push(wP((i+1)+'. '+f,{size:20,before:40})));
-  }else{
-    children.push(wP('Nu s-au identificat factori de risc specifici.',{size:20,italic:true,color:WC.gray}));
-  }
-  children.push(wSp(80));
-
-  // ═══ VIII. DATE DE LABORATOR ═══
-  children.push(wH1('VIII. DATE DE LABORATOR \u2014 ETIOLOGIE',WC.blue),wSp(40));
-  if(gList.length>0){
-    const gW=[800,3200,2600,2426];
-    const gRows=[wTblHead(['Nr.','Germen identificat','Rezisten\u021B\u0103 (MDR)','Observa\u021Bii'],gW)];
-    gList.forEach((g,i)=>{
-      const mdrVal=g.mdr&&g.mdr!=='Nu'?g.mdr:'Nu';
-      gRows.push(wTblRow([{text:String(i+1)},{text:g.name||'\u2014'},{text:mdrVal,bold:mdrVal!=='Nu',color:mdrVal!=='Nu'?WC.red:undefined},{text:''}],gW,i%2===1,mdrVal!=='Nu'));
-    });
-    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:gW,rows:gRows}));
-  }else{
-    children.push(wP('Nu s-au identificat germeni.',{size:20,italic:true,color:WC.gray}));
-  }
-  // MDR alert box
-  if(gList.some(g=>g.mdr&&g.mdr!=='Nu')){
-    children.push(wSp(40),wAlertBox('ATEN\u021AIE: S-au identificat germeni multirezisten\u021Bi (MDR). Verifica\u021Bi protocoalele de izolare \u0219i raportare obligatorie.'));
-  }
-  children.push(wSp(80));
-
-  // ═══ IX. CLASIFICARE / ORIGINE ═══
-  children.push(wH1('IX. CLASIFICARE \u0218I ORIGINE',WC.blue),wSp(40));
-  children.push(kvTbl([
-    kvRow('Originea infec\u021Biei',CFG.origins?CFG.origins[r.origin]||r.origin||'\u2014':r.origin||'\u2014'),
-    kvRow('Clasificare final\u0103',r.classification||'IAAM confirmat\u0103'),
-    kvRow('Contact de salon',r.contacts||'F\u0103r\u0103 contact de salon'),
-    kvRow('Face parte din focar?',r.outbreak==='da'?'DA \u2014 Se notific\u0103 conform legisla\u021Biei':'NU'),
-    kvRow('Sursa suspectat\u0103',r.suspected_source||'\u2014'),
-  ]));
-  children.push(wSp(80));
-
-  // ═══ X. CONCLUZII ═══
-  children.push(wH1('X. CONCLUZII \u0218I RECOMAND\u0102RI',WC.blue),wSp(40));
-  children.push(wP(r.conclusions||'.......................................................................',{size:20}));
-  children.push(wSp(120));
-
-  // ═══ SEMN\u0102TURI ═══
-  children.push(wH2('Semn\u0103turi',WC.blue),wSp(40));
-  const sigW=[4513,4513];
-  children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:sigW,borders:{top:{style:'none'},bottom:{style:'none'},left:{style:'none'},right:{style:'none'},insideH:{style:'none'},insideV:{style:'none'}},rows:[
-    new TableRow({children:[
-      new TableCell({width:{size:4513,type:WidthType.DXA},borders:{top:{style:'none'},bottom:{style:'none'},left:{style:'none'},right:{style:'none'}},children:[
-        wP([wTR('Medic curant',{bold:true,size:20})]),
-        wP('...............................................',{size:20,color:WC.gray}),
-        wP('(nume, prenume, semn\u0103tura, parafa)',{size:16,italic:true,color:WC.gray})
-      ]}),
-      new TableCell({width:{size:4513,type:WidthType.DXA},borders:{top:{style:'none'},bottom:{style:'none'},left:{style:'none'},right:{style:'none'}},children:[
-        wP([wTR('Responsabil CPIAAM',{bold:true,size:20})]),
-        wP(getCoord().name||'...............................................',{size:20}),
-        wP(getCoord().title||'',{size:16,italic:true,color:WC.gray})
-      ]})
-    ]})
-  ]}));
-  children.push(wSp(60));
-  children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:sigW,borders:{top:{style:'none'},bottom:{style:'none'},left:{style:'none'},right:{style:'none'},insideH:{style:'none'},insideV:{style:'none'}},rows:[
-    new TableRow({children:[
-      new TableCell({width:{size:4513,type:WidthType.DXA},borders:{top:{style:'none'},bottom:{style:'none'},left:{style:'none'},right:{style:'none'}},children:[
-        wP([wTR('Manager / Director Medical',{bold:true,size:20})]),
-        wP(getMgr().name||'...............................................',{size:20}),
-        wP(getMgr().title||'',{size:16,italic:true,color:WC.gray})
-      ]}),
-      new TableCell({width:{size:4513,type:WidthType.DXA},borders:{top:{style:'none'},bottom:{style:'none'},left:{style:'none'},right:{style:'none'}},children:[
-        wP([wTR('Data complet\u0103rii fi\u0219ei',{bold:true,size:20})]),
-        wP(fmtDateNow(),{size:20})
-      ]})
-    ]})
-  ]}));
-
-  const fn='Fisa_IAAM_'+(r.patient||'caz').replace(/[^a-zA-Z0-9]/g,'_')+'_'+rSec(r.section).replace(/[^a-zA-Z0-9]/g,'_')+'_'+A.year+'.docx';
-  await saveDocx(makeDoc(children,'Fisa IAAM — '+rSec(r.section),'Fisa_IAAM'),fn);
+  // Build document with Courier New defaults, US Letter page (same as original)
+  const fn='Fisa_IAAM_'+(pName||'caz').replace(/[^a-zA-Z0-9]/g,'_')+'_'+rSec(r.section).replace(/[^a-zA-Z0-9]/g,'_')+'_'+A.year+'.docx';
+  const doc=new Document({
+    styles:{default:{document:{run:{font:CN,size:SZ}}}},
+    sections:[{properties:{page:{size:{width:12240,height:15840},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]
+  });
+  await saveDocx(doc,fn);
 }
 
 // ── Check incomplete IAAM cases before report ──

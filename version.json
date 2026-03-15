@@ -1,14 +1,8 @@
 {
-  "version": "6.6",
+  "version": "6.6.1",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Restructurare pagina Configurare in 4 tab-uri: Spital, Introducere date, Date & Backup, AI",
-    "Toolbar simplificat — indicator sync pill cu meniu popup (3 stari: rosu/galben/verde)",
-    "Deseu: totaluri auto-calculate + afisare unitati kg",
-    "IAAM: zile spitalizare auto-calculate + camp editabil",
-    "IAAM: campuri noi Nr. inregistrare si Nr. foaie observatie",
-    "IAAM: initiale pacient + matching automat cazuri anterioare din toti anii",
-    "Calendar: Raportari/Termene integrat ca tab in pagina Calendar",
-    "Eliminat butoane backup din sidebar si dashboard"
+    "FIX: Sync reconectare ramanea pe galben dupa import — location.reload() pierdea _fileHandle",
+    "FIX: syncReadFile si syncReconnect nu mai fac reload, ci render() pastrand _fileHandle activ"
   ]
 }

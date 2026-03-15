@@ -726,7 +726,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='6.6';
+const APP_VERSION='6.6.1';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -4442,7 +4442,7 @@ async function _syncAfterReconnect(){
     updateSyncIndicator();await syncWrite();
   } else {
     // Local DB is empty — read from file to restore data
-    try{await _importFromHandle(_fileHandle)}catch(e){
+    try{await _importFromHandle(_fileHandle,true)}catch(e){
       console.warn('Import from sync file failed:',e);
       updateSyncIndicator();
     }
@@ -4488,9 +4488,9 @@ async function syncReadFile(){
   if(!window.showOpenFilePicker){alert('Browserul tau nu suporta File System Access API. Foloseste Chrome/Edge.');return}
   try{const[fh]=await window.showOpenFilePicker({types:[{description:'JSON',accept:{'application/json':['.json']}}]});
     _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();await saveFileHandle(fh);
-    await _importFromHandle(fh);
+    await _importFromHandle(fh,true);
   }catch(e){if(e.name!=='AbortError')alert('Eroare import: '+e.message)}}
-async function _importFromHandle(fh){
+async function _importFromHandle(fh,skipReload){
   const file=await fh.getFile();const text=await file.text();const d=JSON.parse(text);
   if(d.config){const cfg=_extractCfg(d.config);if(cfg)Object.assign(CFG,cfg);CFG.sync_file_name=fh.name;await saveCfg()}
   // Import all stores (by store name — new format)
@@ -4498,7 +4498,8 @@ async function _importFromHandle(fh){
   // Also support old format keys (ia, au, de, bi, pp, docs, terms)
   const oldMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
   for(const[key,store] of Object.entries(oldMap)){if(d[key]&&!d[store]){for(const r of d[key])await pt(store,r)}}
-  alert('Import reusit!');location.reload();
+  if(skipReload){showToast('Import reusit!');updateSyncIndicator();render()}
+  else{alert('Import reusit!');location.reload()}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -4603,6 +4604,7 @@ function rAjutor(el){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'6.6.1',date:'2026-03-15',notes:'FIX: Sync reconectare ramanea pe galben dupa import — location.reload() pierdea _fileHandle din memorie\nFIX: syncReadFile si syncReconnect nu mai fac reload, ci render() pastrand _fileHandle activ'},
   {version:'6.6',date:'2026-03-15',notes:'Restructurare pagina Configurare in 4 tab-uri: Spital, Introducere date, Date & Backup, AI\nToolbar simplificat — indicator sync pill cu meniu popup (3 stari: rosu/galben/verde)\nDeseu: totaluri auto-calculate + afisare unitati "kg"\nIAAM: zile spitalizare auto-calculate + camp editabil\nIAAM: campuri noi Nr. inregistrare (reg_number) si Nr. foaie observatie (fo_number)\nIAAM: initiale pacient + matching automat cazuri anterioare din toti anii\nCalendar: Raportari/Termene integrat ca tab in pagina Calendar\nEliminat butoane backup din sidebar si dashboard (sync prin toolbar)'},
   {version:'6.5.2',date:'2026-03-15',notes:'FIX: Comparare versiuni semantica (vCmp) — parseFloat ignora patch version (6.5.1 → 6.5)\nFIX: Auto-update si verificare manuala detecteaza corect versiuni cu 3 segmente (ex: 6.5.1 vs 6.5)\nInclude fix-uri 6.5.1: import config corupt, syncWrite/expAll exclud config din getAll, _extractCfg()'},
   {version:'6.5',date:'2026-03-15',notes:'Fuzionare Tip Infectie cu Categorie IAAM Anexa 9 — un singur dropdown grupat ECDC + categorii personalizate\nConfigurator categorii IAAM in Configurare: categorii ECDC predefinite (non-stergibile) + categorii custom\nEtiologie germeni: dropdown searchable cu filtrare dupa nume/cod, camp text liber pentru Alte/nespecificat\nMDRo (ESBL, CRE, etc.) afisat conditional — doar pentru bacterii, nu virusuri/fungi/paraziti\nButon verificare manuala update-uri in toolbar (🔄) si pagina Despre\nFunctie showToast() pentru notificari temporare'},

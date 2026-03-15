@@ -1,25 +1,11 @@
 {
-  "version": "6.5",
+  "version": "6.5.1",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "CRITIC: syncWrite salveaza acum TOATE cele 13 store-uri (inainte pierdea events, audits, trainings, etc.)",
-    "CRITIC: Reconectare JSON verifica daca baza e goala si restaureaza din fisier (nu mai suprascrie)",
-    "CRITIC: Import JSON importa toate store-urile + config + suport format vechi",
-    "Indicator galben Reconecteaza deschide fisierul existent (nu mai creaza fisier nou)",
-    "Stocare atasamente pe disc (File System Access API) — folder configurabil",
-    "Format data dd.mm.yyyy (romanesc) ca default + 4 optiuni configurabile",
-    "Buton sync redenumit Salveaza JSON",
-    "Configurare reorganizata cu 3 tab-uri: Spital, Date & Backup, AI",
-    "Butoane salvare/import mutate din Despre in Configurare > Date & Backup",
-    "Dark mode fix: text vizibil in Autocontrol Microbiologic Prezentare",
-    "Dashboard: buton Incarca Backup langa Salveaza Backup",
-    "Configurator praguri ATP: 17 tipuri suprafete cu prag RLU, rezultat calculat automat (Conform/Neconform)",
-    "Configurator suprafete UV Check: 5 tipuri predefinite, dropdown in formular UV",
-    "Sectiune Autocontrol — Tipuri Suprafete in Configurare (tab Spital)",
-    "Preview format data sub fiecare input type=date din formulare (arata data in formatul ales)",
-    "Protectie formulare nesalvate: avertizare la inchidere modal cu date modificate (toate formularele)",
-    "Fuzionare Tip Infectie cu Categorie IAAM Anexa 9 — un singur dropdown grupat ECDC + categorii custom",
-    "Etiologie germeni: dropdown searchable cu filtrare, camp text liber pentru Alte/nespecificat, MDRo doar pentru bacterii",
-    "Buton verificare manuala update-uri in toolbar si pagina Despre"
+    "CRITIC FIX: Import/sync config corupt — config salvat ca array imbricat in loc de obiect",
+    "FIX: syncWrite() si expAll() exclud config din bucla getAll (evita suprascrierea cu array)",
+    "FIX: Export backup include explicit config:CFG ca obiect",
+    "FIX: _extractCfg() — extrage config valid din structuri corupte (array, nested 0 keys)",
+    "FIX: downloadUpdate() foloseste versiunea remote pentru numele fisierului descarcat"
   ]
 }

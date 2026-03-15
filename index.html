@@ -591,6 +591,21 @@ async function ga(s){const d=await odb();return new Promise((ok,no)=>{const t=d.
 async function pt(s,i){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).put(i);r.onsuccess=()=>{ok(r.result);_syncDebounce()};r.onerror=()=>no(r.error)})}
 async function dl(s,id){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).delete(id);r.onsuccess=()=>{ok();_syncDebounce()};r.onerror=()=>no(r.error)})}
 var _syncTimer=null;function _syncDebounce(){if(!_fileHandle)return;clearTimeout(_syncTimer);_syncTimer=setTimeout(()=>syncWrite(),2000)}
+// Extract valid config object from potentially corrupted backup structures
+function _extractCfg(c){
+  if(!c||typeof c!=='object')return null;
+  // If it's a plain config object with hospital_name — use directly
+  if(!Array.isArray(c)&&c.hospital_name)return c;
+  // If it's an array (from getAll on config store) — unwrap
+  let obj=Array.isArray(c)?c[0]:c;
+  if(!obj||typeof obj!=='object')return null;
+  // If it has hospital_name at this level — use it
+  if(obj.hospital_name)return obj;
+  // Check nested "0" keys (corrupted by Object.assign on array)
+  for(let i=0;i<5;i++){if(obj['0']&&typeof obj['0']==='object'){obj=obj['0']}else break;if(obj.hospital_name)return obj}
+  // Last resort — return first level that looks like config
+  return null;
+}
 // Persist FileSystemFileHandle in IndexedDB (survives refresh/close)
 function _fhDB(){return new Promise((ok,no)=>{const r=indexedDB.open('CPIAAM_FH',1);r.onupgradeneeded=e=>e.target.result.createObjectStore('handles');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function saveFileHandle(fh){try{const db=await _fhDB();const tx=db.transaction('handles','readwrite');tx.objectStore('handles').put(fh,'syncFile');await new Promise((ok,no)=>{tx.oncomplete=ok;tx.onerror=no})}catch(e){console.warn('saveFileHandle:',e)}}
@@ -708,7 +723,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='6.5';
+const APP_VERSION='6.5.1';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -4408,8 +4423,7 @@ async function saveFileLocationCfg(v){
 async function syncWrite(){
   if(!_fileHandle)return;
   try{
-    // Write ALL stores (not just year-filtered analysis data)
-    const d={};for(const s of ST)d[s]=await ga(s);
+    const d={};for(const s of ST){if(s==='config')continue;d[s]=await ga(s)}
     const wr=await _fileHandle.createWritable();
     await wr.write(JSON.stringify({version:APP_VERSION,exported:new Date().toISOString(),config:CFG,...d},null,2));
     await wr.close()
@@ -4423,7 +4437,7 @@ async function syncReadFile(){
   }catch(e){if(e.name!=='AbortError')alert('Eroare import: '+e.message)}}
 async function _importFromHandle(fh){
   const file=await fh.getFile();const text=await file.text();const d=JSON.parse(text);
-  if(d.config){Object.assign(CFG,d.config);CFG.sync_file_name=fh.name;await saveCfg()}
+  if(d.config){const cfg=_extractCfg(d.config);if(cfg)Object.assign(CFG,cfg);CFG.sync_file_name=fh.name;await saveCfg()}
   // Import all stores (by store name — new format)
   for(const s of ST){if(d[s]&&Array.isArray(d[s])){await cl(s);for(const r of d[s])await pt(s,r)}}
   // Also support old format keys (ia, au, de, bi, pp, docs, terms)
@@ -4534,6 +4548,7 @@ function rAjutor(el){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'6.5.1',date:'2026-03-15',notes:'CRITIC FIX: Import/sync config corupt — config salvat ca array imbricat in loc de obiect\nFIX: syncWrite() si expAll() exclud config din bucla getAll (evita suprascrierea cu array)\nFIX: Export backup include explicit config:CFG ca obiect\nFIX: _extractCfg() — extrage config valid din structuri corupte (array, nested "0" keys)\nFIX: downloadUpdate() foloseste versiunea remote pentru numele fisierului descarcat'},
   {version:'6.5',date:'2026-03-15',notes:'Fuzionare Tip Infectie cu Categorie IAAM Anexa 9 — un singur dropdown grupat ECDC + categorii personalizate\nConfigurator categorii IAAM in Configurare: categorii ECDC predefinite (non-stergibile) + categorii custom\nEtiologie germeni: dropdown searchable cu filtrare dupa nume/cod, camp text liber pentru Alte/nespecificat\nMDRo (ESBL, CRE, etc.) afisat conditional — doar pentru bacterii, nu virusuri/fungi/paraziti\nButon verificare manuala update-uri in toolbar (🔄) si pagina Despre\nFunctie showToast() pentru notificari temporare'},
   {version:'6.4',date:'2026-03-15',notes:'Configurator praguri ATP: 17 tipuri suprafete cu prag RLU, rezultat calculat automat (Conform/Neconform)\nConfigurator suprafete UV Check: 5 tipuri predefinite, dropdown in formular UV\nSectiune Autocontrol — Tipuri Suprafete in Configurare (tab Spital)\nPreview format data sub fiecare input type=date din formulare (arata data in formatul ales)\nProtectie formulare nesalvate: avertizare la inchidere modal cu date modificate (toate formularele)\nNota explicativa format data in Configurare (browser/OS controls date picker)'},
   {version:'6.2',date:'2026-03-15',notes:'CRITIC: syncWrite() scrie acum TOATE cele 13 store-uri IndexedDB (inainte pierdea events, audits, trainings, atp, uvcheck, documents, deadlines)\nCRITIC: syncReconnect() verifica daca IndexedDB e gol si citeste din fisier (inainte suprascria JSON-ul bun cu date goale)\nCRITIC: syncReadFile() importa toate store-urile + suport format vechi\nCorectat: impAll() importa si config + suport ambele formate JSON\nCorectat: Click pe indicator galben deschide fisierul existent (nu mai creaza fisier nou)'},
@@ -5104,7 +5119,7 @@ function downloadApp(){
   saveAs(new Blob([html],{type:'text/html;charset=utf-8'}),'CPIAAM_Management.html');
   logActivity('Descarcat aplicatia pe calculator');
 }
-async function expAll(){const d={};for(const s of ST)d[s]=await ga(s);
+async function expAll(){const d={};for(const s of ST){if(s==='config')continue;d[s]=await ga(s)}
   // Re-embed on_disk attachments as base64 for portable backup
   if(_attDirHandle){
     for(const rec of (d.biocide||[])){
@@ -5127,12 +5142,13 @@ async function expAll(){const d={};for(const s of ST)d[s]=await ga(s);
     }
   }
   CFG.last_backup=new Date().toISOString();await saveCfg();
-  saveAs(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),'CPIAAM_Backup_'+A.year+'_'+new Date().toISOString().slice(0,10)+'.json');logActivity('Backup exportat')}
+  const out={version:APP_VERSION,exported:new Date().toISOString(),config:CFG,...d};
+  saveAs(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}),'CPIAAM_Backup_'+A.year+'_'+new Date().toISOString().slice(0,10)+'.json');logActivity('Backup exportat')}
 function impAll(){if(!confirm('Importul inlocuieste datele existente. Continua?'))return;
   const inp=document.createElement('input');inp.type='file';inp.accept='.json';
   inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;
     try{const d=JSON.parse(await f.text());
-    if(d.config){Object.assign(CFG,d.config);await saveCfg()}
+    if(d.config){const cfg=_extractCfg(d.config);if(cfg)Object.assign(CFG,cfg);await saveCfg()}
     // Import all stores by name
     for(const s of ST)if(d[s]&&Array.isArray(d[s])){await cl(s);for(const i of d[s])await pt(s,i)}
     // Support old format keys

@@ -702,7 +702,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='6.1';
+const APP_VERSION='6.2';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -4133,15 +4133,31 @@ async function syncReconnect(){
   const stored=await loadFileHandle();
   if(stored){
     try{const perm=await stored.requestPermission({mode:'readwrite'});
-      if(perm==='granted'){_fileHandle=stored;updateSyncIndicator();await syncWrite();return}
+      if(perm==='granted'){_fileHandle=stored;await saveFileHandle(stored);
+        await _syncAfterReconnect();return}
     }catch(e){console.warn('Handle permission failed:',e)}
   }
   // If handle restore failed, let user pick the existing file
   try{const[fh]=await window.showOpenFilePicker({types:[{description:'JSON',accept:{'application/json':['.json']}}]});
     _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();
     await saveFileHandle(fh);
-    await syncWrite();updateSyncIndicator();
+    await _syncAfterReconnect();
   }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}
+}
+async function _syncAfterReconnect(){
+  // Check if local DB has data or is empty
+  const localData=await ga('iaam');const localAuto=await ga('autocontrol');
+  const hasLocalData=localData.length>0||localAuto.length>0;
+  if(hasLocalData){
+    // Local DB has data — write to file (normal sync)
+    updateSyncIndicator();await syncWrite();
+  } else {
+    // Local DB is empty — read from file to restore data
+    try{await _importFromHandle(_fileHandle)}catch(e){
+      console.warn('Import from sync file failed:',e);
+      updateSyncIndicator();
+    }
+  }
 }
 async function syncPickFile(){
   if(!window.showSaveFilePicker){alert('Browserul tau nu suporta File System Access API. Foloseste Chrome sau Edge.');return}
@@ -4171,23 +4187,31 @@ async function saveFileLocation(){
 async function saveFileLocationCfg(v){
   CFG.file_location=v;await saveCfg();updateSyncIndicator()}
 async function syncWrite(){
-  if(!_fileHandle)return;try{const data=await collectAllData();const wr=await _fileHandle.createWritable();
-    await wr.write(JSON.stringify({version:APP_VERSION,exported:new Date().toISOString(),config:CFG,...data},null,2));
-    await wr.close()}catch(e){console.warn('Sync write failed:',e)}}
+  if(!_fileHandle)return;
+  try{
+    // Write ALL stores (not just year-filtered analysis data)
+    const d={};for(const s of ST)d[s]=await ga(s);
+    const wr=await _fileHandle.createWritable();
+    await wr.write(JSON.stringify({version:APP_VERSION,exported:new Date().toISOString(),config:CFG,...d},null,2));
+    await wr.close()
+  }catch(e){console.warn('Sync write failed:',e)}
+}
 async function syncReadFile(){
   if(!window.showOpenFilePicker){alert('Browserul tau nu suporta File System Access API. Foloseste Chrome/Edge.');return}
   try{const[fh]=await window.showOpenFilePicker({types:[{description:'JSON',accept:{'application/json':['.json']}}]});
     _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();await saveFileHandle(fh);
-    const file=await fh.getFile();const text=await file.text();const d=JSON.parse(text);
-    if(d.config){Object.assign(CFG,d.config);await saveCfg()}
-    if(d.ia)for(const r of d.ia)await pt('iaam',r);
-    if(d.au)for(const r of d.au)await pt('autocontrol',r);
-    if(d.de)for(const r of d.de)await pt('deseuri',r);
-    if(d.bi)for(const r of d.bi)await pt('biocide',r);
-    if(d.pp)for(const r of d.pp)await pt('pps',r);
-    if(d.docs)for(const r of d.docs)await pt('documents',r);
-    if(d.terms)for(const r of d.terms)await pt('deadlines',r);
-    alert('Import reusit!');location.reload()}catch(e){if(e.name!=='AbortError')alert('Eroare import: '+e.message)}}
+    await _importFromHandle(fh);
+  }catch(e){if(e.name!=='AbortError')alert('Eroare import: '+e.message)}}
+async function _importFromHandle(fh){
+  const file=await fh.getFile();const text=await file.text();const d=JSON.parse(text);
+  if(d.config){Object.assign(CFG,d.config);CFG.sync_file_name=fh.name;await saveCfg()}
+  // Import all stores (by store name — new format)
+  for(const s of ST){if(d[s]&&Array.isArray(d[s])){await cl(s);for(const r of d[s])await pt(s,r)}}
+  // Also support old format keys (ia, au, de, bi, pp, docs, terms)
+  const oldMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
+  for(const[key,store] of Object.entries(oldMap)){if(d[key]&&!d[store]){for(const r of d[key])await pt(store,r)}}
+  alert('Import reusit!');location.reload();
+}
 
 // ═══════════════════════════════════════════════════════════════
 // HELP / FAQ PAGE (cerinta D)
@@ -4291,6 +4315,7 @@ function rAjutor(el){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'6.2',date:'2026-03-15',notes:'CRITIC: syncWrite() scrie acum TOATE cele 13 store-uri IndexedDB (inainte pierdea events, audits, trainings, atp, uvcheck, documents, deadlines)\nCRITIC: syncReconnect() verifica daca IndexedDB e gol si citeste din fisier (inainte suprascria JSON-ul bun cu date goale)\nCRITIC: syncReadFile() importa toate store-urile + suport format vechi\nCorectat: impAll() importa si config + suport ambele formate JSON\nCorectat: Click pe indicator galben deschide fisierul existent (nu mai creaza fisier nou)'},
   {version:'6.1',date:'2026-03-15',notes:'Adaugat: Stocare atasamente pe disc via File System Access API — folder configurabil, performanta superioara\nAdaugat: Migrare automata atasamente base64 existente pe disc\nAdaugat: Reconectare folder atasamente la reincarcare pagina (banner galben)\nAdaugat: Re-embed base64 la backup JSON pentru portabilitate\nAdaugat: Import atasamente pe disc automat la import JSON\nAdaugat: Sectiune Stocare Atasamente in Configurare\nModificat: Butonul sync redenumit "Salveaza JSON" (clar, nu "Conecteaza")\nAdaugat: Format data dd.mm.yyyy (romanesc) ca optiune + setat ca default\nCorectat: Toate datele din Word folosesc formatul configurabil (nu mai sunt hardcodate ro-RO)'},
   {version:'5.5.0',date:'2026-03-14',notes:'Adaugat: Indicator sincronizare 3 stari in toolbar — rosu (nesincronizat), galben (salvat local), verde (sincronizat cloud)\nAdaugat: Modal locatie fisier dupa conectare — intrebare local/cloud/nu stiu\nAdaugat: Setare locatie fisier editabila in Configurare\nAdaugat: Sectiune ghid complet "Date, backup si sincronizare" in Ajutor/FAQ — cele 3 stari, diferenta live vs backup, cum primesti update-uri\nAdaugat: Link spre ghid sincronizare in tutorialul post-wizard (Sfat 1)\nAdaugat: Traduceri bilingve RO/EN pentru toate elementele noi\nActualizat: Versiune 5.5'},
   {version:'5.4.0',date:'2026-03-14',notes:'Adaugat: Sistem auto-update — verificare versiune noua la pornire de pe GitHub\nAdaugat: Banner update galben-amber cu changelog si buton Descarca acum\nAdaugat: Dismiss banner cu sessionStorage (nu reapare in aceeasi sesiune)\nAdaugat: Download direct fisier HTML nou la click pe Descarca acum\nAdaugat: Fisier version.json separat pentru controlul versiunilor\nActualizat: Versiune 5.4'},
@@ -4888,7 +4913,12 @@ function impAll(){if(!confirm('Importul inlocuieste datele existente. Continua?'
   const inp=document.createElement('input');inp.type='file';inp.accept='.json';
   inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;
     try{const d=JSON.parse(await f.text());
-    for(const s of ST)if(d[s]){await cl(s);for(const i of d[s])await pt(s,i)}
+    if(d.config){Object.assign(CFG,d.config);await saveCfg()}
+    // Import all stores by name
+    for(const s of ST)if(d[s]&&Array.isArray(d[s])){await cl(s);for(const i of d[s])await pt(s,i)}
+    // Support old format keys
+    const oldMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
+    for(const[key,store] of Object.entries(oldMap)){if(d[key]&&!d[store]){for(const r of d[key])await pt(store,r)}}
     // Write imported attachments to disk if directory available
     if(_attDirHandle){
       for(const rec of (d.biocide||[])){

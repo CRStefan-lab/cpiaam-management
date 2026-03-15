@@ -1,14 +1,13 @@
 {
-  "version": "6.1",
+  "version": "6.2",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Stocare atasamente pe disc (File System Access API) — folder configurabil, migrare automata",
-    "Reconectare folder atasamente la reincarcare pagina cu banner",
-    "Backup JSON portabil — re-embed base64 automat la export",
-    "Import atasamente pe disc automat la import JSON",
-    "Sectiune Stocare Atasamente in Configurare",
-    "Buton sync redenumit Salveaza JSON",
+    "CRITIC: syncWrite salveaza acum TOATE cele 13 store-uri (inainte pierdea events, audits, trainings, etc.)",
+    "CRITIC: Reconectare JSON verifica daca baza e goala si restaureaza din fisier (nu mai suprascrie)",
+    "CRITIC: Import JSON importa toate store-urile + config + suport format vechi",
+    "Indicator galben Reconecteaza deschide fisierul existent (nu mai creaza fisier nou)",
+    "Stocare atasamente pe disc (File System Access API) — folder configurabil",
     "Format data dd.mm.yyyy (romanesc) ca default + 4 optiuni configurabile",
-    "Datele din Word respecta formatul configurabil (nu mai sunt hardcodate)"
+    "Buton sync redenumit Salveaza JSON"
   ]
 }

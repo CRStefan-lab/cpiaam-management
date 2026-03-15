@@ -551,6 +551,7 @@ body{display:block!important;background:#fff!important}
       <button class="tb-icon" onclick="syncPickFile()" title="Salveaza date in fisier JSON">&#128190;</button>
       <button class="tb-icon" onclick="printDashboard()" title="Printeaza dashboard" id="btn-print">&#128424;</button>
       <button class="tb-icon" onclick="downloadApp()" title="Descarca aplicatia / Download app" style="font-size:12px">&#11015;&#65039;</button>
+      <button class="tb-icon" onclick="checkForUpdateManual(event)" title="Verifica update-uri" id="btn-update">&#128260;</button>
       <div style="position:relative">
         <button class="tb-icon" onclick="toggleNotif()" title="Notificari" id="btn-notif">&#128276;<span class="notif-badge" id="notif-badge" style="display:none">0</span></button>
         <div class="notif-dd" id="notif-dd"></div>
@@ -707,7 +708,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='6.4';
+const APP_VERSION='6.5';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1001,7 +1002,7 @@ function genId(prefix){return prefix+'_'+Date.now().toString(36)+'_'+(++_idCount
 // Resolve ID→name for each config type. Returns name or '(dezactivat)' if not found.
 function rSec(id){if(!id)return '—';const s=CFG.sections.find(x=>x.id===id)||CFG.sections.find(x=>x.name===id);return s?(s.name||s.id):id}
 function rProbe(id){if(!id)return '—';const a=CFG.probe_types||[];const p=a.find(x=>x.id===id)||a.find(x=>x.name===id);return p?(p.name||p.id):id}
-function rInf(id){if(!id)return '—';const a=CFG.infection_types||[];const t=a.find(x=>x.id===id)||a.find(x=>x.name===id);return t?(t.name||t.id):id}
+function rInf(id){if(!id)return '—';return iaamCatLabel(id)}
 function rWaste(id){if(!id)return '—';const a=CFG.waste_codes||[];const w=a.find(x=>x.id===id)||a.find(x=>x.name===id)||a.find(x=>x.code===id);return w?(w.name||w.code):id}
 function rWasteCode(id){if(!id)return '—';const a=CFG.waste_codes||[];const w=a.find(x=>x.id===id)||a.find(x=>x.code===id);return w?w.code:id}
 function rWasteObj(id){const a=CFG.waste_codes||[];return a.find(x=>x.id===id)||a.find(x=>x.code===id)||null}
@@ -1043,12 +1044,31 @@ function addDatePreview(inputId){
 function calcAge(dob){if(!dob)return '';const b=new Date(dob),t=new Date(),m=t.getMonth()-b.getMonth()+(t.getFullYear()-b.getFullYear())*12;if(m<12)return m+' luni';return Math.floor(m/12)}
 function calcDays(d1,d2){if(!d1||!d2)return '';const a=new Date(d1),b=new Date(d2);const diff=Math.ceil((b-a)/864e5);return diff>=0?diff:''}
 function germenName(code){for(const g of GERMENI_LIST)for(const it of g.items)if(it.c===code)return it.n;return code}
-function iaamCatLabel(code){for(const g of IAAM_CATS)for(const it of g.items)if(it.c===code)return it.c+' — '+it.n;return code}
-function iaamCatOpts(sel){let h='<option value="">—</option>';IAAM_CATS.forEach(g=>{h+='<optgroup label="'+g.g+'">';g.items.forEach(it=>{h+='<option value="'+it.c+'"'+(it.c===sel?' selected':'')+'>'+it.c+' — '+it.n+'</option>'});h+='</optgroup>'});return h}
+function iaamCatLabel(code){if(!code)return '—';for(const g of IAAM_CATS)for(const it of g.items)if(it.c===code)return it.c+' — '+it.n;const cust=(CFG.iaam_custom_cats||[]).find(x=>x.id===code);if(cust)return cust.name;const old=(CFG.infection_types||[]).find(x=>x.id===code||x.name===code);if(old)return typeof old==='string'?old:(old.name||code);return code}
+function iaamCatOpts(sel){let h='<option value="">—</option>';IAAM_CATS.forEach(g=>{h+='<optgroup label="'+g.g+'">';g.items.forEach(it=>{h+='<option value="'+it.c+'"'+(it.c===sel?' selected':'')+'>'+it.c+' — '+it.n+'</option>'});h+='</optgroup>'});const cust=CFG.iaam_custom_cats||[];if(cust.length){h+='<optgroup label="Personalizate">';cust.forEach(c=>{h+='<option value="'+c.id+'"'+(c.id===sel?' selected':'')+'>'+esc(c.name)+'</option>'});h+='</optgroup>'}return h}
 function germeniOpts(){let h='<option value="">— Selecteaza germen —</option>';GERMENI_LIST.forEach(g=>{h+='<optgroup label="'+g.g+'">';g.items.forEach(it=>{h+='<option value="'+it.c+'">'+it.n+' ('+it.c+')</option>'});h+='</optgroup>'});return h}
+function needsMDRo(code){if(!code)return false;if(code.startsWith('VIR'))return false;if(code.startsWith('CAN')||code.startsWith('ASP')||code.startsWith('YEA')||code.startsWith('FUN')||code.startsWith('FIL'))return false;if(code==='PAROTH'||code.startsWith('_'))return false;return true}
+function needsCustomName(code){if(!code)return false;const item=germenName(code);return/Alt[eiă]|alt[eiă]|Other|spp\.,? ?alt|nespecificat|neidentificat/i.test(item)||code.startsWith('_')}
+function _allGermeniFlat(){const arr=[];GERMENI_LIST.forEach(g=>g.items.forEach(it=>arr.push({c:it.c,n:it.n,g:g.g})));return arr}
 function atbOpts(){let h='<option value="">— Selecteaza antibiotic —</option>';ATB_LIST.forEach(g=>{h+='<optgroup label="'+g.g+'">';g.items.forEach(it=>{h+='<option value="'+it.a+'">'+it.n+' ('+it.a+')</option>'});h+='</optgroup>'});return h}
-function renderGermeniCards(){if(_iaamGermeni.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun germen adaugat.</div>';return _iaamGermeni.map((g,i)=>'<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;background:var(--bg);border:1px solid var(--brd);border-radius:6px;margin:3px"><strong style="font-size:12px">'+g.name+' ('+g.code+')</strong><select onchange="_iaamGermeni['+i+'].mdr=this.value" style="padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'+MDR_OPTS.map(o=>'<option'+(g.mdr===o?' selected':'')+'>'+o+'</option>').join('')+'</select><button onclick="removeIaamGermen('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">&times;</button></div>').join('')}
+function renderGermeniCards(){if(_iaamGermeni.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun germen adaugat.</div>';return _iaamGermeni.map((g,i)=>{
+  let h='<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;background:var(--bg);border:1px solid var(--brd);border-radius:6px;margin:3px;flex-wrap:wrap">';
+  h+='<strong style="font-size:12px">'+esc(g.name)+' ('+esc(g.code)+')</strong>';
+  if(needsMDRo(g.code)){h+='<select onchange="_iaamGermeni['+i+'].mdr=this.value" style="padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'+MDR_OPTS.map(o=>'<option'+(g.mdr===o?' selected':'')+'>'+o+'</option>').join('')+'</select>'}
+  if(needsCustomName(g.code)){h+='<input placeholder="Specifica (optional)" value="'+esc(g.name_custom||'')+'" onchange="_iaamGermeni['+i+'].name_custom=this.value;markFormDirty()" style="width:140px;padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'}
+  h+='<button onclick="removeIaamGermen('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">&times;</button></div>';return h}).join('')}
 function addIaamGermen(){const sel=document.getElementById('f-germ-sel');if(!sel||!sel.value)return;if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}if(_iaamGermeni.find(g=>g.code===sel.value))return;const name=germenName(sel.value);_iaamGermeni.push({code:sel.value,name,mdr:'Nu'});sel.value='';document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
+function selectGermenFromDD(code){if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}if(_iaamGermeni.find(g=>g.code===code))return;const name=germenName(code);_iaamGermeni.push({code,name,mdr:needsMDRo(code)?'Nu':''});markFormDirty();const si=document.getElementById('f-germ-search');if(si)si.value='';hideGermeniDD();document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
+function addGermenManual(){if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}const name=prompt('Numele germenului:');if(!name||!name.trim())return;_iaamGermeni.push({code:'MANUAL',name:name.trim(),mdr:'Nu'});markFormDirty();document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
+function showGermeniDD(){filterGermeniDropdown(document.getElementById('f-germ-search')?.value||'')}
+function hideGermeniDD(){setTimeout(()=>{const dd=document.getElementById('f-germ-dd');if(dd)dd.style.display='none'},200)}
+function filterGermeniDropdown(q){const dd=document.getElementById('f-germ-dd');if(!dd)return;
+  const all=_allGermeniFlat();const ql=q.toLowerCase().trim();
+  const filtered=ql?all.filter(it=>it.n.toLowerCase().includes(ql)||it.c.toLowerCase().includes(ql)):all;
+  if(filtered.length===0){dd.innerHTML='<div style="padding:10px;font-size:12px;color:var(--txtL)">Niciun rezultat. Foloseste butonul "Adauga manual".</div>';dd.style.display='block';return}
+  let curG='',h='';filtered.slice(0,50).forEach(it=>{if(it.g!==curG){curG=it.g;h+='<div style="padding:4px 10px;font-size:10px;font-weight:700;color:var(--navy);background:var(--bg);text-transform:uppercase;position:sticky;top:0">'+esc(it.g)+'</div>'}
+    h+='<div onclick="selectGermenFromDD(\''+it.c+'\')" style="padding:5px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--bg)" onmouseenter="this.style.background=\'var(--bg)\'" onmouseleave="this.style.background=\'\'">'+esc(it.n)+' <span style="color:var(--txtL);font-size:10px">('+it.c+')</span></div>'});
+  dd.innerHTML=h;dd.style.display='block'}
 function removeIaamGermen(i){_iaamGermeni.splice(i,1);document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
 function renderAtbRows(){if(_iaamAtb.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun antibiotic adaugat.</div>';let h='<table class="dt" style="font-size:12px"><thead><tr><th>Antibiotic</th><th>Cale</th><th>Start</th><th>Stop</th><th>Zile</th><th style="width:30px"></th></tr></thead><tbody>';_iaamAtb.forEach((a,i)=>{const days=calcDays(a.date_start,a.date_stop);h+='<tr><td><strong>'+a.name+'</strong><br><span style="font-size:10px;color:var(--txtL)">'+a.atc+'</span></td><td>'+a.route+'</td><td><input type="date" value="'+(a.date_start||'')+'" onchange="_iaamAtb['+i+'].date_start=this.value;document.getElementById(\'f-atb-rows\').innerHTML=renderAtbRows()" style="font-size:11px;padding:2px;border:1px solid var(--brd);border-radius:4px"></td><td><input type="date" value="'+(a.date_stop||'')+'" onchange="_iaamAtb['+i+'].date_stop=this.value;document.getElementById(\'f-atb-rows\').innerHTML=renderAtbRows()" style="font-size:11px;padding:2px;border:1px solid var(--brd);border-radius:4px"></td><td>'+(days||'—')+'</td><td><button onclick="removeIaamAtb('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">&times;</button></td></tr>'});h+='</tbody></table>';return h}
 function addIaamAtb(){const sel=document.getElementById('f-atb-sel'),route=document.getElementById('f-atb-route');if(!sel||!sel.value)return;const opt=sel.options[sel.selectedIndex];_iaamAtb.push({atc:sel.value,name:opt.text.split(' (')[0],route:route?route.value:'IV',date_start:'',date_stop:''});sel.value='';document.getElementById('f-atb-rows').innerHTML=renderAtbRows()}
@@ -1152,6 +1172,10 @@ function optsA(arr,sel){return arr.map(v=>'<option '+(v===sel?'selected':'')+'>'
 function optsO(obj,sel){return Object.entries(obj).map(([k,v])=>'<option value="'+k+'" '+(k===sel?'selected':'')+'>'+v+'</option>').join('')}
 
 // ═══ DATA MIGRATION: text→ID ═══
+function _matchOldInfToEcdc(text){if(!text)return null;const tl=text.toLowerCase();
+  const map={'isc':'SSI-S','situs chirurgical':'SSI-S','its':'C-CVC','tract sangvin':'C-CVC','pneumonie':'PN1','vap':'PN1',
+    'itu':'UTI-A','tract urinar':'UTI-A','bacteriemie':'UO','icd':'ICD','clostridioides':'ICD','covid':'COV-MM','sepsis':'CSEP'};
+  for(const[k,v] of Object.entries(map)){if(tl.includes(k))return v}return null}
 async function migrateDataToIds(){
   let migrated=0;
   // Build lookup maps: name→id for current config
@@ -1168,6 +1192,14 @@ async function migrateDataToIds(){
     let changed=false;
     if(r.section&&!r.section.startsWith('sec_')&&secMap[r.section]){r.section=secMap[r.section];changed=true}
     if(r.infection_type&&!r.infection_type.startsWith('inf_')&&infMap[r.infection_type]){r.infection_type=infMap[r.infection_type];changed=true}
+    // Migrate: if iaam_category is empty but infection_type has a value, try to match ECDC code
+    if(!r.iaam_category&&r.infection_type){
+      const itVal=rInf(r.infection_type);
+      // Try matching old infection_type text to ECDC category
+      const ecdcMatch=_matchOldInfToEcdc(itVal);
+      if(ecdcMatch){r.iaam_category=ecdcMatch;r.infection_type=ecdcMatch;changed=true}
+      else{r.iaam_category=r.infection_type;changed=true}
+    }
     if(changed){await pt('iaam',r);migrated++}
   }
   // Migrate Autocontrol records
@@ -1272,6 +1304,8 @@ function ensureConfigIds(){
   }else{CFG.doc_categories=normalizeArr(CFG.doc_categories,'doccat',DEF_DOCCAT)}
   // Personnel: ensure IDs
   (CFG.personnel||[]).forEach(p=>{if(!p.id){p.id=genId('pers');changed=true}});
+  // IAAM custom categories
+  if(!CFG.iaam_custom_cats)CFG.iaam_custom_cats=[];
 
   if(changed)console.log('[CPIAAM] Config IDs ensured/repaired, saving...');
   return changed;
@@ -1734,7 +1768,7 @@ async function rIAAM(el){
     if(f.mdr==='da'&&!r.mdr)return false;
     if(f.mdr==='nu'&&r.mdr)return false;
     if(f.search){const q=f.search.toLowerCase();
-      const fields=[r.patient||'',rSec(r.section),rInf(r.infection_type),r.organism||'',detLabel(r.detection),r.date_discharge||''];
+      const fields=[r.patient||'',rSec(r.section),rInf(r.iaam_category||r.infection_type),r.organism||'',detLabel(r.detection),r.date_discharge||''];
       if(!fields.some(x=>x.toLowerCase().includes(q)))return false}
     return true;
   });
@@ -1757,9 +1791,9 @@ async function rIAAM(el){
     '<button class="btn bp" onclick="editIAAM()">+ Caz IAAM Nou</button></div>'+
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
   (data.length===0?'<div class="es"><p>Niciun caz IAAM '+(f.search||f.sec||f.mdr?'gasit cu filtrele selectate':'pentru '+A.year)+'.</p><button class="btn bp" onclick="editIAAM()">Adauga primul caz</button></div>':
-    '<table class="dt"><thead><tr><th>#</th><th>Luna</th><th>Pacient</th><th>Sectie</th><th>Tip infectie</th><th>Germen</th><th>MDR</th><th>Depistare</th><th>Externare</th><th>Actiuni</th></tr></thead><tbody>'+
+    '<table class="dt"><thead><tr><th>#</th><th>Luna</th><th>Pacient</th><th>Sectie</th><th>Categorie IAAM</th><th>Germen</th><th>MDR</th><th>Depistare</th><th>Externare</th><th>Actiuni</th></tr></thead><tbody>'+
     data.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+(MO[r.month-1]||'?')+'</td><td>'+(r.patient||'—')+'</td><td>'+rSec(r.section)+'</td>'+
-      '<td>'+rInf(r.infection_type)+'</td><td><strong>'+(r.germeni&&r.germeni.length?r.germeni.map(g=>g.name).join(', '):r.organism||'—')+'</strong></td>'+
+      '<td>'+rInf(r.iaam_category||r.infection_type)+'</td><td><strong>'+(r.germeni&&r.germeni.length?r.germeni.map(g=>g.name).join(', '):r.organism||'—')+'</strong></td>'+
       '<td>'+(r.mdr?'<span class="bdg bdg-r">MDR</span>':'<span class="bdg bdg-g">Nu</span>')+'</td>'+
       '<td style="font-size:11px">'+detLabel(r.detection)+'</td>'+
       '<td style="font-size:11px">'+fmtDate(r.date_discharge)+'</td>'+
@@ -1808,16 +1842,18 @@ async function editIAAM(id){
     '<h4 style="color:var(--navy);margin:16px 0 10px;font-size:13px">IV. FACTORI DE RISC</h4>'+
     '<div class="fg"><label>Factori de risc (cate unul pe linie)</label><textarea id="f-rf" rows="3">'+rf.join('\n')+'</textarea></div>'+
     '<h4 style="color:var(--navy);margin:16px 0 10px;font-size:13px">V. DETALII INFECTIE</h4>'+
-    '<div class="fr"><div class="fg"><label>Categorie IAAM (Anexa 9 ECDC)</label><select id="f-iaam-cat">'+iaamCatOpts(r.iaam_category||'')+'</select></div>'+
-    '<div class="fg"><label>Tip infectie (configurator)</label><select id="f-type"><option value="">—</option>'+optsId(CFG.infection_types,r.infection_type)+'</select></div></div>'+
+    '<div class="fg"><label>Categorie IAAM (Anexa 9 ECDC)</label><select id="f-iaam-cat">'+iaamCatOpts(r.iaam_category||r.infection_type||'')+'</select></div>'+
     '<div class="fr3"><div class="fg"><label>Data confirmarii</label><input type="date" id="f-dconf" value="'+(r.date_confirmed||'')+'"></div>'+
     '<div class="fg"><label>Nr. buletin analize</label><input id="f-bul" value="'+(r.bulletin_nr||'')+'"></div>'+
     '<div class="fg"><label>Localizare infectie</label><input id="f-loc" value="'+(r.localization||'')+'"></div></div>'+
     '<div class="fr"><div class="fg"><label>Mod depistare</label><select id="f-dep"><option value="activa" '+(r.detection==='activa'?'selected':'')+'>Activa (supraveghere activa)</option><option value="pasiva" '+(r.detection==='pasiva'?'selected':'')+'>Pasiva (simptomatologie clinica)</option><option value="pps" '+(r.detection==='pps'?'selected':'')+'>Studiu de prevalenta (PPS)</option><option value="screening" '+(r.detection==='screening'?'selected':'')+'>Screening</option></select></div>'+
     '<div class="fg"><label>Colonizare / Infectie activa</label><select id="f-act"><option value="infectie" '+(r.active_type!=='colonizare'?'selected':'')+'>Infectie activa</option><option value="colonizare" '+(r.active_type==='colonizare'?'selected':'')+'>Colonizare</option></select></div></div>'+
     '<h4 style="color:var(--navy);margin:16px 0 10px;font-size:13px">ETIOLOGIE — GERMENI</h4>'+
-    '<div class="fg"><label>Adauga germen (Anexa 11 ECDC)</label><div style="display:flex;gap:6px;margin-bottom:6px"><select id="f-germ-sel" style="flex:1">'+germeniOpts()+'</select><button class="btn bo bsm" onclick="addIaamGermen()">+ Adauga</button></div>'+
-    '<div id="f-germeni-cards" style="display:flex;flex-wrap:wrap;gap:4px">'+renderGermeniCards()+'</div></div>'+
+    '<div class="fg"><label>Adauga germen (Anexa 11 ECDC)</label>'+
+    '<div style="position:relative"><input id="f-germ-search" placeholder="Cauta germen (nume sau cod)..." autocomplete="off" style="width:100%;margin-bottom:0" oninput="filterGermeniDropdown(this.value)" onfocus="showGermeniDD()" onblur="hideGermeniDD()">'+
+    '<div id="f-germ-dd" style="display:none;position:absolute;left:0;right:0;top:100%;background:var(--card);border:1px solid var(--brd);border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,0.15)"></div></div>'+
+    '<div style="margin-top:6px"><button class="btn bo bsm" onclick="addGermenManual()">+ Adauga manual (text liber)</button></div></div>'+
+    '<div class="fg"><div id="f-germeni-cards" style="display:flex;flex-wrap:wrap;gap:4px">'+renderGermeniCards()+'</div></div>'+
     '<h4 style="color:var(--navy);margin:16px 0 10px;font-size:13px">TRATAMENT ANTIBIOTIC</h4>'+
     '<div class="fg"><div style="display:flex;gap:6px;margin-bottom:8px"><select id="f-atb-sel" style="flex:1">'+atbOpts()+'</select><select id="f-atb-route" style="width:130px">'+ATB_ROUTES.map(r=>'<option value="'+r.v+'">'+r.n+'</option>').join('')+'</select><button class="btn bo bsm" onclick="addIaamAtb()">+ Adauga</button></div>'+
     '<div id="f-atb-rows">'+renderAtbRows()+'</div></div>'+
@@ -1855,7 +1891,7 @@ async function saveIAAM(id){
     procedures:v('f-proc').trim(),
     risk_factors:v('f-rf').split('\n').map(s=>s.trim()).filter(Boolean),
     iaam_category:v('f-iaam-cat'),
-    infection_type:v('f-type'),
+    infection_type:v('f-iaam-cat'),
     germeni:_iaamGermeni,
     organism:_iaamGermeni.length>0?_iaamGermeni.map(g=>g.name).join(', '):'',
     mdr:_iaamGermeni.some(g=>g.mdr&&g.mdr!=='Nu'),
@@ -3862,9 +3898,12 @@ async function rCfg(el){
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-probe" placeholder="Tip proba nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-probe\').value.trim();if(v){CFG.probe_types.push({id:genId(\'probe\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
-  '<div class="pn"><div class="ph"><h3>Tipuri de Infectii (IAAM)</h3></div><div class="pb">'+
-    '<div class="tag-list">'+CFG.infection_types.map((t,i)=>{const nm=typeof t==='string'?t:(t.name||t.id||'?');return '<span class="tag">'+nm+'<span class="tag-x" onclick="CFG.infection_types.splice('+i+',1);saveCfg();render()">&#215;</span></span>'}).join('')+'</div>'+
-    '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-inf" placeholder="Tip infectie nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-inf\').value.trim();if(v){CFG.infection_types.push({id:genId(\'inf\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
+  '<div class="pn"><div class="ph"><h3>Categorii IAAM (Anexa 9 ECDC)</h3></div><div class="pb">'+
+    '<p style="font-size:12px;color:var(--txtL);margin-bottom:10px">Categoriile ECDC sunt predefinite si nu pot fi sterse. Poti adauga categorii personalizate.</p>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">'+IAAM_CATS.map(g=>g.items.map(it=>'<span class="tag" style="background:#EEF2FF;border:1px solid #C7D2FE;color:var(--navy)">'+it.c+' — '+it.n+' <span style="font-size:9px;background:var(--navy);color:#fff;padding:1px 4px;border-radius:3px;margin-left:3px">ECDC</span></span>').join('')).join('')+'</div>'+
+    '<h4 style="font-size:12px;color:var(--navy);margin-bottom:6px">Categorii personalizate</h4>'+
+    '<div class="tag-list">'+(CFG.iaam_custom_cats||[]).map((c,i)=>'<span class="tag">'+esc(c.name)+'<span class="tag-x" onclick="CFG.iaam_custom_cats.splice('+i+',1);saveCfg();render()">&#215;</span></span>').join('')+'</div>'+
+    '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-iaam-cat" placeholder="Categorie personalizata noua"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-iaam-cat\').value.trim();if(v){if(!CFG.iaam_custom_cats)CFG.iaam_custom_cats=[];CFG.iaam_custom_cats.push({id:genId(\'icat\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
   '<div class="pn"><div class="ph"><h3>Produse Biocide</h3></div><div class="pb">'+
@@ -4495,6 +4534,7 @@ function rAjutor(el){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'6.5',date:'2026-03-15',notes:'Fuzionare Tip Infectie cu Categorie IAAM Anexa 9 — un singur dropdown grupat ECDC + categorii personalizate\nConfigurator categorii IAAM in Configurare: categorii ECDC predefinite (non-stergibile) + categorii custom\nEtiologie germeni: dropdown searchable cu filtrare dupa nume/cod, camp text liber pentru Alte/nespecificat\nMDRo (ESBL, CRE, etc.) afisat conditional — doar pentru bacterii, nu virusuri/fungi/paraziti\nButon verificare manuala update-uri in toolbar (🔄) si pagina Despre\nFunctie showToast() pentru notificari temporare'},
   {version:'6.4',date:'2026-03-15',notes:'Configurator praguri ATP: 17 tipuri suprafete cu prag RLU, rezultat calculat automat (Conform/Neconform)\nConfigurator suprafete UV Check: 5 tipuri predefinite, dropdown in formular UV\nSectiune Autocontrol — Tipuri Suprafete in Configurare (tab Spital)\nPreview format data sub fiecare input type=date din formulare (arata data in formatul ales)\nProtectie formulare nesalvate: avertizare la inchidere modal cu date modificate (toate formularele)\nNota explicativa format data in Configurare (browser/OS controls date picker)'},
   {version:'6.2',date:'2026-03-15',notes:'CRITIC: syncWrite() scrie acum TOATE cele 13 store-uri IndexedDB (inainte pierdea events, audits, trainings, atp, uvcheck, documents, deadlines)\nCRITIC: syncReconnect() verifica daca IndexedDB e gol si citeste din fisier (inainte suprascria JSON-ul bun cu date goale)\nCRITIC: syncReadFile() importa toate store-urile + suport format vechi\nCorectat: impAll() importa si config + suport ambele formate JSON\nCorectat: Click pe indicator galben deschide fisierul existent (nu mai creaza fisier nou)'},
   {version:'6.1',date:'2026-03-15',notes:'Adaugat: Stocare atasamente pe disc via File System Access API — folder configurabil, performanta superioara\nAdaugat: Migrare automata atasamente base64 existente pe disc\nAdaugat: Reconectare folder atasamente la reincarcare pagina (banner galben)\nAdaugat: Re-embed base64 la backup JSON pentru portabilitate\nAdaugat: Import atasamente pe disc automat la import JSON\nAdaugat: Sectiune Stocare Atasamente in Configurare\nModificat: Butonul sync redenumit "Salveaza JSON" (clar, nu "Conecteaza")\nAdaugat: Format data dd.mm.yyyy (romanesc) ca optiune + setat ca default\nCorectat: Toate datele din Word folosesc formatul configurabil (nu mai sunt hardcodate ro-RO)'},
@@ -4518,7 +4558,7 @@ function rChangelog(el){
 function rAbout(el){
   el.innerHTML='<div class="pn"><div class="pb" style="text-align:center;padding:40px">'+
     '<h2 style="color:var(--navy);margin-bottom:8px">CPIAAM — Sistem de Management</h2>'+
-    '<p style="color:var(--txtL);margin-bottom:24px">Versiune '+APP_VERSION+'</p>'+
+    '<p style="color:var(--txtL);margin-bottom:24px">Versiune '+APP_VERSION+' <button class="btn bo bsm" onclick="checkForUpdateManual(event)" style="margin-left:8px;font-size:11px">&#128260; Verifica update-uri</button></p>'+
     '<div style="background:var(--bg);border-radius:12px;padding:20px;text-align:left;max-width:500px;margin:0 auto 20px">'+
     '<p style="font-size:13px;line-height:1.6;color:var(--txt)">Dezvoltat de <strong>Dr. Chitu Robert Stefan</strong> cu asistenta <strong>Claude AI</strong> (Anthropic)</p>'+
     '<p style="font-size:12px;color:var(--txtL);margin-top:4px">Gratuit &middot; Vanzarea interzisa</p></div>'+
@@ -5168,14 +5208,14 @@ function showUpdateBanner(d){
   b.innerHTML='<div style="flex:1;min-width:200px"><strong>Versiune noua disponibila (v'+esc(d.version)+')</strong>'+
     (cl?' — <span style="font-size:12px">'+esc(cl)+'</span>':'')+
     '</div><div style="display:flex;gap:6px;flex-shrink:0">'+
-    '<button onclick="downloadUpdate(\''+esc(d.url)+'\')" style="background:#854F0B;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Descarca acum</button>'+
+    '<button onclick="downloadUpdate(\''+esc(d.url)+'\',\''+esc(d.version)+'\')" style="background:#854F0B;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Descarca acum</button>'+
     '<button onclick="dismissUpdate()" style="background:none;border:1px solid #C9A84C;color:#854F0B;padding:6px 10px;border-radius:6px;font-size:14px;cursor:pointer;line-height:1">&times;</button></div>';
   const mn=document.getElementById('app-mn');
   if(mn)mn.insertBefore(b,mn.firstChild);
   else document.body.insertBefore(b,document.body.firstChild);
 }
-function downloadUpdate(url){
-  const a=document.createElement('a');a.href=url;a.download='CPIAAM_Management_v'+APP_VERSION+'.html';a.click();
+function downloadUpdate(url,version){
+  const a=document.createElement('a');a.href=url;a.download='CPIAAM_Management_v'+(version||'new')+'.html';a.click();
   setTimeout(()=>{
     alert('Fisierul a fost descarcat.\n\nInlocuieste fisierul vechi cu cel nou si redeschide aplicatia.');
     dismissUpdate();
@@ -5184,6 +5224,23 @@ function downloadUpdate(url){
 function dismissUpdate(){
   sessionStorage.setItem('cpiaam_update_dismissed','1');
   const b=document.getElementById('update-banner');if(b)b.remove();
+}
+function showToast(msg){
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:500;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
+  t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
+}
+async function checkForUpdateManual(e){
+  const btn=e?e.currentTarget:null;
+  if(btn){btn.disabled=true;btn.textContent='\u23F3'}
+  try{
+    const r=await fetch(UPDATE_URL+'?t='+Date.now(),{cache:'no-store'});
+    const d=await r.json();
+    const remote=parseFloat(d.version),local=parseFloat(APP_VERSION);
+    if(remote>local){showUpdateBanner(d)}
+    else{showToast('\u2713 Aplicatia este la zi (v'+APP_VERSION+')')}
+  }catch(err){showToast('\u26A0 Nu s-a putut verifica. Verifica conexiunea la internet.')}
+  finally{if(btn){btn.disabled=false;btn.textContent='\uD83D\uDD04'}}
 }
 
 function checkEmptyDB(){

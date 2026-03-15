@@ -569,7 +569,7 @@ body{display:block!important;background:#fff!important}
 </div>
 
 <!-- ═══ Modal ═══ -->
-<div class="mo" id="mov" onclick="if(event.target===this)closeM()">
+<div class="mo" id="mov" onclick="if(event.target===this)safeCloseM()">
   <div class="md" id="mdc"></div>
 </div>
 
@@ -1531,10 +1531,40 @@ function dch(){Object.values(A.charts).forEach(c=>{try{c.destroy()}catch(e){}});
 function render(){renderPage(A.page)}
 function changeYear(d){A.year+=d;document.getElementById('ys').value=A.year;render()}
 
+var _formDirty=false;
 function openM(t,body,foot){const m=document.getElementById('mdc');
-  m.innerHTML='<div class="mh"><h3>'+t+'</h3><button class="cx" onclick="closeM()">&times;</button></div><div class="mb">'+body+'</div>'+(foot?'<div class="mf">'+foot+'</div>':'');
+  _formDirty=false;
+  m.innerHTML='<div class="mh"><h3>'+t+'</h3><button class="cx" onclick="safeCloseM()">&times;</button></div><div class="mb">'+body+'</div>'+(foot?'<div class="mf">'+foot+'</div>':'');
   document.getElementById('mov').classList.add('sh')}
-function closeM(){document.getElementById('mov').classList.remove('sh')}
+function closeM(){_formDirty=false;document.getElementById('mov').classList.remove('sh')}
+function markFormDirty(){_formDirty=true}
+function attachDirtyTracking(){
+  const mo=document.querySelector('.md');if(!mo)return;
+  mo.querySelectorAll('input,select,textarea').forEach(el=>{
+    el.addEventListener('change',markFormDirty);
+    el.addEventListener('input',markFormDirty);
+  });
+}
+function safeCloseM(){
+  if(_formDirty){showUnsavedWarning();return}
+  closeM();
+}
+function showUnsavedWarning(){
+  if(document.getElementById('unsaved-warning'))return;
+  const d=document.createElement('div');d.id='unsaved-warning';
+  d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:400;display:flex;align-items:center;justify-content:center';
+  d.innerHTML='<div style="background:var(--card);border-radius:12px;padding:24px;max-width:360px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.3)">'+
+    '<div style="font-size:24px;margin-bottom:12px">&#9888;&#65039;</div>'+
+    '<h3 style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:8px">Date nesalvate</h3>'+
+    '<p style="font-size:13px;color:var(--txtL);margin-bottom:20px">Ai date introduse care nu au fost salvate. E\u0219ti sigur c\u0103 vrei s\u0103 \u00EEnchizi f\u0103r\u0103 s\u0103 salvezi?</p>'+
+    '<div style="display:flex;gap:10px;justify-content:center">'+
+    '<button class="btn bo" onclick="dismissWarningAndClose()" style="min-width:120px">\u00CEnchide f\u0103r\u0103 salvare</button>'+
+    '<button class="btn bp" onclick="dismissWarning()" style="min-width:120px">R\u0103m\u00E2n \u00EEn formular</button>'+
+    '</div></div>';
+  document.body.appendChild(d);
+}
+function dismissWarning(){const w=document.getElementById('unsaved-warning');if(w)w.remove()}
+function dismissWarningAndClose(){dismissWarning();_formDirty=false;closeM()}
 function showGen(t){document.getElementById('gen-txt').textContent=t||'Se genereaza...';document.getElementById('genov').classList.add('sh')}
 function hideGen(){document.getElementById('genov').classList.remove('sh')}
 async function delRec(store,id){if(!confirm('Sigur stergi?'))return;await dl(store,id);render()}
@@ -1802,9 +1832,9 @@ async function editIAAM(id){
     '<div class="fg"><label>Clasificare finala</label><textarea id="f-class" rows="2">'+(r.classification||'')+'</textarea></div>'+
     '<h4 style="color:var(--navy);margin:16px 0 10px;font-size:13px">XII. CONCLUZII</h4>'+
     '<div class="fg"><label>Concluzii si recomandari</label><textarea id="f-concl" rows="3">'+(r.conclusions||'')+'</textarea></div>',
-  '<button class="btn bo" onclick="closeM()">Anuleaza</button>'+(id?'<button class="btn" style="background:var(--blue);color:#fff" onclick="genFisaIAAM('+id+')">&#128203; Genera Fisa IAAM</button>':'')+
+  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button>'+(id?'<button class="btn" style="background:var(--blue);color:#fff" onclick="genFisaIAAM('+id+')">&#128203; Genera Fisa IAAM</button>':'')+
   '<button class="btn bp" onclick="saveIAAM('+(id||'null')+')">Salveaza</button>');
-  setTimeout(()=>{addDatePreview('f-dob');addDatePreview('f-dint');addDatePreview('f-dext');addDatePreview('f-deces-date');addDatePreview('f-dconf')},50);
+  setTimeout(()=>{addDatePreview('f-dob');addDatePreview('f-dint');addDatePreview('f-dext');addDatePreview('f-deces-date');addDatePreview('f-dconf');attachDirtyTracking()},50);
 }
 function autoCalcDays(){const d1=document.getElementById('f-dint').value,d2=document.getElementById('f-dext').value;const days=calcDays(d1,d2);document.getElementById('f-nzi').value=days;document.getElementById('f-days-info').textContent=days?'Durata spitalizare: '+days+' zile':''}
 function toggleDecesFields(){const s=document.getElementById('f-status-ext').value;document.getElementById('f-deces-wrap').style.display=s==='Decedat'?'':'none';document.getElementById('f-cauza-deces-wrap').style.display=s==='Decedat'?'':'none'}
@@ -2103,6 +2133,10 @@ function showAutoPopup(evt,ptId,secId){
 }
 // Close popup on click outside
 document.addEventListener('click',function(e){if(_autoPopup&&!e.target.closest('.ac-popup')&&!e.target.closest('.ac-cell-c'))closeAutoPopup()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){
+  const w=document.getElementById('unsaved-warning');if(w){w.remove();return}
+  if(document.getElementById('mov').classList.contains('sh')){safeCloseM();e.preventDefault()}
+}});
 
 // Chart render
 function renderAutoChart(data,probeTypes,sections,matrix,isEN){
@@ -2343,8 +2377,8 @@ async function editAuto(id){
     '<div class="fg"><label>DSP</label><select id="f-dsp"><option value="false" '+(!r.dsp_parallel?'selected':'')+'>Nu</option><option value="true" '+(r.dsp_parallel?'selected':'')+'>Da</option></select></div></div>'+
     '<div id="f-nc-wrap" style="display:'+(r.result==='neconform'?'block':'none')+'"><div class="fg"><label>'+(isEN?'Non-conformity details':'Neconformitati detaliate')+'</label><textarea id="f-nc" rows="2" placeholder="'+(isEN?'Describe non-conformities...':'Descrie neconformitatile...')+'">'+(r.nc_details||'')+'</textarea></div></div>'+
     '<div class="fg"><label>'+(isEN?'Notes':'Observatii')+'</label><textarea id="f-n" rows="2">'+(r.notes||'')+'</textarea></div>',
-  '<button class="btn bo" onclick="closeM()">'+(isEN?'Cancel':'Anuleaza')+'</button><button class="btn bp" onclick="saveAuto('+(id||'null')+')">'+(isEN?'Save':'Salveaza')+'</button>');
-  setTimeout(()=>addDatePreview('f-dt'),50);
+  '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaza')+'</button><button class="btn bp" onclick="saveAuto('+(id||'null')+')">'+(isEN?'Save':'Salveaza')+'</button>');
+  setTimeout(()=>{addDatePreview('f-dt');attachDirtyTracking()},50);
 }
 async function saveAuto(id){
   const v=s=>document.getElementById(s).value;
@@ -2483,8 +2517,8 @@ async function editAtp(id){
     '<div class="fg"><label>RLU '+(isEN?'(repeat reading)':'(repeti\u021Bie)')+' <span style="color:var(--txtL);font-size:11px">('+( isEN?'optional':'op\u021Bional')+')</span></label><input type="number" id="f-atp-rlu2" value="'+(r.rlu_repeat!=null&&r.rlu_repeat!==''?r.rlu_repeat:'')+'" min="0" step="1" oninput="updateAtpResult()"></div></div>'+
     '<div id="f-atp-result-preview" style="margin:8px 0"></div>'+
     '<div class="fg"><label>'+(isEN?'Notes':'Observa\u021Bii')+'</label><textarea id="f-atp-notes" rows="2">'+((r.notes||'').replace(/</g,'&lt;'))+'</textarea></div>',
-    '<button class="btn bo" onclick="closeM()">'+(isEN?'Cancel':'Anuleaz\u0103')+'</button><button class="btn bp" onclick="saveAtp('+(id||'null')+')">'+(isEN?'Save':'Salveaz\u0103')+'</button>');
-  setTimeout(()=>{updateAtpResult();addDatePreview('f-atp-date')},50);
+    '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaz\u0103')+'</button><button class="btn bp" onclick="saveAtp('+(id||'null')+')">'+(isEN?'Save':'Salveaz\u0103')+'</button>');
+  setTimeout(()=>{updateAtpResult();addDatePreview('f-atp-date');attachDirtyTracking()},50);
 }
 function updateAtpResult(){
   const el=document.getElementById('f-atp-result-preview');if(!el)return;
@@ -2613,8 +2647,8 @@ async function editUv(id){
     '<div class="fr"><div class="fg"><label>'+(isEN?'Surface type':'Tip suprafa\u021B\u0103')+'</label><select id="f-uv-surf"><option value="">\u2014</option>'+uvSurfOpts+'</select></div>'+
     '<div class="fg"><label>'+(isEN?'Result':'Rezultat')+'</label><select id="f-uv-res"><option value="pass"'+(r.result==='pass'?' selected':'')+'>Pass (marker '+( isEN?'removed':'\u00EEndep\u0103rtat')+')</option><option value="fail"'+(r.result==='fail'?' selected':'')+'>Fail (marker '+(isEN?'visible':'vizibil')+')</option></select></div></div>'+
     '<div class="fg"><label>'+(isEN?'Notes':'Observa\u021Bii')+'</label><textarea id="f-uv-notes" rows="2">'+((r.notes||'').replace(/</g,'&lt;'))+'</textarea></div>',
-    '<button class="btn bo" onclick="closeM()">'+(isEN?'Cancel':'Anuleaz\u0103')+'</button><button class="btn bp" onclick="saveUv('+(id||'null')+')">'+(isEN?'Save':'Salveaz\u0103')+'</button>');
-  setTimeout(()=>addDatePreview('f-uv-date'),50);
+    '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaz\u0103')+'</button><button class="btn bp" onclick="saveUv('+(id||'null')+')">'+(isEN?'Save':'Salveaz\u0103')+'</button>');
+  setTimeout(()=>{addDatePreview('f-uv-date');attachDirtyTracking()},50);
 }
 async function saveUv(id){
   const v=s=>document.getElementById(s)?document.getElementById(s).value:'';
@@ -2739,7 +2773,8 @@ async function editBio(id){
     '<div class="fg"><label>Lot</label><input id="f-lot" value="'+(r.lot||'')+'"></div></div>'+
     '<div class="fr"><div class="fg"><label>Cantitate</label><input type="number" step="0.01" id="f-qty" value="'+(r.quantity||'')+'"></div>'+
     '<div class="fg"><label>Valoare (lei)</label><input type="number" step="0.01" id="f-val" value="'+(r.value_lei||'')+'"></div></div>'+attHtml,
-  '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" onclick="saveBio('+(id||'null')+')">Salveaza</button>');
+  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveBio('+(id||'null')+')">Salveaza</button>');
+  setTimeout(()=>attachDirtyTracking(),50);
 }
 function uploadBioAttModal(key){
   if(!_editBioRec||!_editBioRec.id)return;
@@ -2909,8 +2944,8 @@ async function editPPS(id){
     '<div class="fr"><div class="fg"><label>Nr. total prescriptii AB</label><input type="number" id="f-rx" value="'+(r.prescriptions||'')+'" min="0"></div>'+
     '<div class="fg"><label>Indicatie documentata (nr.)</label><input type="number" id="f-ddoc" value="'+(r.documented||'')+'" min="0"></div></div>'+
     '<div class="fg"><label>Observatii / antibiotice frecvente</label><textarea id="f-n" rows="3">'+(r.notes||'')+'</textarea></div>',
-  '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" onclick="savePPS('+(id||'null')+')">Salveaza</button>');
-  setTimeout(()=>addDatePreview('f-dt'),50);
+  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="savePPS('+(id||'null')+')">Salveaza</button>');
+  setTimeout(()=>{addDatePreview('f-dt');attachDirtyTracking()},50);
 }
 async function savePPS(id){
   const v=s=>document.getElementById(s).value;
@@ -2992,8 +3027,8 @@ async function editDoc(id){
     '<div class="fg"><label>Observatii</label><textarea id="f-obs" rows="2">'+(r.observations||'')+'</textarea></div>'+
     '<div class="fg"><label>Fisier atasat (PDF, imagine — max 10MB)</label><input type="file" id="f-file" accept=".pdf,.doc,.docx,.jpg,.png,.jpeg"></div>'+
     (r.file_data||r.file_meta?'<div class="ib inf">Fisier existent: '+(r.file_name||'')+(r.file_meta?.on_disk?' (pe disc)':'')+' — va fi inlocuit daca incarci unul nou.</div>':''),
-  '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" onclick="saveDoc('+(id||'null')+')">Salveaza</button>');
-  setTimeout(()=>{addDatePreview('f-di');addDatePreview('f-de')},50);
+  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveDoc('+(id||'null')+')">Salveaza</button>');
+  setTimeout(()=>{addDatePreview('f-di');addDatePreview('f-de');attachDirtyTracking()},50);
 }
 async function saveDoc(id){
   const v=s=>document.getElementById(s).value;
@@ -3105,8 +3140,8 @@ async function editDeadline(id){
       '<option value="trimis"'+(r.status==='trimis'?' selected':'')+'>Trimis</option></select></div></div>'+
     '<div class="fg"><label>Link / URL extern (optional)</label><input id="f-url" value="'+(r.url||'')+'"></div>'+
     '<div class="fg"><label>Observatii</label><textarea id="f-obs" rows="2">'+(r.observations||'')+'</textarea></div>',
-  '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" onclick="saveDeadline('+(id||'null')+')">Salveaza</button>');
-  setTimeout(()=>addDatePreview('f-due'),50);
+  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveDeadline('+(id||'null')+')">Salveaza</button>');
+  setTimeout(()=>{addDatePreview('f-due');attachDirtyTracking()},50);
 }
 async function saveDeadline(id){
   const v=s=>document.getElementById(s).value;
@@ -3271,10 +3306,10 @@ async function editCalEvent(id,prefillDate){
     '<div class="fg"><label>'+(isEN?'End date':'Data sfarsit')+' <span style="color:var(--txtL);font-size:11px">(optional)</span></label><input type="date" id="f-evt-date-end" value="'+(r.date_end||'')+'"></div></div>'+
     '<div class="fg"><label>'+(isEN?'Description':'Descriere')+'</label><textarea id="f-evt-desc" rows="3">'+((r.description||'').replace(/</g,'&lt;'))+'</textarea></div>'+
     '<div class="fg"><label>'+(isEN?'Notes':'Observatii')+'</label><textarea id="f-evt-notes" rows="2">'+((r.notes||'').replace(/</g,'&lt;'))+'</textarea></div>',
-    '<button class="btn bo" onclick="closeM()">'+(isEN?'Cancel':'Anuleaza')+'</button>'+
+    '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaza')+'</button>'+
     (id?'<button class="btn" style="background:var(--red);color:#fff" onclick="deleteCalEvent('+id+');closeM()">'+(isEN?'Delete':'Sterge')+'</button>':'')+
     '<button class="btn bp" onclick="saveCalEvent('+(id||'null')+')">'+(isEN?'Save':'Salveaza')+'</button>');
-  setTimeout(()=>{addDatePreview('f-evt-date');addDatePreview('f-evt-date-end')},50);
+  setTimeout(()=>{addDatePreview('f-evt-date');addDatePreview('f-evt-date-end');attachDirtyTracking()},50);
 }
 async function saveCalEvent(id){
   const title=document.getElementById('f-evt-title').value.trim();
@@ -3456,8 +3491,8 @@ async function editAudit(id){
     '<div id="audit-items-container">'+renderAuditItemsHTML()+'</div>'+
     '<div class="fr"><div class="fg"><label>Observatii</label><textarea id="f-aobs" rows="2">'+(r.observations||'')+'</textarea></div>'+
     '<div class="fg"><label>Recomandari</label><textarea id="f-arec" rows="2">'+(r.recommendations||'')+'</textarea></div></div>',
-  '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" onclick="saveAudit('+(id||'null')+')">Salveaza</button>');
-  setTimeout(()=>addDatePreview('f-adate'),50);
+  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveAudit('+(id||'null')+')">Salveaza</button>');
+  setTimeout(()=>{addDatePreview('f-adate');attachDirtyTracking()},50);
 }
 
 function onAuditTypeChange(type){
@@ -3670,8 +3705,8 @@ async function editTraining(id){
     '<div id="train-part-container">'+renderTrainParticipants()+'</div>'+
     '<button class="btn bo bsm" onclick="addTrainParticipant()" style="margin-top:6px">+ Adauga participant</button></div>'+
     '<div class="fg"><label>Observatii</label><textarea id="f-tobs" rows="2">'+(r.observations||'')+'</textarea></div>',
-  '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" onclick="saveTraining('+(id||'null')+')">Salveaza</button>');
-  setTimeout(()=>addDatePreview('f-tdate'),50);
+  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveTraining('+(id||'null')+')">Salveaza</button>');
+  setTimeout(()=>{addDatePreview('f-tdate');attachDirtyTracking()},50);
 }
 
 function renderTrainParticipants(){
@@ -4460,6 +4495,7 @@ function rAjutor(el){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'6.4',date:'2026-03-15',notes:'Configurator praguri ATP: 17 tipuri suprafete cu prag RLU, rezultat calculat automat (Conform/Neconform)\nConfigurator suprafete UV Check: 5 tipuri predefinite, dropdown in formular UV\nSectiune Autocontrol — Tipuri Suprafete in Configurare (tab Spital)\nPreview format data sub fiecare input type=date din formulare (arata data in formatul ales)\nProtectie formulare nesalvate: avertizare la inchidere modal cu date modificate (toate formularele)\nNota explicativa format data in Configurare (browser/OS controls date picker)'},
   {version:'6.2',date:'2026-03-15',notes:'CRITIC: syncWrite() scrie acum TOATE cele 13 store-uri IndexedDB (inainte pierdea events, audits, trainings, atp, uvcheck, documents, deadlines)\nCRITIC: syncReconnect() verifica daca IndexedDB e gol si citeste din fisier (inainte suprascria JSON-ul bun cu date goale)\nCRITIC: syncReadFile() importa toate store-urile + suport format vechi\nCorectat: impAll() importa si config + suport ambele formate JSON\nCorectat: Click pe indicator galben deschide fisierul existent (nu mai creaza fisier nou)'},
   {version:'6.1',date:'2026-03-15',notes:'Adaugat: Stocare atasamente pe disc via File System Access API — folder configurabil, performanta superioara\nAdaugat: Migrare automata atasamente base64 existente pe disc\nAdaugat: Reconectare folder atasamente la reincarcare pagina (banner galben)\nAdaugat: Re-embed base64 la backup JSON pentru portabilitate\nAdaugat: Import atasamente pe disc automat la import JSON\nAdaugat: Sectiune Stocare Atasamente in Configurare\nModificat: Butonul sync redenumit "Salveaza JSON" (clar, nu "Conecteaza")\nAdaugat: Format data dd.mm.yyyy (romanesc) ca optiune + setat ca default\nCorectat: Toate datele din Word folosesc formatul configurabil (nu mai sunt hardcodate ro-RO)'},
   {version:'5.5.0',date:'2026-03-14',notes:'Adaugat: Indicator sincronizare 3 stari in toolbar — rosu (nesincronizat), galben (salvat local), verde (sincronizat cloud)\nAdaugat: Modal locatie fisier dupa conectare — intrebare local/cloud/nu stiu\nAdaugat: Setare locatie fisier editabila in Configurare\nAdaugat: Sectiune ghid complet "Date, backup si sincronizare" in Ajutor/FAQ — cele 3 stari, diferenta live vs backup, cum primesti update-uri\nAdaugat: Link spre ghid sincronizare in tutorialul post-wizard (Sfat 1)\nAdaugat: Traduceri bilingve RO/EN pentru toate elementele noi\nActualizat: Versiune 5.5'},

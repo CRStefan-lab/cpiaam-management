@@ -1,11 +1,11 @@
 {
-  "version": "6.5.1",
+  "version": "6.5.2",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "CRITIC FIX: Import/sync config corupt — config salvat ca array imbricat in loc de obiect",
-    "FIX: syncWrite() si expAll() exclud config din bucla getAll (evita suprascrierea cu array)",
-    "FIX: Export backup include explicit config:CFG ca obiect",
-    "FIX: _extractCfg() — extrage config valid din structuri corupte (array, nested 0 keys)",
-    "FIX: downloadUpdate() foloseste versiunea remote pentru numele fisierului descarcat"
+    "FIX: Comparare versiuni semantica — parseFloat ignora patch version (6.5.1 devenia 6.5)",
+    "FIX: Auto-update si verificare manuala detecteaza corect versiuni cu 3 segmente",
+    "FIX: Import/sync config corupt — config salvat ca array imbricat in loc de obiect",
+    "FIX: syncWrite/expAll exclud config din bucla getAll, export include config:CFG explicit",
+    "FIX: _extractCfg() extrage config valid din structuri corupte (backup-uri vechi)"
   ]
 }

@@ -542,8 +542,8 @@ body{display:block!important;background:#fff!important}
     <button class="sb-ham" id="sb-ham" onclick="toggleSidebar()" title="Menu">&#9776;</button>
     <h2 id="pt">Dashboard</h2>
     <div class="tb-actions">
-      <span id="sync-indicator" style="font-size:11px;cursor:pointer;white-space:nowrap" onclick="syncPickFile()" title="Click pentru a conecta un fisier JSON">&#128308; Neconectat</span>
-      <button class="tb-icon" onclick="syncPickFile()" title="Conecteaza la fisier JSON">&#128193;</button>
+      <span id="sync-indicator" style="font-size:11px;cursor:pointer;white-space:nowrap" onclick="syncIndicatorClick()" title="Click pentru a salva datele intr-un fisier JSON">&#128308; Neconectat</span>
+      <button class="tb-icon" onclick="syncPickFile()" title="Salveaza date in fisier JSON">&#128190;</button>
       <button class="tb-icon" onclick="printDashboard()" title="Printeaza dashboard" id="btn-print">&#128424;</button>
       <button class="tb-icon" onclick="downloadApp()" title="Descarca aplicatia / Download app" style="font-size:12px">&#11015;&#65039;</button>
       <div style="position:relative">
@@ -585,6 +585,109 @@ async function ga(s){const d=await odb();return new Promise((ok,no)=>{const t=d.
 async function pt(s,i){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).put(i);r.onsuccess=()=>{ok(r.result);_syncDebounce()};r.onerror=()=>no(r.error)})}
 async function dl(s,id){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).delete(id);r.onsuccess=()=>{ok();_syncDebounce()};r.onerror=()=>no(r.error)})}
 var _syncTimer=null;function _syncDebounce(){if(!_fileHandle)return;clearTimeout(_syncTimer);_syncTimer=setTimeout(()=>syncWrite(),2000)}
+// Persist FileSystemFileHandle in IndexedDB (survives refresh/close)
+function _fhDB(){return new Promise((ok,no)=>{const r=indexedDB.open('CPIAAM_FH',1);r.onupgradeneeded=e=>e.target.result.createObjectStore('handles');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+async function saveFileHandle(fh){try{const db=await _fhDB();const tx=db.transaction('handles','readwrite');tx.objectStore('handles').put(fh,'syncFile');await new Promise((ok,no)=>{tx.oncomplete=ok;tx.onerror=no})}catch(e){console.warn('saveFileHandle:',e)}}
+async function loadFileHandle(){try{const db=await _fhDB();return new Promise((ok,no)=>{const tx=db.transaction('handles','readonly');const r=tx.objectStore('handles').get('syncFile');r.onsuccess=()=>ok(r.result||null);r.onerror=()=>ok(null)})}catch(e){return null}}
+async function restoreFileHandle(){
+  const fh=await loadFileHandle();if(!fh)return;
+  try{
+    // Verify permission — may prompt user
+    const perm=await fh.queryPermission({mode:'readwrite'});
+    if(perm==='granted'){_fileHandle=fh;updateSyncIndicator();return}
+    const req=await fh.requestPermission({mode:'readwrite'});
+    if(req==='granted'){_fileHandle=fh;updateSyncIndicator()}
+  }catch(e){console.warn('restoreFileHandle:',e)}
+}
+// ── Attachments directory handle (File System Access API) ──
+var _attDirHandle=null;
+async function saveAttDirHandle(h){try{const db=await _fhDB();const tx=db.transaction('handles','readwrite');tx.objectStore('handles').put(h,'attDir');await new Promise((ok,no)=>{tx.oncomplete=ok;tx.onerror=no})}catch(e){console.warn('saveAttDirHandle:',e)}}
+async function loadAttDirHandle(){try{const db=await _fhDB();return new Promise((ok,no)=>{const tx=db.transaction('handles','readonly');const r=tx.objectStore('handles').get('attDir');r.onsuccess=()=>ok(r.result||null);r.onerror=()=>ok(null)})}catch(e){return null}}
+async function restoreAttDirHandle(){
+  const h=await loadAttDirHandle();if(!h)return;
+  try{const perm=await h.queryPermission({mode:'readwrite'});
+    if(perm==='granted'){_attDirHandle=h;CFG.att_dir_name=h.name;return}
+    const req=await h.requestPermission({mode:'readwrite'});
+    if(req==='granted'){_attDirHandle=h;CFG.att_dir_name=h.name}
+  }catch(e){console.warn('restoreAttDirHandle:',e)}
+}
+function showAttReconnectBanner(){
+  const existing=document.getElementById('att-reconnect-banner');if(existing)return;
+  const banner=document.createElement('div');banner.id='att-reconnect-banner';
+  banner.style.cssText='background:#FFFBEB;border:1px solid #FDE68A;padding:8px 16px;display:flex;align-items:center;gap:10px;font-size:12px;position:fixed;top:0;left:0;right:0;z-index:1000';
+  banner.innerHTML='&#128206; Reconecteaza folderul de atasamente: <strong>'+(CFG.att_dir_name||'')+'</strong> <button onclick="pickAttDir().then(()=>{var b=document.getElementById(\'att-reconnect-banner\');if(b)b.remove()})" style="padding:4px 12px;border:1px solid #D97706;background:#fff;border-radius:4px;cursor:pointer;font-size:11px">Reconecteaza</button><button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px">&times;</button>';
+  document.body.prepend(banner);
+}
+async function pickAttDir(){
+  if(!window.showDirectoryPicker){alert('Browserul nu suporta File System Access API. Foloseste Chrome/Edge.');return}
+  try{_attDirHandle=await window.showDirectoryPicker({mode:'readwrite'});
+    CFG.att_dir_name=_attDirHandle.name;await saveCfg();
+    await saveAttDirHandle(_attDirHandle);
+    alert('Folder atasamente selectat: '+_attDirHandle.name);render();
+  }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}
+}
+// ── File I/O helpers for attachments on disk ──
+async function attWriteFile(subdir,filename,blob){
+  if(!_attDirHandle)throw new Error('No attachment directory');
+  const dir=await _attDirHandle.getDirectoryHandle(subdir,{create:true});
+  const fh=await dir.getFileHandle(filename,{create:true});
+  const wr=await fh.createWritable();await wr.write(blob);await wr.close();
+  return {subdir,filename,size:blob.size,type:blob.type}
+}
+async function attReadFile(subdir,filename){
+  if(!_attDirHandle)throw new Error('No attachment directory');
+  const dir=await _attDirHandle.getDirectoryHandle(subdir);
+  const fh=await dir.getFileHandle(filename);
+  return await fh.getFile()
+}
+async function attDeleteFile(subdir,filename){
+  if(!_attDirHandle)return;
+  try{const dir=await _attDirHandle.getDirectoryHandle(subdir);
+    await dir.removeEntry(filename)}catch(e){console.warn('attDeleteFile:',e)}
+}
+async function migrateAttachmentsToDisk(){
+  if(!_attDirHandle){alert('Selecteaza mai intai folderul de atasamente din Configurare.');return}
+  if(!confirm('Migrarea va muta atasamentele din baza de date pe disc. Continua?'))return;
+  let count=0,errors=0;
+  const bios=await ga('biocide');
+  for(const rec of bios){
+    if(!rec.attachments)continue;
+    let changed=false;
+    for(const key of Object.keys(rec.attachments)){
+      const att=rec.attachments[key];
+      if(att.data&&!att.on_disk){
+        try{const resp=await fetch(att.data);const blob=await resp.blob();
+          const ext=att.name?.split('.').pop()||'bin';
+          const fname='bio_'+rec.id+'_'+key+'.'+ext;
+          await attWriteFile('biocide',fname,blob);
+          att.filename=fname;att.on_disk=true;delete att.data;changed=true;count++;
+        }catch(e){errors++;console.warn('Migrate bio:',e)}
+      }
+    }
+    if(changed)await pt('biocide',rec);
+  }
+  const docs=await ga('documents');
+  for(const rec of docs){
+    if(rec.file_data&&!(rec.file_meta&&rec.file_meta.on_disk)){
+      try{const resp=await fetch(rec.file_data);const blob=await resp.blob();
+        const ext=rec.file_name?.split('.').pop()||'bin';
+        const fname='doc_'+rec.id+'.'+ext;
+        await attWriteFile('documents',fname,blob);
+        rec.file_meta={filename:fname,size:blob.size,type:blob.type,on_disk:true};
+        delete rec.file_data;await pt('documents',rec);count++;
+      }catch(e){errors++;console.warn('Migrate doc:',e)}
+    }
+  }
+  alert(count+' atasamente migrate pe disc.'+(errors?' '+errors+' erori.':''));render();
+}
+async function countBase64Attachments(){
+  let count=0;
+  const bios=await ga('biocide');
+  for(const rec of bios){if(!rec.attachments)continue;for(const key of Object.keys(rec.attachments)){if(rec.attachments[key].data&&!rec.attachments[key].on_disk)count++}}
+  const docs=await ga('documents');
+  for(const rec of docs){if(rec.file_data&&!(rec.file_meta&&rec.file_meta.on_disk))count++}
+  return count;
+}
 async function cl(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).clear();r.onsuccess=()=>ok();r.onerror=()=>no(r.error)})}
 
 // Activity log (localStorage, max 20 entries)
@@ -599,7 +702,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='6.0';
+const APP_VERSION='6.1';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -656,7 +759,7 @@ ro:{
   rap_analiza_des:'Analiza Deseuri',rap_ancheta:'Ancheta Epidemiologica',rap_pv:'PV CPIAAM',
   rap_trimestrial:'Raport Trimestrial',rap_autocontrol_xlsx:'Autocontrol XLSX',
   // Sync
-  sync_conectat:'Conectat',sync_neconectat:'Nesincronizat',sync_datele_locale:'Datele sunt salvate doar in browserul acestui calculator. Risc de pierdere la reinstalare. Conecteaza un fisier de date.',
+  sync_conectat:'Conectat',sync_neconectat:'Nesincronizat',sync_datele_locale:'Datele sunt salvate doar in browserul acestui calculator. Risc de pierdere la reinstalare. Salveaza intr-un fisier JSON.',
   sync_salvat_local:'Salvat local',sync_sincronizat:'Sincronizat',
   sync_tip_local:'Datele se salveaza automat pe acest calculator. Nu poti lucra de pe alt calculator.',
   sync_tip_cloud:'Datele se salveaza automat in cloud. Accesibil de pe orice calculator.',
@@ -883,7 +986,8 @@ function optsId(arr,selId){return (arr||[]).map(v=>{const id=v.id||v.name||v;con
 function fn(n){return n!=null?n.toLocaleString('ro-RO'):'—'}
 function fp(n,d){return d>0?(n/d*100).toFixed(1).replace('.',',')+' %':'—'}
 function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function fmtDate(iso){if(!iso)return '—';const p=iso.split('-');if(p.length!==3)return iso;const[y,m,d]=p;const fmt=CFG.dateFormat||'dd/mm/yyyy';if(fmt==='mm/dd/yyyy')return m+'/'+d+'/'+y;if(fmt==='yyyy-mm-dd')return iso;return d+'/'+m+'/'+y}
+function fmtDate(iso){if(!iso)return '—';const p=iso.split('-');if(p.length!==3)return iso;const[y,m,d]=p;const fmt=CFG.dateFormat||'dd.mm.yyyy';if(fmt==='mm/dd/yyyy')return m+'/'+d+'/'+y;if(fmt==='yyyy-mm-dd')return iso;if(fmt==='dd/mm/yyyy')return d+'/'+m+'/'+y;return d+'.'+m+'.'+y}
+function fmtDateNow(){return fmtDate(new Date().toISOString().slice(0,10))}
 function calcAge(dob){if(!dob)return '';const b=new Date(dob),t=new Date(),m=t.getMonth()-b.getMonth()+(t.getFullYear()-b.getFullYear())*12;if(m<12)return m+' luni';return Math.floor(m/12)}
 function calcDays(d1,d2){if(!d1||!d2)return '';const a=new Date(d1),b=new Date(d2);const diff=Math.ceil((b-a)/864e5);return diff>=0?diff:''}
 function germenName(code){for(const g of GERMENI_LIST)for(const it of g.items)if(it.c===code)return it.n;return code}
@@ -1169,7 +1273,7 @@ function wizSkipImport(){
         // Also try direct store names (from full backup)
         for(const s of ST){if(d[s]&&Array.isArray(d[s]))for(const r of d[s])await pt(s,r)}
         // Set file handle for future sync
-        _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();
+        _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();await saveFileHandle(fh);
         localStorage.setItem('cpiaam_had_data','true');
         alert('Date importate cu succes!');location.reload();
       }catch(e){alert('Eroare la import: '+e.message)}
@@ -1327,7 +1431,7 @@ function renderPWStep(step){
           '<h4 style="font-size:13px;color:var(--navy);margin-bottom:6px">&#128190; '+(isEN?'Tip 1 — Data Backup':'Sfat 1 — Backup-ul datelor')+'</h4>'+
           '<p style="font-size:12px;line-height:1.6;color:var(--txt)">'+(isEN?'Your data is stored in this computer\'s browser. If you clear browser data or reinstall, you\'ll lose it. To stay safe:':'Datele tale sunt stocate in browserul acestui calculator. Daca stergi datele browserului sau reinstalezi, le pierzi. Pentru siguranta:')+'</p>'+
           '<ul style="font-size:12px;line-height:1.7;color:var(--txt);margin:6px 0 0 16px;padding:0">'+
-            '<li>'+(isEN?'Click the <strong>&#128193; Connect to data file</strong> button in the toolbar and choose a file in your OneDrive or Google Drive folder. This way your data is saved automatically and you can access it from any computer.':'Apasa butonul <strong>&#128193; Conecteaza la fisier de date</strong> din toolbar si alege un fisier din folderul tau OneDrive sau Google Drive. Astfel datele se salveaza automat si le poti accesa de pe orice calculator.')+'</li>'+
+            '<li>'+(isEN?'Click the <strong>&#128190; Save JSON</strong> button in the toolbar and choose a file in your OneDrive or Google Drive folder. This way your data is saved automatically and you can access it from any computer.':'Apasa butonul <strong>&#128190; Salveaza JSON</strong> din toolbar si alege un fisier din folderul tau OneDrive sau Google Drive. Astfel datele se salveaza automat si le poti accesa de pe orice calculator.')+'</li>'+
             '<li>'+(isEN?'If you don\'t use OneDrive/Google Drive, periodically click the <strong>&#128190; Save Backup</strong> button to download a copy of your data.':'Daca nu folosesti OneDrive/Google Drive, apasa periodic butonul <strong>&#128190; Salveaza Backup</strong> pentru a descarca o copie a datelor.')+'</li>'+
           '</ul>'+
           '<p style="font-size:12px;margin-top:8px">&#8594; <a href="#ghid-sincronizare" onclick="nav(\'ajutor\');setTimeout(function(){var el=document.getElementById(\'ghid-sincronizare\');if(el)el.scrollIntoView({behavior:\'smooth\'})},200)" style="color:var(--blue);text-decoration:underline;cursor:pointer">'+(isEN?'See the complete guide on data and synchronization':'Vezi ghidul complet despre date si sincronizare')+'</a></p>'+
@@ -1491,6 +1595,7 @@ async function rDash(el){
     '<button onclick="nav(\'audituri\');setTimeout(()=>editAudit(),100)"><span class="qicon">&#128203;</span> '+(isEN?'New Audit':'Audit Nou')+'</button>'+
     '<button onclick="nav(\'rapoarte\')"><span class="qicon">&#128196;</span> '+(isEN?'Generate Report':'Genereaza Raport')+'</button>'+
     '<button onclick="expAll()"><span class="qicon">&#128190;</span> '+(isEN?'Save Backup':'Salveaza Backup')+'</button>'+
+    '<button onclick="impAll()"><span class="qicon">&#128193;</span> '+(isEN?'Load JSON':'Incarca JSON')+'</button>'+
   '</div>';
   // Activity feed
   const actLog=getActivityLog();
@@ -2561,14 +2666,24 @@ function uploadBioAttModal(key){
   const inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.doc,.docx,.jpg,.png,.jpeg';
   inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;
     if(f.size>10*1024*1024){alert('Fisierul depaseste 10MB.');return}
+    if(!_editBioRec.attachments)_editBioRec.attachments={};
+    if(_attDirHandle){
+      try{const ext=f.name.split('.').pop()||'bin';
+        const fname='bio_'+_editBioRec.id+'_'+key+'.'+ext;
+        await attWriteFile('biocide',fname,f);
+        _editBioRec.attachments[key]={name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true};
+        await pt('biocide',_editBioRec);editBio(_editBioRec.id);return;
+      }catch(err){console.warn('Disk write failed, fallback to base64:',err)}
+    }
     const reader=new FileReader();reader.onload=async ev=>{
-      if(!_editBioRec.attachments)_editBioRec.attachments={};
       _editBioRec.attachments[key]={name:f.name,type:f.type,size:f.size,data:ev.target.result};
       await pt('biocide',_editBioRec);editBio(_editBioRec.id)};reader.readAsDataURL(f)};inp.click();
 }
 function removeBioAttModal(key){
   if(!_editBioRec||!_editBioRec.id||!_editBioRec.attachments)return;
   if(!confirm('Stergi documentul atasat?'))return;
+  const att=_editBioRec.attachments[key];
+  if(att&&att.on_disk&&att.filename)attDeleteFile('biocide',att.filename);
   delete _editBioRec.attachments[key];
   pt('biocide',_editBioRec).then(()=>editBio(_editBioRec.id));
 }
@@ -2649,16 +2764,29 @@ function uploadBioAtt(id,key){
   const inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.doc,.docx,.jpg,.png,.jpeg';
   inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;
     if(f.size>10*1024*1024){alert('Fisierul depaseste 10MB.');return}
+    const data=await ga('biocide');const rec=data.find(x=>x.id===id);if(!rec)return;
+    if(!rec.attachments)rec.attachments={};
+    if(_attDirHandle){
+      try{const ext=f.name.split('.').pop()||'bin';
+        const fname='bio_'+id+'_'+key+'.'+ext;
+        await attWriteFile('biocide',fname,f);
+        rec.attachments[key]={name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true};
+        await pt('biocide',rec);render();return;
+      }catch(err){console.warn('Disk write failed, fallback to base64:',err)}
+    }
     const reader=new FileReader();reader.onload=async ev=>{
-      const data=await ga('biocide');const rec=data.find(x=>x.id===id);if(!rec)return;
-      if(!rec.attachments)rec.attachments={};
       rec.attachments[key]={name:f.name,type:f.type,size:f.size,data:ev.target.result};
       await pt('biocide',rec);render()};reader.readAsDataURL(f)};inp.click();
 }
 async function downloadBioAtt(id,key){
   const data=await ga('biocide');const rec=data.find(x=>x.id===id);
   if(!rec?.attachments?.[key])return;const att=rec.attachments[key];
-  const a=document.createElement('a');a.href=att.data;a.download=att.name;a.click();
+  if(att.on_disk&&att.filename){
+    try{const file=await attReadFile('biocide',att.filename);
+      saveAs(file,att.name);return}catch(e){console.warn('Disk read failed:',e);alert('Nu pot citi fisierul de pe disc. Reconecteaza folderul de atasamente din Configurare.')}
+    return;
+  }
+  if(att.data){const a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2782,23 +2910,42 @@ async function editDoc(id){
     '<div class="fg"><label>Data expirarii (optional)</label><input type="date" id="f-de" value="'+(r.date_expiry||'')+'"></div></div>'+
     '<div class="fg"><label>Observatii</label><textarea id="f-obs" rows="2">'+(r.observations||'')+'</textarea></div>'+
     '<div class="fg"><label>Fisier atasat (PDF, imagine — max 10MB)</label><input type="file" id="f-file" accept=".pdf,.doc,.docx,.jpg,.png,.jpeg"></div>'+
-    (r.file_data?'<div class="ib inf">Fisier existent: '+r.file_name+' — va fi inlocuit daca incarci unul nou.</div>':''),
+    (r.file_data||r.file_meta?'<div class="ib inf">Fisier existent: '+(r.file_name||'')+(r.file_meta?.on_disk?' (pe disc)':'')+' — va fi inlocuit daca incarci unul nou.</div>':''),
   '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" onclick="saveDoc('+(id||'null')+')">Salveaza</button>');
 }
 async function saveDoc(id){
   const v=s=>document.getElementById(s).value;
   const rec={category:v('f-cat'),name:v('f-name').trim(),number:v('f-nr').trim(),date_issue:v('f-di'),date_expiry:v('f-de'),observations:v('f-obs').trim()};
-  if(id){const old=(await ga('documents')).find(x=>x.id===id);if(old?.file_data){rec.file_data=old.file_data;rec.file_name=old.file_name;rec.file_type=old.file_type}rec.id=id}
+  if(id){const old=(await ga('documents')).find(x=>x.id===id);
+    if(old?.file_data){rec.file_data=old.file_data;rec.file_name=old.file_name;rec.file_type=old.file_type}
+    if(old?.file_meta){rec.file_meta=old.file_meta;rec.file_name=old.file_name;rec.file_type=old.file_type}
+    rec.id=id}
   const fileInput=document.getElementById('f-file');
   if(fileInput.files.length>0){
     const f=fileInput.files[0];if(f.size>10*1024*1024){alert('Max 10MB.');return}
+    rec.file_name=f.name;rec.file_type=f.type;
+    if(_attDirHandle){
+      try{const ext=f.name.split('.').pop()||'bin';
+        const fname='doc_'+(id||Date.now())+'.'+ext;
+        await attWriteFile('documents',fname,f);
+        rec.file_meta={filename:fname,size:f.size,type:f.type,on_disk:true};
+        delete rec.file_data;
+        await pt('documents',rec);logActivity((id?'Editat':'Adaugat')+' document — '+rec.name);closeM();render();return;
+      }catch(err){console.warn('Disk write failed, fallback to base64:',err)}
+    }
     const data=await new Promise(ok=>{const r=new FileReader();r.onload=e=>ok(e.target.result);r.readAsDataURL(f)});
-    rec.file_data=data;rec.file_name=f.name;rec.file_type=f.type;
+    rec.file_data=data;
   }
   await pt('documents',rec);logActivity((id?'Editat':'Adaugat')+' document — '+rec.name);closeM();render();
 }
 async function downloadDocFile(id){
-  const data=await ga('documents');const d=data.find(x=>x.id===id);if(!d?.file_data)return;
+  const data=await ga('documents');const d=data.find(x=>x.id===id);if(!d)return;
+  if(d.file_meta&&d.file_meta.on_disk&&d.file_meta.filename){
+    try{const file=await attReadFile('documents',d.file_meta.filename);
+      saveAs(file,d.file_name||d.file_meta.filename);return}catch(e){console.warn('Disk read failed:',e);alert('Nu pot citi fisierul de pe disc. Reconecteaza folderul de atasamente din Configurare.')}
+    return;
+  }
+  if(!d.file_data)return;
   const a=document.createElement('a');a.href=d.file_data;a.download=d.file_name;a.click();
 }
 
@@ -3542,7 +3689,7 @@ async function rCfg(el){
     '<div class="fr"><div class="fg"><label>Nume compartiment</label><input id="c-cpiaam" value="'+CFG.cpiaam_name+'"></div>'+
     '<div class="fg"><label>Cod spital PPS</label><input id="c-code" value="'+(CFG.hospital_code||'')+'"></div></div>'+
     '<div class="fr"><div class="fg"><label>Limita bugetara biocide (lei/an)</label><input type="number" id="c-bb" value="'+(CFG.biocide_budget||'')+'"></div>'+
-    '<div class="fg"><label>Format data</label><select id="c-datefmt"><option value="dd/mm/yyyy"'+((CFG.dateFormat||'dd/mm/yyyy')==='dd/mm/yyyy'?' selected':'')+'>dd/mm/yyyy</option><option value="mm/dd/yyyy"'+((CFG.dateFormat)==='mm/dd/yyyy'?' selected':'')+'>mm/dd/yyyy</option><option value="yyyy-mm-dd"'+((CFG.dateFormat)==='yyyy-mm-dd'?' selected':'')+'>yyyy-mm-dd</option></select></div></div>'+
+    '<div class="fg"><label>Format data</label><select id="c-datefmt"><option value="dd.mm.yyyy"'+((CFG.dateFormat||'dd.mm.yyyy')==='dd.mm.yyyy'?' selected':'')+'>dd.mm.yyyy (RO)</option><option value="dd/mm/yyyy"'+((CFG.dateFormat)==='dd/mm/yyyy'?' selected':'')+'>dd/mm/yyyy</option><option value="mm/dd/yyyy"'+((CFG.dateFormat)==='mm/dd/yyyy'?' selected':'')+'>mm/dd/yyyy (US)</option><option value="yyyy-mm-dd"'+((CFG.dateFormat)==='yyyy-mm-dd'?' selected':'')+'>yyyy-mm-dd (ISO)</option></select></div></div>'+
     '<div class="fr"><div class="fg"><label>Reminder backup (zile)</label><input type="number" id="c-bkpint" value="'+(CFG.backup_interval_days||7)+'" min="1" max="90" style="width:80px"><span style="font-size:11px;color:var(--txtL);margin-left:6px">Primesti notificare daca nu ai facut backup in acest interval</span></div></div>'+
     '<button class="btn bp" onclick="saveCfgForm()" style="margin-top:8px">Salveaza</button>'+
   '</div></div>'+
@@ -3555,6 +3702,18 @@ async function rCfg(el){
     '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);background:var(--bg)"><input type="radio" name="cfg-floc" value="unknown"'+(CFG.file_location==='unknown'?' checked':'')+' onchange="saveFileLocationCfg(this.value)" style="accent-color:var(--navy)"> '+T('sync_nu_stiu')+'</label>'+
     '</div>'+
     '<p style="font-size:11px;color:var(--txtL);margin-top:8px">'+T('sync_nota_cloud')+'</p>'+
+  '</div></div>'+
+
+  // ── Attachment Storage Config ──
+  '<div class="pn"><div class="ph"><h3>Stocare Atasamente</h3></div><div class="pb">'+
+    (_attDirHandle?
+      '<div class="ib suc">&#128193; Folder atasamente: <strong>'+(_attDirHandle.name||CFG.att_dir_name||'—')+'</strong></div>':
+      '<div class="ib wrn">&#9888; Niciun folder selectat — atasamentele se salveaza in baza de date (mai lent pentru fisiere mari).</div>')+
+    '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+
+      '<button class="btn bp" onclick="pickAttDir()">&#128193; '+ (_attDirHandle?'Schimba folder':'Alege folder atasamente')+'</button>'+
+      '<button class="btn bo" onclick="migrateAttachmentsToDisk()" id="btn-migrate-att">&#128260; Migreaza atasamente pe disc</button>'+
+    '</div>'+
+    '<p style="font-size:11px;color:var(--txtL);margin-top:8px">Atasamentele mari (PDF, imagini) sunt salvate direct pe disc pentru performanta optima. La backup JSON, sunt reintegrate automat.</p>'+
   '</div></div>'+
 
   '<div class="pn"><div class="ph"><h3>Personal / Semnatari</h3><button class="btn bp bsm" onclick="CFG.personnel.push({id:genId(\'pers\'),name:\'\',title:\'\',role:\'other\',sign:true});saveCfg();render()">+ Adauga persoana</button></div><div class="pb">'+
@@ -3909,7 +4068,7 @@ function clearNotif(){A.notifications=[];updateNotifBadge();document.getElementB
 // ═══════════════════════════════════════════════════════════════
 function printDashboard(){
   const ph=document.querySelector('.print-header');
-  if(ph)ph.innerHTML='<h1>'+(CFG.cpiaam_name||'C.P.I.A.A.M.')+' — '+(CFG.hospital_name||'')+'</h1><p>Dashboard '+A.year+' — Printat la '+new Date().toLocaleDateString('ro-RO')+'</p>';
+  if(ph)ph.innerHTML='<h1>'+(CFG.cpiaam_name||'C.P.I.A.A.M.')+' — '+(CFG.hospital_name||'')+'</h1><p>Dashboard '+A.year+' — Printat la '+fmtDateNow()+'</p>';
   setTimeout(()=>window.print(),200)}
 
 // ═══════════════════════════════════════════════════════════════
@@ -3962,12 +4121,34 @@ function updateSyncIndicator(){
       el.style.color='#D4A017';
     }
   }}
+function syncIndicatorClick(){
+  // If we have a stored handle but lost permission, try to reconnect
+  if(!_fileHandle&&CFG.sync_file_name){syncReconnect();return}
+  // Otherwise open save picker for new file
+  syncPickFile();
+}
+async function syncReconnect(){
+  if(!window.showOpenFilePicker){alert('Browserul nu suporta File System Access API.');return}
+  // First try restoring the stored handle
+  const stored=await loadFileHandle();
+  if(stored){
+    try{const perm=await stored.requestPermission({mode:'readwrite'});
+      if(perm==='granted'){_fileHandle=stored;updateSyncIndicator();await syncWrite();return}
+    }catch(e){console.warn('Handle permission failed:',e)}
+  }
+  // If handle restore failed, let user pick the existing file
+  try{const[fh]=await window.showOpenFilePicker({types:[{description:'JSON',accept:{'application/json':['.json']}}]});
+    _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();
+    await saveFileHandle(fh);
+    await syncWrite();updateSyncIndicator();
+  }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}
+}
 async function syncPickFile(){
   if(!window.showSaveFilePicker){alert('Browserul tau nu suporta File System Access API. Foloseste Chrome sau Edge.');return}
   try{_fileHandle=await window.showSaveFilePicker({suggestedName:'CPIAAM_data.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]});
     CFG.sync_file_name=_fileHandle.name;await saveCfg();
+    await saveFileHandle(_fileHandle);
     await syncWrite();updateSyncIndicator();
-    // Show location modal after a short delay to avoid focus conflict with file picker
     setTimeout(()=>showFileLocationModal(),300);
   }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}}
 function showFileLocationModal(){
@@ -3996,7 +4177,8 @@ async function syncWrite(){
 async function syncReadFile(){
   if(!window.showOpenFilePicker){alert('Browserul tau nu suporta File System Access API. Foloseste Chrome/Edge.');return}
   try{const[fh]=await window.showOpenFilePicker({types:[{description:'JSON',accept:{'application/json':['.json']}}]});
-    _fileHandle=fh;const file=await fh.getFile();const text=await file.text();const d=JSON.parse(text);
+    _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();await saveFileHandle(fh);
+    const file=await fh.getFile();const text=await file.text();const d=JSON.parse(text);
     if(d.config){Object.assign(CFG,d.config);await saveCfg()}
     if(d.ia)for(const r of d.ia)await pt('iaam',r);
     if(d.au)for(const r of d.au)await pt('autocontrol',r);
@@ -4060,7 +4242,7 @@ function rAjutor(el){
     '<h4 style="font-size:13px;color:var(--navy);margin-bottom:10px">'+(isEN?'The 3 application states':'Cele 3 stari ale aplicatiei')+'</h4>'+
     '<div class="ghid-state ghid-state-red"><div><strong>&#128308; '+(isEN?'Not synced — data only in browser':'Nesincronizat — date doar in browser')+'</strong>'+
       '<p style="font-size:12px;line-height:1.5;margin:4px 0">'+(isEN?'Data is saved only in this computer\'s browser. If you reinstall the browser, clear its data or work from another computer — the data is not accessible.':'Datele sunt salvate doar in browserul acestui calculator. Daca reinstalezi browserul, stergi datele lui sau lucrezi de pe alt calculator — datele nu sunt accesibile.')+'</p>'+
-      '<span class="ghid-tag ghid-tag-red">'+(isEN?'Connect a data file or do manual backup':'Conecteaza un fisier de date sau fa backup manual')+'</span></div></div>'+
+      '<span class="ghid-tag ghid-tag-red">'+(isEN?'Save to JSON file or do manual backup':'Salveaza intr-un fisier JSON sau fa backup manual')+'</span></div></div>'+
     '<div class="ghid-state ghid-state-yellow"><div><strong>&#128993; '+(isEN?'Saved locally — file on this PC':'Salvat local — fisier pe acest PC')+'</strong>'+
       '<p style="font-size:12px;line-height:1.5;margin:4px 0">'+(isEN?'Data is automatically saved to a file on this computer. You are protected from browser issues, but you cannot work from another computer.':'Datele se salveaza automat intr-un fisier pe acest calculator. Esti protejat fata de probleme de browser, dar nu poti lucra de pe alt calculator.')+'</p>'+
       '<span class="ghid-tag ghid-tag-yellow">'+(isEN?'Ok for a single PC. Move the file to OneDrive for multi-PC access.':'Ok pentru un singur PC. Muta fisierul in OneDrive pentru acces multi-PC.')+'</span></div></div>'+
@@ -4109,6 +4291,7 @@ function rAjutor(el){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'6.1',date:'2026-03-15',notes:'Adaugat: Stocare atasamente pe disc via File System Access API — folder configurabil, performanta superioara\nAdaugat: Migrare automata atasamente base64 existente pe disc\nAdaugat: Reconectare folder atasamente la reincarcare pagina (banner galben)\nAdaugat: Re-embed base64 la backup JSON pentru portabilitate\nAdaugat: Import atasamente pe disc automat la import JSON\nAdaugat: Sectiune Stocare Atasamente in Configurare\nModificat: Butonul sync redenumit "Salveaza JSON" (clar, nu "Conecteaza")\nAdaugat: Format data dd.mm.yyyy (romanesc) ca optiune + setat ca default\nCorectat: Toate datele din Word folosesc formatul configurabil (nu mai sunt hardcodate ro-RO)'},
   {version:'5.5.0',date:'2026-03-14',notes:'Adaugat: Indicator sincronizare 3 stari in toolbar — rosu (nesincronizat), galben (salvat local), verde (sincronizat cloud)\nAdaugat: Modal locatie fisier dupa conectare — intrebare local/cloud/nu stiu\nAdaugat: Setare locatie fisier editabila in Configurare\nAdaugat: Sectiune ghid complet "Date, backup si sincronizare" in Ajutor/FAQ — cele 3 stari, diferenta live vs backup, cum primesti update-uri\nAdaugat: Link spre ghid sincronizare in tutorialul post-wizard (Sfat 1)\nAdaugat: Traduceri bilingve RO/EN pentru toate elementele noi\nActualizat: Versiune 5.5'},
   {version:'5.4.0',date:'2026-03-14',notes:'Adaugat: Sistem auto-update — verificare versiune noua la pornire de pe GitHub\nAdaugat: Banner update galben-amber cu changelog si buton Descarca acum\nAdaugat: Dismiss banner cu sessionStorage (nu reapare in aceeasi sesiune)\nAdaugat: Download direct fisier HTML nou la click pe Descarca acum\nAdaugat: Fisier version.json separat pentru controlul versiunilor\nActualizat: Versiune 5.4'},
   {version:'5.3.1',date:'2026-03-14',notes:'Imbunatatit: Sumar zone netestate — layout compact, tipurile complet netestate grupate cu pills rosii, partial netestate in tabel cu pills gri mici, scroll vertical max 300px\nImbunatatit: Matrice acoperire — headere sectii trunchiate cu ellipsis, celule compacte, border-radius container, lizibil cu 11+ sectii\nCorectat: ensureConfigIds normalizeArr — recuperare automata denumiri din defaults cand obiectele pierd campul name\nCorectat: Display config robust — sn() helper universal, typeof check pe probe_types/infection_types/biocide_products\nActualizat: Versiune 5.3.1'},
@@ -4136,7 +4319,7 @@ function rAbout(el){
     '<div class="wiz-note" style="text-align:left;max-width:500px;margin:0 auto 20px">'+GDPR_NOTE+'</div>'+
     '<p style="font-size:11px;color:var(--txtL);margin-bottom:16px">Functioneaza 100% offline &middot; Date stocate local (IndexedDB)<br>Tehnologii: Chart.js, docx.js, FileSaver.js, SheetJS</p>'+
     '<div class="bg" style="justify-content:center"><button class="btn bo" onclick="rerunWizard()">Ruleaza din nou setup-ul</button>'+
-    '<button class="btn bo" onclick="syncPickFile()">Leaga fisier JSON sync</button>'+
+    '<button class="btn bo" onclick="syncPickFile()">Salveaza JSON</button>'+
     '<button class="btn bo" onclick="syncReadFile()">Importa din fisier JSON</button></div>'+
   '</div></div>'}
 
@@ -4306,7 +4489,7 @@ async function genAnchetaWord(id){
     wP([wTR(CFG.cpiaam_name,{bold:true,size:22,color:WC.navy})],{align:AlignmentType.CENTER}),wSp(40),
     wP([wTR('RAPORT ANCHETA EPIDEMIOLOGICA',{bold:true,size:28,color:WC.navy})],{align:AlignmentType.CENTER}),
     wP([wTR('INFECTIE ASOCIATA ASISTENTEI MEDICALE',{bold:true,size:22,color:WC.navy})],{align:AlignmentType.CENTER}),wSp(60),
-    wP([wTR('Data finalizarii: ',{size:20,color:WC.gray}),wTR(new Date().toLocaleDateString('ro-RO'),{size:20,bold:true})]),
+    wP([wTR('Data finalizarii: ',{size:20,color:WC.gray}),wTR(fmtDateNow(),{size:20,bold:true})]),
     wP([wTR('Sectia implicata: ',{size:20,color:WC.gray}),wTR(rSec(r.section),{size:20,bold:true})]),wSp(80),
     wH1('I. DATE PACIENT'),wSp(40),
     new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W1,rows:[
@@ -4371,7 +4554,7 @@ async function genFisaIAAM(id){
     wP([wTR('A INFEC\u021AIEI ASOCIATE ASISTEN\u021AEI MEDICALE',{bold:true,size:24,color:WC.navy})],{align:AlignmentType.CENTER}),
     wP([wTR('(conform Ordinul 1101/2016)',{italic:true,size:18,color:WC.gray})],{align:AlignmentType.CENTER}),wSp(40),
     wP([wTR('Nr. \u00cenregistrare: ',{size:20,color:WC.gray}),wTR(String(r.id||''),{size:20,bold:true}),
-      wTR('          Data complet\u0103rii: ',{size:20,color:WC.gray}),wTR(new Date().toLocaleDateString('ro-RO'),{size:20,bold:true})]),wSp(80),
+      wTR('          Data complet\u0103rii: ',{size:20,color:WC.gray}),wTR(fmtDateNow(),{size:20,bold:true})]),wSp(80),
 
     // ═══ I. DATE DE IDENTIFICARE PACIENT ═══
     wH1('I. DATE DE IDENTIFICARE PACIENT',WC.blue),wSp(40),
@@ -4522,7 +4705,7 @@ async function genFisaIAAM(id){
       ]}),
       new TableCell({width:{size:4513,type:WidthType.DXA},borders:{top:{style:'none'},bottom:{style:'none'},left:{style:'none'},right:{style:'none'}},children:[
         wP([wTR('Data complet\u0103rii fi\u0219ei',{bold:true,size:20})]),
-        wP(new Date().toLocaleDateString('ro-RO'),{size:20})
+        wP(fmtDateNow(),{size:20})
       ]})
     ]})
   ]}));
@@ -4678,12 +4861,63 @@ function downloadApp(){
   logActivity('Descarcat aplicatia pe calculator');
 }
 async function expAll(){const d={};for(const s of ST)d[s]=await ga(s);
+  // Re-embed on_disk attachments as base64 for portable backup
+  if(_attDirHandle){
+    for(const rec of (d.biocide||[])){
+      if(!rec.attachments)continue;
+      for(const key of Object.keys(rec.attachments)){
+        const att=rec.attachments[key];
+        if(att.on_disk&&att.filename&&!att.data){
+          try{const file=await attReadFile('biocide',att.filename);
+            att.data=await new Promise(ok=>{const r=new FileReader();r.onload=e=>ok(e.target.result);r.readAsDataURL(file)});
+          }catch(e){console.warn('Cannot read bio attachment for backup:',att.filename,e)}
+        }
+      }
+    }
+    for(const rec of (d.documents||[])){
+      if(rec.file_meta&&rec.file_meta.on_disk&&rec.file_meta.filename&&!rec.file_data){
+        try{const file=await attReadFile('documents',rec.file_meta.filename);
+          rec.file_data=await new Promise(ok=>{const r=new FileReader();r.onload=e=>ok(e.target.result);r.readAsDataURL(file)});
+        }catch(e){console.warn('Cannot read doc attachment for backup:',rec.file_meta.filename,e)}
+      }
+    }
+  }
   CFG.last_backup=new Date().toISOString();await saveCfg();
   saveAs(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),'CPIAAM_Backup_'+A.year+'_'+new Date().toISOString().slice(0,10)+'.json');logActivity('Backup exportat')}
 function impAll(){if(!confirm('Importul inlocuieste datele existente. Continua?'))return;
   const inp=document.createElement('input');inp.type='file';inp.accept='.json';
   inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;
-    try{const d=JSON.parse(await f.text());for(const s of ST)if(d[s]){await cl(s);for(const i of d[s])await pt(s,i)}
+    try{const d=JSON.parse(await f.text());
+    for(const s of ST)if(d[s]){await cl(s);for(const i of d[s])await pt(s,i)}
+    // Write imported attachments to disk if directory available
+    if(_attDirHandle){
+      for(const rec of (d.biocide||[])){
+        if(!rec.attachments)continue;
+        for(const key of Object.keys(rec.attachments)){
+          const att=rec.attachments[key];
+          if(att.data&&!att.on_disk){
+            try{const resp=await fetch(att.data);const blob=await resp.blob();
+              const ext=att.name?.split('.').pop()||'bin';
+              const fname='bio_'+rec.id+'_'+key+'.'+ext;
+              await attWriteFile('biocide',fname,blob);
+              att.filename=fname;att.on_disk=true;delete att.data;
+              await pt('biocide',rec);
+            }catch(err){console.warn('Import: cannot write bio att to disk:',err)}
+          }
+        }
+      }
+      for(const rec of (d.documents||[])){
+        if(rec.file_data&&!(rec.file_meta&&rec.file_meta.on_disk)){
+          try{const resp=await fetch(rec.file_data);const blob=await resp.blob();
+            const ext=rec.file_name?.split('.').pop()||'bin';
+            const fname='doc_'+rec.id+'.'+ext;
+            await attWriteFile('documents',fname,blob);
+            rec.file_meta={filename:fname,size:blob.size,type:blob.type,on_disk:true};
+            delete rec.file_data;await pt('documents',rec);
+          }catch(err){console.warn('Import: cannot write doc att to disk:',err)}
+        }
+      }
+    }
     alert('Import finalizat!');await loadCfg();render()}catch(e){alert('Eroare import: '+e.message)}};inp.click()}
 
 // ═══════════════════════════════════════════════════════════════
@@ -4696,7 +4930,7 @@ function checkBackupReminder(){
   const last=CFG.last_backup?new Date(CFG.last_backup):null;
   if(!last){showBackupReminder('Nu ai facut niciun backup. Salveaza acum pentru siguranta datelor!');return}
   const daysSince=Math.floor((Date.now()-last.getTime())/864e5);
-  if(daysSince>=interval)showBackupReminder('Au trecut '+daysSince+' zile de la ultimul backup ('+last.toLocaleDateString('ro-RO')+'). Salveaza un backup!');
+  if(daysSince>=interval)showBackupReminder('Au trecut '+daysSince+' zile de la ultimul backup ('+fmtDate(last.toISOString().slice(0,10))+'). Salveaza un backup!');
 }
 function showBackupReminder(msg){
   const d=document.createElement('div');d.id='backup-reminder';
@@ -4770,6 +5004,9 @@ function checkEmptyDB(){
     updateSidebar();updateSyncIndicator();
     document.getElementById('ys').value=A.year;
     render();
+    // Restore file handles from IndexedDB (persists across refresh/close)
+    restoreFileHandle().then(()=>updateSyncIndicator());
+    restoreAttDirHandle().then(()=>{if(!_attDirHandle&&CFG.att_dir_name)showAttReconnectBanner()});
     setTimeout(checkBackupReminder,2000);
     setTimeout(buildNotifications,3000);
     setTimeout(checkForUpdate,4000);

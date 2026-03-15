@@ -1,15 +1,14 @@
 {
-  "version": "6.0",
+  "version": "6.1",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Fisa IAAM Word: generare conform Ordinul 1101/2016 (10 sectiuni, antibiotice, germeni MDR, semnaturi)",
-    "Calendar: editare evenimente existente (titlu, categorie, date start/stop, descriere, observatii)",
-    "Calendar: 7 categorii evenimente cu culori diferite pe punctele calendarului",
-    "Calendar: suport evenimente multi-zi (date start + date end)",
-    "Autocontrol: 3 tab-uri tip (Probe Microbiologice, Probe ATP, Testare UV Check)",
-    "Probe ATP: suprafete configurabile cu praguri RLU, citire initiala + repetitie, conformitate automata",
-    "Testare UV Check: verificare curatenie cu markeri fluorescenti, Pass/Fail per sectie/suprafata",
-    "Biocide: butoane colorate pentru documente (verde Aviz, albastru Fisa tehnica, portocaliu SDS)",
-    "Biocide: zone upload colorate cu bordura punctata in formularul de editare"
+    "Stocare atasamente pe disc (File System Access API) — folder configurabil, migrare automata",
+    "Reconectare folder atasamente la reincarcare pagina cu banner",
+    "Backup JSON portabil — re-embed base64 automat la export",
+    "Import atasamente pe disc automat la import JSON",
+    "Sectiune Stocare Atasamente in Configurare",
+    "Buton sync redenumit Salveaza JSON",
+    "Format data dd.mm.yyyy (romanesc) ca default + 4 optiuni configurabile",
+    "Datele din Word respecta formatul configurabil (nu mai sunt hardcodate)"
   ]
 }

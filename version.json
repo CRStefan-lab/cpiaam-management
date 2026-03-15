@@ -1,13 +1,13 @@
 {
-  "version": "6.7.2",
+  "version": "6.8",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Toolbar redesign: sync pill stilizat cu dot + text + clase CSS",
-    "Separatoare toolbar mai vizibile (.tb-sep)",
-    "Toolbar icons cu border transparent si hover cu border",
-    "Badge notificari cu border 2px solid pe card",
-    "Butoane an compacte (.yr-nav 26x26px)",
-    "Meniu sync modern cu descrieri sub fiecare optiune",
-    "Eliminat toate inline styles din toolbar"
+    "IAAM: Formular wizard cu 10 sectiuni si navigare laterala",
+    "IAAM: Factori de risc ca checkbox-uri + dropdown + chips",
+    "IAAM: Calcul completare % per caz cu indicator vizual",
+    "IAAM: Lista redesignata cu coloane noi si filtre extinse",
+    "IAAM: Functie duplicare caz",
+    "IAAM: Alerta rapoarte pentru cazuri incomplete",
+    "Config: Factori de risc editabili in Introducere date"
   ]
 }

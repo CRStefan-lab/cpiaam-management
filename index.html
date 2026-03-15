@@ -374,6 +374,11 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dash-quick button{display:flex;align-items:center;gap:7px;padding:10px 18px;border:1px solid var(--brd);border-radius:24px;background:var(--card);color:var(--txt);font-size:12.5px;font-weight:600;font-family:var(--f);cursor:pointer;transition:all .2s ease;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .dash-quick button:hover{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(37,99,176,.25);transform:translateY(-1px)}
 .dash-quick button .qicon{font-size:15px}
+.dash-toggle{display:flex;justify-content:center;padding:8px 0;margin:4px 0}
+.dash-toggle button{background:none;border:1px solid var(--brd);border-radius:20px;padding:6px 20px;cursor:pointer;color:var(--txtL);font-size:12px;font-family:var(--f);transition:.2s}
+.dash-toggle button:hover{background:var(--bg);color:var(--navy)}
+#dash-details{overflow:hidden;transition:max-height .4s ease;max-height:0}
+#dash-details.open{max-height:4000px}
 /* Activity feed */
 .dash-activity{background:var(--card);border:none;border-radius:16px;padding:16px 20px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .dash-activity strong{font-size:13px;color:var(--navy);display:block;margin-bottom:10px}
@@ -726,7 +731,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='6.6.1';
+const APP_VERSION='6.6.2';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1686,15 +1691,20 @@ async function rDash(el){
   docs.forEach(d=>{if(!d.date_expiry)return;if(new Date(d.date_expiry)<new Date())urgentItems.push({icon:'⚫',text:(isEN?'Expired: ':'Expirat: ')+d.name,link:'documente'})});
   dls.forEach(d=>{if(!d.due_date||d.status==='trimis')return;if(new Date(d.due_date)<new Date())urgentItems.push({icon:'⚫',text:(isEN?'Overdue: ':'Depasit: ')+d.name,link:'termene'})});
 
-  let h='<div class="print-header"></div>'+dashCfgBar();
-  // 1. MINI-CALENDAR + UPCOMING 7 DAYS (first widget)
-  if(widgetVisible('miniCal')){h+='<div id="dash-mini-cal"></div>'}
-  // 2. URGENT BANNER (if any expired/overdue)
+  let h='<div class="print-header"></div>';
+  // 1. URGENT BANNER (if any expired/overdue) — always visible
   if(urgentItems.length>0){
     h+='<div class="dash-urgent"><div class="dash-urgent-icon">&#9888;&#65039;</div><div class="dash-urgent-list">'+
       '<strong>'+T('cal_urgent_title')+'</strong><br>'+
       urgentItems.map(u=>u.icon+' '+u.text+' <a onclick="nav(\''+u.link+'\');return false">'+(isEN?'View':'Deschide')+'</a>').join('<br>')+
     '</div></div>'}
+  // 2. QUICK ACTIONS — first visible element
+  h+='<div class="dash-quick">'+
+    '<button onclick="nav(\'iaam\');setTimeout(()=>editIAAM(),100)"><span class="qicon">&#128737;</span> '+(isEN?'IAAM Case':'Caz IAAM')+'</button>'+
+    '<button onclick="nav(\'autocontrol\');setTimeout(()=>editAuto(),100)"><span class="qicon">&#128300;</span> '+(isEN?'Sample':'Proba Autocontrol')+'</button>'+
+    '<button onclick="nav(\'audituri\');setTimeout(()=>editAudit(),100)"><span class="qicon">&#128203;</span> '+(isEN?'New Audit':'Audit Nou')+'</button>'+
+    '<button onclick="nav(\'rapoarte\')"><span class="qicon">&#128196;</span> '+(isEN?'Generate Report':'Genereaza Raport')+'</button>'+
+  '</div>';
   // 3. KPI cards
   if(widgetVisible('kpi')){
     h+='<div class="kg">'+
@@ -1722,13 +1732,12 @@ async function rDash(el){
       '<div class="kc tl"><div class="kl">'+(isEN?'Audits':'Audituri')+'</div><div class="kv">'+audits.length+'</div><div class="ks">'+(isEN?'Avg compliance':'Conformitate medie')+': '+avgCompl+'%</div></div>'+
       '<div class="kc bl"><div class="kl">'+(isEN?'Trainings':'Instruiri')+'</div><div class="kv">'+trains.length+'</div><div class="ks">'+(isEN?'Staff trained':'Personal instruit')+': '+trainedPct+'%</div></div>'+
     '</div>'}
-  // Quick actions row
-  h+='<div class="dash-quick">'+
-    '<button onclick="nav(\'iaam\');setTimeout(()=>editIAAM(),100)"><span class="qicon">&#128737;</span> '+(isEN?'IAAM Case':'Caz IAAM')+'</button>'+
-    '<button onclick="nav(\'autocontrol\');setTimeout(()=>editAuto(),100)"><span class="qicon">&#128300;</span> '+(isEN?'Sample':'Proba Autocontrol')+'</button>'+
-    '<button onclick="nav(\'audituri\');setTimeout(()=>editAudit(),100)"><span class="qicon">&#128203;</span> '+(isEN?'New Audit':'Audit Nou')+'</button>'+
-    '<button onclick="nav(\'rapoarte\')"><span class="qicon">&#128196;</span> '+(isEN?'Generate Report':'Genereaza Raport')+'</button>'+
-  '</div>';
+  // 4. TOGGLE button for details
+  h+='<div class="dash-toggle"><button id="dash-details-btn" onclick="toggleDashDetails()">'+(_dashDetails?'&#9650; '+(isEN?'Hide details':'Ascunde detalii'):'&#9660; '+(isEN?'Show details':'Arata detalii'))+'</button></div>';
+  // 5. DETAILS wrapper (hidden by default)
+  h+='<div id="dash-details"'+(_dashDetails?' class="open"':'')+'>';
+  // Mini-calendar
+  if(widgetVisible('miniCal')){h+='<div id="dash-mini-cal"></div>'}
   // Activity feed
   const actLog=getActivityLog();
   if(actLog.length>0){
@@ -1739,7 +1748,7 @@ async function rDash(el){
     });
     h+='</div>';
   }
-  // 4. Charts
+  // Charts
   if(widgetVisible('charts')){
     h+='<div class="cr">'+
       '<div class="cb"><h4>'+T('ch_iaam_lunar')+'</h4><div class="cc"><canvas id="c1"></canvas></div></div>'+
@@ -1750,24 +1759,32 @@ async function rDash(el){
       '<div class="cb"><h4>'+T('ch_deseuri_lunar')+'</h4><div class="cc"><canvas id="c3"></canvas></div></div>'+
       '<div class="cb"><h4>'+T('ch_iaam_sectii')+'</h4><div class="cc"><canvas id="c4"></canvas></div></div>'+
     '</div>'}
+  h+='</div>'; // close #dash-details
   el.innerHTML=h;
-  // Build charts
-  if(widgetVisible('charts')){
-    const tc=A.darkMode?'#94A3B8':'#64748B';
-    A.charts.c1=new Chart(document.getElementById('c1'),{type:'bar',data:{labels:MO,datasets:[{label:'Cazuri',data:ibm,backgroundColor:'#C0392B88',borderColor:'#C0392B',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{stepSize:1,color:tc}},x:{ticks:{color:tc}}},plugins:{legend:{display:false}}}});
-    A.charts.c2=new Chart(document.getElementById('c2'),{type:'doughnut',data:{labels:[T('ch_conforme'),T('ch_neconforme')],datasets:[{data:[conf,totP-conf],backgroundColor:['#0F7B6C','#D4A017']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:tc}}}}});
-  }
-  if(widgetVisible('desChart')){
-    const tc=A.darkMode?'#94A3B8':'#64748B';
-    A.charts.c3=new Chart(document.getElementById('c3'),{type:'line',data:{labels:MO,datasets:[{label:'kg',data:dbm,borderColor:'#D4A017',backgroundColor:'#D4A01720',fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{color:tc}},x:{ticks:{color:tc}}},plugins:{legend:{display:false}}}});
-    const sc={};ia.forEach(r=>{const sn=rSec(r.section);sc[sn]=(sc[sn]||0)+1});
-    if(Object.keys(sc).length>0)
-      A.charts.c4=new Chart(document.getElementById('c4'),{type:'bar',data:{labels:Object.keys(sc),datasets:[{label:'Cazuri',data:Object.values(sc),backgroundColor:'#2563B088',borderColor:'#2563B0',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{stepSize:1,color:tc}},y:{ticks:{color:tc}}},plugins:{legend:{display:false}}}});
-  }
+  // Store chart data for lazy init
+  A._dashChartData={ibm,conf,totP,dbm,ia,MO};
+  // Build charts only if details already open
+  if(_dashDetails)initDashCharts();
   // Build notifications
   buildNotifications();
   // Mini-calendar + upcoming 7 days
-  if(widgetVisible('miniCal')){const mc=document.getElementById('dash-mini-cal');if(mc)renderDashCalendar().then(html=>{mc.innerHTML=html})}
+  if(_dashDetails&&widgetVisible('miniCal')){const mc=document.getElementById('dash-mini-cal');if(mc)renderDashCalendar().then(html=>{mc.innerHTML=html})}
+}
+function initDashCharts(){
+  const d=A._dashChartData;if(!d)return;
+  const tc=A.darkMode?'#94A3B8':'#64748B';
+  if(widgetVisible('charts')&&document.getElementById('c1')&&!A.charts.c1){
+    A.charts.c1=new Chart(document.getElementById('c1'),{type:'bar',data:{labels:d.MO,datasets:[{label:'Cazuri',data:d.ibm,backgroundColor:'#C0392B88',borderColor:'#C0392B',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{stepSize:1,color:tc}},x:{ticks:{color:tc}}},plugins:{legend:{display:false}}}});
+    A.charts.c2=new Chart(document.getElementById('c2'),{type:'doughnut',data:{labels:[T('ch_conforme'),T('ch_neconforme')],datasets:[{data:[d.conf,d.totP-d.conf],backgroundColor:['#0F7B6C','#D4A017']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:tc}}}}});
+  }
+  if(widgetVisible('desChart')&&document.getElementById('c3')&&!A.charts.c3){
+    A.charts.c3=new Chart(document.getElementById('c3'),{type:'line',data:{labels:d.MO,datasets:[{label:'kg',data:d.dbm,borderColor:'#D4A017',backgroundColor:'#D4A01720',fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{color:tc}},x:{ticks:{color:tc}}},plugins:{legend:{display:false}}}});
+    const sc={};d.ia.forEach(r=>{const sn=rSec(r.section);sc[sn]=(sc[sn]||0)+1});
+    if(Object.keys(sc).length>0)
+      A.charts.c4=new Chart(document.getElementById('c4'),{type:'bar',data:{labels:Object.keys(sc),datasets:[{label:'Cazuri',data:Object.values(sc),backgroundColor:'#2563B088',borderColor:'#2563B0',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{stepSize:1,color:tc}},y:{ticks:{color:tc}}},plugins:{legend:{display:false}}}});
+  }
+  // Mini-calendar
+  if(widgetVisible('miniCal')){const mc=document.getElementById('dash-mini-cal');if(mc&&!mc.innerHTML)renderDashCalendar().then(html=>{mc.innerHTML=html})}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1838,11 +1855,11 @@ async function editIAAM(id){
     '<div class="fg"><label>Mediu</label><div style="display:flex;gap:12px;margin-top:4px"><label><input type="radio" name="f-mediu" value="Urban" '+(r.mediu==='Urban'||!r.mediu?'checked':'')+' style="accent-color:var(--navy)"> Urban</label><label><input type="radio" name="f-mediu" value="Rural" '+(r.mediu==='Rural'?'checked':'')+' style="accent-color:var(--navy)"> Rural</label></div></div>'+
     '<div class="fg"><label>Luna raportarii</label><select id="f-mo">'+moOpts(r.month)+'</select></div></div>'+
     '<div class="fg"><label>Sectia</label><select id="f-sec"><option value="">—</option>'+secOpts(r.section)+'</select></div>'+
-    '<div class="fr"><div class="fg"><label>Nr. inregistrare (registru CPIAAM)</label><input id="f-regn" value="'+(r.reg_number||'')+'" placeholder="optional"></div>'+
+    '<div class="fr"><div class="fg"><label>Nr. inregistrare (registru)</label><input id="f-regn" value="'+(r.reg_number||'')+'" placeholder="optional"></div>'+
     '<div class="fg"><label>Nr. foaie observatie (FO)</label><input id="f-fon" value="'+(r.fo_number||'')+'" placeholder="optional"></div></div>'+
     '<div class="fg"><label>Medic curant</label><input id="f-doc" value="'+(r.doctor||'')+'"></div>'+
-    '<div class="fr3"><div class="fg"><label>Data internarii</label><input type="date" id="f-dint" value="'+(r.date_admission||'')+'" onchange="autoCalcDays()"></div>'+
-    '<div class="fg"><label>Data externarii</label><input type="date" id="f-dext" value="'+(r.date_discharge||'')+'" onchange="autoCalcDays()"></div>'+
+    '<div class="fr3"><div class="fg"><label>Data internarii</label><input type="date" id="f-dint" value="'+(r.date_admission||'')+'" onchange="autoCalcDays()" oninput="autoCalcDays()"></div>'+
+    '<div class="fg"><label>Data externarii</label><input type="date" id="f-dext" value="'+(r.date_discharge||'')+'" onchange="autoCalcDays()" oninput="autoCalcDays()"></div>'+
     '<div class="fg"><label>Nr. zile internare</label><input type="number" id="f-nzi" value="'+(r.days||'')+'" min="0" style="background:#f1f5f9"><div id="f-days-info" style="font-size:11px;color:var(--txtL);margin-top:2px">'+(r.date_admission&&r.date_discharge?'Calculat automat: '+calcDays(r.date_admission,r.date_discharge)+' zile (editabil)':'')+'</div></div></div>'+
     '<div class="fg"><label>Diagnostic internare</label><textarea id="f-dgi" rows="2">'+(r.diag_admission||'')+'</textarea></div>'+
     '<div class="fg"><label>Diagnostic externare</label><textarea id="f-dge" rows="2">'+(r.diag_discharge||'')+'</textarea></div>'+
@@ -1892,7 +1909,7 @@ async function editIAAM(id){
   '<button class="btn bp" onclick="saveIAAM('+(id||'null')+')">Salveaza</button>');
   setTimeout(()=>{addDatePreview('f-dob');addDatePreview('f-dint');addDatePreview('f-dext');addDatePreview('f-deces-date');addDatePreview('f-dconf');attachDirtyTracking()},50);
 }
-function autoCalcDays(){const d1=document.getElementById('f-dint').value,d2=document.getElementById('f-dext').value;const days=calcDays(d1,d2);if(days){document.getElementById('f-nzi').value=days;document.getElementById('f-days-info').textContent='Calculat automat: '+days+' zile (editabil)'}else{document.getElementById('f-days-info').textContent=''}}
+function autoCalcDays(){const d1=document.getElementById('f-dint').value,d2=document.getElementById('f-dext').value;const days=calcDays(d1,d2);if(days!==''&&days!==null){document.getElementById('f-nzi').value=days;document.getElementById('f-days-info').textContent='Calculat automat: '+days+' zile (editabil)'}else{document.getElementById('f-days-info').textContent=''}}
 function toggleDecesFields(){const s=document.getElementById('f-status-ext').value;document.getElementById('f-deces-wrap').style.display=s==='Decedat'?'':'none';document.getElementById('f-cauza-deces-wrap').style.display=s==='Decedat'?'':'none'}
 var _iaamMatchTimer=null;
 function checkIaamMatch(editId){
@@ -4386,6 +4403,15 @@ function dashCfgBar(){
   const w=CFG.dash_widgets||{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true,miniCal:true};
   const items=[['kpi','KPI-uri'],['charts','Grafice IAAM/Auto'],['docsKpi','Documente'],['termKpi','Raportari'],['desChart','Deseuri'],['iaamSec','IAAM Sectii'],['miniCal','Calendar']];
   return '<div class="dash-cfg">'+items.map(([k,l])=>'<label><input type="checkbox" '+(w[k]!==false?'checked':'')+' onchange="toggleWidget(\''+k+'\')"> '+l+'</label>').join('')+'</div>'}
+var _dashDetails=false;
+function toggleDashDetails(){
+  _dashDetails=!_dashDetails;
+  const el=document.getElementById('dash-details'),btn=document.getElementById('dash-details-btn');
+  if(el){if(_dashDetails)el.classList.add('open');else el.classList.remove('open')}
+  if(btn)btn.innerHTML=_dashDetails?'&#9650; '+(CFG.lang==='en'?'Hide details':'Ascunde detalii'):'&#9660; '+(CFG.lang==='en'?'Show details':'Arata detalii');
+  // Init charts if expanding for first time
+  if(_dashDetails&&el)setTimeout(()=>initDashCharts(),50);
+}
 
 // ═══════════════════════════════════════════════════════════════
 // FILE SYSTEM ACCESS API — Sync (cerinta B)
@@ -4604,6 +4630,7 @@ function rAjutor(el){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'6.6.2',date:'2026-03-15',notes:'Dashboard restructurat: Quick Actions mutate sus (primul element vizibil)\nKPI-uri sub quick actions\nButon global "Arata detalii" ascunde/arata widgeturile secundare (grafice, calendar, activitate)\nGrafice initializate lazy — doar cand detaliile sunt deschise'},
   {version:'6.6.1',date:'2026-03-15',notes:'FIX: Sync reconectare ramanea pe galben dupa import — location.reload() pierdea _fileHandle din memorie\nFIX: syncReadFile si syncReconnect nu mai fac reload, ci render() pastrand _fileHandle activ'},
   {version:'6.6',date:'2026-03-15',notes:'Restructurare pagina Configurare in 4 tab-uri: Spital, Introducere date, Date & Backup, AI\nToolbar simplificat — indicator sync pill cu meniu popup (3 stari: rosu/galben/verde)\nDeseu: totaluri auto-calculate + afisare unitati "kg"\nIAAM: zile spitalizare auto-calculate + camp editabil\nIAAM: campuri noi Nr. inregistrare (reg_number) si Nr. foaie observatie (fo_number)\nIAAM: initiale pacient + matching automat cazuri anterioare din toti anii\nCalendar: Raportari/Termene integrat ca tab in pagina Calendar\nEliminat butoane backup din sidebar si dashboard (sync prin toolbar)'},
   {version:'6.5.2',date:'2026-03-15',notes:'FIX: Comparare versiuni semantica (vCmp) — parseFloat ignora patch version (6.5.1 → 6.5)\nFIX: Auto-update si verificare manuala detecteaza corect versiuni cu 3 segmente (ex: 6.5.1 vs 6.5)\nInclude fix-uri 6.5.1: import config corupt, syncWrite/expAll exclud config din getAll, _extractCfg()'},

@@ -1,8 +1,10 @@
 {
-  "version": "6.6.1",
+  "version": "6.6.2",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX: Sync reconectare ramanea pe galben dupa import — location.reload() pierdea _fileHandle",
-    "FIX: syncReadFile si syncReconnect nu mai fac reload, ci render() pastrand _fileHandle activ"
+    "Dashboard restructurat: Quick Actions mutate sus (primul element vizibil)",
+    "KPI-uri sub quick actions",
+    "Buton global Arata detalii ascunde/arata widgeturile secundare (grafice, calendar, activitate)",
+    "Grafice initializate lazy — doar cand detaliile sunt deschise"
   ]
 }

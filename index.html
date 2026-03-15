@@ -523,7 +523,7 @@ body{display:block!important;background:#fff!important}
     <a class="ni" data-p="biocide" onclick="nav('biocide')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.5a2 2 0 01-.2.9L4.7 20.6a1 1 0 00.9 1.4h12.8a1 1 0 00.9-1.4l-5.1-10.2A2 2 0 0114 9.5V2"/><path d="M8.5 2h7"/></svg><span data-t="sb_biocide">Biocide</span></a>
     <a class="ni" data-p="pps" onclick="nav('pps')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span data-t="sb_pps">PPS / Antibiotice</span></a>
     <a class="ni" data-p="documente" onclick="nav('documente')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg><span data-t="sb_documente">Documente</span></a>
-    <a class="ni" data-p="termene" onclick="nav('termene')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span data-t="sb_termene">Raportari/Termene</span></a>
+    <!-- Raportari/Termene moved to Calendar module -->
     <a class="ni" data-p="calendar" onclick="nav('calendar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="1"/><circle cx="12" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg><span data-t="sb_calendar">Calendar</span></a>
     <div class="ns">Calitate</div>
     <a class="ni" data-p="audituri" onclick="nav('audituri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg><span>Audituri</span></a>
@@ -536,7 +536,7 @@ body{display:block!important;background:#fff!important}
     <a class="ni" data-p="changelog" onclick="nav('changelog')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg><span>Versiuni</span></a>
     <a class="ni" data-p="about" onclick="nav('about')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span data-t="sb_despre">Despre</span></a>
   </div>
-  <div class="sb-bk"><button onclick="expAll()" data-t="sb_backup">Salveaza Backup</button></div>
+  <!-- backup button removed from sidebar per v6.6 -->
   <div class="sb-f" id="sb-footer"></div>
 </nav>
 
@@ -547,19 +547,22 @@ body{display:block!important;background:#fff!important}
     <button class="sb-ham" id="sb-ham" onclick="toggleSidebar()" title="Menu">&#9776;</button>
     <h2 id="pt">Dashboard</h2>
     <div class="tb-actions">
-      <span id="sync-indicator" style="font-size:11px;cursor:pointer;white-space:nowrap" onclick="syncIndicatorClick()" title="Click pentru a salva datele intr-un fisier JSON">&#128308; Neconectat</span>
-      <button class="tb-icon" onclick="syncPickFile()" title="Salveaza date in fisier JSON">&#128190;</button>
-      <button class="tb-icon" onclick="printDashboard()" title="Printeaza dashboard" id="btn-print">&#128424;</button>
-      <button class="tb-icon" onclick="downloadApp()" title="Descarca aplicatia / Download app" style="font-size:12px">&#11015;&#65039;</button>
-      <button class="tb-icon" onclick="checkForUpdateManual(event)" title="Verifica update-uri" id="btn-update">&#128260;</button>
+      <div style="position:relative"><span id="sync-indicator" style="font-size:11px;cursor:pointer;white-space:nowrap;padding:4px 10px;border-radius:12px" onclick="toggleSyncMenu()" title="Click pentru optiuni sincronizare">&#128308; Neconectat</span>
+      <div id="sync-menu" style="display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--card);border:1px solid var(--brd);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:240px;z-index:60;padding:4px 0">
+        <button onclick="syncReadFile();closeSyncMenu()" style="display:block;width:100%;text-align:left;padding:8px 14px;border:none;background:none;font-size:12px;cursor:pointer;font-family:var(--f)">&#128194; Reconecteaza la fisierul existent</button>
+        <button onclick="syncPickFile();closeSyncMenu()" style="display:block;width:100%;text-align:left;padding:8px 14px;border:none;background:none;font-size:12px;cursor:pointer;font-family:var(--f)">&#128190; Conecteaza fisier nou</button>
+        <button onclick="disconnectSync();closeSyncMenu()" style="display:block;width:100%;text-align:left;padding:8px 14px;border:none;background:none;font-size:12px;cursor:pointer;font-family:var(--f);color:var(--red)">&#128683; Deconecteaza fisierul</button>
+      </div></div>
+      <div style="width:1px;height:18px;background:var(--brd);margin:0 4px"></div>
       <div style="position:relative">
         <button class="tb-icon" onclick="toggleNotif()" title="Notificari" id="btn-notif">&#128276;<span class="notif-badge" id="notif-badge" style="display:none">0</span></button>
         <div class="notif-dd" id="notif-dd"></div>
       </div>
-      <button class="tb-icon" onclick="toggleDark()" title="Mod zi/noapte" id="btn-dark">&#9728;&#65039;</button>
+      <div style="width:1px;height:18px;background:var(--brd);margin:0 4px"></div>
       <button class="tb-icon" onclick="toggleLang()" title="Schimba limba / Switch language" id="btn-lang" style="font-size:13px;font-weight:700">RO</button>
+      <button class="tb-icon" onclick="toggleDark()" title="Mod zi/noapte" id="btn-dark">&#9728;&#65039;</button>
+      <div style="width:1px;height:18px;background:var(--brd);margin:0 4px"></div>
       <div class="yr-sel">
-        <label>An:</label>
         <button class="btn bo bsm" onclick="changeYear(-1)" title="Anul anterior">&#9664;</button>
         <input type="number" id="ys" onchange="A.year=+this.value;render()">
         <button class="btn bo bsm" onclick="changeYear(1)" title="Anul urmator">&#9654;</button>
@@ -723,7 +726,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='6.5.2';
+const APP_VERSION='6.6';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1624,7 +1627,7 @@ async function delRec(store,id){if(!confirm('Sigur stergi?'))return;await dl(sto
 async function renderPage(p){const el=document.getElementById('pc');dch();switch(p){
   case'dashboard':return rDash(el);case'iaam':return rIAAM(el);case'autocontrol':return rAuto(el);
   case'deseuri':return rDes(el);case'biocide':return rBio(el);case'pps':return rPPS(el);
-  case'documente':return rDoc(el);case'termene':return rTerm(el);case'calendar':return rCalendar(el);
+  case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
   case'audituri':return rAudit(el);case'instruire':return rInstr(el);
   case'rapoarte':return rRap(el);case'config':return rCfg(el);case'ajutor':return rAjutor(el);
   case'changelog':return rChangelog(el);case'about':return rAbout(el);case'terms':return rTerms(el);
@@ -1725,8 +1728,6 @@ async function rDash(el){
     '<button onclick="nav(\'autocontrol\');setTimeout(()=>editAuto(),100)"><span class="qicon">&#128300;</span> '+(isEN?'Sample':'Proba Autocontrol')+'</button>'+
     '<button onclick="nav(\'audituri\');setTimeout(()=>editAudit(),100)"><span class="qicon">&#128203;</span> '+(isEN?'New Audit':'Audit Nou')+'</button>'+
     '<button onclick="nav(\'rapoarte\')"><span class="qicon">&#128196;</span> '+(isEN?'Generate Report':'Genereaza Raport')+'</button>'+
-    '<button onclick="expAll()"><span class="qicon">&#128190;</span> '+(isEN?'Save Backup':'Salveaza Backup')+'</button>'+
-    '<button onclick="impAll()"><span class="qicon">&#128193;</span> '+(isEN?'Load Backup':'Incarca Backup')+'</button>'+
   '</div>';
   // Activity feed
   const actLog=getActivityLog();
@@ -1806,8 +1807,8 @@ async function rIAAM(el){
     '<button class="btn bp" onclick="editIAAM()">+ Caz IAAM Nou</button></div>'+
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
   (data.length===0?'<div class="es"><p>Niciun caz IAAM '+(f.search||f.sec||f.mdr?'gasit cu filtrele selectate':'pentru '+A.year)+'.</p><button class="btn bp" onclick="editIAAM()">Adauga primul caz</button></div>':
-    '<table class="dt"><thead><tr><th>#</th><th>Luna</th><th>Pacient</th><th>Sectie</th><th>Categorie IAAM</th><th>Germen</th><th>MDR</th><th>Depistare</th><th>Externare</th><th>Actiuni</th></tr></thead><tbody>'+
-    data.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+(MO[r.month-1]||'?')+'</td><td>'+(r.patient||'—')+'</td><td>'+rSec(r.section)+'</td>'+
+    '<table class="dt"><thead><tr><th>#</th><th>Luna</th><th>Nr.Inr.</th><th>FO</th><th>Pacient</th><th>Sectie</th><th>Categorie IAAM</th><th>Germen</th><th>MDR</th><th>Depistare</th><th>Externare</th><th>Actiuni</th></tr></thead><tbody>'+
+    data.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+(MO[r.month-1]||'?')+'</td><td style="font-size:11px">'+(r.reg_number||'')+'</td><td style="font-size:11px">'+(r.fo_number||'')+'</td><td>'+(r.patient||'—')+'</td><td>'+rSec(r.section)+'</td>'+
       '<td>'+rInf(r.iaam_category||r.infection_type)+'</td><td><strong>'+(r.germeni&&r.germeni.length?r.germeni.map(g=>g.name).join(', '):r.organism||'—')+'</strong></td>'+
       '<td>'+(r.mdr?'<span class="bdg bdg-r">MDR</span>':'<span class="bdg bdg-g">Nu</span>')+'</td>'+
       '<td style="font-size:11px">'+detLabel(r.detection)+'</td>'+
@@ -1827,18 +1828,22 @@ async function editIAAM(id){
   // Backward compat: old organism field → convert to germeni
   if(_iaamGermeni.length===0&&r.organism){_iaamGermeni=[{code:'',name:r.organism,mdr:r.mdr?'MRSA':'Nu'}]}
   openM(id?'Editare Caz IAAM':'Caz IAAM Nou — Fisa IAAM',
+    '<div id="f-iaam-match-banner"></div>'+
     '<h4 style="color:var(--navy);margin-bottom:10px;font-size:13px">I. DATE PACIENT</h4>'+
-    '<div class="fr"><div class="fg"><label>Nume pacient (initiale)</label><input id="f-pat" value="'+(r.patient||'')+'" placeholder="ex: I.P."></div>'+
-    '<div class="fg"><label>Data nasterii</label><input type="date" id="f-dob" value="'+(r.date_of_birth||'')+'" onchange="document.getElementById(\'f-age\').value=calcAge(this.value)"></div></div>'+
+    '<div class="fr"><div class="fg"><label>Initiale pacient</label><input id="f-pinit" value="'+(r.patient_initials||'')+'" placeholder="ex: C.R." maxlength="10" oninput="checkIaamMatch('+(id||'null')+')"></div>'+
+    '<div class="fg"><label>Nume pacient (initiale)</label><input id="f-pat" value="'+(r.patient||'')+'" placeholder="ex: I.P."></div></div>'+
+    '<div class="fr"><div class="fg"><label>Data nasterii</label><input type="date" id="f-dob" value="'+(r.date_of_birth||'')+'" onchange="document.getElementById(\'f-age\').value=calcAge(this.value);checkIaamMatch('+(id||'null')+')"></div>'+
     '<div class="fr4"><div class="fg"><label>Varsta</label><input type="number" id="f-age" value="'+(r.age||'')+'" min="0" max="120"></div>'+
-    '<div class="fg"><label>Sex</label><select id="f-sex"><option value="">—</option><option '+(r.sex==='M'?'selected':'')+'>M</option><option '+(r.sex==='F'?'selected':'')+'>F</option></select></div>'+
+    '<div class="fg"><label>Sex</label><select id="f-sex" onchange="checkIaamMatch('+(id||'null')+')"><option value="">—</option><option '+(r.sex==='M'?'selected':'')+'>M</option><option '+(r.sex==='F'?'selected':'')+'>F</option></select></div>'+
     '<div class="fg"><label>Mediu</label><div style="display:flex;gap:12px;margin-top:4px"><label><input type="radio" name="f-mediu" value="Urban" '+(r.mediu==='Urban'||!r.mediu?'checked':'')+' style="accent-color:var(--navy)"> Urban</label><label><input type="radio" name="f-mediu" value="Rural" '+(r.mediu==='Rural'?'checked':'')+' style="accent-color:var(--navy)"> Rural</label></div></div>'+
     '<div class="fg"><label>Luna raportarii</label><select id="f-mo">'+moOpts(r.month)+'</select></div></div>'+
     '<div class="fg"><label>Sectia</label><select id="f-sec"><option value="">—</option>'+secOpts(r.section)+'</select></div>'+
+    '<div class="fr"><div class="fg"><label>Nr. inregistrare (registru CPIAAM)</label><input id="f-regn" value="'+(r.reg_number||'')+'" placeholder="optional"></div>'+
+    '<div class="fg"><label>Nr. foaie observatie (FO)</label><input id="f-fon" value="'+(r.fo_number||'')+'" placeholder="optional"></div></div>'+
     '<div class="fg"><label>Medic curant</label><input id="f-doc" value="'+(r.doctor||'')+'"></div>'+
     '<div class="fr3"><div class="fg"><label>Data internarii</label><input type="date" id="f-dint" value="'+(r.date_admission||'')+'" onchange="autoCalcDays()"></div>'+
     '<div class="fg"><label>Data externarii</label><input type="date" id="f-dext" value="'+(r.date_discharge||'')+'" onchange="autoCalcDays()"></div>'+
-    '<div class="fg"><label>Nr. zile internare</label><input type="number" id="f-nzi" value="'+(r.days||'')+'" readonly style="background:#f1f5f9"><div id="f-days-info" style="font-size:11px;color:var(--txtL);margin-top:2px">'+(r.date_admission&&r.date_discharge?'Durata spitalizare: '+calcDays(r.date_admission,r.date_discharge)+' zile':'')+'</div></div></div>'+
+    '<div class="fg"><label>Nr. zile internare</label><input type="number" id="f-nzi" value="'+(r.days||'')+'" min="0" style="background:#f1f5f9"><div id="f-days-info" style="font-size:11px;color:var(--txtL);margin-top:2px">'+(r.date_admission&&r.date_discharge?'Calculat automat: '+calcDays(r.date_admission,r.date_discharge)+' zile (editabil)':'')+'</div></div></div>'+
     '<div class="fg"><label>Diagnostic internare</label><textarea id="f-dgi" rows="2">'+(r.diag_admission||'')+'</textarea></div>'+
     '<div class="fg"><label>Diagnostic externare</label><textarea id="f-dge" rows="2">'+(r.diag_discharge||'')+'</textarea></div>'+
     '<div class="fg"><label>Internari anterioare (ultimele 6 luni)</label><textarea id="f-prev" rows="2">'+(r.prev_admissions||'')+'</textarea></div>'+
@@ -1887,16 +1892,46 @@ async function editIAAM(id){
   '<button class="btn bp" onclick="saveIAAM('+(id||'null')+')">Salveaza</button>');
   setTimeout(()=>{addDatePreview('f-dob');addDatePreview('f-dint');addDatePreview('f-dext');addDatePreview('f-deces-date');addDatePreview('f-dconf');attachDirtyTracking()},50);
 }
-function autoCalcDays(){const d1=document.getElementById('f-dint').value,d2=document.getElementById('f-dext').value;const days=calcDays(d1,d2);document.getElementById('f-nzi').value=days;document.getElementById('f-days-info').textContent=days?'Durata spitalizare: '+days+' zile':''}
+function autoCalcDays(){const d1=document.getElementById('f-dint').value,d2=document.getElementById('f-dext').value;const days=calcDays(d1,d2);if(days){document.getElementById('f-nzi').value=days;document.getElementById('f-days-info').textContent='Calculat automat: '+days+' zile (editabil)'}else{document.getElementById('f-days-info').textContent=''}}
 function toggleDecesFields(){const s=document.getElementById('f-status-ext').value;document.getElementById('f-deces-wrap').style.display=s==='Decedat'?'':'none';document.getElementById('f-cauza-deces-wrap').style.display=s==='Decedat'?'':'none'}
+var _iaamMatchTimer=null;
+function checkIaamMatch(editId){
+  clearTimeout(_iaamMatchTimer);
+  _iaamMatchTimer=setTimeout(()=>_doIaamMatch(editId),500);
+}
+async function _doIaamMatch(editId){
+  const banner=document.getElementById('f-iaam-match-banner');if(!banner)return;
+  const initials=(document.getElementById('f-pinit')?.value||'').trim().toLowerCase();
+  const dob=document.getElementById('f-dob')?.value||'';
+  const sex=document.getElementById('f-sex')?.value||'';
+  if(!initials||!dob||!sex){banner.innerHTML='';return}
+  const all=await ga('iaam');
+  const matches=all.filter(r=>{
+    if(editId&&r.id===editId)return false;
+    const ri=(r.patient_initials||r.patient||'').trim().toLowerCase();
+    return ri===initials&&r.date_of_birth===dob&&r.sex===sex;
+  });
+  if(matches.length===0){banner.innerHTML='';return}
+  let html='<div class="ib wrn" style="border-color:var(--amber);background:#FFFBEB;margin-bottom:12px">'+
+    '<strong style="color:#92400E">&#9888;&#65039; Pacient cu IAAM anterior identificat</strong> (potrivire initiale + data nasterii + sex)<br>';
+  matches.forEach(m=>{
+    const germs=m.germeni&&m.germeni.length?m.germeni.map(g=>{let s=g.name;if(g.mdr&&g.mdr!=='Nu')s+=' ('+g.mdr+')';return s}).join(', '):(m.organism||'—');
+    html+='<div style="font-size:12px;margin-top:4px;padding:4px 8px;background:rgba(0,0,0,.04);border-radius:4px">'+
+      '<strong>'+m.year+'</strong>: '+rInf(m.iaam_category||m.infection_type)+', '+germs+', '+rSec(m.section)+
+      (m.fo_number?', FO: '+esc(m.fo_number):'')+
+    '</div>';
+  });
+  html+='<div style="font-size:11px;color:#92400E;margin-top:6px">Verificati daca este acelasi pacient.</div></div>';
+  banner.innerHTML=html;
+}
 
 async function saveIAAM(id){
   const v=s=>document.getElementById(s)?document.getElementById(s).value:'';
   const mediu=document.querySelector('input[name="f-mediu"]:checked');
   const cauzaDeces=document.querySelector('input[name="f-cauza-deces"]:checked');
-  const rec={year:A.year,month:+v('f-mo'),patient:v('f-pat').trim(),date_of_birth:v('f-dob'),
+  const rec={year:A.year,month:+v('f-mo'),patient_initials:v('f-pinit').trim(),patient:v('f-pat').trim(),date_of_birth:v('f-dob'),
     age:+v('f-age')||null,sex:v('f-sex'),mediu:mediu?mediu.value:'Urban',
-    section:v('f-sec'),doctor:v('f-doc').trim(),
+    section:v('f-sec'),reg_number:v('f-regn').trim(),fo_number:v('f-fon').trim(),doctor:v('f-doc').trim(),
     date_admission:v('f-dint'),date_discharge:v('f-dext'),days:+v('f-nzi')||null,
     diag_admission:v('f-dgi').trim(),diag_discharge:v('f-dge').trim(),
     status_externare:v('f-status-ext'),
@@ -2724,10 +2759,10 @@ async function rDes(el){
     '<table class="dt"><thead><tr><th style="min-width:130px">Cod</th>'+MO.map(m=>'<th style="text-align:right;min-width:65px">'+m+'</th>').join('')+'<th style="text-align:right;min-width:80px">TOTAL</th></tr></thead><tbody>'+
     CFG.waste_codes.map(w=>'<tr><td><strong>'+w.code+'</strong><br><span style="font-size:10px;color:var(--txtL)">'+(w.name||w.code)+'</span></td>'+
       MO.map((_,mi)=>{const v=byM[mi+1]?byM[mi+1][w.id]||'':'';return'<td style="padding:3px"><input type="number" step="0.01" min="0" value="'+v+'" style="width:100%;padding:4px 3px;border:1px solid var(--brd);border-radius:4px;font-size:11px;text-align:right;font-family:var(--f)" onchange="sDes('+(mi+1)+',\''+w.id+'\',this.value)"></td>'}).join('')+
-      '<td style="text-align:right"><strong>'+fn(Math.round(ct[w.id]*100)/100)+'</strong></td></tr>').join('')+
-    '<tr style="background:var(--navy);color:#fff;font-weight:700"><td>TOTAL</td>'+
-      MO.map((_,mi)=>{let mt=0;CFG.waste_codes.forEach(w=>{mt+=+(byM[mi+1]?.[w.id])||0});return'<td style="text-align:right">'+(mt>0?fn(Math.round(mt*100)/100):'')+'</td>'}).join('')+
-      '<td style="text-align:right">'+fn(Math.round(gt*100)/100)+'</td></tr>'+
+      '<td style="text-align:right"><strong>'+fn(Math.round(ct[w.id]*100)/100)+'</strong> <span style="font-size:10px;opacity:.7">kg</span></td></tr>').join('')+
+    '<tr style="background:var(--navy);color:#fff;font-weight:700"><td>TOTAL (kg)</td>'+
+      MO.map((_,mi)=>{let mt=0;CFG.waste_codes.forEach(w=>{mt+=+(byM[mi+1]?.[w.id])||0});return'<td style="text-align:right">'+(mt>0?fn(Math.round(mt*100)/100)+' kg':'')+'</td>'}).join('')+
+      '<td style="text-align:right">'+fn(Math.round(gt*100)/100)+' kg</td></tr>'+
   '</tbody></table></div></div>'+
   '<div class="pn"><div class="ph"><h3>Om-zile lunare</h3></div><div class="pb">'+
     '<div style="display:grid;grid-template-columns:repeat(12,1fr);gap:6px">'+MO.map((m,mi)=>'<div><label style="font-size:10px;font-weight:600;color:var(--txtL);display:block;margin-bottom:3px">'+m+'</label><input type="number" min="0" value="'+(byM[mi+1]?.om_zile||'')+'" style="width:100%;padding:4px;border:1px solid var(--brd);border-radius:4px;font-size:11px;text-align:right;font-family:var(--f)" onchange="sDes('+(mi+1)+',\'om_zile\',this.value)"></div>').join('')+
@@ -2737,6 +2772,8 @@ async function sDes(month,field,value){
   const data=(await ga('deseuri')).filter(r=>r.year===A.year);let rec=data.find(r=>r.month===month);
   if(!rec){rec={year:A.year,month};CFG.waste_codes.forEach(w=>{rec[w.id]=0});rec.om_zile=0}
   rec[field]=parseFloat(value)||0;await pt('deseuri',rec);logActivity('Actualizat deseuri — luna '+month);
+  // Auto-recalculate totals
+  rDes(document.getElementById('pc'));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3251,7 +3288,7 @@ async function getCalendarEvents(year,month){
   });
   return events;
 }
-var _calView='month';// 'month' or 'year'
+var _calView='month',_calTab='calendar';// 'calendar' or 'termene'
 function getMonthNames(){return CFG.lang==='en'?LANG.en.months_full:T('months_full_ro')}
 function buildMonthGrid(y,m,events,compact){
   const dayNames=T('cal_days');
@@ -3279,8 +3316,14 @@ function buildMonthGrid(y,m,events,compact){
   return grid;
 }
 async function rCalendar(el){
-  const y=_calYear,m=_calMonth;
   const isEN=CFG.lang==='en';
+  // Tab bar: Calendar | Raportari
+  let tabs_h='<div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--brd)">'+
+    '<button onclick="_calTab=\'calendar\';render()" style="padding:8px 20px;border:none;cursor:pointer;font-weight:600;font-size:14px;background:none;border-bottom:3px solid '+(_calTab==='calendar'?'var(--navy)':'transparent')+';color:'+(_calTab==='calendar'?'var(--navy)':'var(--txtL)')+'">&#128197; '+(isEN?'Calendar':'Calendar')+'</button>'+
+    '<button onclick="_calTab=\'termene\';render()" style="padding:8px 20px;border:none;cursor:pointer;font-weight:600;font-size:14px;background:none;border-bottom:3px solid '+(_calTab==='termene'?'var(--navy)':'transparent')+';color:'+(_calTab==='termene'?'var(--navy)':'var(--txtL)')+'">&#128203; '+(isEN?'Reporting Deadlines':'Raportari / Termene')+'</button>'+
+  '</div>';
+  if(_calTab==='termene'){el.innerHTML=tabs_h;const termDiv=document.createElement('div');el.appendChild(termDiv);return rTerm(termDiv)}
+  const y=_calYear,m=_calMonth;
   const mNames=getMonthNames();
   // Month selector options
   let mOpts='';for(let i=0;i<12;i++)mOpts+='<option value="'+i+'"'+(i===m?' selected':'')+'>'+mNames[i]+'</option>';
@@ -3306,12 +3349,12 @@ async function rCalendar(el){
         '<h5>'+mNames[mi]+'</h5><div class="cal-grid">'+buildMonthGrid(y,mi,evts,true)+'</div></div>';
     }
     yg+='</div>';
-    el.innerHTML=nav_h+yg+
+    el.innerHTML=tabs_h+nav_h+yg+
       '<div class="cal-popup-ov" id="cal-pop-ov" onclick="closeCalPopup()"></div>'+
       '<div class="cal-popup" id="cal-pop" style="display:none"></div>';
   } else {
     const events=await getCalendarEvents(y,m);
-    el.innerHTML=nav_h+'<div class="cal-grid">'+buildMonthGrid(y,m,events,false)+'</div>'+
+    el.innerHTML=tabs_h+nav_h+'<div class="cal-grid">'+buildMonthGrid(y,m,events,false)+'</div>'+
       '<div class="cal-popup-ov" id="cal-pop-ov" onclick="closeCalPopup()"></div>'+
       '<div class="cal-popup" id="cal-pop" style="display:none"></div>';
   }
@@ -3857,7 +3900,7 @@ var _cfgTab='spital';
 async function rCfg(el){
   // ── Tab navigation ──
   var h='<div class="ac-type-tabs" style="margin-bottom:16px">'+
-    [['spital','&#127973; Spital'],['date','&#128190; Date & Backup'],['ai','&#129302; AI']].map(t=>
+    [['spital','&#127973; Spital'],['dateintro','&#128203; Introducere date'],['date','&#128190; Date & Backup'],['ai','&#129302; AI']].map(t=>
       '<div class="ac-ttab'+(t[0]===_cfgTab?' act':'')+'" onclick="_cfgTab=\''+t[0]+'\';render()">'+t[1]+'</div>').join('')+'</div>';
 
   if(_cfgTab==='spital'){
@@ -3868,10 +3911,7 @@ async function rCfg(el){
     '<div class="fr"><div class="fg"><label>Nume compartiment</label><input id="c-cpiaam" value="'+CFG.cpiaam_name+'"></div>'+
     '<div class="fg"><label>Cod spital PPS</label><input id="c-code" value="'+(CFG.hospital_code||'')+'"></div></div>'+
     '<div class="fr"><div class="fg"><label>Limita bugetara biocide (lei/an)</label><input type="number" id="c-bb" value="'+(CFG.biocide_budget||'')+'"></div>'+
-    '<div class="fg"><label>Format data</label><select id="c-datefmt"><option value="dd.mm.yyyy"'+((CFG.dateFormat||'dd.mm.yyyy')==='dd.mm.yyyy'?' selected':'')+'>dd.mm.yyyy (RO)</option><option value="dd/mm/yyyy"'+((CFG.dateFormat)==='dd/mm/yyyy'?' selected':'')+'>dd/mm/yyyy</option><option value="mm/dd/yyyy"'+((CFG.dateFormat)==='mm/dd/yyyy'?' selected':'')+'>mm/dd/yyyy (US)</option><option value="yyyy-mm-dd"'+((CFG.dateFormat)==='yyyy-mm-dd'?' selected':'')+'>yyyy-mm-dd (ISO)</option></select></div></div>'+
-    '<div class="ib inf" style="margin-top:8px;font-size:11px"><strong>Unde se aplica formatul:</strong> tabele, rapoarte Word, preview sub campurile de data din formulare.<br>'+
-    '<strong>Campurile de tip calendar</strong> (date picker) din formulare afiseaza formatul setat de browser/sistemul de operare — nu poate fi controlat din aplicatie.<br>'+
-    'Pentru a schimba formatul calendarului: <strong>Windows</strong> \u2192 Settings \u2192 Time &amp; Language \u2192 Region \u2192 Regional format \u2192 alege formatul dorit (ex: Romanian).</div>'+
+    '<div class="fg"></div></div>'+
     '<button class="btn bp" onclick="saveCfgForm()" style="margin-top:8px">Salveaza</button>'+
   '</div></div>'+
 
@@ -3906,8 +3946,10 @@ async function rCfg(el){
       '</div>'+(nPer>0?'<div style="font-size:10px;color:var(--teal);margin-top:2px">Ponderat: '+wb+' paturi</div>':'')+'</td>'+
       '<td class="act"><button onclick="CFG.sections.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>'}).join('')+'</tbody></table>'+
     '<button class="btn bp" onclick="saveCfg();alert(\'Salvat!\')" style="margin-top:8px">Salveaza Sectii</button>'+
-  '</div></div>'+
+  '</div></div>';
 
+  } else if(_cfgTab==='dateintro'){
+  h+=
   '<div class="pn"><div class="ph"><h3>Tipuri de Probe (Autocontrol)</h3></div><div class="pb">'+
     '<div class="tag-list">'+CFG.probe_types.map((p,i)=>{const nm=typeof p==='string'?p:(p.name||p.id||'?');return '<span class="tag">'+nm+'<span class="tag-x" onclick="CFG.probe_types.splice('+i+',1);saveCfg();render()">&#215;</span></span>'}).join('')+'</div>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-probe" placeholder="Tip proba nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-probe\').value.trim();if(v){CFG.probe_types.push({id:genId(\'probe\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
@@ -3969,14 +4011,33 @@ async function rCfg(el){
 
   } else if(_cfgTab==='date'){
   h+=
-  // ── Salvare & Recuperare ──
-  '<div class="pn"><div class="ph"><h3>Salvare & Recuperare Date</h3></div><div class="pb">'+
-    '<div class="ib inf">Datele sunt stocate local in browser (IndexedDB). Foloseste optiunile de mai jos pentru a salva, importa sau sincroniza datele.</div>'+
-    '<div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap">'+
-      '<button class="btn bp" onclick="expAll()" style="padding:10px 18px">&#128190; Salveaza Backup JSON</button>'+
-      '<button class="btn bo" onclick="impAll()" style="padding:10px 18px">&#128193; Incarca Backup JSON</button>'+
-      '<button class="btn bo" onclick="syncPickFile()" style="padding:10px 18px">&#128190; Salveaza JSON (sync live)</button>'+
-      '<button class="btn bo" onclick="syncReadFile()" style="padding:10px 18px">&#128194; Importa din fisier JSON</button>'+
+  // ── Format Data & Limba ──
+  '<div class="pn"><div class="ph"><h3>Format Data si Limba</h3></div><div class="pb">'+
+    '<div class="fr"><div class="fg"><label>Format data</label><select id="c-datefmt"><option value="dd.mm.yyyy"'+((CFG.dateFormat||'dd.mm.yyyy')==='dd.mm.yyyy'?' selected':'')+'>dd.mm.yyyy (RO)</option><option value="dd/mm/yyyy"'+((CFG.dateFormat)==='dd/mm/yyyy'?' selected':'')+'>dd/mm/yyyy</option><option value="mm/dd/yyyy"'+((CFG.dateFormat)==='mm/dd/yyyy'?' selected':'')+'>mm/dd/yyyy (US)</option><option value="yyyy-mm-dd"'+((CFG.dateFormat)==='yyyy-mm-dd'?' selected':'')+'>yyyy-mm-dd (ISO)</option></select></div>'+
+    '<div class="fg"><label>Limba interfata</label><select id="c-lang" onchange="CFG.lang=this.value;saveCfg();render()"><option value="ro"'+(CFG.lang!=='en'?' selected':'')+'>Romana (RO)</option><option value="en"'+(CFG.lang==='en'?' selected':'')+'>English (EN)</option></select></div></div>'+
+    '<button class="btn bp" onclick="saveCfgForm()" style="margin-top:8px">Salveaza</button>'+
+    '<details style="margin-top:12px"><summary style="font-size:12px;color:var(--txtL);cursor:pointer"><strong>Informatii despre formatul datelor in calendar picker</strong></summary>'+
+    '<div class="ib inf" style="margin-top:8px;font-size:11px"><strong>Unde se aplica formatul:</strong> tabele, rapoarte Word, preview sub campurile de data din formulare.<br>'+
+    '<strong>Campurile de tip calendar</strong> (date picker) din formulare afiseaza formatul setat de browser/sistemul de operare — nu poate fi controlat din aplicatie.<br><br>'+
+    '<strong>Metoda 1 — Chrome:</strong> Setari \u2192 Limbi \u2192 Adauga English (United Kingdom) pentru DD/MM/YYYY sau English (United States) pentru MM/DD/YYYY \u2192 Afiseaza Chrome in aceasta limba.<br>'+
+    '<strong>Metoda 2 — Windows:</strong> Settings \u2192 Time &amp; Language \u2192 Region \u2192 Regional format \u2192 alege formatul dorit.</div></details>'+
+  '</div></div>'+
+  // ── Sincronizare ──
+  '<div class="pn"><div class="ph"><h3>Sincronizare Fisier JSON</h3></div><div class="pb">'+
+    '<div style="padding:10px 14px;border-radius:8px;background:'+(_fileHandle?'#D1FAE5;border:1px solid #86EFAC':'#FEE2E2;border:1px solid #FCA5A5')+';margin-bottom:12px;font-size:13px">'+
+    (_fileHandle?'&#128994; <strong>Conectat:</strong> '+esc(_fileHandle.name)+' — salvare automata la fiecare modificare':'&#128308; <strong>Neconectat</strong> — datele se salveaza doar in browser (IndexedDB)')+'</div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button class="btn bp" onclick="syncReadFile()">&#128194; Reconecteaza la fisier existent</button>'+
+      '<button class="btn bo" onclick="syncPickFile()">&#128190; Conecteaza fisier nou</button>'+
+      (_fileHandle?'<button class="btn bo" onclick="_fileHandle=null;CFG.sync_file_name=\'\';saveCfg();updateSyncIndicator();render()">&#128683; Deconecteaza</button>':'')+
+    '</div>'+
+  '</div></div>'+
+  // ── Backup ──
+  '<div class="pn"><div class="ph"><h3>Backup Manual</h3></div><div class="pb">'+
+    (CFG.last_backup?'<div style="font-size:12px;color:var(--txtL);margin-bottom:10px">Ultimul backup: <strong>'+fmtDate(CFG.last_backup.slice(0,10))+' '+CFG.last_backup.slice(11,16)+'</strong></div>':'')+
+    '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">'+
+      '<button class="btn bw" onclick="expAll()" style="padding:10px 18px;font-size:13px">&#128190; Descarca Backup JSON</button>'+
+      '<button class="btn bo" onclick="impAll()" style="padding:10px 18px">&#128193; Incarca Backup din fisier</button>'+
     '</div>'+
     '<div class="fr"><div class="fg"><label>Reminder backup (zile)</label><input type="number" id="c-bkpint" value="'+(CFG.backup_interval_days||7)+'" min="1" max="90" style="width:80px" onchange="CFG.backup_interval_days=+this.value||7;saveCfg()"><span style="font-size:11px;color:var(--txtL);margin-left:6px">Primesti notificare daca nu ai facut backup in acest interval</span></div></div>'+
   '</div></div>'+
@@ -4057,8 +4118,8 @@ async function fullReset(){
 
 async function saveCfgForm(){
   const v=s=>document.getElementById(s).value;
-  CFG.hospital_name=v('c-name');CFG.hospital_short=v('c-short');CFG.cpiaam_name=v('c-cpiaam');
-  CFG.hospital_code=v('c-code');CFG.biocide_budget=+v('c-bb')||0;CFG.dateFormat=v('c-datefmt');
+  if(document.getElementById('c-name')){CFG.hospital_name=v('c-name');CFG.hospital_short=v('c-short');CFG.cpiaam_name=v('c-cpiaam');CFG.hospital_code=v('c-code');CFG.biocide_budget=+v('c-bb')||0}
+  if(document.getElementById('c-datefmt'))CFG.dateFormat=v('c-datefmt');
   const bkpEl=document.getElementById('c-bkpint');if(bkpEl)CFG.backup_interval_days=+bkpEl.value||7;
   await saveCfg();alert('Setari salvate!');render();
 }
@@ -4261,7 +4322,7 @@ async function buildNotifications(){
     else if(diff<=ms30)n.push({icon:'🟡',text:(isEN?'Deadline in '+dz+' days: ':'Termen in '+dz+' zile: ')+t.name,link:'termene'})});
   // Backup
   if(CFG.last_backup){const lb=new Date(CFG.last_backup);const diff=now-lb;
-    if(diff>=(CFG.backup_interval_days||7)*86400000)n.push({icon:'💾',text:(isEN?'No backup for '+Math.ceil(diff/86400000)+' days':'Nu ai facut backup de '+Math.ceil(diff/86400000)+' zile'),link:'config'})}
+    if(diff>=(CFG.backup_interval_days||7)*86400000)n.push({icon:'💾',text:(isEN?'No backup for '+Math.ceil(diff/86400000)+' days. Go to Config → Date & Backup':'Nu ai facut backup de '+Math.ceil(diff/86400000)+' zile. Mergi la Configurare \u2192 Date \u0219i backup'),link:'config',cfgTab:'date'})}
   else n.push({icon:'💾',text:(isEN?'No backup created yet':'Nu ai facut niciun backup'),link:'config'});
   A.notifications=n;updateNotifBadge()}
 async function autoAdvanceRecurring(terms){
@@ -4334,33 +4395,27 @@ function updateSyncIndicator(){
   const el=document.getElementById('sync-indicator');if(!el)return;
   if(!_fileHandle){
     if(CFG.sync_file_name){
-      // File was connected before but handle lost on refresh
-      el.innerHTML='&#128993; Reconecteaza: '+CFG.sync_file_name;
-      el.title='Fisierul de sincronizare trebuie reconectat dupa reincarcarea paginii. Click pentru a reconecta.';
-      el.style.color='#D4A017';
+      el.innerHTML='&#128993; Reconecteaza: '+esc(CFG.sync_file_name);
+      el.title='Click pentru optiuni sincronizare';
+      el.style.cssText='font-size:11px;cursor:pointer;white-space:nowrap;padding:4px 10px;border-radius:12px;background:#FEF3C7;color:#92400E;border:1px solid #F59E0B';
     } else {
       el.innerHTML='&#128308; '+T('sync_neconectat');
-      el.title=T('sync_datele_locale');
-      el.style.color='#C0392B';
+      el.title='Click pentru optiuni sincronizare';
+      el.style.cssText='font-size:11px;cursor:pointer;white-space:nowrap;padding:4px 10px;border-radius:12px;background:#FEE2E2;color:#991B1B;border:1px solid #EF4444';
     }
   } else {
-    const loc=CFG.file_location||'';
-    if(loc==='cloud'){
-      el.innerHTML='&#128994; '+T('sync_sincronizat')+' — '+_fileHandle.name;
-      el.title=T('sync_tip_cloud');
-      el.style.color='#27AE60';
-    } else {
-      el.innerHTML='&#128993; '+T('sync_salvat_local')+' — '+_fileHandle.name;
-      el.title=T('sync_tip_local');
-      el.style.color='#D4A017';
-    }
+    el.innerHTML='&#128994; '+esc(_fileHandle.name);
+    el.title='Click pentru optiuni sincronizare';
+    el.style.cssText='font-size:11px;cursor:pointer;white-space:nowrap;padding:4px 10px;border-radius:12px;background:#D1FAE5;color:#065F46;border:1px solid #10B981';
   }}
 function syncIndicatorClick(){
-  // If we have a stored handle but lost permission, try to reconnect
   if(!_fileHandle&&CFG.sync_file_name){syncReconnect();return}
-  // Otherwise open save picker for new file
   syncPickFile();
 }
+function toggleSyncMenu(){const m=document.getElementById('sync-menu');if(!m)return;m.style.display=m.style.display==='none'?'block':'none'}
+function closeSyncMenu(){const m=document.getElementById('sync-menu');if(m)m.style.display='none'}
+document.addEventListener('click',function(e){if(!e.target.closest('#sync-indicator')&&!e.target.closest('#sync-menu'))closeSyncMenu()});
+function disconnectSync(){_fileHandle=null;CFG.sync_file_name='';saveCfg();updateSyncIndicator();render()}
 async function syncReconnect(){
   if(!window.showOpenFilePicker){alert('Browserul nu suporta File System Access API.');return}
   // First try restoring the stored handle
@@ -4548,6 +4603,7 @@ function rAjutor(el){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'6.6',date:'2026-03-15',notes:'Restructurare pagina Configurare in 4 tab-uri: Spital, Introducere date, Date & Backup, AI\nToolbar simplificat — indicator sync pill cu meniu popup (3 stari: rosu/galben/verde)\nDeseu: totaluri auto-calculate + afisare unitati "kg"\nIAAM: zile spitalizare auto-calculate + camp editabil\nIAAM: campuri noi Nr. inregistrare (reg_number) si Nr. foaie observatie (fo_number)\nIAAM: initiale pacient + matching automat cazuri anterioare din toti anii\nCalendar: Raportari/Termene integrat ca tab in pagina Calendar\nEliminat butoane backup din sidebar si dashboard (sync prin toolbar)'},
   {version:'6.5.2',date:'2026-03-15',notes:'FIX: Comparare versiuni semantica (vCmp) — parseFloat ignora patch version (6.5.1 → 6.5)\nFIX: Auto-update si verificare manuala detecteaza corect versiuni cu 3 segmente (ex: 6.5.1 vs 6.5)\nInclude fix-uri 6.5.1: import config corupt, syncWrite/expAll exclud config din getAll, _extractCfg()'},
   {version:'6.5',date:'2026-03-15',notes:'Fuzionare Tip Infectie cu Categorie IAAM Anexa 9 — un singur dropdown grupat ECDC + categorii personalizate\nConfigurator categorii IAAM in Configurare: categorii ECDC predefinite (non-stergibile) + categorii custom\nEtiologie germeni: dropdown searchable cu filtrare dupa nume/cod, camp text liber pentru Alte/nespecificat\nMDRo (ESBL, CRE, etc.) afisat conditional — doar pentru bacterii, nu virusuri/fungi/paraziti\nButon verificare manuala update-uri in toolbar (🔄) si pagina Despre\nFunctie showToast() pentru notificari temporare'},
   {version:'6.4',date:'2026-03-15',notes:'Configurator praguri ATP: 17 tipuri suprafete cu prag RLU, rezultat calculat automat (Conform/Neconform)\nConfigurator suprafete UV Check: 5 tipuri predefinite, dropdown in formular UV\nSectiune Autocontrol — Tipuri Suprafete in Configurare (tab Spital)\nPreview format data sub fiecare input type=date din formulare (arata data in formatul ales)\nProtectie formulare nesalvate: avertizare la inchidere modal cu date modificate (toate formularele)\nNota explicativa format data in Configurare (browser/OS controls date picker)'},
@@ -5190,12 +5246,7 @@ function impAll(){if(!confirm('Importul inlocuieste datele existente. Continua?'
 // ═══════════════════════════════════════════════════════════════
 // ── Backup Reminder (cerinta 8) ──
 function checkBackupReminder(){
-  if(!CFG.setup_complete)return;
-  const interval=CFG.backup_interval_days||7;
-  const last=CFG.last_backup?new Date(CFG.last_backup):null;
-  if(!last){showBackupReminder('Nu ai facut niciun backup. Salveaza acum pentru siguranta datelor!');return}
-  const daysSince=Math.floor((Date.now()-last.getTime())/864e5);
-  if(daysSince>=interval)showBackupReminder('Au trecut '+daysSince+' zile de la ultimul backup ('+fmtDate(last.toISOString().slice(0,10))+'). Salveaza un backup!');
+  // Backup reminders now appear only in the notification bell (buildNotifications)
 }
 function showBackupReminder(msg){
   const d=document.createElement('div');d.id='backup-reminder';

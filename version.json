@@ -1,11 +1,14 @@
 {
-  "version": "6.5.2",
+  "version": "6.6",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX: Comparare versiuni semantica — parseFloat ignora patch version (6.5.1 devenia 6.5)",
-    "FIX: Auto-update si verificare manuala detecteaza corect versiuni cu 3 segmente",
-    "FIX: Import/sync config corupt — config salvat ca array imbricat in loc de obiect",
-    "FIX: syncWrite/expAll exclud config din bucla getAll, export include config:CFG explicit",
-    "FIX: _extractCfg() extrage config valid din structuri corupte (backup-uri vechi)"
+    "Restructurare pagina Configurare in 4 tab-uri: Spital, Introducere date, Date & Backup, AI",
+    "Toolbar simplificat — indicator sync pill cu meniu popup (3 stari: rosu/galben/verde)",
+    "Deseu: totaluri auto-calculate + afisare unitati kg",
+    "IAAM: zile spitalizare auto-calculate + camp editabil",
+    "IAAM: campuri noi Nr. inregistrare si Nr. foaie observatie",
+    "IAAM: initiale pacient + matching automat cazuri anterioare din toti anii",
+    "Calendar: Raportari/Termene integrat ca tab in pagina Calendar",
+    "Eliminat butoane backup din sidebar si dashboard"
   ]
 }

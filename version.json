@@ -1,11 +1,13 @@
 {
-  "version": "6.7.1",
+  "version": "6.7.2",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Dashboard: sectiuni configurabile individual cu checkboxuri",
-    "Sageata dropdown sub toolbar — selectie per sectiune",
-    "Calendar si Evenimente vizibile implicit",
-    "Selectia sectiunilor salvata persistent in config",
-    "Eliminat toggle global — inlocuit cu configurare granulara"
+    "Toolbar redesign: sync pill stilizat cu dot + text + clase CSS",
+    "Separatoare toolbar mai vizibile (.tb-sep)",
+    "Toolbar icons cu border transparent si hover cu border",
+    "Badge notificari cu border 2px solid pe card",
+    "Butoane an compacte (.yr-nav 26x26px)",
+    "Meniu sync modern cu descrieri sub fiecare optiune",
+    "Eliminat toate inline styles din toolbar"
   ]
 }

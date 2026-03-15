@@ -1,11 +1,14 @@
 {
-  "version": "6.8.2",
+  "version": "6.8.3",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
+    "Autocontrol: Fix dark mode sumar zone netestate (text alb pe fundal deschis)",
+    "IAAM: Sectiunile ATB, Contacti, Masuri, Externare marcate obligatorii",
+    "IAAM: Optiune Fara tratament antibiotic in sectiunea ATB",
     "Dashboard: KPI trend ascuns cand anul anterior nu are date",
     "Dashboard: Sparkline pe KPI biocide",
     "Dashboard: KPI ATP/UV cu indicator neconformitati",
-    "Dashboard: KPI labels nu se mai trunchează",
+    "Dashboard: KPI labels nu se mai trunchiaza",
     "IAAM: Fix FO duplicat in coloana Pacient",
     "Biocide: Dropdown selectie produs + input manual fallback",
     "Config: Fix denumire spital cu ghilimele se trunchia",

@@ -328,7 +328,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dark .ac-cell-rd{background:#450A0A;color:#FCA5A5}.dark .ac-cell-gr{background:#1E293B;color:#64748B}
 .dark .ac-matrix td:first-child{background:#0F172A;color:#CBD5E1}
 .dark .ac-matrix th{background:#0F172A}
-.dark .ac-collapse-hdr{color:var(--txt)}
+.dark .ac-collapse-hdr{color:var(--txt)}.dark .ac-summary-hdr{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:#FCD34D}.dark .ac-summary-hdr strong{color:#FBBF24}
 
 /* ── Toolbar extras ── */
 .tb-actions{display:flex;align-items:center;gap:10px}
@@ -828,7 +828,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='6.8.2';
+const APP_VERSION='6.8.3';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -2541,10 +2541,10 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
 
     // Fully untested — compact: just list names with a shared badge
     if(fullyUntested.length>0){
-      h+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:#991B1B;margin-bottom:5px">'+(isEN?'Completely untested — all sections':'Complet netestate — toate sectiile')+' ('+sections.length+')</div>';
+      h+='<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:5px">'+(isEN?'Completely untested — all sections':'Complet netestate — toate sectiile')+' ('+sections.length+')</div>';
       h+='<div style="display:flex;flex-wrap:wrap;gap:4px">';
       fullyUntested.forEach(pt=>{
-        h+='<span style="display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:500;background:#FEE2E2;color:#991B1B">'+sn(pt)+'</span>';
+        h+='<span style="display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:500;background:rgba(192,57,43,.12);color:var(--red)">'+sn(pt)+'</span>';
       });
       h+='</div></div>';
     }
@@ -5068,6 +5068,7 @@ function rAjutor(el){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'6.8.3',date:'2026-03-15',notes:'Autocontrol: Fix dark mode sumar zone netestate (text alb pe fundal deschis)\nIAAM: Sectiunile ATB, Contacti, Masuri, Externare marcate obligatorii\nIAAM: Optiune "Fara tratament antibiotic" in sectiunea ATB\nDashboard: KPI trend ascuns cand anul anterior nu are date\nDashboard: Sparkline pe KPI biocide\nDashboard: KPI ATP/UV cu indicator neconformitati\nDashboard: KPI labels nu se mai trunchiaza\nIAAM: Fix FO duplicat in coloana Pacient\nBiocide: Dropdown selectie produs + input manual fallback\nConfig: Fix denumire spital cu ghilimele se trunchia\nDate test: JSON complet 2 ani pentru toate modulele'},
   {version:'6.8',date:'2026-03-15',notes:'IAAM Module restructurat complet:\nFormular wizard cu 10 sectiuni si navigare laterala (Date pacient, Spitalizare, Infectie, Etiologie, Factori de risc, Tratament ATB, Istoric clinic, Contacti/focar, Masuri/cauzalitate, Externare/clasificare)\nFactori de risc ca checkbox-uri (pinned) + dropdown + chips (inlocuieste textarea)\nCalcul completare % per caz — indicator vizual in lista si in wizard nav\nLista cazuri redesignata: coloane noi (indicator, sectie+categorie 2 linii, germen+MDR tag, completare %, actiuni cu duplicare)\nFiltre noi: luna, completare (complete/incomplete), cautare extinsa\nFunctie duplicare caz — copiaza sectia/medicul/luna, goleste datele pacient\nSmart defaults la caz nou (ultima sectie, luna curenta)\nAlerta rapoarte: dialog pentru cazuri incomplete inainte de generare Word\nConfig factori de risc in Configurare > Introducere date\nKPI completare medie pe pagina IAAM'},
   {version:'6.7.2',date:'2026-03-15',notes:'Toolbar redesign complet: sync pill stilizat cu dot+text+clase CSS, separatoare mai vizibile (.tb-sep), toolbar icons cu border transparent+hover, badge notificari cu border 2px, butoane an compacte (.yr-nav 26x26px), meniu sync modern cu descrieri sub fiecare optiune, eliminat toate inline styles din toolbar'},
   {version:'6.7.1',date:'2026-03-15',notes:'Dashboard: sectiuni configurabile individual — sageata dropdown sub toolbar cu checkboxuri per sectiune\nCalendar si Evenimente vizibile implicit (nu mai sunt ascunse)\nFiecare sectiune se poate ascunde/arata independent, selectia salvata persistent\nEliminat toggle global "Arata detalii" — inlocuit cu configurare granulara'},

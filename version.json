@@ -1,12 +1,14 @@
 {
-  "version": "7.0",
+  "version": "7.4",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Manual de Utilizare complet integrat in aplicatie — 16 capitole bilingve RO/EN",
-    "Cuprins interactiv cu navigare la fiecare sectiune",
-    "Butoane 'Deschide modulul' pentru navigare directa din manual",
-    "Casete sfat si avertizare pentru informatii importante",
-    "Pasi numerotati vizual pentru toate procedurile",
-    "Functionalitate printare manual (CSS @media print optimizat)"
+    "Modal fix: footer vizibil permanent pe ecrane mici (1366x768)",
+    "ATB Consum: Ruta redenumit Modalitate de administrare",
+    "Ancheta: Nr. inregistrare in header (NR.X DIN LUNA AN)",
+    "Camp domiciliu in Date pacient",
+    "Internari anterioare structurate (spital, sectie, perioada)",
+    "Buletine analize multiple cu nr. si data validare",
+    "Sectiunea II: dispozitive invazive, interventii chirurgicale",
+    "Eliminat sectiunea Concluzii din ancheta Word"
   ]
 }

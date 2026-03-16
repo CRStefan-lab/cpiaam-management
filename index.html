@@ -201,13 +201,13 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 /* ── Modal ── */
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:.2s}
 .mo.sh{opacity:1;pointer-events:auto}
-.md{background:var(--card);border-radius:var(--rL);box-shadow:0 20px 60px rgba(0,0,0,.2);width:700px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.md{background:var(--card);border-radius:var(--rL);box-shadow:0 20px 60px rgba(0,0,0,.2);width:700px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
 .mh{padding:16px 22px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between}
 .mh h3{font-size:15px;font-weight:700;color:var(--navy)}
 .mh .cx{background:none;border:none;font-size:20px;cursor:pointer;color:var(--txtL);padding:4px;line-height:1}
-.mb{padding:22px}
+.mb{padding:22px;overflow-y:auto;flex:1;min-height:0}
 .mf{padding:14px 22px;border-top:1px solid var(--brd);display:flex;justify-content:flex-end;gap:8px}
-.md.iw-modal{width:900px;max-width:95vw}.iw-modal .mb{padding:0;overflow:hidden}.iw-modal .mf{display:none}
+.md.iw-modal{width:900px;max-width:95vw}.iw-modal .mb{padding:0;overflow:hidden;flex:1;min-height:0}.iw-modal .mf{display:none}
 /* ── IAAM Wizard ── */
 .iw{display:flex;height:calc(90vh - 120px);min-height:400px}
 .iw-nav{width:200px;border-right:1px solid var(--brd);padding:10px 0;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column}
@@ -233,6 +233,10 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .rf-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .rf-chip{background:var(--bg);border:1px solid var(--brd);border-radius:14px;padding:3px 10px;font-size:11px;display:inline-flex;align-items:center;gap:4px}
 .rf-chip button{background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:0;line-height:1}
+.contact-row{display:flex;gap:6px;align-items:center;padding:8px 10px;background:var(--bg);border:1px solid var(--brd);border-radius:8px;margin-bottom:6px;flex-wrap:wrap}
+.contact-row input{padding:5px 8px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:var(--f)}
+.contact-row .ci{width:80px}.contact-row .cfo{width:100px}.contact-row .cint{width:150px}.contact-row .crm{flex:1;min-width:120px}
+.contact-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:0 4px;line-height:1}
 .rf-add-row{display:flex;gap:6px;align-items:center;margin-top:6px}
 .rf-add-row select{flex:1;padding:6px 8px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:var(--f)}
 .compl-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;display:inline-block}
@@ -301,6 +305,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dark .iw-dot-grey{background:#475569}.dark .iw-hdr{border-color:#334155}.dark .iw-footer{border-color:#334155}
 .dark .iw-hdr h4{color:#E2E8F0}.dark .iw-nav-pct{border-color:#334155}
 .dark .rf-chip{background:#0F172A;border-color:#475569}.dark .rf-add-row select{background:#0F172A;border-color:#334155;color:#E2E8F0}
+.dark .contact-row{background:#0F172A;border-color:#475569}.dark .contact-row input{background:#0F172A;border-color:#334155;color:#E2E8F0}
 .dark .compl-100{background:rgba(16,185,129,.15);color:#6EE7B7}
 .dark .compl-60{background:rgba(245,158,11,.15);color:#FCD34D}
 .dark .compl-30{background:rgba(239,68,68,.15);color:#FCA5A5}
@@ -629,6 +634,56 @@ body{display:block!important;background:#fff!important}
 .man-vis-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
 .man-matrix{display:inline-grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:10px 0}
 .man-matrix span{width:36px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+/* ── Antibiograma Locală ── */
+.abg-wrap{overflow-x:auto;margin:16px 0;border:1px solid var(--brd);border-radius:var(--rL)}
+.abg-matrix{border-collapse:collapse;font-size:11px;min-width:100%}
+.abg-matrix th,.abg-matrix td{padding:4px 6px;text-align:center;white-space:nowrap;border:1px solid var(--brd)}
+.abg-matrix thead th{background:var(--navy);color:#fff;font-size:10px;font-weight:600;position:sticky;top:0;z-index:2}
+.abg-matrix thead th.abg-grp{background:#334155;font-size:9px;text-transform:uppercase;letter-spacing:.5px}
+.abg-matrix tbody th{text-align:left;font-weight:600;background:var(--bg);position:sticky;left:0;z-index:1;font-size:11px}
+.abg-matrix tbody th .abg-n{display:block;font-size:10px;color:var(--txtL);font-weight:400}
+.abg-s{background:#DCFCE7;color:#166534}.abg-i{background:#FEF9C3;color:#854D0E}.abg-r{background:#FEE2E2;color:#991B1B}.abg-na{background:var(--bg);color:var(--txtL)}
+.abg-low{font-style:italic;opacity:.7}
+.abg-legend{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0;font-size:11px}
+.abg-legend span{display:inline-flex;align-items:center;gap:4px}
+.abg-legend i{width:14px;height:14px;border-radius:3px;display:inline-block}
+.abg-modal-body{max-height:70vh;overflow-y:auto;padding:16px}
+.abg-atb-grid{display:grid;grid-template-columns:1fr auto auto auto;gap:4px 8px;align-items:center;font-size:12px}
+.abg-atb-grid .abg-hdr{font-weight:700;padding:6px 4px;border-bottom:2px solid var(--brd);font-size:11px}
+.abg-atb-grid label{padding:3px 4px}
+.abg-atb-grid .abg-radio{display:flex;gap:2px;justify-content:center}
+.abg-atb-grid .abg-radio label{display:flex;align-items:center;gap:2px;cursor:pointer;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;border:1px solid transparent;transition:.15s}
+.abg-atb-grid .abg-radio label:has(input:checked){border-color:currentColor}
+.abg-atb-grid .abg-radio .rs:has(input:checked){background:#DCFCE7;color:#166534}
+.abg-atb-grid .abg-radio .ri:has(input:checked){background:#FEF9C3;color:#854D0E}
+.abg-atb-grid .abg-radio .rr:has(input:checked){background:#FEE2E2;color:#991B1B}
+.abg-grp-hdr{grid-column:1/-1;font-weight:700;font-size:11px;color:var(--navy);padding:8px 4px 4px;border-bottom:1px solid var(--brd);margin-top:4px}
+.abg-quick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.abg-quick button{font-size:11px;padding:4px 10px;border:1px solid var(--brd);border-radius:6px;background:var(--card);cursor:pointer;font-family:var(--f);transition:.15s}
+.abg-quick button:hover{border-color:var(--navy);color:var(--navy)}
+.dark .abg-matrix thead th{background:#4338CA}.dark .abg-matrix thead th.abg-grp{background:#334155}
+.dark .abg-matrix tbody th{background:#1E293B}
+.dark .abg-s{background:#14532D;color:#86EFAC}.dark .abg-i{background:#713F12;color:#FDE68A}.dark .abg-r{background:#7F1D1D;color:#FCA5A5}.dark .abg-na{background:#1E293B;color:#64748B}
+.dark .abg-grp-hdr{color:#818CF8}
+/* DDD/AWaRe Consum ATB */
+.ddd-wrap{overflow-x:auto;margin-top:10px}
+.ddd-aw-a{color:#166534;background:#DCFCE7;padding:2px 8px;border-radius:4px;font-weight:600;font-size:11px}
+.ddd-aw-w{color:#854D0E;background:#FEF9C3;padding:2px 8px;border-radius:4px;font-weight:600;font-size:11px}
+.ddd-aw-r{color:#991B1B;background:#FEE2E2;padding:2px 8px;border-radius:4px;font-weight:600;font-size:11px}
+.ddd-aw-x{color:#475569;background:#F1F5F9;padding:2px 8px;border-radius:4px;font-weight:600;font-size:11px}
+.ddd-charts{display:flex;gap:20px;flex-wrap:wrap;margin:16px 0}
+.ddd-chart-box{background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px;flex:1;min-width:280px}
+.ddd-chart-box h4{margin:0 0 10px;font-size:13px;color:var(--navy)}
+.ddd-chart-box canvas{max-height:260px}
+.ddd-target{font-size:12px;padding:6px 12px;border-radius:8px;display:inline-flex;align-items:center;gap:6px}
+.ddd-target.ok{background:#DCFCE7;color:#166534}
+.ddd-target.warn{background:#FEF9C3;color:#854D0E}
+.ddd-target.bad{background:#FEE2E2;color:#991B1B}
+.ddd-bulk-area{width:100%;min-height:120px;font-family:monospace;font-size:11px;border:1px solid var(--brd);border-radius:6px;padding:8px;resize:vertical}
+.dark .ddd-aw-a{background:#14532D;color:#86EFAC}.dark .ddd-aw-w{background:#713F12;color:#FDE68A}
+.dark .ddd-aw-r{background:#7F1D1D;color:#FCA5A5}.dark .ddd-aw-x{background:#1E293B;color:#94A3B8}
+.dark .ddd-chart-box{background:var(--card);border-color:var(--brd)}
+.dark .ddd-chart-box h4{color:#818CF8}
 @media print{.sb,.tb,.man-print,.man-top{display:none!important}.mn{margin-left:0!important}.man-sec{page-break-inside:avoid}.ct{padding:10px!important}}
 </style>
 </head>
@@ -662,6 +717,8 @@ body{display:block!important;background:#fff!important}
     <a class="ni" data-p="deseuri" onclick="nav('deseuri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg><span data-t="sb_deseuri">Deseuri</span></a>
     <a class="ni" data-p="biocide" onclick="nav('biocide')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.5a2 2 0 01-.2.9L4.7 20.6a1 1 0 00.9 1.4h12.8a1 1 0 00.9-1.4l-5.1-10.2A2 2 0 0114 9.5V2"/><path d="M8.5 2h7"/></svg><span data-t="sb_biocide">Biocide</span></a>
     <a class="ni" data-p="pps" onclick="nav('pps')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span data-t="sb_pps">PPS / Antibiotice</span></a>
+    <a class="ni" data-p="consum_atb" onclick="nav('consum_atb')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.5 1.5v5.7a2 2 0 01-.4 1.2L6 13.5V15h12v-1.5l-4.1-5.1a2 2 0 01-.4-1.2V1.5"/><path d="M8.5 1.5h7"/><path d="M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg><span data-t="sb_consum_atb">Consum Antibiotice</span></a>
+    <a class="ni" data-p="antibiograma" onclick="nav('antibiograma')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="8" r="1" fill="currentColor"/><circle cx="16" cy="12" r="1" fill="currentColor"/><circle cx="8" cy="12" r="1" fill="currentColor"/></svg><span data-t="sb_antibiograma">Antibiograma Locala</span></a>
     <a class="ni" data-p="documente" onclick="nav('documente')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg><span data-t="sb_documente">Documente</span></a>
     <!-- Raportari/Termene moved to Calendar module -->
     <a class="ni" data-p="calendar" onclick="nav('calendar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="1"/><circle cx="12" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg><span data-t="sb_calendar">Calendar</span></a>
@@ -734,7 +791,7 @@ body{display:block!important;background:#fff!important}
 // ═══════════════════════════════════════════════════════════════
 // DATABASE
 // ═══════════════════════════════════════════════════════════════
-const DB='CPIAAM4',VER=4,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck'];
+const DB='CPIAAM4',VER=5,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum'];
 function odb(){return new Promise((ok,no)=>{const r=indexedDB.open(DB,VER);r.onupgradeneeded=e=>{const d=e.target.result;ST.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id',autoIncrement:true})})};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function ga(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function pt(s,i){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).put(i);r.onsuccess=()=>{ok(r.result);_syncDebounce()};r.onerror=()=>no(r.error)})}
@@ -872,7 +929,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='7.0';
+const APP_VERSION='7.4';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -924,6 +981,11 @@ ro:{
   // IAAM specific
   iaam_tip_infectie:'Tip infectie',iaam_mdr:'MDR',iaam_depistare:'Depistare',iaam_externare:'Externare',
   iaam_mod_depistare:'Mod depistare',iaam_colonizare:'Colonizare / Infectie activa',
+  iaam_comorbidities:'Comorbiditati',iaam_add_comorbidity:'Adauga comorbiditate',iaam_configure_comorbidities:'Configureaza lista',
+  iaam_contacts_add:'Adauga contact',iaam_contact_initials:'Initiale',iaam_contact_fo:'Nr. FO',
+  iaam_contact_interval:'Interval contact',iaam_contact_room:'Salon/Sectie',
+  iaam_mediu:'Mediu',iaam_urban:'Urban',iaam_rural:'Rural',
+  rap_registru_iaam_excel:'Registru Electronic IAAM (Excel)',
   // Reports
   rap_raport_anual:'Raport Anual',rap_analiza_iaam:'Analiza IAAM',rap_analiza_auto:'Analiza Autocontrol',
   rap_analiza_des:'Analiza Deseuri',rap_ancheta:'Ancheta Epidemiologica',rap_pv:'PV CPIAAM',
@@ -962,7 +1024,35 @@ ro:{
   bkp_mai_tarziu:'Mai tarziu',
   // Detection modes
   det_activa:'Activa (supraveghere activa)',det_pasiva:'Pasiva (simptomatologie clinica)',
-  det_pps:'Studiu de prevalenta (PPS)',det_screening:'Screening'
+  det_pps:'Studiu de prevalenta (PPS)',det_screening:'Screening',
+  // Antibiograma
+  sb_antibiograma:'Antibiograma Locala',pt_antibiograma:'Antibiograma Locala',
+  abg_total:'IZOLATE CU ANTIBIOGRAMA',abg_mdr:'IZOLATE MDR',abg_top3:'TOP 3 GERMENI',abg_sens:'SENSIBILITATE MEDIE',
+  abg_filtru_sec:'Toate sectiile',abg_export_word:'Export Word',abg_export_whonet:'Export WHONET (CSV)',
+  abg_n_testat:'n testat',abg_n_sensibil:'n sensibil',abg_pct_s:'% S',
+  abg_verde:'≥80% sensibil',abg_galben:'50-79%',abg_rosu:'<50%',abg_gri:'Netestat',
+  abg_low_n:'* <10 izolate (nesemnificativ statistic)',
+  abg_btn_abg:'Antibiograma',abg_quick_gram_neg:'Gram- comune',abg_quick_gram_poz:'Gram+ comune',abg_quick_all:'Deselecteaza tot',
+  abg_sir_s:'S',abg_sir_i:'I',abg_sir_r:'R',
+  abg_no_data:'Niciun caz IAAM cu date de antibiograma pentru anul si filtrele selectate.',
+  abg_germen:'Germen',abg_izolate:'Izolate',abg_modal_title:'Antibiograma — ',
+  sb_consum_atb:'Consum Antibiotice',pt_consum_atb:'Consum Antibiotice — DDD / AWaRe',
+  ddd_total:'Total DDD/100 zile-pat',ddd_access:'% Access',ddd_watch:'% Watch',ddd_reserve:'% Reserve',ddd_substances:'Substante utilizate',
+  ddd_target_ok:'Tinta OMS atinsa (>=60% Access)',ddd_target_warn:'Sub tinta OMS (<60% Access)',
+  ddd_section:'Sectie',ddd_month:'Luna',ddd_substance:'Substanta activa',ddd_quantity:'Cantitate (g)',ddd_route:'Mod. administrare',ddd_ddds:'DDD-uri',
+  ddd_no_data:'Niciun consum inregistrat pentru anul si filtrele selectate.',
+  ddd_add:'+ Adauga Consum',ddd_bulk:'Import CSV',ddd_export_word:'Raport Word',
+  ddd_aware_label:'AWaRe',ddd_per_100:'DDD/100 zile-pat',ddd_aware_dist:'Distributie AWaRe',
+  ddd_esac_title:'Comparatie ESAC-Net',ddd_esac_note:'Comparatie orientativa — datele ESAC-Net sunt comunitare, nu spitalicesti.',
+  ddd_top10:'Top 10 antibiotice dupa consum DDD',ddd_monthly_evol:'Evolutie lunara',
+  ddd_bulk_help:'Format CSV: sectie_id;luna(1-12);cod_ATC;cantitate_g\nExemplu: sec_001;3;J01CR02;1500',
+  ddd_computed:'DDD calculate',ddd_all_months:'Toate lunile',
+  iaam_domiciliu:'Domiciliu',iaam_prev_admissions:'Internari anterioare (ultimele 6 luni)',
+  iaam_prev_hosp:'Spital',iaam_prev_sec:'Sectie',iaam_prev_period:'Perioada',
+  iaam_add_admission:'+ Adauga internare',iaam_no_prev:'Nicio internare anterioara',
+  iaam_bulletins:'Buletine de analize',iaam_bulletin_nr:'Nr. buletin',iaam_bulletin_date:'Data validare',
+  iaam_add_bulletin:'+ Adauga buletin',iaam_no_bulletins:'Niciun buletin',
+  iaam_invasive_devices:'Dispozitive medicale invazive',iaam_procedures_label:'Proceduri invazive / Interventii chirurgicale'
 },
 en:{
   months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
@@ -1002,6 +1092,11 @@ en:{
   confirma_stergere:'Are you sure you want to delete?',da:'Yes',nu:'No',
   iaam_tip_infectie:'Infection type',iaam_mdr:'MDR',iaam_depistare:'Detection',iaam_externare:'Discharge',
   iaam_mod_depistare:'Detection mode',iaam_colonizare:'Colonization / Active infection',
+  iaam_comorbidities:'Comorbidities',iaam_add_comorbidity:'Add comorbidity',iaam_configure_comorbidities:'Configure list',
+  iaam_contacts_add:'Add contact',iaam_contact_initials:'Initials',iaam_contact_fo:'Chart No.',
+  iaam_contact_interval:'Contact interval',iaam_contact_room:'Room/Ward',
+  iaam_mediu:'Environment',iaam_urban:'Urban',iaam_rural:'Rural',
+  rap_registru_iaam_excel:'HAI Electronic Registry (Excel)',
   rap_raport_anual:'Annual Report',rap_analiza_iaam:'HAI Analysis',rap_analiza_auto:'QC Analysis',
   rap_analiza_des:'Waste Analysis',rap_ancheta:'Epidemiological Investigation',rap_pv:'Minutes CPIAAM',
   rap_trimestrial:'Quarterly Report',rap_autocontrol_xlsx:'QC XLSX',
@@ -1034,7 +1129,35 @@ en:{
   bkp_reminder_nota:'Save backup to a folder synced with OneDrive or Google Drive for maximum safety.',
   bkp_mai_tarziu:'Later',
   det_activa:'Active (active surveillance)',det_pasiva:'Passive (clinical symptoms)',
-  det_pps:'Prevalence survey (PPS)',det_screening:'Screening'
+  det_pps:'Prevalence survey (PPS)',det_screening:'Screening',
+  // Antibiogram
+  sb_antibiograma:'Local Antibiogram',pt_antibiograma:'Local Antibiogram',
+  abg_total:'ISOLATES WITH ANTIBIOGRAM',abg_mdr:'MDR ISOLATES',abg_top3:'TOP 3 ORGANISMS',abg_sens:'MEAN SUSCEPTIBILITY',
+  abg_filtru_sec:'All wards',abg_export_word:'Export Word',abg_export_whonet:'Export WHONET (CSV)',
+  abg_n_testat:'n tested',abg_n_sensibil:'n susceptible',abg_pct_s:'% S',
+  abg_verde:'≥80% susceptible',abg_galben:'50-79%',abg_rosu:'<50%',abg_gri:'Not tested',
+  abg_low_n:'* <10 isolates (not statistically significant)',
+  abg_btn_abg:'Antibiogram',abg_quick_gram_neg:'Gram- common',abg_quick_gram_poz:'Gram+ common',abg_quick_all:'Deselect all',
+  abg_sir_s:'S',abg_sir_i:'I',abg_sir_r:'R',
+  abg_no_data:'No HAI cases with antibiogram data for the selected year and filters.',
+  abg_germen:'Organism',abg_izolate:'Isolates',abg_modal_title:'Antibiogram — ',
+  sb_consum_atb:'Antibiotic Consumption',pt_consum_atb:'Antibiotic Consumption — DDD / AWaRe',
+  ddd_total:'Total DDD/100 bed-days',ddd_access:'% Access',ddd_watch:'% Watch',ddd_reserve:'% Reserve',ddd_substances:'Substances used',
+  ddd_target_ok:'WHO target met (>=60% Access)',ddd_target_warn:'Below WHO target (<60% Access)',
+  ddd_section:'Section',ddd_month:'Month',ddd_substance:'Active substance',ddd_quantity:'Quantity (g)',ddd_route:'Admin. route',ddd_ddds:'DDDs',
+  ddd_no_data:'No consumption records for the selected year and filters.',
+  ddd_add:'+ Add Consumption',ddd_bulk:'Import CSV',ddd_export_word:'Word Report',
+  ddd_aware_label:'AWaRe',ddd_per_100:'DDD/100 bed-days',ddd_aware_dist:'AWaRe Distribution',
+  ddd_esac_title:'ESAC-Net Comparison',ddd_esac_note:'Indicative comparison — ESAC-Net data is community-based, not hospital-based.',
+  ddd_top10:'Top 10 antibiotics by DDD consumption',ddd_monthly_evol:'Monthly evolution',
+  ddd_bulk_help:'CSV format: section_id;month(1-12);ATC_code;quantity_g\nExample: sec_001;3;J01CR02;1500',
+  ddd_computed:'Computed DDDs',ddd_all_months:'All months',
+  iaam_domiciliu:'Address',iaam_prev_admissions:'Previous admissions (last 6 months)',
+  iaam_prev_hosp:'Hospital',iaam_prev_sec:'Section',iaam_prev_period:'Period',
+  iaam_add_admission:'+ Add admission',iaam_no_prev:'No previous admissions',
+  iaam_bulletins:'Lab bulletins',iaam_bulletin_nr:'Bulletin nr.',iaam_bulletin_date:'Validation date',
+  iaam_add_bulletin:'+ Add bulletin',iaam_no_bulletins:'No bulletins',
+  iaam_invasive_devices:'Invasive medical devices',iaam_procedures_label:'Invasive procedures / Surgical interventions'
 }
 };
 function T(key){const lang=CFG.lang||'ro';return LANG[lang]?.[key]||LANG.ro[key]||key}
@@ -1148,8 +1271,19 @@ async function loadCfg(){
       {name:'Drenaj chirurgical',pinned:false}
     ];
   }
+  let _comorbAdded=false;
+  if(!CFG.comorbidities_config||!CFG.comorbidities_config.length){
+    CFG.comorbidities_config=[
+      {name:'Diabet zaharat',pinned:true},{name:'Hipertensiune arteriala',pinned:true},
+      {name:'Boala renala cronica',pinned:true},{name:'Insuficienta cardiaca',pinned:true},
+      {name:'BPOC',pinned:true},{name:'Neoplasm activ',pinned:true},{name:'Imunosupresie',pinned:true},
+      {name:'Ciroza hepatica',pinned:false},{name:'Obezitate',pinned:false},{name:'AVC',pinned:false},
+      {name:'Dementa',pinned:false},{name:'Transplant organ',pinned:false},{name:'HIV/SIDA',pinned:false},
+      {name:'Boala autoimuna',pinned:false}
+    ];_comorbAdded=true;
+  }
   // Ensure all config items have unique IDs
-  if(ensureConfigIds()){await saveCfg();await migrateDataToIds()}
+  if(ensureConfigIds()||_comorbAdded){await saveCfg();await migrateDataToIds()}
   updateSidebar();
 }
 async function saveCfg(){CFG.id=1;await pt('config',CFG);updateSidebar()}
@@ -1220,7 +1354,7 @@ function addDatePreview(inputId){
 function calcAge(dob){if(!dob)return '';const b=new Date(dob),t=new Date(),m=t.getMonth()-b.getMonth()+(t.getFullYear()-b.getFullYear())*12;if(m<12)return m+' luni';return Math.floor(m/12)}
 function calcDays(d1,d2){if(!d1||!d2)return '';const a=new Date(d1),b=new Date(d2);const diff=Math.ceil((b-a)/864e5);return diff>=0?diff:''}
 function germenName(code){for(const g of GERMENI_LIST)for(const it of g.items)if(it.c===code)return it.n;return code}
-function iaamCatLabel(code){if(!code)return '—';for(const g of IAAM_CATS)for(const it of g.items)if(it.c===code)return it.c+' — '+it.n;const cust=(CFG.iaam_custom_cats||[]).find(x=>x.id===code);if(cust)return cust.name;const old=(CFG.infection_types||[]).find(x=>x.id===code||x.name===code);if(old)return typeof old==='string'?old:(old.name||code);return code}
+function iaamCatLabel(code){if(!code)return '—';for(const g of IAAM_CATS)for(const it of g.items)if(it.c===code)return it.c+' — '+it.n;if(LEGACY_CODE_MAP[code]){const nc=LEGACY_CODE_MAP[code];for(const g of IAAM_CATS)for(const it of g.items)if(it.c===nc)return it.c+' — '+it.n+' (legacy: '+code+')'}const cust=(CFG.iaam_custom_cats||[]).find(x=>x.id===code);if(cust)return cust.name;const old=(CFG.infection_types||[]).find(x=>x.id===code||x.name===code);if(old)return typeof old==='string'?old:(old.name||code);return code}
 function iaamCatOpts(sel){let h='<option value="">—</option>';IAAM_CATS.forEach(g=>{h+='<optgroup label="'+g.g+'">';g.items.forEach(it=>{h+='<option value="'+it.c+'"'+(it.c===sel?' selected':'')+'>'+it.c+' — '+it.n+'</option>'});h+='</optgroup>'});const cust=CFG.iaam_custom_cats||[];if(cust.length){h+='<optgroup label="Personalizate">';cust.forEach(c=>{h+='<option value="'+c.id+'"'+(c.id===sel?' selected':'')+'>'+esc(c.name)+'</option>'});h+='</optgroup>'}return h}
 function germeniOpts(){let h='<option value="">— Selecteaza germen —</option>';GERMENI_LIST.forEach(g=>{h+='<optgroup label="'+g.g+'">';g.items.forEach(it=>{h+='<option value="'+it.c+'">'+it.n+' ('+it.c+')</option>'});h+='</optgroup>'});return h}
 function needsMDRo(code){if(!code)return false;if(code.startsWith('VIR'))return false;if(code.startsWith('CAN')||code.startsWith('ASP')||code.startsWith('YEA')||code.startsWith('FUN')||code.startsWith('FIL'))return false;if(code==='PAROTH'||code.startsWith('_'))return false;return true}
@@ -1232,6 +1366,8 @@ function renderGermeniCards(){if(_iaamGermeni.length===0)return '<div style="col
   h+='<strong style="font-size:12px">'+esc(g.name)+' ('+esc(g.code)+')</strong>';
   if(needsMDRo(g.code)){h+='<select onchange="_iaamGermeni['+i+'].mdr=this.value" style="padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'+MDR_OPTS.map(o=>'<option'+(g.mdr===o?' selected':'')+'>'+o+'</option>').join('')+'</select>'}
   if(needsCustomName(g.code)){h+='<input placeholder="Specifica (optional)" value="'+esc(g.name_custom||'')+'" onchange="_iaamGermeni['+i+'].name_custom=this.value;markFormDirty()" style="width:140px;padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'}
+  const nAbg=(g.susceptibility||[]).length;
+  h+='<button onclick="openAbgModal('+i+')" class="btn bo bsm" style="font-size:10px;padding:2px 8px" title="'+T('abg_btn_abg')+'">&#129516; '+T('abg_btn_abg')+(nAbg?' ('+nAbg+')':'')+'</button>';
   h+='<button onclick="removeIaamGermen('+i+')" class="btn-x">&times;</button></div>';return h}).join('')}
 function addIaamGermen(){const sel=document.getElementById('f-germ-sel');if(!sel||!sel.value)return;if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}if(_iaamGermeni.find(g=>g.code===sel.value))return;const name=germenName(sel.value);_iaamGermeni.push({code:sel.value,name,mdr:'Nu'});sel.value='';document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
 function selectGermenFromDD(code){if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}if(_iaamGermeni.find(g=>g.code===code))return;const name=germenName(code);_iaamGermeni.push({code,name,mdr:needsMDRo(code)?'Nu':''});markFormDirty();const si=document.getElementById('f-germ-search');if(si)si.value='';hideGermeniDD();document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
@@ -1246,28 +1382,91 @@ function filterGermeniDropdown(q){const dd=document.getElementById('f-germ-dd');
     h+='<div onclick="selectGermenFromDD(\''+it.c+'\')" style="padding:5px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--bg)" onmouseenter="this.style.background=\'var(--bg)\'" onmouseleave="this.style.background=\'\'">'+esc(it.n)+' <span style="color:var(--txtL);font-size:10px">('+it.c+')</span></div>'});
   dd.innerHTML=h;dd.style.display='block'}
 function removeIaamGermen(i){_iaamGermeni.splice(i,1);document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
+
+// ═══ Antibiograma per germen ═══
+const ABG_COMMON_GRAM_NEG=['J01CA01','J01CR02','J01CR05','J01DB04','J01DC02','J01DD01','J01DD02','J01DD04','J01DE01','J01DH02','J01DH51','J01DH03','J01GB03','J01GB06','J01MA02','J01MA12','J01EE01','J01XB01','J01DF01','J01AA12'];
+const ABG_COMMON_GRAM_POZ=['J01CE01','J01CF05','J01CR02','J01DB04','J01DC02','J01DD04','J01FA10','J01FA09','J01FF01','J01GB03','J01MA12','J01XA01','J01XA02','J01XX08','J01XX09','J01EE01','J01AA02'];
+var _abgIdx=-1;
+function openAbgModal(gIdx){
+  _abgIdx=gIdx;const g=_iaamGermeni[gIdx];
+  if(!g.susceptibility)g.susceptibility=[];
+  const sel=new Set(g.susceptibility.map(s=>s.atb_code));
+  let h='<div class="abg-modal-body"><h4 style="margin-bottom:10px">'+T('abg_modal_title')+esc(g.name)+'</h4>';
+  h+='<div class="abg-quick"><button onclick="abgQuickFill(\'neg\')">'+T('abg_quick_gram_neg')+'</button><button onclick="abgQuickFill(\'poz\')">'+T('abg_quick_gram_poz')+'</button><button onclick="abgQuickFill(\'clear\')">'+T('abg_quick_all')+'</button></div>';
+  h+='<div class="abg-atb-grid"><span class="abg-hdr">Antibiotic</span><span class="abg-hdr" style="text-align:center">S</span><span class="abg-hdr" style="text-align:center">I</span><span class="abg-hdr" style="text-align:center">R</span>';
+  ATB_LIST.forEach(grp=>{
+    h+='<div class="abg-grp-hdr">'+esc(grp.g)+'</div>';
+    grp.items.forEach(atb=>{
+      const ex=g.susceptibility.find(s=>s.atb_code===atb.a);
+      const chk=sel.has(atb.a);
+      h+='<label style="font-size:11px"><input type="checkbox" class="abg-chk" data-atc="'+atb.a+'" data-name="'+esc(atb.n)+'" '+(chk?'checked':'')+' onchange="abgToggleAtb(this)"> '+esc(atb.n)+' <span style="color:var(--txtL);font-size:9px">('+atb.a+')</span></label>';
+      const rv=ex?ex.result:'';
+      h+='<div class="abg-radio"><label class="rs"><input type="radio" name="abg_'+atb.a+'" value="S" '+(rv==='S'?'checked':'')+' '+(chk?'':'disabled')+'>S</label></div>';
+      h+='<div class="abg-radio"><label class="ri"><input type="radio" name="abg_'+atb.a+'" value="I" '+(rv==='I'?'checked':'')+' '+(chk?'':'disabled')+'>I</label></div>';
+      h+='<div class="abg-radio"><label class="rr"><input type="radio" name="abg_'+atb.a+'" value="R" '+(rv==='R'?'checked':'')+' '+(chk?'':'disabled')+'>R</label></div>';
+    });
+  });
+  h+='</div></div>';
+  // Use a nested modal approach: create a floating div over the existing modal
+  const ov=document.createElement('div');ov.id='abg-ov';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:210;display:flex;align-items:center;justify-content:center';
+  ov.innerHTML='<div style="background:var(--card);border-radius:12px;width:90%;max-width:700px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.3)">'+
+    '<div style="padding:12px 16px;border-bottom:1px solid var(--brd);display:flex;justify-content:space-between;align-items:center"><strong>'+T('abg_btn_abg')+'</strong><button onclick="closeAbgModal()" class="btn-x">&times;</button></div>'+
+    '<div style="flex:1;overflow-y:auto">'+h+'</div>'+
+    '<div style="padding:10px 16px;border-top:1px solid var(--brd);display:flex;justify-content:flex-end;gap:8px"><button class="btn bo" onclick="closeAbgModal()">'+T('btn_cancel')+'</button><button class="btn bp" onclick="saveAbgModal()">'+T('btn_save')+'</button></div>'+
+  '</div>';
+  document.body.appendChild(ov);
+}
+function closeAbgModal(){const ov=document.getElementById('abg-ov');if(ov)ov.remove();_abgIdx=-1}
+function abgToggleAtb(chk){
+  const atc=chk.dataset.atc;const row=chk.closest('.abg-atb-grid');if(!row)return;
+  row.querySelectorAll('input[name="abg_'+atc+'"]').forEach(r=>{r.disabled=!chk.checked;if(!chk.checked)r.checked=false});
+}
+function abgQuickFill(type){
+  const ov=document.getElementById('abg-ov');if(!ov)return;
+  const codes=type==='neg'?ABG_COMMON_GRAM_NEG:type==='poz'?ABG_COMMON_GRAM_POZ:[];
+  ov.querySelectorAll('.abg-chk').forEach(chk=>{
+    const shouldCheck=type==='clear'?false:codes.includes(chk.dataset.atc);
+    chk.checked=shouldCheck;
+    const atc=chk.dataset.atc;
+    ov.querySelectorAll('input[name="abg_'+atc+'"]').forEach(r=>{r.disabled=!shouldCheck;if(!shouldCheck)r.checked=false});
+  });
+}
+function saveAbgModal(){
+  if(_abgIdx<0)return;const g=_iaamGermeni[_abgIdx];
+  const ov=document.getElementById('abg-ov');if(!ov)return;
+  const sus=[];
+  ov.querySelectorAll('.abg-chk:checked').forEach(chk=>{
+    const atc=chk.dataset.atc,name=chk.dataset.name;
+    const sel=ov.querySelector('input[name="abg_'+atc+'"]:checked');
+    if(sel)sus.push({atb_code:atc,atb_name:name,result:sel.value});
+  });
+  g.susceptibility=sus;markFormDirty();
+  closeAbgModal();
+  document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards();
+}
+
 function renderAtbRows(){if(_iaamAtb.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun antibiotic adaugat.</div>';let h='<table class="dt" style="font-size:12px"><thead><tr><th>Antibiotic</th><th>Cale</th><th>Start</th><th>Stop</th><th>Zile</th><th style="width:30px"></th></tr></thead><tbody>';_iaamAtb.forEach((a,i)=>{const days=calcDays(a.date_start,a.date_stop);h+='<tr><td><strong>'+a.name+'</strong><br><span style="font-size:10px;color:var(--txtL)">'+a.atc+'</span></td><td>'+a.route+'</td><td><input type="date" value="'+(a.date_start||'')+'" onchange="_iaamAtb['+i+'].date_start=this.value;document.getElementById(\'f-atb-rows\').innerHTML=renderAtbRows()" style="font-size:11px;padding:2px;border:1px solid var(--brd);border-radius:4px"></td><td><input type="date" value="'+(a.date_stop||'')+'" onchange="_iaamAtb['+i+'].date_stop=this.value;document.getElementById(\'f-atb-rows\').innerHTML=renderAtbRows()" style="font-size:11px;padding:2px;border:1px solid var(--brd);border-radius:4px"></td><td>'+(days||'—')+'</td><td><button onclick="removeIaamAtb('+i+')" class="btn-x">&times;</button></td></tr>'});h+='</tbody></table>';return h}
 function addIaamAtb(){const sel=document.getElementById('f-atb-sel'),route=document.getElementById('f-atb-route');if(!sel||!sel.value)return;const opt=sel.options[sel.selectedIndex];_iaamAtb.push({atc:sel.value,name:opt.text.split(' (')[0],route:route?route.value:'IV',date_start:'',date_stop:''});sel.value='';document.getElementById('f-atb-rows').innerHTML=renderAtbRows()}
 function removeIaamAtb(i){_iaamAtb.splice(i,1);document.getElementById('f-atb-rows').innerHTML=renderAtbRows()}
 const IAAM_CATS=[
-{g:'SSI — Infectii situs chirurgical',items:[{c:'SSI-S',n:'Superficiala'},{c:'SSI-D',n:'Profunda'},{c:'SSI-O',n:'Organ/Spatiu'}]},
-{g:'PN — Pneumonie',items:[{c:'PN1',n:'Pneumonie clinic confirmata'},{c:'PN2',n:'Pneumonie — imagistic + lab'},{c:'PN3',n:'Pneumonie — pacient imunosupresat'},{c:'PN4',n:'Pneumonie — microbiologic confirmata'},{c:'PN5',n:'Pneumonie — agent etiologic specific'}]},
-{g:'COVID-19',items:[{c:'COV-ASY',n:'Asimptomatic'},{c:'COV-MM',n:'Moderat-Mediu'},{c:'COV-SEV',n:'Sever'}]},
-{g:'UTI — Tract urinar',items:[{c:'UTI-A',n:'Microbiologic confirmata'},{c:'UTI-B',n:'Neclara microbiologic'}]},
-{g:'BSI — Septicemie',items:[{c:'C-CVC',n:'Septicemie CVC-asociata'},{c:'C-PVC',n:'Septicemie PVC-asociata'},{c:'S-PUL',n:'Secundara — pulmonara'},{c:'S-UTI',n:'Secundara — urinara'},{c:'S-DIG',n:'Secundara — digestiva'},{c:'S-SSI',n:'Secundara — situs chirurgical'},{c:'S-SST',n:'Secundara — piele/tesuturi moi'},{c:'S-OTH',n:'Secundara — alta'},{c:'UO',n:'Origine necunoscuta'},{c:'UNK',n:'Necunoscuta'}]},
-{g:'CRI-CVC',items:[{c:'CRI1-CVC',n:'Infectie locala CVC'},{c:'CRI2-CVC',n:'Infectie generala CVC'},{c:'CRI3-CVC',n:'Microbiologic confirmata CVC'}]},
-{g:'CRI-PVC',items:[{c:'CRI1-PVC',n:'Infectie locala PVC'},{c:'CRI2-PVC',n:'Infectie generala PVC'},{c:'CRI3-PVC',n:'Microbiologic confirmata PVC'}]},
-{g:'CVS — Cardiovascular',items:[{c:'VASC',n:'Infectie arteriala/venoasa'},{c:'ENDO',n:'Endocardita'},{c:'CARD',n:'Miocardita/Pericardita'},{c:'MED',n:'Mediastinita'}]},
-{g:'CNS — Sistem nervos central',items:[{c:'IC',n:'Infectie intracraniala'},{c:'MEN',n:'Meningita/Ventriculita'},{c:'SA',n:'Abces spinal'}]},
-{g:'EENT/ORL',items:[{c:'CONJ',n:'Conjunctivita'},{c:'EYE',n:'Infectie oculara (nu conjunctivita)'},{c:'EAR',n:'Otita'},{c:'ORAL',n:'Infectie cavitate bucala'},{c:'SINU',n:'Sinuzita'},{c:'UR',n:'Infectie tract respirator superior'}]},
-{g:'GI — Gastrointestinal',items:[{c:'ICD',n:'Infectie Clostridioides difficile'},{c:'GE',n:'Gastroenterita'},{c:'GIT',n:'Infectie tract GI'},{c:'HEP',n:'Hepatita'},{c:'IAB',n:'Infectie intra-abdominala'}]},
-{g:'LRI — Tract respirator inferior',items:[{c:'BRON',n:'Bronsita/Traheita'},{c:'LUNG',n:'Alte infectii pulmonare'}]},
-{g:'REPR — Reproducere',items:[{c:'EMET',n:'Endometrita'},{c:'EPIS',n:'Episiotomie'},{c:'VCUF',n:'Cupola vaginala'},{c:'OREP',n:'Alte infectii reproducere'}]},
-{g:'SST — Piele/Tesuturi moi',items:[{c:'SKIN',n:'Infectie cutanata'},{c:'ST',n:'Infectie tesuturi moi'},{c:'DECU',n:'Infectie decubit'},{c:'BURN',n:'Infectie arsura'},{c:'BRST',n:'Abces/mastita san'}]},
-{g:'BJ — Os/Articulatii',items:[{c:'BONE',n:'Osteomielita'},{c:'JNT',n:'Artrita/Bursita'},{c:'DISC',n:'Infectie disc intervertebral'}]},
-{g:'SYS — Sistemice',items:[{c:'DI',n:'Infectie diseminata'},{c:'CSEP',n:'Sepsis clinic (fara hemocultura pozitiva)'}]},
-{g:'NEO — Neonatale',items:[{c:'CSEP',n:'Sepsis clinic neonatal'},{c:'LCBI',n:'Septicemie confirmata neonatal'},{c:'CNSB',n:'Meningita neonatala'},{c:'PNEU',n:'Pneumonie neonatala'},{c:'NEC',n:'Enterocolita necrozanta'}]}
+{g:'BJ — Os/Articulatii',items:[{c:'BJ-BONE',n:'Osteomielita'},{c:'BJ-JNT',n:'Artrita, bursite'},{c:'BJ-DISC',n:'Infectie spatiu discal'}]},
+{g:'BSI — Bacteriemie',items:[{c:'BSI',n:'BSI confirmat lab (fara alt focar)'},{c:'S-PUL',n:'Secundara — pulmonar'},{c:'S-UTI',n:'Secundara — urinar'},{c:'S-DIG',n:'Secundara — digestiv'},{c:'S-SSI',n:'Secundara — situs chirurgical'},{c:'S-SST',n:'Secundara — piele/tesuturi moi'},{c:'S-OTH',n:'Secundara — alt focar'}]},
+{g:'CNS — Sistem nervos central',items:[{c:'CNS-IC',n:'Infectie intracraniala'},{c:'CNS-MEN',n:'Meningita/Ventriculita'},{c:'CNS-SA',n:'Abces spinal'}]},
+{g:'CRI — Infectii asociate cateterului',items:[{c:'CRI1-CVC',n:'CRI locala CVC'},{c:'CRI1-CVP',n:'CRI locala CVP'},{c:'CRI2-CVC',n:'CRI generala CVC (fara hemocultura+)'},{c:'CRI2-CVP',n:'CRI generala CVP (fara hemocultura+)'},{c:'CRI3-CVC',n:'CRI microbiologica CVC (hemocultura+)'},{c:'CRI3-CVP',n:'CRI microbiologica CVP (hemocultura+)'},{c:'BSI-CRI',n:'BSI asociata cateterului'}]},
+{g:'CVS — Cardiovascular',items:[{c:'CVS-VASC',n:'Infectie arteriala/venoasa'},{c:'CVS-ENDO',n:'Endocardita'},{c:'CVS-CARD',n:'Miocardita/Pericardita'},{c:'CVS-MED',n:'Mediastinita'}]},
+{g:'EENT — Ochi/ORL',items:[{c:'EENT-CONJ',n:'Conjunctivita'},{c:'EENT-EYE',n:'Infectie oculara (non-conjunctivita)'},{c:'EENT-EAR',n:'Otita'},{c:'EENT-ORAL',n:'Infectie cavitate orala'},{c:'EENT-SINU',n:'Sinuzita'},{c:'EENT-UR',n:'Infectie cai aeriene superioare'}]},
+{g:'GI — Gastrointestinal',items:[{c:'GI-CDI',n:'Infectie Clostridioides difficile'},{c:'GI-GE',n:'Gastroenterita'},{c:'GI-GIT',n:'Infectie tract GI'},{c:'GI-HEP',n:'Hepatita'},{c:'GI-IAB',n:'Infectie intraabdominala'}]},
+{g:'LRI — Tract respirator inferior',items:[{c:'LRI-BRON',n:'Bronsita/Traheobronsite'},{c:'LRI-LUNG',n:'Alte infectii pulmonare'}]},
+{g:'NEO — Neonatale',items:[{c:'NEO-CSEP',n:'Sepsis clinic neonatal'},{c:'NEO-LCBI',n:'BSI confirmat lab neonatal'},{c:'NEO-CNSB',n:'Meningita neonatala'},{c:'NEO-PNEU',n:'Pneumonie neonatala'},{c:'NEO-NEC',n:'Enterocolita necrozanta'}]},
+{g:'PN — Pneumonie',items:[{c:'PN1',n:'Pneumonie clinic + Rx'},{c:'PN2',n:'Pneumonie cu izolat'},{c:'PN3',n:'Pneumonie la imunocompromisi'},{c:'PN4',n:'Pneumonie cu protejat'},{c:'PN5',n:'Pneumonie VAP'},{c:'IAP',n:'Pneumonie asociata intubatiei (IAP)'}]},
+{g:'REPR — Reproducere',items:[{c:'REPR-EMET',n:'Endometrita'},{c:'REPR-EPIS',n:'Infectie episiotomie'},{c:'REPR-VCUF',n:'Infectie cupola vaginala'},{c:'REPR-OREP',n:'Alte infectii reproducere'}]},
+{g:'SSI — Infectii situs chirurgical',items:[{c:'SSI-S',n:'Superficiala incizie'},{c:'SSI-D',n:'Profunda incizie'},{c:'SSI-O',n:'Organ/Spatiu'}]},
+{g:'SST — Piele/Tesuturi moi',items:[{c:'SST-SKIN',n:'Infectie tegument'},{c:'SST-ST',n:'Infectie tesuturi moi'},{c:'SST-DECU',n:'Infectie decubit'},{c:'SST-BURN',n:'Infectie arsura'},{c:'SST-BRST',n:'Abces mamar/mastita'}]},
+{g:'SYS — Sistemice',items:[{c:'SYS-DI',n:'Infectie diseminata'},{c:'SYS-CSEP',n:'Sepsis clinic'}]},
+{g:'UTI — Tract urinar',items:[{c:'UTI-A',n:'UTI simptomatica microbiologic confirmata'},{c:'UTI-B',n:'UTI simptomatica neconfirmata microbiologic'}]}
 ];
+const LEGACY_CODE_MAP={'C-CVC':'CRI3-CVC','C-PVC':'CRI3-CVP','UO':'BSI','UNK':'BSI','CRI1-PVC':'CRI1-CVP','CRI2-PVC':'CRI2-CVP','CRI3-PVC':'CRI3-CVP','VASC':'CVS-VASC','ENDO':'CVS-ENDO','CARD':'CVS-CARD','MED':'CVS-MED','IC':'CNS-IC','MEN':'CNS-MEN','SA':'CNS-SA','CONJ':'EENT-CONJ','EYE':'EENT-EYE','EAR':'EENT-EAR','ORAL':'EENT-ORAL','SINU':'EENT-SINU','UR':'EENT-UR','ICD':'GI-CDI','GE':'GI-GE','GIT':'GI-GIT','HEP':'GI-HEP','IAB':'GI-IAB','BRON':'LRI-BRON','LUNG':'LRI-LUNG','EMET':'REPR-EMET','EPIS':'REPR-EPIS','VCUF':'REPR-VCUF','OREP':'REPR-OREP','SKIN':'SST-SKIN','ST':'SST-ST','DECU':'SST-DECU','BURN':'SST-BURN','BRST':'SST-BRST','BONE':'BJ-BONE','JNT':'BJ-JNT','DISC':'BJ-DISC','DI':'SYS-DI','CSEP':'SYS-CSEP','LCBI':'NEO-LCBI','CNSB':'NEO-CNSB','PNEU':'NEO-PNEU','NEC':'NEO-NEC','COV-ASY':'SYS-DI','COV-MM':'SYS-DI','COV-SEV':'SYS-DI'};
 const GERMENI_LIST=[
 {g:'Cocci Gram-pozitivi',items:[
 {c:'STAAUR',n:'Staphylococcus aureus'},{c:'STAEPI',n:'Staphylococcus epidermidis'},{c:'STAHAE',n:'Staphylococcus haemolyticus'},{c:'STACNS',n:'Staphylococci Coag-neg. nespecificati'},{c:'STAOTH',n:'Alti Stafilococci CNS'},{c:'STANSP',n:'Staphylococcus spp. nespecificat'},
@@ -1319,25 +1518,25 @@ const GERMENI_LIST=[
 {c:'_NONID',n:'Microorganism neidentificat'},{c:'_NOEXA',n:'Fara examinare microbiologica'},{c:'_STERI',n:'Rezultat steril'},{c:'_NA',n:'Rezultat indisponibil'}]}
 ];
 const ATB_LIST=[
-{g:'Tetracicline (J01A)',items:[{a:'J01AA02',n:'Doxiciclina'},{a:'J01AA07',n:'Tetraciclina'},{a:'J01AA08',n:'Minociclina'},{a:'J01AA12',n:'Tigeciclina'}]},
-{g:'Amfenicoli (J01B)',items:[{a:'J01BA01',n:'Cloramfenicol'}]},
-{g:'Beta-lactamice: Penicilline (J01C)',items:[{a:'J01CA01',n:'Ampicilina'},{a:'J01CA04',n:'Amoxicilina'},{a:'J01CA12',n:'Piperacilina'},{a:'J01CE01',n:'Benzilpenicilina'},{a:'J01CE02',n:'Fenoximetilpenicilina'},{a:'J01CF02',n:'Cloxacilina'},{a:'J01CF05',n:'Flucloxacilina'},{a:'J01CR01',n:'Ampicilina+Sulbactam'},{a:'J01CR02',n:'Amoxicilina+Acid clavulanic'},{a:'J01CR05',n:'Piperacilina+Tazobactam'}]},
-{g:'Beta-lactamice: Cefalosporine (J01D)',items:[{a:'J01DB01',n:'Cefalexina'},{a:'J01DB04',n:'Cefazolina'},{a:'J01DC02',n:'Cefuroxima'},{a:'J01DC04',n:'Cefaclor'},{a:'J01DD01',n:'Cefotaxima'},{a:'J01DD02',n:'Ceftazidima'},{a:'J01DD04',n:'Ceftriaxona'},{a:'J01DD08',n:'Cefixima'},{a:'J01DD12',n:'Cefoperazona'},{a:'J01DD13',n:'Cefpodoxima'},{a:'J01DD52',n:'Ceftazidima+Avibactam'},{a:'J01DD62',n:'Ceftolozana+Tazobactam'},{a:'J01DE01',n:'Cefepima'},{a:'J01DI01',n:'Ceftobiprola'},{a:'J01DI02',n:'Ceftarolina'}]},
-{g:'Beta-lactamice: Carbapeneme (J01DH)',items:[{a:'J01DH02',n:'Meropenem'},{a:'J01DH03',n:'Ertapenem'},{a:'J01DH04',n:'Doripenem'},{a:'J01DH51',n:'Imipenem+Cilastatina'},{a:'J01DH56',n:'Imipenem+Cilastatina+Relebactam'}]},
-{g:'Beta-lactamice: Monobactame (J01DF)',items:[{a:'J01DF01',n:'Aztreonam'}]},
-{g:'Sulfonamide si Trimetoprim (J01E)',items:[{a:'J01EA01',n:'Trimetoprim'},{a:'J01EE01',n:'Sulfametoxazol+Trimetoprim (Co-trimoxazol)'}]},
-{g:'Macrolide (J01FA)',items:[{a:'J01FA01',n:'Eritromicina'},{a:'J01FA06',n:'Roxitromicina'},{a:'J01FA09',n:'Claritromicina'},{a:'J01FA10',n:'Azitromicina'},{a:'J01FA15',n:'Telitromicina'}]},
-{g:'Lincosamide (J01FF)',items:[{a:'J01FF01',n:'Clindamicina'},{a:'J01FF02',n:'Lincomicina'}]},
-{g:'Aminoglicozide (J01G)',items:[{a:'J01GA01',n:'Streptomicina'},{a:'J01GB01',n:'Tobramicina'},{a:'J01GB03',n:'Gentamicina'},{a:'J01GB06',n:'Amikacina'},{a:'J01GB07',n:'Netilmicina'}]},
-{g:'Chinolone (J01M)',items:[{a:'J01MA01',n:'Ofloxacina'},{a:'J01MA02',n:'Ciprofloxacina'},{a:'J01MA06',n:'Norfloxacina'},{a:'J01MA12',n:'Levofloxacina'},{a:'J01MA14',n:'Moxifloxacina'}]},
-{g:'Glicopeptide (J01XA)',items:[{a:'J01XA01',n:'Vancomicina'},{a:'J01XA02',n:'Teicoplanina'},{a:'J01XA04',n:'Dalbavancina'}]},
-{g:'Polimixine (J01XB)',items:[{a:'J01XB01',n:'Colistina (Polimixina E)'},{a:'J01XB02',n:'Polimixina B'}]},
-{g:'Oxazolidinone (J01XX)',items:[{a:'J01XX08',n:'Linezolid'},{a:'J01XX09',n:'Daptomicina'},{a:'J01XX11',n:'Tedizolid'}]},
-{g:'Nitroimidazoli (J01XD)',items:[{a:'J01XD01',n:'Metronidazol'}]},
-{g:'Alte antibacteriene (J01XX)',items:[{a:'J01XX01',n:'Fosfomicina'},{a:'J01XX04',n:'Spectinomicina'},{a:'J01XX05',n:'Nitrofurantoina'}]},
-{g:'Antimicotice sistemice (J02)',items:[{a:'J02AA01',n:'Amfotericina B'},{a:'J02AB02',n:'Ketoconazol'},{a:'J02AC01',n:'Fluconazol'},{a:'J02AC02',n:'Itraconazol'},{a:'J02AC03',n:'Voriconazol'},{a:'J02AC04',n:'Posaconazol'},{a:'J02AC05',n:'Isavuconazol'},{a:'J02AX04',n:'Caspofungina'},{a:'J02AX05',n:'Micafungina'},{a:'J02AX06',n:'Anidulafungina'}]},
-{g:'Antivirale (J05)',items:[{a:'J05AB01',n:'Aciclovir'},{a:'J05AB06',n:'Ganciclovir'},{a:'J05AB11',n:'Valaciclovir'},{a:'J05AB14',n:'Valganciclovir'},{a:'J05AH02',n:'Oseltamivir'},{a:'J05AX09',n:'Remdesivir'}]},
-{g:'Antituberculoase (J04)',items:[{a:'J04AB02',n:'Rifampicina'},{a:'J04AC01',n:'Izoniazida'},{a:'J04AK01',n:'Pirazinamida'},{a:'J04AK02',n:'Etambutol'}]}
+{g:'Tetracicline (J01A)',items:[{a:'J01AA02',n:'Doxiciclina',ddd:0.1,aw:'A'},{a:'J01AA07',n:'Tetraciclina',ddd:1,aw:'A'},{a:'J01AA08',n:'Minociclina',ddd:0.2,aw:'W'},{a:'J01AA12',n:'Tigeciclina',ddd:0.1,aw:'R'}]},
+{g:'Amfenicoli (J01B)',items:[{a:'J01BA01',n:'Cloramfenicol',ddd:3,aw:'A'}]},
+{g:'Beta-lactamice: Penicilline (J01C)',items:[{a:'J01CA01',n:'Ampicilina',ddd:2,aw:'A'},{a:'J01CA04',n:'Amoxicilina',ddd:1.5,aw:'A'},{a:'J01CA12',n:'Piperacilina',ddd:14,aw:'W'},{a:'J01CE01',n:'Benzilpenicilina',ddd:3.6,aw:'A'},{a:'J01CE02',n:'Fenoximetilpenicilina',ddd:2,aw:'A'},{a:'J01CF02',n:'Cloxacilina',ddd:2,aw:'A'},{a:'J01CF05',n:'Flucloxacilina',ddd:2,aw:'A'},{a:'J01CR01',n:'Ampicilina+Sulbactam',ddd:6,aw:'A'},{a:'J01CR02',n:'Amoxicilina+Acid clavulanic',ddd:3,aw:'A'},{a:'J01CR05',n:'Piperacilina+Tazobactam',ddd:14,aw:'W'}]},
+{g:'Beta-lactamice: Cefalosporine (J01D)',items:[{a:'J01DB01',n:'Cefalexina',ddd:2,aw:'A'},{a:'J01DB04',n:'Cefazolina',ddd:3,aw:'A'},{a:'J01DC02',n:'Cefuroxima',ddd:3,aw:'W'},{a:'J01DC04',n:'Cefaclor',ddd:1,aw:'W'},{a:'J01DD01',n:'Cefotaxima',ddd:4,aw:'W'},{a:'J01DD02',n:'Ceftazidima',ddd:4,aw:'W'},{a:'J01DD04',n:'Ceftriaxona',ddd:2,aw:'W'},{a:'J01DD08',n:'Cefixima',ddd:0.4,aw:'W'},{a:'J01DD12',n:'Cefoperazona',ddd:4,aw:'W'},{a:'J01DD13',n:'Cefpodoxima',ddd:0.4,aw:'W'},{a:'J01DD52',n:'Ceftazidima+Avibactam',ddd:6,aw:'R'},{a:'J01DD62',n:'Ceftolozana+Tazobactam',ddd:3,aw:'R'},{a:'J01DE01',n:'Cefepima',ddd:4,aw:'W'},{a:'J01DI01',n:'Ceftobiprola',ddd:1.5,aw:'R'},{a:'J01DI02',n:'Ceftarolina',ddd:1.2,aw:'R'}]},
+{g:'Beta-lactamice: Carbapeneme (J01DH)',items:[{a:'J01DH02',n:'Meropenem',ddd:3,aw:'W'},{a:'J01DH03',n:'Ertapenem',ddd:1,aw:'W'},{a:'J01DH04',n:'Doripenem',ddd:1.5,aw:'W'},{a:'J01DH51',n:'Imipenem+Cilastatina',ddd:2,aw:'W'},{a:'J01DH56',n:'Imipenem+Cilastatina+Relebactam',ddd:2,aw:'R'}]},
+{g:'Beta-lactamice: Monobactame (J01DF)',items:[{a:'J01DF01',n:'Aztreonam',ddd:4,aw:'R'}]},
+{g:'Sulfonamide si Trimetoprim (J01E)',items:[{a:'J01EA01',n:'Trimetoprim',ddd:0.4,aw:'A'},{a:'J01EE01',n:'Sulfametoxazol+Trimetoprim (Co-trimoxazol)',ddd:1.92,aw:'A'}]},
+{g:'Macrolide (J01FA)',items:[{a:'J01FA01',n:'Eritromicina',ddd:1,aw:'W'},{a:'J01FA06',n:'Roxitromicina',ddd:0.3,aw:'W'},{a:'J01FA09',n:'Claritromicina',ddd:0.5,aw:'W'},{a:'J01FA10',n:'Azitromicina',ddd:0.5,aw:'W'},{a:'J01FA15',n:'Telitromicina',ddd:0.8,aw:'W'}]},
+{g:'Lincosamide (J01FF)',items:[{a:'J01FF01',n:'Clindamicina',ddd:1.8,aw:'A'},{a:'J01FF02',n:'Lincomicina',ddd:1.8,aw:'W'}]},
+{g:'Aminoglicozide (J01G)',items:[{a:'J01GA01',n:'Streptomicina',ddd:1,aw:'W'},{a:'J01GB01',n:'Tobramicina',ddd:0.24,aw:'W'},{a:'J01GB03',n:'Gentamicina',ddd:0.24,aw:'A'},{a:'J01GB06',n:'Amikacina',ddd:1,aw:'A'},{a:'J01GB07',n:'Netilmicina',ddd:0.35,aw:'W'}]},
+{g:'Chinolone (J01M)',items:[{a:'J01MA01',n:'Ofloxacina',ddd:0.4,aw:'W'},{a:'J01MA02',n:'Ciprofloxacina',ddd:0.8,aw:'W'},{a:'J01MA06',n:'Norfloxacina',ddd:0.8,aw:'W'},{a:'J01MA12',n:'Levofloxacina',ddd:0.5,aw:'W'},{a:'J01MA14',n:'Moxifloxacina',ddd:0.4,aw:'W'}]},
+{g:'Glicopeptide (J01XA)',items:[{a:'J01XA01',n:'Vancomicina',ddd:2,aw:'W'},{a:'J01XA02',n:'Teicoplanina',ddd:0.4,aw:'W'},{a:'J01XA04',n:'Dalbavancina',ddd:1.5,aw:'R'}]},
+{g:'Polimixine (J01XB)',items:[{a:'J01XB01',n:'Colistina (Polimixina E)',ddd:0.3,aw:'R'},{a:'J01XB02',n:'Polimixina B',ddd:0.15,aw:'R'}]},
+{g:'Oxazolidinone (J01XX)',items:[{a:'J01XX08',n:'Linezolid',ddd:1.2,aw:'R'},{a:'J01XX09',n:'Daptomicina',ddd:0.28,aw:'R'},{a:'J01XX11',n:'Tedizolid',ddd:0.2,aw:'R'}]},
+{g:'Nitroimidazoli (J01XD)',items:[{a:'J01XD01',n:'Metronidazol',ddd:1.5,aw:'A'}]},
+{g:'Alte antibacteriene (J01XX)',items:[{a:'J01XX01',n:'Fosfomicina',ddd:8,aw:'R'},{a:'J01XX04',n:'Spectinomicina',ddd:3,aw:'A'},{a:'J01XX05',n:'Nitrofurantoina',ddd:0.2,aw:'A'}]},
+{g:'Antimicotice sistemice (J02)',items:[{a:'J02AA01',n:'Amfotericina B',ddd:0.035,aw:'X'},{a:'J02AB02',n:'Ketoconazol',ddd:0.2,aw:'X'},{a:'J02AC01',n:'Fluconazol',ddd:0.2,aw:'X'},{a:'J02AC02',n:'Itraconazol',ddd:0.2,aw:'X'},{a:'J02AC03',n:'Voriconazol',ddd:0.4,aw:'X'},{a:'J02AC04',n:'Posaconazol',ddd:0.3,aw:'X'},{a:'J02AC05',n:'Isavuconazol',ddd:0.2,aw:'X'},{a:'J02AX04',n:'Caspofungina',ddd:0.05,aw:'X'},{a:'J02AX05',n:'Micafungina',ddd:0.1,aw:'X'},{a:'J02AX06',n:'Anidulafungina',ddd:0.1,aw:'X'}]},
+{g:'Antivirale (J05)',items:[{a:'J05AB01',n:'Aciclovir',ddd:4,aw:'X'},{a:'J05AB06',n:'Ganciclovir',ddd:0.5,aw:'X'},{a:'J05AB11',n:'Valaciclovir',ddd:3,aw:'X'},{a:'J05AB14',n:'Valganciclovir',ddd:0.9,aw:'X'},{a:'J05AH02',n:'Oseltamivir',ddd:0.15,aw:'X'},{a:'J05AX09',n:'Remdesivir',ddd:0.1,aw:'X'}]},
+{g:'Antituberculoase (J04)',items:[{a:'J04AB02',n:'Rifampicina',ddd:0.6,aw:'A'},{a:'J04AC01',n:'Izoniazida',ddd:0.3,aw:'A'},{a:'J04AK01',n:'Pirazinamida',ddd:1.5,aw:'A'},{a:'J04AK02',n:'Etambutol',ddd:1.2,aw:'A'}]}
 ];
 const MDR_OPTS=['Nu','ESBL','CRE','CPE','MRSA','VRE','XDR','PDR'];
 const ATB_ROUTES=[{v:'PO',n:'Oral (PO)'},{v:'IV',n:'Intravenos (IV)'},{v:'IM',n:'Intramuscular (IM)'},{v:'INH',n:'Inhalator'},{v:'TOP',n:'Topic'}];
@@ -1376,6 +1575,12 @@ async function migrateDataToIds(){
       if(ecdcMatch){r.iaam_category=ecdcMatch;r.infection_type=ecdcMatch;changed=true}
       else{r.iaam_category=r.infection_type;changed=true}
     }
+    // Migrate prev_admissions string → array
+    if(r.prev_admissions&&typeof r.prev_admissions==='string'){r.prev_admissions=[{hospital:r.prev_admissions,section:'',interval:''}];changed=true}
+    // Migrate bulletin_nr string → bulletins array
+    if(r.bulletin_nr&&typeof r.bulletin_nr==='string'&&!r.bulletins){r.bulletins=[{nr:r.bulletin_nr,date:''}];changed=true}
+    // Migrate comorbidities string → array
+    if(r.comorbidities&&typeof r.comorbidities==='string'){r.comorbidities=r.comorbidities.split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean);changed=true}
     if(changed){await pt('iaam',r);migrated++}
   }
   // Migrate Autocontrol records
@@ -1530,7 +1735,7 @@ function wizSkipImport(){
         // Import config
         if(d.config){Object.assign(CFG,d.config);CFG.setup_complete=true;await saveCfg()}
         // Import all data stores
-        const storeMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines',events:'events',audits:'audits',trainings:'trainings',atp:'atp',uvcheck:'uvcheck'};
+        const storeMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines',events:'events',audits:'audits',trainings:'trainings',atp:'atp',uvcheck:'uvcheck',ac:'atb_consum'};
         for(const[key,store] of Object.entries(storeMap)){if(d[key])for(const r of d[key])await pt(store,r)}
         // Also try direct store names (from full backup)
         for(const s of ST){if(d[s]&&Array.isArray(d[s]))for(const r of d[s])await pt(s,r)}
@@ -1743,7 +1948,7 @@ function changeYear(d){A.year+=d;document.getElementById('ys').value=A.year;rend
 
 var _formDirty=false;
 function openM(t,body,foot){const m=document.getElementById('mdc');
-  _formDirty=false;
+  _formDirty=false;m.classList.remove('iw-modal');
   m.innerHTML='<div class="mh"><h3>'+t+'</h3><button class="cx" onclick="safeCloseM()">&times;</button></div><div class="mb">'+body+'</div>'+(foot?'<div class="mf">'+foot+'</div>':'');
   document.getElementById('mov').classList.add('sh')}
 function closeM(){_formDirty=false;document.getElementById('mov').classList.remove('sh')}
@@ -1785,7 +1990,7 @@ async function delRec(store,id){if(!confirm('Sigur stergi?'))return;await dl(sto
 async function renderPage(p){const el=document.getElementById('pc');dch();switch(p){
   case'dashboard':return rDash(el);case'iaam':return rIAAM(el);case'autocontrol':return rAuto(el);
   case'deseuri':return rDes(el);case'biocide':return rBio(el);case'pps':return rPPS(el);
-  case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
+  case'consum_atb':return rConsumATB(el);case'antibiograma':return rAntibiograma(el);case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
   case'audituri':return rAudit(el);case'instruire':return rInstr(el);
   case'rapoarte':return rRap(el);case'config':return rCfg(el);case'ajutor':return rAjutor(el);
   case'manual':return rManual(el);case'changelog':return rChangelog(el);case'about':return rAbout(el);case'terms':return rTerms(el);
@@ -2096,13 +2301,13 @@ function renderIaamSection(step){
   switch(step){
   case 0: // Patient data
     h='<div id="f-iaam-match-banner"></div>'+
-      '<div class="fr"><div class="fg"><label>Initiale pacient</label><input id="f-pinit" value="'+esc(d.patient_initials||'')+'" placeholder="ex: C.R." maxlength="10" oninput="checkIaamMatch('+(_iaamEditId||'null')+')"></div>'+
-      '<div class="fg"><label>Nume pacient (initiale)</label><input id="f-pat" value="'+esc(d.patient||'')+'" placeholder="ex: I.P."></div></div>'+
-      '<div class="fr"><div class="fg"><label>Data nasterii</label><input type="date" id="f-dob" value="'+(d.date_of_birth||'')+'" onchange="document.getElementById(\'f-age\').value=calcAge(this.value);checkIaamMatch('+(_iaamEditId||'null')+')"></div>'+
+      '<div class="fr"><div class="fg"><label>'+T('iaam_contact_initials')+' pacient</label><input id="f-pinit" value="'+esc(d.patient_initials||d.patient||'')+'" placeholder="ex: C.R." maxlength="10" oninput="checkIaamMatch('+(_iaamEditId||'null')+')"></div>'+
+      '<div class="fg"><label>Data nasterii</label><input type="date" id="f-dob" value="'+(d.date_of_birth||'')+'" onchange="document.getElementById(\'f-age\').value=calcAge(this.value);checkIaamMatch('+(_iaamEditId||'null')+')"></div></div>'+
       '<div class="fr4"><div class="fg"><label>Varsta</label><input type="number" id="f-age" value="'+(d.age||'')+'" min="0" max="120"></div>'+
       '<div class="fg"><label>Sex</label><select id="f-sex" onchange="checkIaamMatch('+(_iaamEditId||'null')+')"><option value="">—</option><option value="M" '+(d.sex==='M'?'selected':'')+'>M</option><option value="F" '+(d.sex==='F'?'selected':'')+'>F</option></select></div>'+
-      '<div class="fg"><label>Mediu</label><div style="display:flex;gap:12px;margin-top:4px"><label><input type="radio" name="f-mediu" value="Urban" '+(d.mediu==='Urban'||!d.mediu?'checked':'')+' style="accent-color:var(--navy)"> Urban</label><label><input type="radio" name="f-mediu" value="Rural" '+(d.mediu==='Rural'?'checked':'')+' style="accent-color:var(--navy)"> Rural</label></div></div>'+
-      '<div class="fg"><label>Luna raportarii</label><select id="f-mo">'+moOpts(d.month)+'</select></div></div>';
+      '<div class="fg"><label>'+T('iaam_mediu')+'</label><select id="f-mediu"><option value="Urban" '+(d.mediu==='Urban'||!d.mediu?'selected':'')+'>'+T('iaam_urban')+'</option><option value="Rural" '+(d.mediu==='Rural'?'selected':'')+'>'+T('iaam_rural')+'</option></select></div>'+
+      '<div class="fg"><label>Luna raportarii</label><select id="f-mo">'+moOpts(d.month)+'</select></div></div>'+
+      '<div class="fg"><label>'+T('iaam_domiciliu')+'</label><input id="f-dom" value="'+esc(d.domiciliu||'')+'" placeholder="Oras, strada (optional)"></div>';
     break;
   case 1: // Hospitalization
     h='<div class="fg"><label>Sectia</label><select id="f-sec"><option value="">—</option>'+secOpts(d.section)+'</select></div>'+
@@ -2114,13 +2319,19 @@ function renderIaamSection(step){
       '<div class="fg"><label>Nr. zile internare</label><input type="number" id="f-nzi" value="'+(d.days||'')+'" min="0" style="background:var(--bg)"><div id="f-days-info" style="font-size:11px;color:var(--txtL);margin-top:2px">'+(d.date_admission&&d.date_discharge?'Calculat automat: '+calcDays(d.date_admission,d.date_discharge)+' zile (editabil)':'')+'</div></div></div>'+
       '<div class="fg"><label>Diagnostic internare</label><textarea id="f-dgi" rows="2">'+esc(d.diag_admission||'')+'</textarea></div>'+
       '<div class="fg"><label>Diagnostic externare</label><textarea id="f-dge" rows="2">'+esc(d.diag_discharge||'')+'</textarea></div>'+
-      '<div class="fg"><label>Internari anterioare (ultimele 6 luni)</label><textarea id="f-prev" rows="2">'+esc(d.prev_admissions||'')+'</textarea></div>';
+      '<div class="fg"><label>'+T('iaam_prev_admissions')+'</label>'+
+      (()=>{let pa=d.prev_admissions;if(typeof pa==='string'&&pa){_iaamDraft.prev_admissions=[{hospital:pa,section:'',interval:''}]}else if(!Array.isArray(pa)){_iaamDraft.prev_admissions=[]}return ''})()+
+      '<div id="f-prev-list">'+renderPrevAdmRows()+'</div>'+
+      '<button class="btn bo bsm" onclick="addPrevAdmRow()" style="margin-top:6px">'+T('iaam_add_admission')+'</button></div>';
     break;
   case 2: // Infection
     h='<div class="fg"><label>Categorie IAAM (Anexa 9 ECDC)</label><select id="f-iaam-cat">'+iaamCatOpts(d.iaam_category||d.infection_type||'')+'</select></div>'+
-      '<div class="fr3"><div class="fg"><label>Data confirmarii</label><input type="date" id="f-dconf" value="'+(d.date_confirmed||'')+'"></div>'+
-      '<div class="fg"><label>Nr. buletin analize</label><input id="f-bul" value="'+esc(d.bulletin_nr||'')+'"></div>'+
+      '<div class="fr"><div class="fg"><label>Data confirmarii</label><input type="date" id="f-dconf" value="'+(d.date_confirmed||'')+'"></div>'+
       '<div class="fg"><label>Localizare infectie</label><input id="f-loc" value="'+esc(d.localization||'')+'"></div></div>'+
+      '<div class="fg"><label>'+T('iaam_bulletins')+'</label>'+
+      (()=>{if(d.bulletin_nr&&typeof d.bulletin_nr==='string'&&!d.bulletins){_iaamDraft.bulletins=[{nr:d.bulletin_nr,date:''}]}if(!Array.isArray(_iaamDraft.bulletins))_iaamDraft.bulletins=[];return ''})()+
+      '<div id="f-bul-list">'+renderBulletinRows()+'</div>'+
+      '<button class="btn bo bsm" onclick="addBulletinRow()" style="margin-top:6px">'+T('iaam_add_bulletin')+'</button></div>'+
       '<div class="fr"><div class="fg"><label>Mod depistare</label><select id="f-dep"><option value="activa" '+(d.detection==='activa'?'selected':'')+'>Activa (supraveghere activa)</option><option value="pasiva" '+(d.detection==='pasiva'?'selected':'')+'>Pasiva (simptomatologie clinica)</option><option value="pps" '+(d.detection==='pps'?'selected':'')+'>Studiu de prevalenta (PPS)</option><option value="screening" '+(d.detection==='screening'?'selected':'')+'>Screening</option></select></div>'+
       '<div class="fg"><label>Colonizare / Infectie activa</label><select id="f-act"><option value="infectie" '+(d.active_type!=='colonizare'?'selected':'')+'>Infectie activa</option><option value="colonizare" '+(d.active_type==='colonizare'?'selected':'')+'>Colonizare</option></select></div></div>';
     break;
@@ -2142,13 +2353,17 @@ function renderIaamSection(step){
     break;
   case 6: // Clinical history
     h='<div class="fg"><label>Istoric clinic (narativ)</label><textarea id="f-hist" rows="4">'+esc(d.clinical_history||'')+'</textarea></div>'+
-      '<div class="fg"><label>Comorbiditati</label><textarea id="f-comorb" rows="3">'+esc(d.comorbidities||'')+'</textarea></div>'+
-      '<div class="fg"><label>Proceduri invazive</label><textarea id="f-proc" rows="3">'+esc(d.procedures||'')+'</textarea></div>';
+      '<div class="fg"><label>'+T('iaam_comorbidities')+'</label>'+renderComorbSection()+'</div>'+
+      '<div class="fg"><label>'+T('iaam_procedures_label')+'</label><textarea id="f-proc" rows="3">'+esc(d.procedures||'')+'</textarea></div>'+
+      '<div class="fg"><label>'+T('iaam_invasive_devices')+'</label><textarea id="f-devices" rows="2" placeholder="CVC, SVU, IOT, etc.">'+esc(d.invasive_devices||'')+'</textarea></div>';
     break;
   case 7: // Contacts & outbreak
-    h='<div class="fg"><label>Contacti de salon</label><input id="f-cont" value="'+esc(d.contacts||'Fara contacti de salon')+'"></div>'+
+    {let cArr=d.contacts;if(typeof cArr==='string')cArr=cArr&&cArr!=='Fara contacti de salon'?[{initials:cArr,fo:'',interval:'',room:''}]:[];
+    if(!Array.isArray(cArr))cArr=[];_iaamDraft.contacts=cArr;
+    h='<div class="fg"><label>'+T('iaam_contacts_add')+'</label><div id="f-contacts-list">'+renderContactRows()+'</div>'+
+      '<button class="btn bo bsm" onclick="addContactRow()" style="margin-top:6px">+ '+T('iaam_contacts_add')+'</button></div>'+
       '<div class="fg"><label>Face parte din focar?</label><select id="f-foc"><option value="nu" '+(d.outbreak!=='da'?'selected':'')+'>NU</option><option value="da" '+(d.outbreak==='da'?'selected':'')+'>DA</option></select></div>'+
-      '<div class="fg"><label>Detalii focar (daca DA)</label><textarea id="f-foc-det" rows="2">'+esc(d.outbreak_details||'')+'</textarea></div>';
+      '<div class="fg"><label>Detalii focar (daca DA)</label><textarea id="f-foc-det" rows="2">'+esc(d.outbreak_details||'')+'</textarea></div>';}
     break;
   case 8: // Measures & causality
     h='<div class="fg"><label>Masuri de control aplicate (cate una pe linie)</label><textarea id="f-ms" rows="4">'+(d.measures||[]).join('\n')+'</textarea></div>'+
@@ -2195,20 +2410,23 @@ function collectIaamSection(step){
   const v=id=>{const el=document.getElementById(id);return el?el.value:''};
   switch(step){
   case 0:
-    d.patient_initials=v('f-pinit').trim();d.patient=v('f-pat').trim();
+    d.patient_initials=v('f-pinit').trim();d.patient=d.patient_initials;
     d.date_of_birth=v('f-dob');d.age=+v('f-age')||null;d.sex=v('f-sex');
-    const mediu=document.querySelector('input[name="f-mediu"]:checked');d.mediu=mediu?mediu.value:'Urban';
+    d.mediu=v('f-mediu')||'Urban';
     d.month=+v('f-mo');
+    d.domiciliu=v('f-dom').trim();
     break;
   case 1:
     d.section=v('f-sec');d.reg_number=v('f-regn').trim();d.fo_number=v('f-fon').trim();
     d.doctor=v('f-doc').trim();d.date_admission=v('f-dint');d.date_discharge=v('f-dext');
     d.days=+v('f-nzi')||null;d.diag_admission=v('f-dgi').trim();d.diag_discharge=v('f-dge').trim();
-    d.prev_admissions=v('f-prev').trim();
+    // prev_admissions already in sync via oninput handlers
     break;
   case 2:
     d.iaam_category=v('f-iaam-cat');d.infection_type=v('f-iaam-cat');
-    d.date_confirmed=v('f-dconf');d.bulletin_nr=v('f-bul').trim();d.localization=v('f-loc').trim();
+    d.date_confirmed=v('f-dconf');d.localization=v('f-loc').trim();
+    // bulletins already in sync via oninput handlers; generate backward-compat bulletin_nr
+    d.bulletin_nr=(d.bulletins||[]).map(b=>b.nr).filter(Boolean).join(', ');
     d.detection=v('f-dep');d.active_type=v('f-act');
     break;
   case 3:
@@ -2225,10 +2443,13 @@ function collectIaamSection(step){
     d.prev_antibiotics=_iaamAtb.map(a=>a.name).join(', ');
     break;
   case 6:
-    d.clinical_history=v('f-hist').trim();d.comorbidities=v('f-comorb').trim();d.procedures=v('f-proc').trim();
+    d.clinical_history=v('f-hist').trim();
+    // comorbidities collected via toggleComorb/addComorbFromDropdown/removeComorbChip — already in _iaamDraft
+    d.procedures=v('f-proc').trim();
+    d.invasive_devices=v('f-devices').trim();
     break;
   case 7:
-    d.contacts=v('f-cont').trim();d.outbreak=v('f-foc');d.outbreak_details=v('f-foc-det').trim();
+    collectContactRows();d.outbreak=v('f-foc');d.outbreak_details=v('f-foc-det').trim();
     break;
   case 8:
     d.measures=v('f-ms').split('\n').map(s=>s.trim()).filter(Boolean);d.suspected_source=v('f-src').trim();
@@ -2316,10 +2537,149 @@ function removeRiskChip(name){
   const content=document.getElementById('iw-content');if(content)content.innerHTML=renderRiskSection();
 }
 
+// ═══ Comorbidity section (same pattern as risk factors) ═══
+function renderComorbSection(){
+  const cfg=CFG.comorbidities_config||[];
+  let sel=_iaamDraft.comorbidities||[];
+  if(typeof sel==='string')sel=sel?sel.split(/[,\n]+/).map(s=>s.trim()).filter(Boolean):[];
+  _iaamDraft.comorbidities=sel;
+  const pinned=cfg.filter(f=>f.pinned),unpinned=cfg.filter(f=>!f.pinned);
+  let h='<div class="rf-checks">';
+  pinned.forEach(f=>{
+    const chk=sel.includes(f.name)?'checked':'';
+    h+='<label><input type="checkbox" '+chk+' onchange="toggleComorb(\''+esc(f.name).replace(/'/g,"\\'")+'\',this.checked)"> '+esc(f.name)+'</label>';
+  });
+  h+='</div>';
+  const avail=unpinned.filter(f=>!sel.includes(f.name));
+  if(avail.length>0){
+    h+='<div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">'+
+      '<select id="f-comorb-dd" style="flex:1;padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+      '<option value="">— '+T('iaam_add_comorbidity')+' —</option>'+
+      avail.map(f=>'<option value="'+esc(f.name)+'">'+esc(f.name)+'</option>').join('')+
+      '</select><button class="btn bo bsm" onclick="addComorbFromDropdown()">+ '+T('btn_add')+'</button></div>';
+  }
+  h+='<div style="display:flex;gap:6px;align-items:center;margin-bottom:12px">'+
+    '<input id="f-comorb-custom" placeholder="Comorbiditate personalizata..." style="flex:1;padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+    '<button class="btn bo bsm" onclick="addComorbCustom()">+ '+T('btn_add')+'</button></div>';
+  const chipItems=sel.filter(s=>!pinned.find(p=>p.name===s));
+  if(chipItems.length>0){
+    h+='<div class="rf-chips">';
+    chipItems.forEach(name=>{h+='<span class="rf-chip">'+esc(name)+'<button onclick="removeComorbChip(\''+esc(name).replace(/'/g,"\\'")+'\')">&times;</button></span>'});
+    h+='</div>';
+  }
+  return h;
+}
+function toggleComorb(name,checked){
+  if(!_iaamDraft.comorbidities)_iaamDraft.comorbidities=[];
+  if(typeof _iaamDraft.comorbidities==='string')_iaamDraft.comorbidities=_iaamDraft.comorbidities?_iaamDraft.comorbidities.split(/[,\n]+/).map(s=>s.trim()).filter(Boolean):[];
+  if(checked&&!_iaamDraft.comorbidities.includes(name))_iaamDraft.comorbidities.push(name);
+  if(!checked)_iaamDraft.comorbidities=_iaamDraft.comorbidities.filter(n=>n!==name);
+  markFormDirty();
+}
+function addComorbFromDropdown(){
+  const sel=document.getElementById('f-comorb-dd');if(!sel||!sel.value)return;
+  if(!_iaamDraft.comorbidities)_iaamDraft.comorbidities=[];
+  if(!_iaamDraft.comorbidities.includes(sel.value)){_iaamDraft.comorbidities.push(sel.value);markFormDirty()}
+  const wrap=document.querySelector('#iw-content .fg:nth-child(2)');
+  if(wrap)wrap.innerHTML='<label>'+T('iaam_comorbidities')+'</label>'+renderComorbSection();
+}
+function addComorbCustom(){
+  const inp=document.getElementById('f-comorb-custom');if(!inp||!inp.value.trim())return;
+  if(!_iaamDraft.comorbidities)_iaamDraft.comorbidities=[];
+  const val=inp.value.trim();
+  if(!_iaamDraft.comorbidities.includes(val)){_iaamDraft.comorbidities.push(val);markFormDirty()}
+  const wrap=document.querySelector('#iw-content .fg:nth-child(2)');
+  if(wrap)wrap.innerHTML='<label>'+T('iaam_comorbidities')+'</label>'+renderComorbSection();
+}
+function removeComorbChip(name){
+  if(!_iaamDraft.comorbidities)return;
+  _iaamDraft.comorbidities=_iaamDraft.comorbidities.filter(n=>n!==name);
+  markFormDirty();
+  const wrap=document.querySelector('#iw-content .fg:nth-child(2)');
+  if(wrap)wrap.innerHTML='<label>'+T('iaam_comorbidities')+'</label>'+renderComorbSection();
+}
+
+// ═══ Structured contacts section ═══
+function renderContactRows(){
+  const arr=_iaamDraft.contacts||[];
+  if(arr.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun contact adaugat.</div>';
+  return arr.map((c,i)=>
+    '<div class="contact-row"><input class="ci" value="'+esc(c.initials||'')+'" placeholder="'+T('iaam_contact_initials')+'" oninput="_iaamDraft.contacts['+i+'].initials=this.value">'+
+    '<input class="cfo" value="'+esc(c.fo||'')+'" placeholder="'+T('iaam_contact_fo')+'" oninput="_iaamDraft.contacts['+i+'].fo=this.value">'+
+    '<input class="cint" value="'+esc(c.interval||'')+'" placeholder="'+T('iaam_contact_interval')+'" oninput="_iaamDraft.contacts['+i+'].interval=this.value">'+
+    '<input class="crm" value="'+esc(c.room||'')+'" placeholder="'+T('iaam_contact_room')+'" oninput="_iaamDraft.contacts['+i+'].room=this.value">'+
+    '<button class="contact-del" onclick="removeContactRow('+i+')">&times;</button></div>'
+  ).join('');
+}
+function addContactRow(){
+  if(!_iaamDraft.contacts)_iaamDraft.contacts=[];
+  _iaamDraft.contacts.push({initials:'',fo:'',interval:'',room:''});
+  markFormDirty();
+  const el=document.getElementById('f-contacts-list');if(el)el.innerHTML=renderContactRows();
+}
+function removeContactRow(i){
+  if(!_iaamDraft.contacts)return;
+  _iaamDraft.contacts.splice(i,1);markFormDirty();
+  const el=document.getElementById('f-contacts-list');if(el)el.innerHTML=renderContactRows();
+}
+function collectContactRows(){
+  // contacts are already kept in sync via oninput handlers
+}
+
 function toggleNoAtb(checked){
   _iaamDraft.no_antibiotic=checked;markFormDirty();
   const block=document.getElementById('f-atb-block');
   if(block){block.style.opacity=checked?'0.4':'';block.style.pointerEvents=checked?'none':''}
+}
+
+// ═══ Previous admissions rows ═══
+function renderPrevAdmRows(){
+  const arr=_iaamDraft.prev_admissions;
+  if(!Array.isArray(arr)||arr.length===0)return '<div style="color:var(--txtL);font-size:12px">'+T('iaam_no_prev')+'</div>';
+  return arr.map((a,i)=>
+    '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+
+    '<input placeholder="'+T('iaam_prev_hosp')+'" value="'+esc(a.hospital||'')+'" oninput="_iaamDraft.prev_admissions['+i+'].hospital=this.value" style="flex:2">'+
+    '<input placeholder="'+T('iaam_prev_sec')+'" value="'+esc(a.section||'')+'" oninput="_iaamDraft.prev_admissions['+i+'].section=this.value" style="flex:1">'+
+    '<input placeholder="'+T('iaam_prev_period')+'" value="'+esc(a.interval||'')+'" oninput="_iaamDraft.prev_admissions['+i+'].interval=this.value" style="flex:1">'+
+    '<button class="contact-del" onclick="removePrevAdm('+i+')">&times;</button></div>'
+  ).join('');
+}
+function addPrevAdmRow(){
+  if(!Array.isArray(_iaamDraft.prev_admissions))_iaamDraft.prev_admissions=[];
+  _iaamDraft.prev_admissions.push({hospital:'',section:'',interval:''});markFormDirty();
+  const el=document.getElementById('f-prev-list');if(el)el.innerHTML=renderPrevAdmRows();
+}
+function removePrevAdm(i){
+  if(!Array.isArray(_iaamDraft.prev_admissions))return;
+  _iaamDraft.prev_admissions.splice(i,1);markFormDirty();
+  const el=document.getElementById('f-prev-list');if(el)el.innerHTML=renderPrevAdmRows();
+}
+
+// ═══ Bulletin rows ═══
+function renderBulletinRows(){
+  const arr=_iaamDraft.bulletins;
+  if(!Array.isArray(arr)||arr.length===0)return '<div style="color:var(--txtL);font-size:12px">'+T('iaam_no_bulletins')+'</div>';
+  return arr.map((b,i)=>
+    '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+
+    '<input placeholder="'+T('iaam_bulletin_nr')+'" value="'+esc(b.nr||'')+'" oninput="_iaamDraft.bulletins['+i+'].nr=this.value" style="flex:1">'+
+    '<input type="date" value="'+(b.date||'')+'" oninput="_iaamDraft.bulletins['+i+'].date=this.value" style="flex:1">'+
+    '<button class="contact-del" onclick="removeBulletin('+i+')">&times;</button></div>'
+  ).join('');
+}
+function addBulletinRow(){
+  if(!Array.isArray(_iaamDraft.bulletins))_iaamDraft.bulletins=[];
+  _iaamDraft.bulletins.push({nr:'',date:''});markFormDirty();
+  const el=document.getElementById('f-bul-list');if(el)el.innerHTML=renderBulletinRows();
+}
+function removeBulletin(i){
+  if(!Array.isArray(_iaamDraft.bulletins))return;
+  _iaamDraft.bulletins.splice(i,1);markFormDirty();
+  const el=document.getElementById('f-bul-list');if(el)el.innerHTML=renderBulletinRows();
+}
+
+async function calcRegNumber(year){
+  const all=(await ga('iaam')).filter(r=>r.year===year);
+  return String(all.length+1);
 }
 
 // ═══ IAAM Wizard — editIAAM (rewritten) ═══
@@ -2335,8 +2695,10 @@ async function editIAAM(id){
     const lastSec=localStorage.getItem('iaam_last_section')||'';
     _iaamDraft={year:A.year,month:new Date().getMonth()+1,section:lastSec,mediu:'Urban',
       detection:'activa',active_type:'infectie',risk_factors:[],measures:[],
-      germeni:[],antibiotics:[],contacts:'Fara contacti de salon',outbreak:'nu'};
+      germeni:[],antibiotics:[],contacts:'Fara contacti de salon',outbreak:'nu',
+      prev_admissions:[],bulletins:[],comorbidities:[]};
     _iaamEditId=null;
+    _iaamDraft.reg_number=await calcRegNumber(A.year);
   }
   _iaamGermeni=_iaamDraft.germeni?JSON.parse(JSON.stringify(_iaamDraft.germeni)):[];
   _iaamAtb=_iaamDraft.antibiotics?JSON.parse(JSON.stringify(_iaamDraft.antibiotics)):[];
@@ -2370,9 +2732,10 @@ async function duplicateIAAM(id){
   _iaamDraft.age=null;_iaamDraft.sex='';_iaamDraft.fo_number='';_iaamDraft.reg_number='';
   _iaamDraft.germeni=[];_iaamDraft.antibiotics=[];_iaamDraft.organism='';_iaamDraft.mdr=false;
   _iaamDraft.diag_admission='';_iaamDraft.diag_discharge='';_iaamDraft.clinical_history='';
-  _iaamDraft.comorbidities='';_iaamDraft.procedures='';_iaamDraft.prev_admissions='';
+  _iaamDraft.comorbidities=[];_iaamDraft.procedures='';_iaamDraft.prev_admissions=[];
+  _iaamDraft.invasive_devices='';_iaamDraft.domiciliu='';
   _iaamDraft.classification='';_iaamDraft.conclusions='';_iaamDraft.date_deces='';_iaamDraft.cauza_deces='';
-  _iaamDraft.date_confirmed='';_iaamDraft.bulletin_nr='';
+  _iaamDraft.date_confirmed='';_iaamDraft.bulletin_nr='';_iaamDraft.bulletins=[];
   _iaamEditId=null;
   _iaamGermeni=[];_iaamAtb=[];_iaamStep=0;
   openM('Caz IAAM Nou (duplicat)',
@@ -4369,11 +4732,13 @@ async function rRap(el){
     '<div class="rc"><h3>PV Sedinta CPIAAM</h3><p>Proces-verbal anual complet cu ordine de zi, date, masuri, semnaturi.</p>'+
       '<button class="btn bp" onclick="genPVCPIAAM()">PV Anual</button></div>'+
     '<div class="rc"><h3>Analiza IAAM</h3><p>Analiza detaliata: sectii, germeni, origine, MDR.</p>'+
-      '<button class="btn bp" onclick="genAnalizaIAAMWord()">Word</button></div>'+
+      '<div class="bg"><button class="btn bp" onclick="genAnalizaIAAMWord()">Word</button><button class="btn bs" onclick="genRegistruIAAMExcel()">'+T('rap_registru_iaam_excel')+'</button></div></div>'+
     '<div class="rc"><h3>Analiza Autocontrol</h3><p>Probe pe tipuri, sectii, neconformitati detaliate.</p>'+
       '<div class="bg"><button class="btn bp" onclick="genAnalizaAutoWord()">Word</button><button class="btn bs" onclick="genAutoExcel()">Excel</button></div></div>'+
     '<div class="rc"><h3>Analiza Deseuri</h3><p>Evolutie lunara, coduri, indicator kg/om-zi.</p>'+
       '<button class="btn bp" onclick="genAnalizaDesWord()">Word</button></div>'+
+    '<div class="rc"><h3>Consum Antibiotice DDD/AWaRe</h3><p>DDD/100 zile-pat, clasificare AWaRe, comparatie ESAC-Net.</p>'+
+      '<button class="btn bp" onclick="genConsumATBWord()">Word</button></div>'+
     '<div class="rc"><h3>Anchete Epidemiologice</h3><p>Din modulul IAAM — butonul pe fiecare caz.</p>'+
       '<button class="btn bo" onclick="nav(\'iaam\')">Mergi la IAAM</button></div>'+
     '<div class="rc"><h3>Backup / Transfer</h3><p>Export/import JSON — backup sau transfer la colegi.</p>'+
@@ -4460,6 +4825,17 @@ async function rCfg(el){
       '<td class="act"><button onclick="CFG.risk_factors_config.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>').join('')+
     '</tbody></table>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-rf" placeholder="Factor de risc nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-rf\').value.trim();if(v){if(!CFG.risk_factors_config)CFG.risk_factors_config=[];CFG.risk_factors_config.push({name:v,pinned:false});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
+  '</div></div>'+
+
+  '<div class="pn"><div class="ph"><h3>'+T('iaam_comorbidities')+'</h3></div><div class="pb">'+
+    '<p style="font-size:12px;color:var(--txtL);margin-bottom:10px">Comorbiditatile marcate ca "Afisat permanent" apar ca checkbox-uri in formularul IAAM. Restul sunt disponibile in dropdown.</p>'+
+    '<table class="dt" style="font-size:12px"><thead><tr><th>Nume comorbiditate</th><th style="width:130px">Afisat permanent</th><th style="width:50px">Actiuni</th></tr></thead>'+
+    '<tbody>'+(CFG.comorbidities_config||[]).map((cm,i)=>
+      '<tr><td>'+esc(cm.name)+'</td>'+
+      '<td style="text-align:center"><input type="checkbox" '+(cm.pinned?'checked':'')+' onchange="CFG.comorbidities_config['+i+'].pinned=this.checked;saveCfg()" style="accent-color:#6366F1"></td>'+
+      '<td class="act"><button onclick="CFG.comorbidities_config.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>').join('')+
+    '</tbody></table>'+
+    '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-comorb" placeholder="Comorbiditate noua"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-comorb\').value.trim();if(v){if(!CFG.comorbidities_config)CFG.comorbidities_config=[];CFG.comorbidities_config.push({name:v,pinned:false});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
   '<div class="pn"><div class="ph"><h3>Produse Biocide</h3></div><div class="pb">'+
@@ -4784,7 +5160,7 @@ function updateLangUI(){
   document.getElementById('pt').textContent=getPageTitle(A.page);}
 function getPageTitle(p){
   const map={dashboard:'pt_dashboard',iaam:'pt_iaam',autocontrol:'pt_autocontrol',deseuri:'pt_deseuri',
-    biocide:'pt_biocide',pps:'pt_pps',documente:'pt_documente',termene:'pt_termene',calendar:'pt_calendar',
+    biocide:'pt_biocide',pps:'pt_pps',consum_atb:'pt_consum_atb',antibiograma:'pt_antibiograma',documente:'pt_documente',termene:'pt_termene',calendar:'pt_calendar',
     audituri:'pt_audituri',instruire:'pt_instruire',rapoarte:'pt_rapoarte',
     config:'pt_config',ajutor:'pt_ajutor',manual:'pt_manual',changelog:'pt_changelog',about:'pt_despre',terms:'pt_terms'};
   return T(map[p]||'pt_dashboard')}
@@ -5859,9 +6235,625 @@ function rAjutor(el){
     '</div></div>'}
 
 // ═══════════════════════════════════════════════════════════════
+// 5B.1 — ANTIBIOGRAMA LOCALA
+// ═══════════════════════════════════════════════════════════════
+function buildAntibiogramMatrix(cases,year,secFilter){
+  const filtered=cases.filter(r=>r.year===year&&(!secFilter||r.section===secFilter));
+  // Collect all germeni with susceptibility data
+  const gMap={};// code → {name, isolates:[{susceptibility}]}
+  filtered.forEach(r=>{
+    (r.germeni||[]).forEach(g=>{
+      if(!g.susceptibility||g.susceptibility.length===0)return;
+      const key=g.code||g.name;
+      if(!gMap[key])gMap[key]={code:g.code,name:g.name,isolates:[]};
+      gMap[key].isolates.push(g.susceptibility);
+    });
+  });
+  // Build atb set (only those that appear in data)
+  const atbSet=new Set();
+  Object.values(gMap).forEach(gd=>{gd.isolates.forEach(sus=>{sus.forEach(s=>{atbSet.add(s.atb_code)})})});
+  // Build ATB columns ordered by ATB_LIST
+  const atbCols=[];
+  ATB_LIST.forEach(grp=>{
+    grp.items.forEach(atb=>{
+      if(atbSet.has(atb.a))atbCols.push({code:atb.a,name:atb.n,group:grp.g});
+    });
+  });
+  // Build germen rows
+  const germeni=Object.values(gMap).map(gd=>{
+    const count=gd.isolates.length;
+    const atbs=atbCols.map(ac=>{
+      let tested=0,susceptible=0;
+      gd.isolates.forEach(sus=>{
+        const entry=sus.find(s=>s.atb_code===ac.code);
+        if(entry){tested++;if(entry.result==='S')susceptible++}
+      });
+      return{code:ac.code,name:ac.name,tested,susceptible,pctS:tested>0?Math.round(susceptible/tested*100):null};
+    });
+    return{code:gd.code,name:gd.name,count,atbs};
+  }).sort((a,b)=>b.count-a.count);// Sort by isolate count desc
+  return{germeni,atbCols};
+}
+
+async function rAntibiograma(el){
+  const cases=await ga('iaam');const E=CFG.lang==='en';
+  // KPI calc
+  const yc=cases.filter(r=>r.year===A.year);
+  let totalAbg=0,totalMDR=0,germCounts={};
+  yc.forEach(r=>{(r.germeni||[]).forEach(g=>{
+    if(g.susceptibility&&g.susceptibility.length>0){totalAbg++;const k=g.code||g.name;germCounts[k]=(germCounts[k]||0)+1}
+    if(g.mdr&&g.mdr!=='Nu')totalMDR++;
+  })});
+  const top3=Object.entries(germCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>{const n=germenName(k);return(n||k)+' ('+v+')'}).join(', ')||'—';
+  // Mean susceptibility
+  let sumS=0,sumT=0;
+  yc.forEach(r=>{(r.germeni||[]).forEach(g=>{(g.susceptibility||[]).forEach(s=>{sumT++;if(s.result==='S')sumS++})})});
+  const meanS=sumT>0?Math.round(sumS/sumT*100):0;
+
+  // Sections dropdown
+  const secOpts='<option value="">'+T('abg_filtru_sec')+'</option>'+
+    (CFG.sections||[]).map(s=>'<option value="'+s.id+'">'+sn(s)+'</option>').join('');
+
+  let h='<div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px">'+
+    '<div class="kc" style="flex:1;min-width:180px"><div class="kl">'+T('abg_total')+'</div><div class="kv">'+totalAbg+'</div></div>'+
+    '<div class="kc" style="flex:1;min-width:180px;border-left-color:var(--red)"><div class="kl">'+T('abg_mdr')+'</div><div class="kv">'+(totalAbg>0?Math.round(totalMDR/totalAbg*100):0)+'%<span style="font-size:12px;color:var(--txtL)"> ('+totalMDR+')</span></div></div>'+
+    '<div class="kc" style="flex:1;min-width:180px;border-left-color:var(--teal)"><div class="kl">'+T('abg_top3')+'</div><div class="kv" style="font-size:14px">'+esc(top3)+'</div></div>'+
+    '<div class="kc" style="flex:1;min-width:180px;border-left-color:var(--green)"><div class="kl">'+T('abg_sens')+'</div><div class="kv">'+meanS+'%</div></div>'+
+  '</div>';
+
+  // Filters + export
+  h+='<div class="pn"><div class="ph" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h3>'+T('pt_antibiograma')+'</h3>'+
+    '<div style="display:flex;gap:8px;align-items:center">'+
+    '<select id="abg-sec-filter" onchange="abgRefreshMatrix()" style="padding:5px 8px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:var(--f)">'+secOpts+'</select>'+
+    '<button class="btn bp bsm" onclick="genAntibiogramaWord()">'+T('abg_export_word')+'</button>'+
+    '<button class="btn bo bsm" onclick="genAntibiogramaWHONET()">'+T('abg_export_whonet')+'</button>'+
+    '</div></div>'+
+    '<div class="pb">'+
+    '<div class="abg-legend">'+
+      '<span><i style="background:#DCFCE7"></i> '+T('abg_verde')+'</span>'+
+      '<span><i style="background:#FEF9C3"></i> '+T('abg_galben')+'</span>'+
+      '<span><i style="background:#FEE2E2"></i> '+T('abg_rosu')+'</span>'+
+      '<span><i style="background:var(--bg)"></i> '+T('abg_gri')+'</span>'+
+      '<span style="font-style:italic;color:var(--txtL)">'+T('abg_low_n')+'</span>'+
+    '</div>'+
+    '<div id="abg-matrix-wrap"></div>'+
+  '</div></div>';
+  el.innerHTML=h;
+  abgRefreshMatrix();
+}
+
+async function abgRefreshMatrix(){
+  const wrap=document.getElementById('abg-matrix-wrap');if(!wrap)return;
+  const secFilter=document.getElementById('abg-sec-filter')?.value||'';
+  const cases=await ga('iaam');
+  const{germeni,atbCols}=buildAntibiogramMatrix(cases,A.year,secFilter);
+  if(germeni.length===0||atbCols.length===0){wrap.innerHTML='<p style="color:var(--txtL);font-size:13px;padding:20px 0">'+T('abg_no_data')+'</p>';return}
+
+  // Group atbCols by group
+  const grpOrder=[];const grpMap={};
+  atbCols.forEach(ac=>{if(!grpMap[ac.group]){grpMap[ac.group]=[];grpOrder.push(ac.group)}grpMap[ac.group].push(ac)});
+
+  let h='<div class="abg-wrap"><table class="abg-matrix">';
+  // Header row 1: group spans
+  h+='<thead><tr><th rowspan="2" style="min-width:160px;text-align:left">'+T('abg_germen')+'</th><th rowspan="2" style="width:50px">n</th>';
+  grpOrder.forEach(g=>{h+='<th class="abg-grp" colspan="'+grpMap[g].length+'">'+esc(g.split(' (')[0])+'</th>'});
+  h+='</tr><tr>';
+  // Header row 2: individual ATBs
+  atbCols.forEach(ac=>{
+    const abbr=ac.name.length>8?ac.name.substring(0,8)+'.':ac.name;
+    h+='<th title="'+esc(ac.name)+' ('+ac.code+')">'+esc(abbr)+'</th>';
+  });
+  h+='</tr></thead><tbody>';
+  // Data rows
+  germeni.forEach(gd=>{
+    h+='<tr><th>'+esc(gd.name)+'<span class="abg-n">'+esc(gd.code)+'</span></th><td><strong>'+gd.count+'</strong></td>';
+    gd.atbs.forEach(a=>{
+      if(a.tested===0){h+='<td class="abg-na">—</td>'}
+      else{
+        const cls=a.pctS>=80?'abg-s':a.pctS>=50?'abg-i':'abg-r';
+        const low=a.tested<10?' abg-low':'';
+        h+='<td class="'+cls+low+'" title="'+a.susceptible+'/'+a.tested+' S ('+a.pctS+'%)">'+a.pctS+'%'+(a.tested<10?'*':'')+'</td>';
+      }
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  wrap.innerHTML=h;
+}
+
+// ── Word Export Antibiograma ──
+async function genAntibiogramaWord(){
+  const secFilter=document.getElementById('abg-sec-filter')?.value||'';
+  const cases=await ga('iaam');
+  const{germeni,atbCols}=buildAntibiogramMatrix(cases,A.year,secFilter);
+  if(germeni.length===0){alert('Nu exista date de antibiograma.');return}
+  const E=CFG.lang==='en';
+  const title=E?'LOCAL ANTIBIOGRAM':'ANTIBIOGRAMA LOCALA';
+  const subtitle=CFG.hospital_name+' — '+A.year;
+  const children=[...wCover(title,subtitle,WC.navy),wH1(title),wSp(40)];
+  // Summary
+  children.push(wP(E?'Summary of antimicrobial susceptibility data extracted from HAI cases registered in '+A.year+'.':
+    'Sumar al datelor de sensibilitate antimicrobiana extrase din cazurile IAAM inregistrate in '+A.year+'.',{size:20,before:40}));
+  if(secFilter){const sName=rSec(secFilter);children.push(wP((E?'Filtered by ward: ':'Filtrat pe sectia: ')+sName,{size:20,italic:true}))}
+  children.push(wSp(60));
+  // Legend
+  children.push(wInfoBox((E?'Color coding: Green (>=80% S), Yellow (50-79%), Red (<50%). * = less than 10 isolates (not statistically significant).':
+    'Cod culoare: Verde (>=80% S), Galben (50-79%), Rosu (<50%). * = mai putin de 10 izolate (nesemnificativ statistic).'),WC.bgBlue,WC.blue));
+  children.push(wSp(80));
+  // Matrix table — landscape-friendly: limit columns, split if needed
+  const maxCols=12;// Reasonable for A4
+  for(let ci=0;ci<atbCols.length;ci+=maxCols){
+    const slice=atbCols.slice(ci,ci+maxCols);
+    const ws=[3000,800,...slice.map(()=>Math.floor(5226/slice.length))];
+    const totalW=ws.reduce((a,b)=>a+b,0);
+    // Adjust to fit 9026
+    const factor=9026/totalW;ws.forEach((w,i)=>{ws[i]=Math.round(w*factor)});
+    const hdrCells=[E?'Organism':'Germen','n',...slice.map(ac=>ac.name.length>10?ac.name.substring(0,10)+'.':ac.name)];
+    const rows=[wTblHead(hdrCells,ws)];
+    germeni.forEach((gd,ri)=>{
+      const cells=[gd.name+' ('+gd.code+')',String(gd.count)];
+      const cellObjs=[];
+      slice.forEach(ac=>{
+        const a=gd.atbs.find(x=>x.code===ac.code);
+        if(!a||a.tested===0){cells.push('—')}
+        else{cells.push(a.pctS+'%'+(a.tested<10?'*':''))}
+      });
+      rows.push(wTblRow(cells,ws,ri%2===1));
+    });
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},rows}));
+    if(ci+maxCols<atbCols.length)children.push(wSp(60));
+  }
+  children.push(wSp(100));
+  children.push(...wSigBlock());
+  const doc=makeDoc(children,title,(E?'Local Antibiogram':'Antibiograma Locala'));
+  await saveDocx(doc,'Antibiograma_Locala_'+A.year+'.docx');
+}
+
+// ── WHONET CSV Export ──
+async function genAntibiogramaWHONET(){
+  const secFilter=document.getElementById('abg-sec-filter')?.value||'';
+  const cases=await ga('iaam');
+  const filtered=cases.filter(r=>r.year===A.year&&(!secFilter||r.section===secFilter));
+  // Collect all ATB codes used
+  const atbSet=new Set();
+  filtered.forEach(r=>{(r.germeni||[]).forEach(g=>{(g.susceptibility||[]).forEach(s=>{atbSet.add(s.atb_code)})})});
+  const atbCodes=[];
+  ATB_LIST.forEach(grp=>{grp.items.forEach(atb=>{if(atbSet.has(atb.a))atbCodes.push(atb.a)})});
+  if(atbCodes.length===0){alert('Nu exista date de antibiograma.');return}
+  // CSV header
+  const header=['PATIENT_ID','SPEC_DATE','ORGANISM','SPEC_TYPE','WARD',...atbCodes];
+  const rows=[header.join(',')];
+  let pid=1;
+  filtered.forEach(r=>{
+    (r.germeni||[]).forEach(g=>{
+      if(!g.susceptibility||g.susceptibility.length===0)return;
+      const susMap={};g.susceptibility.forEach(s=>{susMap[s.atb_code]=s.result});
+      const row=[
+        'P'+String(pid++).padStart(4,'0'),
+        r.date_confirmed||r.date_admission||'',
+        g.code||g.name,
+        r.localization||'',
+        rSec(r.section)
+      ];
+      atbCodes.forEach(ac=>{row.push(susMap[ac]||'')});
+      rows.push(row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+    });
+  });
+  const csv=rows.join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  saveAs(blob,'WHONET_Antibiograma_'+A.year+'.csv');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONSUM ANTIBIOTICE — DDD / AWaRe (5B.4)
+// ═══════════════════════════════════════════════════════════════
+
+// ATB_LIST lookup helpers for DDD/AWaRe
+function _atbFlat(){const m={};ATB_LIST.forEach(g=>g.items.forEach(it=>{m[it.a]=it}));return m}
+function atbDDD(atc){const m=_atbFlat();return m[atc]?.ddd||0}
+function atbAWaRe(atc){const m=_atbFlat();return m[atc]?.aw||'X'}
+function atbName(atc){const m=_atbFlat();return m[atc]?.n||atc}
+function calcDDD(atc,qty_g){const d=atbDDD(atc);return d>0?qty_g/d:0}
+function calcDDDper100(totalDDD,bedDays){return bedDays>0?(totalDDD/bedDays)*100:0}
+
+// ESAC-Net reference data (2022 published)
+const ESAC_REF={
+  eu_avg_ddd1000:{total:19.4,j01c:8.2,j01d:2.1,j01f:3.0,j01m:1.5},
+  ro_avg_ddd1000:{total:24.8,j01c:7.5,j01d:5.2,j01f:2.8,j01m:3.1}
+};
+
+function buildConsumMatrix(data,year,secFilter,monthFilter){
+  let filtered=data.filter(r=>r.year===year);
+  if(secFilter)filtered=filtered.filter(r=>r.section===secFilter);
+  if(monthFilter)filtered=filtered.filter(r=>r.month===+monthFilter);
+
+  // Bed-days calculation
+  let bedDays=0;
+  if(secFilter){
+    const wb=getWeightedBeds(secFilter,year);
+    if(monthFilter){
+      const m=+monthFilter,daysInMonth=new Date(year,m,0).getDate();
+      bedDays=wb*(daysInMonth/((year%4===0&&year%100!==0)||year%400===0?366:365))*daysInMonth;
+      // Approximate: weighted beds for that section × days in selected month
+      bedDays=wb*daysInMonth;
+    }else{
+      const diy=((year%4===0&&year%100!==0)||year%400===0)?366:365;
+      bedDays=wb*diy;
+    }
+  }else{
+    const twb=getTotalWeightedBeds(year);
+    if(monthFilter){
+      const m=+monthFilter,daysInMonth=new Date(year,m,0).getDate();
+      bedDays=twb*daysInMonth;
+    }else{
+      const diy=((year%4===0&&year%100!==0)||year%400===0)?366:365;
+      bedDays=twb*diy;
+    }
+  }
+
+  // Group by ATC
+  const byAtc={};
+  filtered.forEach(r=>{
+    if(!byAtc[r.atc])byAtc[r.atc]={atc:r.atc,name:atbName(r.atc),aw:atbAWaRe(r.atc),totalG:0,byMonth:{}};
+    byAtc[r.atc].totalG+=r.quantity_g||0;
+    const mk=r.month||0;
+    if(!byAtc[r.atc].byMonth[mk])byAtc[r.atc].byMonth[mk]=0;
+    byAtc[r.atc].byMonth[mk]+=r.quantity_g||0;
+  });
+
+  const rows=Object.values(byAtc).map(r=>{
+    r.totalDDD=calcDDD(r.atc,r.totalG);
+    r.dddPer100=calcDDDper100(r.totalDDD,bedDays);
+    return r;
+  }).sort((a,b)=>b.totalDDD-a.totalDDD);
+
+  // Totals
+  const totalDDD=rows.reduce((s,r)=>s+r.totalDDD,0);
+  const dddPer100=calcDDDper100(totalDDD,bedDays);
+
+  // AWaRe breakdown — only J01 antibacterials (not J02/J04/J05)
+  const j01rows=rows.filter(r=>r.atc.startsWith('J01'));
+  const j01DDD=j01rows.reduce((s,r)=>s+r.totalDDD,0);
+  const accessDDD=j01rows.filter(r=>r.aw==='A').reduce((s,r)=>s+r.totalDDD,0);
+  const watchDDD=j01rows.filter(r=>r.aw==='W').reduce((s,r)=>s+r.totalDDD,0);
+  const reserveDDD=j01rows.filter(r=>r.aw==='R').reduce((s,r)=>s+r.totalDDD,0);
+  const pctAccess=j01DDD>0?(accessDDD/j01DDD*100):0;
+  const pctWatch=j01DDD>0?(watchDDD/j01DDD*100):0;
+  const pctReserve=j01DDD>0?(reserveDDD/j01DDD*100):0;
+
+  return {rows,bedDays,totals:{totalDDD,dddPer100,pctAccess,pctWatch,pctReserve,j01DDD,accessDDD,watchDDD,reserveDDD}};
+}
+
+var _dddChartAware=null,_dddChartEsac=null;
+
+async function rConsumATB(el){
+  const y=A.year;
+  const data=(await ga('atb_consum')).filter(r=>r.year===y);
+  const mx=buildConsumMatrix(data,y,null,null);
+  const t=mx.totals;
+  const nSub=new Set(data.map(r=>r.atc)).size;
+  const accessCls=t.pctAccess>=60?'ok':(t.pctAccess>=40?'warn':'bad');
+
+  let h='<div class="ib inf">'+T('pt_consum_atb')+' — '+y+'</div>';
+  // KPI cards
+  h+='<div class="kg">';
+  h+='<div class="kc bl"><div class="kl">'+T('ddd_total')+'</div><div class="kv">'+t.dddPer100.toFixed(1)+'</div></div>';
+  h+='<div class="kc '+(t.pctAccess>=60?'gn':'am')+'"><div class="kl">'+T('ddd_access')+'</div><div class="kv">'+t.pctAccess.toFixed(1)+'%</div>';
+  h+='<div class="ks"><span class="ddd-target '+accessCls+'">'+(t.pctAccess>=60?'&#9989; '+T('ddd_target_ok'):'&#9888; '+T('ddd_target_warn'))+'</span></div></div>';
+  h+='<div class="kc am"><div class="kl">'+T('ddd_watch')+'</div><div class="kv">'+t.pctWatch.toFixed(1)+'%</div></div>';
+  h+='<div class="kc rd"><div class="kl">'+T('ddd_reserve')+'</div><div class="kv">'+t.pctReserve.toFixed(1)+'%</div></div>';
+  h+='<div class="kc tl"><div class="kl">'+T('ddd_substances')+'</div><div class="kv">'+nSub+'</div></div>';
+  h+='</div>';
+
+  // Filters row
+  h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0">';
+  h+='<select id="ddd-sec" onchange="dddRefresh()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-family:var(--f)"><option value="">'+T('ddd_section')+': '+T('ddd_all_months').replace('lunile','sectiile')+'</option>'+secOpts('')+'</select>';
+  h+='<select id="ddd-mo" onchange="dddRefresh()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-family:var(--f)"><option value="">'+T('ddd_month')+': '+T('ddd_all_months')+'</option>';
+  const mo=getMO();for(let i=0;i<12;i++)h+='<option value="'+(i+1)+'">'+mo[i]+'</option>';
+  h+='</select>';
+  h+='<div style="flex:1"></div>';
+  h+='<button class="btn bs" onclick="dddBulkImport()">'+T('ddd_bulk')+'</button>';
+  h+='<button class="btn bp" onclick="editConsumATB()">'+T('ddd_add')+'</button>';
+  h+='<button class="btn bw" onclick="genConsumATBWord()">'+T('ddd_export_word')+'</button>';
+  h+='</div>';
+
+  // Charts row
+  h+='<div class="ddd-charts">';
+  h+='<div class="ddd-chart-box" style="max-width:320px"><h4>'+T('ddd_aware_dist')+'</h4><canvas id="ddd-chart-aware" width="280" height="260"></canvas></div>';
+  h+='<div class="ddd-chart-box"><h4>'+T('ddd_esac_title')+'</h4><canvas id="ddd-chart-esac" width="500" height="260"></canvas><div style="font-size:10px;color:var(--txtL);margin-top:6px">'+T('ddd_esac_note')+'</div></div>';
+  h+='</div>';
+
+  // Data table
+  h+='<div id="ddd-table-wrap">';
+  h+=_dddBuildTable(data,mx);
+  h+='</div>';
+
+  el.innerHTML=h;
+  _dddRenderCharts(t);
+}
+
+function _dddBuildTable(data,mx){
+  if(mx.rows.length===0)return '<div class="es"><p>'+T('ddd_no_data')+'</p></div>';
+  const mo=getMO();
+  let h='<div class="ddd-wrap"><table class="dt"><thead><tr><th>'+T('ddd_substance')+'</th><th>ATC</th><th>'+T('ddd_aware_label')+'</th><th>'+T('ddd_quantity')+'</th><th>'+T('ddd_ddds')+'</th><th>'+T('ddd_per_100')+'</th></tr></thead><tbody>';
+  mx.rows.forEach(r=>{
+    const awCls='ddd-aw-'+(r.aw||'x').toLowerCase();
+    h+='<tr><td>'+esc(r.name)+'</td><td style="font-size:11px;color:var(--txtL)">'+r.atc+'</td>';
+    h+='<td><span class="'+awCls+'">'+r.aw+'</span></td>';
+    h+='<td style="text-align:right">'+r.totalG.toFixed(1)+'g</td>';
+    h+='<td style="text-align:right">'+r.totalDDD.toFixed(1)+'</td>';
+    h+='<td style="text-align:right">'+r.dddPer100.toFixed(2)+'</td></tr>';
+  });
+  // Totals row
+  h+='<tr style="background:var(--navy);color:#fff;font-weight:700"><td>TOTAL</td><td></td><td></td>';
+  h+='<td style="text-align:right">'+mx.rows.reduce((s,r)=>s+r.totalG,0).toFixed(1)+'g</td>';
+  h+='<td style="text-align:right">'+mx.totals.totalDDD.toFixed(1)+'</td>';
+  h+='<td style="text-align:right">'+mx.totals.dddPer100.toFixed(2)+'</td></tr>';
+  h+='</tbody></table></div>';
+
+  // Individual records table
+  const recs=data.sort((a,b)=>(a.month-b.month)||(a.atc||'').localeCompare(b.atc||''));
+  if(recs.length>0){
+    h+='<h4 style="margin:18px 0 8px;font-size:13px">'+T('ddd_computed')+' ('+recs.length+' inregistrari)</h4>';
+    h+='<div class="ddd-wrap"><table class="dt"><thead><tr><th>'+T('ddd_month')+'</th><th>'+T('ddd_section')+'</th><th>'+T('ddd_substance')+'</th><th>ATC</th><th>'+T('ddd_quantity')+'</th><th>'+T('ddd_route')+'</th><th>'+T('ddd_ddds')+'</th><th>Actiuni</th></tr></thead><tbody>';
+    recs.forEach(r=>{
+      const ddds=calcDDD(r.atc,r.quantity_g||0);
+      h+='<tr><td>'+mo[(r.month||1)-1]+'</td><td>'+rSec(r.section)+'</td><td>'+esc(r.atb_name||atbName(r.atc))+'</td>';
+      h+='<td style="font-size:11px;color:var(--txtL)">'+r.atc+'</td>';
+      h+='<td style="text-align:right">'+(r.quantity_g||0).toFixed(1)+'g</td>';
+      h+='<td>'+(r.route||'—')+'</td>';
+      h+='<td style="text-align:right">'+ddds.toFixed(1)+'</td>';
+      h+='<td class="act"><button onclick="editConsumATB('+r.id+')">&#9998;</button><button onclick="delRec(\'atb_consum\','+r.id+')">&#128465;</button></td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  return h;
+}
+
+function _dddRenderCharts(t){
+  // AWaRe pie chart
+  const ctx1=document.getElementById('ddd-chart-aware');
+  if(ctx1){
+    if(_dddChartAware)_dddChartAware.destroy();
+    _dddChartAware=new Chart(ctx1,{type:'doughnut',data:{
+      labels:['Access','Watch','Reserve'],
+      datasets:[{data:[t.pctAccess,t.pctWatch,t.pctReserve],backgroundColor:['#27AE60','#D4A017','#C0392B'],borderWidth:2,borderColor:'#fff'}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{
+      legend:{position:'bottom',labels:{font:{size:11}}},
+      tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.parsed.toFixed(1)+'%'}},
+      title:{display:true,text:t.pctAccess>=60?'✓ WHO Target ≥60% Access':'⚠ <60% Access',font:{size:12},color:t.pctAccess>=60?'#166534':'#991B1B'}
+    }}});
+  }
+  // ESAC-Net comparison bar chart
+  const ctx2=document.getElementById('ddd-chart-esac');
+  if(ctx2&&t.j01DDD>0){
+    if(_dddChartEsac)_dddChartEsac.destroy();
+    // Calculate hospital class percentages (DDD distribution by ATC class)
+    // This is a simplified comparison
+    _dddChartEsac=new Chart(ctx2,{type:'bar',data:{
+      labels:['DDD/100 zile-pat','% Access','% Watch','% Reserve'],
+      datasets:[
+        {label:'Spital',data:[t.dddPer100,t.pctAccess,t.pctWatch,t.pctReserve],backgroundColor:'#2563B0'},
+        {label:'RO media (comunitar)',data:[ESAC_REF.ro_avg_ddd1000.total*0.4,45,42,13],backgroundColor:'#D4A017'},
+        {label:'EU/EEA media',data:[ESAC_REF.eu_avg_ddd1000.total*0.35,65,30,5],backgroundColor:'#27AE60'}
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{
+      legend:{position:'bottom',labels:{font:{size:10}}},
+      tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y.toFixed(1)}}
+    },scales:{y:{beginAtZero:true}}}});
+  }
+}
+
+async function dddRefresh(){
+  const sec=document.getElementById('ddd-sec')?.value||'';
+  const mo=document.getElementById('ddd-mo')?.value||'';
+  const y=A.year;
+  let data=(await ga('atb_consum')).filter(r=>r.year===y);
+  if(sec)data=data.filter(r=>r.section===sec);
+  if(mo)data=data.filter(r=>r.month===+mo);
+  const mx=buildConsumMatrix(await ga('atb_consum'),y,sec||null,mo||null);
+  const wrap=document.getElementById('ddd-table-wrap');
+  if(wrap)wrap.innerHTML=_dddBuildTable(data,mx);
+  _dddRenderCharts(mx.totals);
+  // Update KPI cards
+  const kv=document.querySelectorAll('.kv');
+  // KPIs are re-rendered on full page anyway via render() if needed
+}
+
+async function editConsumATB(id){
+  const allData=await ga('atb_consum');
+  let r=id?allData.find(x=>x.id===id):{year:A.year,month:new Date().getMonth()+1,section:'',atc:'',atb_name:'',quantity_g:'',route:'IV',notes:''};
+  if(!r)r={year:A.year,month:new Date().getMonth()+1};
+
+  const mo=getMO();
+  let moH='';for(let i=1;i<=12;i++)moH+='<option value="'+i+'" '+(i===r.month?'selected':'')+'>'+mo[i-1]+'</option>';
+
+  let atbH='<option value="">— '+T('ddd_substance')+' —</option>';
+  ATB_LIST.forEach(g=>{
+    // Only J01 antibacterials for consumption tracking (skip J02 antifungals, J04 TB, J05 antivirals)
+    atbH+='<optgroup label="'+g.g+'">';
+    g.items.forEach(it=>{
+      const awBadge=it.aw?(' ['+it.aw+']'):'';
+      atbH+='<option value="'+it.a+'" '+(it.a===r.atc?'selected':'')+'>'+it.n+' ('+it.a+')'+awBadge+'</option>';
+    });
+    atbH+='</optgroup>';
+  });
+
+  const routeH=ATB_ROUTES.map(rt=>'<option value="'+rt.v+'" '+(rt.v===r.route?'selected':'')+'>'+rt.n+'</option>').join('');
+
+  openM(id?'Editare Consum':'Adauga Consum Antibiotic',
+    '<div class="fr"><div class="fg"><label>'+T('ddd_section')+'</label><select id="f-sec"><option value="">—</option>'+secOpts(r.section)+'</select></div>'+
+    '<div class="fg"><label>'+T('ddd_month')+'</label><select id="f-mo">'+moH+'</select></div></div>'+
+    '<div class="fg"><label>'+T('ddd_substance')+'</label><select id="f-atc" onchange="dddUpdatePreview()">'+atbH+'</select></div>'+
+    '<div class="fr"><div class="fg"><label>'+T('ddd_quantity')+' (grame)</label><input type="number" id="f-qty" value="'+(r.quantity_g||'')+'" min="0" step="0.1" oninput="dddUpdatePreview()"></div>'+
+    '<div class="fg"><label>'+T('ddd_route')+'</label><select id="f-route">'+routeH+'</select></div></div>'+
+    '<div id="ddd-preview" style="padding:8px 12px;background:var(--bg);border-radius:6px;font-size:12px;margin-top:6px"></div>'+
+    '<div class="fg" style="margin-top:8px"><label>Observatii</label><textarea id="f-n" rows="2">'+(r.notes||'')+'</textarea></div>',
+  '<button class="btn bo" onclick="safeCloseM()">'+T('btn_cancel')+'</button><button class="btn bp" onclick="saveConsumATB('+(id||'null')+')">'+T('btn_save')+'</button>');
+  setTimeout(()=>{dddUpdatePreview();attachDirtyTracking()},50);
+}
+
+function dddUpdatePreview(){
+  const atc=document.getElementById('f-atc')?.value||'';
+  const qty=parseFloat(document.getElementById('f-qty')?.value)||0;
+  const prev=document.getElementById('ddd-preview');
+  if(!prev)return;
+  if(!atc||!qty){prev.innerHTML='<span style="color:var(--txtL)">Selecteaza antibioticul si introdu cantitatea pentru a vedea DDD-urile calculate.</span>';return}
+  const ddd=atbDDD(atc);const aw=atbAWaRe(atc);const ddds=calcDDD(atc,qty);
+  const awCls='ddd-aw-'+(aw||'x').toLowerCase();
+  prev.innerHTML='DDD unitar: <b>'+ddd+'g</b> | AWaRe: <span class="'+awCls+'">'+aw+'</span> | '+T('ddd_ddds')+': <b>'+ddds.toFixed(2)+'</b>';
+}
+
+async function saveConsumATB(id){
+  const v=s=>document.getElementById(s).value;
+  const sec=v('f-sec'),mo=+v('f-mo'),atc=v('f-atc'),qty=parseFloat(v('f-qty'))||0,route=v('f-route'),notes=v('f-n').trim();
+  if(!sec){alert('Selecteaza sectia.');return}
+  if(!atc){alert('Selecteaza antibioticul.');return}
+  if(qty<=0){alert('Introdu cantitatea in grame.');return}
+  const rec={year:A.year,month:mo,section:sec,atc:atc,atb_name:atbName(atc),quantity_g:qty,route:route,notes:notes};
+  if(id)rec.id=id;
+  await pt('atb_consum',rec);
+  logActivity((id?'Editat':'Adaugat')+' consum ATB — '+atbName(atc)+' '+qty+'g '+rSec(sec));
+  closeM();render();
+}
+
+function dddBulkImport(){
+  openM('Import CSV — Consum Antibiotice',
+    '<div class="ib inf">'+T('ddd_bulk_help')+'</div>'+
+    '<textarea id="ddd-csv" class="ddd-bulk-area" placeholder="sec_001;3;J01CR02;1500\nsec_002;3;J01DD04;800"></textarea>',
+  '<button class="btn bo" onclick="safeCloseM()">'+T('btn_cancel')+'</button><button class="btn bp" onclick="dddDoBulkImport()">Import</button>');
+}
+
+async function dddDoBulkImport(){
+  const csv=(document.getElementById('ddd-csv')?.value||'').trim();
+  if(!csv){alert('Introdu date CSV.');return}
+  const lines=csv.split('\n').filter(l=>l.trim());
+  let ok=0,err=0;
+  for(const line of lines){
+    const parts=line.split(/[;,\t]/);
+    if(parts.length<4){err++;continue}
+    const [sec,mo,atc,qty]=parts;
+    const qtyN=parseFloat(qty);
+    if(!sec||!mo||!atc||isNaN(qtyN)||qtyN<=0){err++;continue}
+    await pt('atb_consum',{year:A.year,month:+mo,section:sec.trim(),atc:atc.trim(),atb_name:atbName(atc.trim()),quantity_g:qtyN,route:'IV',notes:'Import CSV'});
+    ok++;
+  }
+  alert('Importate: '+ok+' inregistrari'+(err>0?' | Erori: '+err:''));
+  closeM();render();
+}
+
+async function genConsumATBWord(){
+  const data=await ga('atb_consum');
+  const y=A.year;
+  const mx=buildConsumMatrix(data,y,null,null);
+  if(mx.rows.length===0){alert('Nu exista date de consum antibiotice.');return}
+  const t=mx.totals;
+  const E=CFG.lang==='en';
+  const title=E?'ANTIBIOTIC CONSUMPTION REPORT':'RAPORT CONSUM ANTIBIOTICE';
+  const subtitle=CFG.hospital_name+' — '+y;
+  const children=[...wCover(title,subtitle,WC.navy),wH1(title),wSp(40)];
+
+  // Summary info box
+  children.push(wInfoBox(E?
+    'Analysis of antibiotic consumption for '+y+' using WHO DDD/100 bed-days methodology and AWaRe classification.':
+    'Analiza consumului de antibiotice pentru anul '+y+' utilizand metodologia OMS DDD/100 zile-pat si clasificarea AWaRe.',WC.bgBlue,WC.blue));
+  children.push(wSp(60));
+
+  // KPI summary table
+  children.push(wH2(E?'Key Indicators':'Indicatori Cheie'));
+  const kpiW=[4500,4526];
+  const kpiRows=[
+    wTblHead([E?'Indicator':'Indicator',E?'Value':'Valoare'],kpiW),
+    wTblRow([E?'Total DDD/100 bed-days':'Total DDD/100 zile-pat',t.dddPer100.toFixed(2)],kpiW,false),
+    wTblRow(['% Access (AWaRe)',t.pctAccess.toFixed(1)+'% '+(t.pctAccess>=60?(E?'(WHO target met)':'(tinta OMS atinsa)'):(E?'(below WHO target)':'(sub tinta OMS)'))],kpiW,true),
+    wTblRow(['% Watch (AWaRe)',t.pctWatch.toFixed(1)+'%'],kpiW,false),
+    wTblRow(['% Reserve (AWaRe)',t.pctReserve.toFixed(1)+'%'],kpiW,true),
+    wTblRow([E?'Total DDDs':'Total DDD-uri',t.totalDDD.toFixed(1)],kpiW,false),
+    wTblRow([E?'Substances used':'Substante utilizate',String(mx.rows.length)],kpiW,true),
+    wTblRow([E?'Bed-days (denominator)':'Zile-pat (denominator)',mx.bedDays.toFixed(0)],kpiW,false)
+  ];
+  children.push(new Table({width:{size:9026,type:WidthType.DXA},rows:kpiRows}));
+  children.push(wSp(80));
+
+  // AWaRe target assessment
+  if(t.pctAccess>=60){
+    children.push(wInfoBox(E?'The WHO target of >=60% Access antibiotics is MET ('+t.pctAccess.toFixed(1)+'%).':
+      'Tinta OMS de >=60% antibiotice Access este ATINSA ('+t.pctAccess.toFixed(1)+'%).',WC.bgGreen,WC.green));
+  }else{
+    children.push(wAlertBox(E?'The WHO target of >=60% Access antibiotics is NOT met ('+t.pctAccess.toFixed(1)+'%). Consider antibiotic stewardship interventions.':
+      'Tinta OMS de >=60% antibiotice Access NU este atinsa ('+t.pctAccess.toFixed(1)+'%). Se recomanda interventii de stewardship antimicrobian.'));
+  }
+  children.push(wSp(80));
+
+  // Top 10 table
+  children.push(wH2(E?'Top 10 Antibiotics by DDD Consumption':'Top 10 Antibiotice dupa Consum DDD'));
+  const top10=mx.rows.slice(0,10);
+  const t10w=[600,2600,1200,800,1200,1200,1426];
+  const t10rows=[wTblHead(['#',E?'Substance':'Substanta','ATC','AWaRe',E?'Quantity (g)':'Cantitate (g)','DDD','DDD/100'],t10w)];
+  top10.forEach((r,i)=>{
+    t10rows.push(wTblRow([String(i+1),r.name,r.atc,r.aw,r.totalG.toFixed(1),r.totalDDD.toFixed(1),r.dddPer100.toFixed(2)],t10w,i%2===1));
+  });
+  children.push(new Table({width:{size:9026,type:WidthType.DXA},rows:t10rows}));
+  children.push(wSp(80));
+
+  // Monthly evolution table
+  children.push(wH2(E?'Monthly Evolution':'Evolutie Lunara'));
+  const moNames=E?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']:['Ian','Feb','Mar','Apr','Mai','Iun','Iul','Aug','Sep','Oct','Nov','Dec'];
+  const mow=[1500,...Array(12).fill(627)];
+  const moHead=wTblHead([E?'Indicator':'Indicator',...moNames],mow);
+  // Monthly DDD/100
+  const monthlyDDD=[];const monthlyAccess=[];
+  for(let m=1;m<=12;m++){
+    const mdata=data.filter(r=>r.year===y&&r.month===m);
+    const mmx=buildConsumMatrix(data,y,null,String(m));
+    monthlyDDD.push(mmx.totals.dddPer100.toFixed(1));
+    monthlyAccess.push(mmx.totals.pctAccess.toFixed(0)+'%');
+  }
+  const moRows=[moHead,
+    wTblRow(['DDD/100',...monthlyDDD],mow,false),
+    wTblRow(['%Access',...monthlyAccess],mow,true)
+  ];
+  children.push(new Table({width:{size:9026,type:WidthType.DXA},rows:moRows}));
+  children.push(wSp(80));
+
+  // ESAC-Net comparison
+  children.push(wH2(E?'ESAC-Net Comparison (Indicative)':'Comparatie ESAC-Net (Orientativa)'));
+  children.push(wP(E?'Note: ESAC-Net data reflects community antibiotic use and is not directly comparable with hospital data.':
+    'Nota: Datele ESAC-Net reflecta consumul comunitar de antibiotice si nu sunt direct comparabile cu datele spitalicesti.',{size:18,italic:true}));
+  const ecW=[3000,2013,2013,2000];
+  const ecRows=[
+    wTblHead([E?'Parameter':'Parametru',E?'Hospital':'Spital',E?'Romania avg':'Romania media','EU/EEA'],ecW),
+    wTblRow(['DDD/100 '+(!E?'zile-pat':'bed-days'),t.dddPer100.toFixed(1),(ESAC_REF.ro_avg_ddd1000.total*0.4).toFixed(1),(ESAC_REF.eu_avg_ddd1000.total*0.35).toFixed(1)],ecW,false),
+    wTblRow(['% Access',t.pctAccess.toFixed(1)+'%','~45%','~65%'],ecW,true),
+    wTblRow(['% Watch',t.pctWatch.toFixed(1)+'%','~42%','~30%'],ecW,false),
+    wTblRow(['% Reserve',t.pctReserve.toFixed(1)+'%','~13%','~5%'],ecW,true)
+  ];
+  children.push(new Table({width:{size:9026,type:WidthType.DXA},rows:ecRows}));
+  children.push(wSp(80));
+
+  // Recommendations
+  children.push(wH2(E?'Recommendations':'Recomandari'));
+  const recs=[];
+  if(t.pctAccess<60)recs.push(E?'Increase Access antibiotic use to meet WHO target of >=60%.':'Cresterea utilizarii antibioticelor Access pentru atingerea tintei OMS de >=60%.');
+  if(t.pctReserve>10)recs.push(E?'Reserve antibiotics represent '+t.pctReserve.toFixed(1)+'% — review necessity of Reserve antibiotic prescriptions.':'Antibioticele Reserve reprezinta '+t.pctReserve.toFixed(1)+'% — revizuirea necesitatii prescriptiilor Reserve.');
+  if(t.dddPer100>80)recs.push(E?'High overall consumption ('+t.dddPer100.toFixed(1)+' DDD/100 bed-days). Consider antibiotic stewardship program review.':'Consum total ridicat ('+t.dddPer100.toFixed(1)+' DDD/100 zile-pat). Se recomanda revizuirea programului de stewardship.');
+  if(recs.length===0)recs.push(E?'Antibiotic consumption indicators are within acceptable ranges.':'Indicatorii de consum antibiotice sunt in limite acceptabile.');
+  recs.forEach(r=>children.push(wBul(r)));
+  children.push(wSp(100));
+
+  children.push(...wSigBlock());
+  const doc=makeDoc(children,title,(E?'Antibiotic Consumption':'Consum Antibiotice'));
+  await saveDocx(doc,'Raport_Consum_ATB_'+y+'.docx');
+}
+
+// ═══════════════════════════════════════════════════════════════
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'7.4',date:'2026-03-15',notes:'Modal fix: footer cu butoane salveaza vizibil permanent pe ecrane mici (1366x768)\nATB Consum: "Ruta" redenumit "Modalitate de administrare"\nAncheta epidemiologica: Nr. inregistrare in header (NR.X DIN LUNA AN)\nCamp domiciliu adaugat in Date pacient\nInternari anterioare structurate: spital, sectie, perioada — afisare ca tabel in Word\nBuletine analize multiple cu nr. si data validare\nSectiunea II restructurata: dispozitive medicale invazive, interventii chirurgicale\nEliminat sectiunea Concluzii din ancheta Word (ramane in wizard)'},
+  {version:'7.3',date:'2026-03-15',notes:'Coduri IAAM conform Decizie UE 945/2018 — 63 coduri in 15 grupe (BJ, BSI, CNS, CRI, CVS, EENT, GI, LRI, NEO, PN, REPR, SSI, SST, SYS, UTI)\nRegistru Electronic IAAM (Excel) — conform Ordinul 1101/2016 cu 16 coloane\nDate pacient: camp unic initiale (eliminat duplicat), mediu ca dropdown\nComorbiditati: dropdown/chips cu checkbox-uri pinned si configurator (ca factorii de risc)\nContacti structurati: initiale, nr. FO, interval contact, salon/sectie — cu tabel in ancheta Word\nLegacy code map: codurile vechi sunt recunoscute si afisate corect'},
+  {version:'7.2',date:'2026-03-15',notes:'5B.4 — Consum Antibiotice DDD/AWaRe\nModul nou: Consum Antibiotice — monitorizare consum antibiotice dupa metodologia OMS\nDDD (Defined Daily Dose) / 100 zile-pat per sectie si total spital\nClasificare AWaRe (Access/Watch/Reserve) conform OMS 2023\nTinta OMS: >=60% Access — indicatie vizuala in KPI si raport\nGrafic AWaRe (doughnut) cu distributie Access/Watch/Reserve\nComparatie ESAC-Net: spital vs Romania vs EU/EEA\nAdaugare consum: per substanta, sectie, luna, ruta administrare\nImport CSV bulk din farmacia spitalului\nRaport Word profesionist cu KPI, top 10, evolutie lunara, recomandari\nATB_LIST extins cu valori DDD si clasificare AWaRe pentru ~85 antibiotice'},
+  {version:'7.1',date:'2026-03-15',notes:'5B.1 — Antibiograma Locala\nModul nou: Antibiograma Locala — pagina dedicata cu matrice sensibilitate antimicrobiana\nCamp nou in IAAM: buton Antibiograma per germen — introducere S/I/R per antibiotic testat\nQuick-fill: selectie rapida antibiotice comune Gram+/Gram-\nMatrice color-coded: verde (>=80% S), galben (50-79%), rosu (<50%), gri (netestat)\nKPI-uri: total izolate, % MDR, top 3 germeni, sensibilitate medie\nFiltrare pe sectie\nExport Word: tabel antibiograma cu cover page si semnaturi\nExport WHONET (CSV): format compatibil cu software-ul WHONET pentru schimb date\nDate test actualizate cu antibiograme pentru toate cazurile IAAM 2024'},
   {version:'7.0',date:'2026-03-15',notes:'Manual de Utilizare complet integrat in aplicatie — 16 capitole bilingve RO/EN\nCuprins interactiv cu navigare la fiecare sectiune\nButoane "Deschide modulul" pentru navigare directa din manual\nCasete sfat (albastru) si avertizare (galben) pentru informatii importante\nPasi numerotati vizual pentru toate procedurile\nFunctionalitate printare manual (CSS @media print optimizat)\nSectiuni: Introducere, Instalare, Interfata, Dashboard, IAAM, Autocontrol, Deseuri, Biocide, PPS, Documente, Calendar, Audituri, Instruire, Rapoarte, Configurare, Sincronizare'},
   {version:'6.9',date:'2026-03-15',notes:'IAAM: Fisa IAAM generata conform Ordinul MS 1101/2016 Figura 2 — format oficial identic\nCourier New 9pt monospace, chenare ASCII box-drawing, checkbox-uri, campuri completate automat\nVarsta calculata automat din data nasterii\nUS Letter (12240x15840), margini 1 inch — identic cu documentul oficial'},
   {version:'6.8.3',date:'2026-03-15',notes:'Autocontrol: Fix dark mode sumar zone netestate (text alb pe fundal deschis)\nIAAM: Sectiunile ATB, Contacti, Masuri, Externare marcate obligatorii\nIAAM: Optiune "Fara tratament antibiotic" in sectiunea ATB\nDashboard: KPI trend ascuns cand anul anterior nu are date\nDashboard: Sparkline pe KPI biocide\nDashboard: KPI ATP/UV cu indicator neconformitati\nDashboard: KPI labels nu se mai trunchiaza\nIAAM: Fix FO duplicat in coloana Pacient\nBiocide: Dropdown selectie produs + input manual fallback\nConfig: Fix denumire spital cu ghilimele se trunchia\nDate test: JSON complet 2 ani pentru toate modulele'},
@@ -6072,37 +7064,57 @@ async function genAnchetaWord(id){
   const children=[
     wP([wTR(CFG.cpiaam_name,{bold:true,size:22,color:WC.navy})],{align:AlignmentType.CENTER}),wSp(40),
     wP([wTR('RAPORT ANCHETA EPIDEMIOLOGICA',{bold:true,size:28,color:WC.navy})],{align:AlignmentType.CENTER}),
-    wP([wTR('INFECTIE ASOCIATA ASISTENTEI MEDICALE',{bold:true,size:22,color:WC.navy})],{align:AlignmentType.CENTER}),wSp(60),
+    wP([wTR('INFECTIE ASOCIATA ASISTENTEI MEDICALE'+(r.reg_number?' NR.'+r.reg_number+' DIN '+(LANG.ro.months_full_ro[(r.month||1)-1]||'').toUpperCase()+' '+r.year:''),{bold:true,size:22,color:WC.navy})],{align:AlignmentType.CENTER}),wSp(60),
     wP([wTR('Data finalizarii: ',{size:20,color:WC.gray}),wTR(fmtDateNow(),{size:20,bold:true})]),
     wP([wTR('Sectia implicata: ',{size:20,color:WC.gray}),wTR(rSec(r.section),{size:20,bold:true})]),wSp(80),
     wH1('I. DATE PACIENT'),wSp(40),
     new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W1,rows:[
       kvRow('Pacient (initiale)',r.patient),kvRow('Data nasterii',fmtDate(r.date_of_birth)),
       kvRow('Varsta / Sex',(r.age||'?')+' ani / '+(r.sex||'?')),kvRow('Sectia',rSec(r.section)),
-      kvRow('Medic curant',r.doctor||'—'),kvRow('Data internarii',fmtDate(r.date_admission)),
+      kvRow('Medic curant',r.doctor||'—'),kvRow('Domiciliu',r.domiciliu||'—'),
+      kvRow('Data internarii',fmtDate(r.date_admission)),
       kvRow('Data externarii',r.date_discharge?fmtDate(r.date_discharge):'Pacient inca internat'),
       kvRow('Nr. zile internare',r.days?r.days+' zile':'—'),
-      kvRow('Dg. internare',r.diag_admission||'—'),kvRow('Dg. externare',r.diag_discharge||'—'),
-      kvRow('Internari anterioare',r.prev_admissions||'Nu')]}),wSp(80),
-    wH1('II-III. ISTORIC MEDICAL SI CLINIC'),wSp(40),wP(r.clinical_history||'—',{size:20}),wSp(40),
+      kvRow('Dg. internare',r.diag_admission||'—'),kvRow('Dg. externare',r.diag_discharge||'—')]}),
+    // Prev admissions
+    ...(()=>{
+      const pa=r.prev_admissions;
+      if(!pa||(Array.isArray(pa)&&pa.length===0)||(typeof pa==='string'&&!pa.trim()))
+        return[wSp(20),new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W1,rows:[kvRow('Internari anterioare','Nu')]})];
+      if(typeof pa==='string')return[wSp(20),new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W1,rows:[kvRow('Internari anterioare',pa)]})];
+      const W3=[3400,2600,3026];
+      return[wSp(20),wP('Internari anterioare (ultimele 6 luni):',{size:20,bold:true,before:80}),
+        new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W3,rows:[
+          wTblHead(['Spital','Sectie','Perioada'],W3),
+          ...pa.map((a,i)=>wTblRow([a.hospital||'—',a.section||'—',a.interval||'—'],W3,i%2===1))]})];
+    })(),wSp(80),
+    wH1('II. ISTORIC MEDICAL SI CLINIC'),wSp(40),wP(r.clinical_history||'—',{size:20}),wSp(40),
     new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W1,rows:[
-      kvRow('Comorbiditati',r.comorbidities||'—'),kvRow('Antibioterapie anterioara',r.prev_antibiotics||'Nu'),
-      kvRow('Proceduri invazive',r.procedures||'Nu')]}),wSp(80),
+      kvRow('Comorbiditati',Array.isArray(r.comorbidities)?r.comorbidities.join(', '):(r.comorbidities||'—')),
+      kvRow('Antibioterapie curenta',r.prev_antibiotics||'Nu'),
+      kvRow('Proceduri invazive / Interventii chirurgicale',r.procedures||'Nu'),
+      kvRow('Dispozitive medicale invazive',r.invasive_devices||'Nu')]}),wSp(80),
     wH1('IV. FACTORI DE RISC IDENTIFICATI'),wSp(40),
     ...(r.risk_factors||[]).map((f,i)=>wP((i+1)+'. '+f,{size:20,before:40})),wSp(80),
     wH1('V. DETALII INFECTIE'),wSp(40),
     new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W1,rows:[
       kvRow('Agent etiologic',r.organism||'—'),kvRow('Data confirmarii',r.date_confirmed||'—'),
-      kvRow('Nr. buletin analize',r.bulletin_nr||'—'),kvRow('Tip infectie',rInf(r.infection_type)),
+      kvRow('Buletine analize',(()=>{const buls=r.bulletins||[];if(buls.length===0)return r.bulletin_nr||'—';return buls.map(b=>(b.nr||'?')+(b.date?' ('+fmtDate(b.date)+')':'')).join('; ')})()),
+      kvRow('Tip infectie',rInf(r.infection_type)),
       kvRow('Localizare',r.localization||'—'),
       kvRow('Colonizare / Infectie activa',r.active_type==='colonizare'?'Colonizare':'Infectie activa'),
       kvRow('Mod depistare',detLabel(r.detection)),
-      kvRow('MDR',r.mdr?'DA — Germen multirezistent':'NU'),
-      kvRow('Clasificare finala',r.classification||'IAAM confirmata')]}),wSp(80),
+      kvRow('MDR',r.mdr?'DA — Germen multirezistent':'NU')]}),wSp(80),
     wH1('VI-VII. CONTACTI SI EVALUARE FOCAR'),wSp(40),
-    new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W1,rows:[
-      kvRow('Contacti de salon',r.contacts||'Fara contacti'),
-      kvRow('Face parte din focar?',r.outbreak==='da'?'DA':'NU')]}),wSp(80),
+    ...(()=>{
+      const cArr=Array.isArray(r.contacts)?r.contacts:(typeof r.contacts==='string'&&r.contacts?[{initials:r.contacts,fo:'',interval:'',room:''}]:[]);
+      if(cArr.length===0)return[new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W1,rows:[kvRow('Contacti de salon','Fara contacti'),kvRow('Face parte din focar?',r.outbreak==='da'?'DA':'NU')]})];
+      const WC2=[2000,1800,2226,3000];
+      return[new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WC2,rows:[
+        wTblHead(['Initiale','Nr. FO','Interval','Salon/Sectie'],WC2),
+        ...cArr.map((c,i)=>wTblRow([c.initials||'—',c.fo||'—',c.interval||'—',c.room||'—'],WC2,i%2===1))
+      ]}),wSp(40),new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W1,rows:[kvRow('Face parte din focar?',r.outbreak==='da'?'DA':'NU')]})];
+    })(),wSp(80),
     wH1('VIII. MASURI DE CONTROL APLICATE'),wSp(40),
     ...(r.measures||[]).map((m,i)=>wP((i+1)+'. '+m,{size:20,before:40})),wSp(80),
     wH1('IX. ANCHETA CAUZEI PROBABILE'),wSp(40),
@@ -6110,7 +7122,7 @@ async function genAnchetaWord(id){
     wH1('X. CLASIFICARE CAZ IAAM'),wSp(40),
     wP([wTR('Originea: ',{bold:true,size:20}),wTR(CFG.origins[r.origin]||r.origin||'—',{size:20})]),
     wP(r.classification||'—',{size:20}),wSp(80),
-    wH1('XII. CONCLUZII SI RECOMANDARI'),wSp(40),wP(r.conclusions||'—',{size:20}),wSp(200),
+    wSp(200),
     wP([wTR('Responsabil ancheta: ',{size:20,color:WC.gray}),wTR(getCoord().name,{size:20,bold:true})]),
     wP(getCoord().title,{size:18,color:WC.gray})];
   await saveDocx(makeDoc(children,'Ancheta Epidemiologica','Ancheta_IAAM'),'Ancheta_Epid_'+(r.patient||'caz')+'_'+rSec(r.section).replace(/[^a-zA-Z0-9]/g,'_')+'_'+A.year+'.docx');
@@ -6376,6 +7388,38 @@ async function genAnalizaIAAMWord(){
   children.push(...wSigBlock());await saveDocx(makeDoc(children,'Analiza IAAM '+y,'Analiza_IAAM_'+y),'Analiza_IAAM_'+y+'.docx');
 }
 
+// ── Registru Electronic IAAM (Excel) — Ordinul 1101/2016 ──
+async function genRegistruIAAMExcel(){
+  showGen('Se genereaza Registrul Electronic IAAM...');
+  const y=A.year,ia=(await ga('iaam')).filter(r=>r.year===y).sort((a,b)=>a.month-b.month||a.id-b.id);
+  const headers=['Nr. crt.','Sectia','Nr. FOCG','Varsta','Sex','Data internarii','Data depistarii',
+    'Mod depistare','Germen identificat (Da/Nu)','Care germene','Rezistenta MDR (Da/Nu)','Tip rezistenta',
+    'Tipul probei','Tipul infectiei / Localizarea','Originea infectiei','Clasificare finala'];
+  const rows=[headers];
+  ia.forEach((r,i)=>{
+    const hasGerm=r.germeni&&r.germeni.length>0;
+    const germNames=hasGerm?r.germeni.map(g=>g.name).join(', '):'';
+    const mdrTypes=hasGerm?r.germeni.filter(g=>g.mdr&&g.mdr!=='Nu').map(g=>g.mdr).join(', '):'';
+    const probeTypes=(r.germeni||[]).map(g=>g.probe_type||'').filter(Boolean).join(', ');
+    rows.push([
+      i+1,rSec(r.section),r.fo_number||'',r.age||'',r.sex||'',
+      r.date_admission?fmtDate(r.date_admission):'',r.date_confirmed?fmtDate(r.date_confirmed):'',
+      detLabel(r.detection),hasGerm?'Da':'Nu',germNames,
+      r.mdr?'Da':'Nu',mdrTypes,probeTypes,
+      iaamCatLabel(r.iaam_category||r.infection_type),
+      CFG.origins&&r.origin?CFG.origins[r.origin]||r.origin:'',
+      r.classification||r.active_type||''
+    ]);
+  });
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  // Auto-width
+  ws['!cols']=headers.map((_,ci)=>{let mx=10;rows.forEach(r=>{const v=String(r[ci]||'');if(v.length>mx)mx=v.length});return{wch:Math.min(mx+2,40)}});
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Registru IAAM');
+  XLSX.writeFile(wb,'Registru_Electronic_IAAM_'+y+'.xlsx');
+  hideGen();
+}
+
 // ── Analiza Autocontrol ──
 async function genAnalizaAutoWord(){
   showGen('Se genereaza analiza autocontrol...');const y=A.year,data=await collectAllData(y);const{au}=data;const AN=runAllAnalysis(data);const c=au.filter(p=>p.result==='conform').length;
@@ -6618,8 +7662,7 @@ function checkEmptyDB(){
   const configs=await ga('config');
   document.getElementById('app-loading').style.display='none';
   if(configs.length>0&&configs[0].setup_complete){
-    Object.assign(CFG,configs[0]);
-    if(ensureConfigIds()){saveCfg()}
+    await loadCfg();
     A.darkMode=!!CFG.dark_mode;applyDark();
     updateMO();
     document.getElementById('btn-lang').textContent=CFG.lang==='en'?'EN':'RO';

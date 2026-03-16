@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CPIAAM — Sistem de Management v6.0</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
@@ -726,6 +727,7 @@ body{display:block!important;background:#fff!important}
     <a class="ni" data-p="audituri" onclick="nav('audituri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg><span>Audituri</span></a>
     <a class="ni" data-p="instruire" onclick="nav('instruire')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Instruire Personal</span></a>
     <div class="ns" data-t="sb_rapoarte">Rapoarte</div>
+    <a class="ni" data-p="multian" onclick="nav('multian')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-8"/><circle cx="7" cy="16" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="19" cy="4" r="1.5"/></svg><span data-t="sb_multian">Analiza Multi-An</span></a>
     <a class="ni" data-p="rapoarte" onclick="nav('rapoarte')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg><span data-t="sb_gen_rapoarte">Generare Rapoarte</span></a>
     <div class="ns" data-t="sb_sistem">Sistem</div>
     <a class="ni" data-p="config" onclick="nav('config')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span data-t="sb_config">Configurare</span></a>
@@ -929,7 +931,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='7.5';
+const APP_VERSION='7.7';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -949,7 +951,7 @@ ro:{
   pt_dashboard:'Dashboard',pt_iaam:'IAAM / Anchete Epidemiologice',pt_autocontrol:'Autocontrol Microbiologic',
   pt_deseuri:'Deseuri Medicale',pt_biocide:'Gestiune Biocide',pt_pps:'PPS / Farmacovigilenta — Antibiotice',
   pt_documente:'Documente / Autorizatii',pt_termene:'Raportari / Termene',pt_calendar:'Calendar',
-  pt_audituri:'Audituri',pt_instruire:'Instruire Personal',pt_rapoarte:'Generare Rapoarte',
+  pt_audituri:'Audituri',pt_instruire:'Instruire Personal',pt_rapoarte:'Generare Rapoarte',pt_multian:'Analiza Comparativa Multi-An',
   pt_config:'Configurare Sistem',pt_ajutor:'Ajutor / FAQ',pt_manual:'Manual de Utilizare',pt_changelog:'Istoric Versiuni',
   pt_despre:'Despre',pt_terms:'Termeni si Conditii',
   // Calendar
@@ -1052,7 +1054,18 @@ ro:{
   iaam_add_admission:'+ Adauga internare',iaam_no_prev:'Nicio internare anterioara',
   iaam_bulletins:'Buletine de analize',iaam_bulletin_nr:'Nr. buletin',iaam_bulletin_date:'Data validare',
   iaam_add_bulletin:'+ Adauga buletin',iaam_no_bulletins:'Niciun buletin',
-  iaam_invasive_devices:'Dispozitive medicale invazive',iaam_procedures_label:'Proceduri invazive / Interventii chirurgicale'
+  iaam_invasive_devices:'Dispozitive medicale invazive',iaam_procedures_label:'Proceduri invazive / Interventii chirurgicale',
+  spc_mean:'Media',spc_ucl:'Limita superioara (UCL)',spc_lcl:'Limita inferioara (LCL)',
+  spc_focar_alert:'Posibil focar: luna {m} depaseste limita superioara de control ({v} cazuri vs UCL={u})',
+  ai_report_btn:'Word + Analiza AI',ai_generating:'Se genereaza analiza AI...',ai_not_configured:'AI nu este configurat. Mergi la Configurare → AI.',
+  ai_disclaimer:'Aceasta sectiune a fost generata automat de un model AI pe baza datelor agregate. Informatiile trebuie verificate de un specialist.',
+  ai_error_fallback:'Analiza AI nu a putut fi generata. Raportul a fost creat fara sectiunea AI.',
+  multian_title:'Analiza Comparativa Multi-An',multian_need_2y:'Sunt necesare date din minim 2 ani pentru analiza comparativa.',
+  sb_multian:'Analiza Multi-An',pt_multian:'Analiza Comparativa Multi-An',
+  multian_iaam:'IAAM — Cazuri lunare',multian_auto:'Autocontrol — Conformitate trimestriala',
+  multian_deseuri:'Deseuri — Total lunar (kg)',multian_ddd:'Antibiotice — DDD/100 zile-pat',
+  multian_trend_up:'Crestere',multian_trend_down:'Scadere',multian_trend_stable:'Stabil',
+  multian_export_word:'Export Word'
 },
 en:{
   months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
@@ -1066,7 +1079,7 @@ en:{
   pt_dashboard:'Dashboard',pt_iaam:'HAI / Epidemiological Investigations',pt_autocontrol:'Microbiological Quality Control',
   pt_deseuri:'Medical Waste Management',pt_biocide:'Biocide Management',pt_pps:'PPS / Pharmacovigilance — Antibiotics',
   pt_documente:'Documents / Authorizations',pt_termene:'Reports / Deadlines',pt_calendar:'Calendar',
-  pt_audituri:'Audits',pt_instruire:'Staff Training',pt_rapoarte:'Generate Reports',
+  pt_audituri:'Audits',pt_instruire:'Staff Training',pt_rapoarte:'Generate Reports',pt_multian:'Multi-Year Comparative Analysis',
   pt_config:'System Settings',pt_ajutor:'Help / FAQ',pt_manual:'User Manual',pt_changelog:'Version History',
   pt_despre:'About',pt_terms:'Terms and Conditions',
   cal_today:'Today',cal_add_event:'Add Event',cal_events:'Events',cal_deadline:'Reporting deadline',
@@ -1157,7 +1170,18 @@ en:{
   iaam_add_admission:'+ Add admission',iaam_no_prev:'No previous admissions',
   iaam_bulletins:'Lab bulletins',iaam_bulletin_nr:'Bulletin nr.',iaam_bulletin_date:'Validation date',
   iaam_add_bulletin:'+ Add bulletin',iaam_no_bulletins:'No bulletins',
-  iaam_invasive_devices:'Invasive medical devices',iaam_procedures_label:'Invasive procedures / Surgical interventions'
+  iaam_invasive_devices:'Invasive medical devices',iaam_procedures_label:'Invasive procedures / Surgical interventions',
+  spc_mean:'Mean',spc_ucl:'Upper Control Limit (UCL)',spc_lcl:'Lower Control Limit (LCL)',
+  spc_focar_alert:'Possible outbreak: month {m} exceeds upper control limit ({v} cases vs UCL={u})',
+  ai_report_btn:'Word + AI Analysis',ai_generating:'Generating AI analysis...',ai_not_configured:'AI not configured. Go to Settings → AI.',
+  ai_disclaimer:'This section was automatically generated by an AI model based on aggregated data. Information should be verified by a specialist.',
+  ai_error_fallback:'AI analysis could not be generated. Report was created without the AI section.',
+  multian_title:'Multi-Year Comparative Analysis',multian_need_2y:'Data from at least 2 years is required for comparative analysis.',
+  sb_multian:'Multi-Year Analysis',pt_multian:'Multi-Year Comparative Analysis',
+  multian_iaam:'HAI — Monthly Cases',multian_auto:'Quality Control — Quarterly Compliance',
+  multian_deseuri:'Waste — Monthly Total (kg)',multian_ddd:'Antibiotics — DDD/100 bed-days',
+  multian_trend_up:'Increase',multian_trend_down:'Decrease',multian_trend_stable:'Stable',
+  multian_export_word:'Export Word'
 }
 };
 function T(key){const lang=CFG.lang||'ro';return LANG[lang]?.[key]||LANG.ro[key]||key}
@@ -1725,10 +1749,12 @@ function hideWizard(){
   document.getElementById('app-sb').style.display='flex';
   document.getElementById('app-mn').style.display='block';
 }
-function wizSkipImport(){
+async function wizSkipImport(){
   // Try File System Access API first, fallback to file input
   if(window.showOpenFilePicker){
-    window.showOpenFilePicker({types:[{description:'JSON',accept:{'application/json':['.json']}}]}).then(async([fh])=>{
+    const _wOpts={types:[{description:'JSON',accept:{'application/json':['.json']}}]};
+    const _wSh=await loadFileHandle().catch(()=>null);if(_wSh)_wOpts.startIn=_wSh;
+    window.showOpenFilePicker(_wOpts).then(async([fh])=>{
       const file=await fh.getFile();const text=await file.text();
       try{
         const d=JSON.parse(text);
@@ -1903,7 +1929,9 @@ function wizNext(step){
 async function wizPickDataFile(){
   if(!window.showSaveFilePicker){alert('Browserul nu suporta File System Access API. Foloseste Chrome/Edge.');return false}
   try{
-    _fileHandle=await window.showSaveFilePicker({suggestedName:'CPIAAM_data.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]});
+    const _wpOpts={suggestedName:'CPIAAM_data.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]};
+    const _wpSh=await loadFileHandle().catch(()=>null);if(_wpSh)_wpOpts.startIn=_wpSh;
+    _fileHandle=await window.showSaveFilePicker(_wpOpts);
     WZ._filePicked=true;WZ._filePickedName=_fileHandle.name;
     return true;
   }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message);return false}
@@ -2001,7 +2029,7 @@ function rerunWizard(){
 // ═══════════════════════════════════════════════════════════════
 const PT={dashboard:'Dashboard',iaam:'IAAM / Anchete Epidemiologice',autocontrol:'Autocontrol Microbiologic',
   deseuri:'Deseuri Medicale',biocide:'Gestiune Biocide',pps:'PPS / Farmacovigilenta — Antibiotice',
-  documente:'Documente / Autorizatii',termene:'Raportari / Termene',
+  documente:'Documente / Autorizatii',termene:'Raportari / Termene',multian:'Analiza Comparativa Multi-An',
   rapoarte:'Generare Rapoarte',config:'Configurare Sistem',ajutor:'Ajutor / FAQ',changelog:'Istoric Versiuni',about:'Despre',terms:'Termeni si Conditii'};
 
 function nav(p){A.page=p;document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('a',n.dataset.p===p));
@@ -2056,7 +2084,7 @@ async function renderPage(p){const el=document.getElementById('pc');dch();switch
   case'deseuri':return rDes(el);case'biocide':return rBio(el);case'pps':return rPPS(el);
   case'consum_atb':return rConsumATB(el);case'antibiograma':return rAntibiograma(el);case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
   case'audituri':return rAudit(el);case'instruire':return rInstr(el);
-  case'rapoarte':return rRap(el);case'config':return rCfg(el);case'ajutor':return rAjutor(el);
+  case'rapoarte':return rRap(el);case'multian':return rMultiAn(el);case'config':return rCfg(el);case'ajutor':return rAjutor(el);
   case'manual':return rManual(el);case'changelog':return rChangelog(el);case'about':return rAbout(el);case'terms':return rTerms(el);
   default:el.innerHTML='<p>Pagina nu exista.</p>'}}
 
@@ -2206,11 +2234,33 @@ async function rDash(el){
   // Mini-calendar
   if(_dw.miniCal!==false){const mc=document.getElementById('dash-mini-cal');if(mc)renderDashCalendar().then(html=>{mc.innerHTML=html})}
 }
+function calcSPC(data){
+  const vals=data.filter(v=>v>0);if(vals.length<3)return null;
+  const mean=vals.reduce((s,v)=>s+v,0)/vals.length;
+  const mr=[];for(let i=1;i<vals.length;i++)mr.push(Math.abs(vals[i]-vals[i-1]));
+  const mrBar=mr.length>0?mr.reduce((s,v)=>s+v,0)/mr.length:0;
+  const ucl=mean+2.66*mrBar;const lcl=Math.max(0,mean-2.66*mrBar);
+  return{mean:Math.round(mean*100)/100,ucl:Math.round(ucl*100)/100,lcl:Math.round(lcl*100)/100};
+}
 function initDashCharts(){
   const d=A._dashChartData;if(!d)return;
   const tc=A.darkMode?'#94A3B8':'#64748B';
   if(widgetVisible('charts')&&document.getElementById('c1')&&!A.charts.c1){
-    A.charts.c1=new Chart(document.getElementById('c1'),{type:'bar',data:{labels:d.MO,datasets:[{label:'Cazuri',data:d.ibm,backgroundColor:'#C0392B88',borderColor:'#C0392B',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{stepSize:1,color:tc}},x:{ticks:{color:tc}}},plugins:{legend:{display:false}}}});
+    const spc=calcSPC(d.ibm);
+    const bgColors=d.ibm.map(v=>spc&&v>spc.ucl?'#C0392B':'#C0392B88');
+    const brdColors=d.ibm.map(v=>spc&&v>spc.ucl?'#E74C3C':'#C0392B');
+    const spcAnnotations={};
+    if(spc){
+      const lc=A.darkMode?'#94A3B8':'#64748B';
+      spcAnnotations.meanLine={type:'line',yMin:spc.mean,yMax:spc.mean,borderColor:'#2563B0',borderWidth:2,borderDash:[6,4],
+        label:{display:true,content:T('spc_mean')+': '+spc.mean,position:'start',backgroundColor:'#2563B099',color:'#fff',font:{size:10}}};
+      spcAnnotations.uclLine={type:'line',yMin:spc.ucl,yMax:spc.ucl,borderColor:'#C0392B',borderWidth:2,borderDash:[4,4],
+        label:{display:true,content:'UCL: '+spc.ucl,position:'end',backgroundColor:'#C0392B99',color:'#fff',font:{size:10}}};
+      if(spc.lcl>0)spcAnnotations.lclLine={type:'line',yMin:spc.lcl,yMax:spc.lcl,borderColor:'#27AE60',borderWidth:2,borderDash:[4,4],
+        label:{display:true,content:'LCL: '+spc.lcl,position:'end',backgroundColor:'#27AE6099',color:'#fff',font:{size:10}}};
+    }
+    A.charts.c1=new Chart(document.getElementById('c1'),{type:'bar',data:{labels:d.MO,datasets:[{label:'Cazuri',data:d.ibm,backgroundColor:bgColors,borderColor:brdColors,borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{stepSize:1,color:tc}},x:{ticks:{color:tc}}},plugins:{legend:{display:false},annotation:{annotations:spcAnnotations}}}});
+    A._spcData=spc;
     A.charts.c2=new Chart(document.getElementById('c2'),{type:'doughnut',data:{labels:[T('ch_conforme'),T('ch_neconforme')],datasets:[{data:[d.conf,d.totP-d.conf],backgroundColor:['#0F7B6C','#D4A017']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:tc}}}}});
   }
   if(widgetVisible('desChart')&&document.getElementById('c3')&&!A.charts.c3){
@@ -4807,22 +4857,24 @@ async function genTrainingWord(id){
 // RAPOARTE PAGE
 // ═══════════════════════════════════════════════════════════════
 async function rRap(el){
+  const hasAI=!!CFG.ai_provider&&!!CFG.ai_api_key;
+  const aiBtn=(fn)=>hasAI?'<button class="btn bo bsm" onclick="'+fn+'" style="margin-left:6px" title="'+T('ai_report_btn')+'">&#129302; '+T('ai_report_btn')+'</button>':'<button class="btn bo bsm" disabled style="margin-left:6px;opacity:.4" title="'+T('ai_not_configured')+'">&#129302; AI</button>';
   el.innerHTML='<div class="ib inf">Rapoartele sunt generate local, format Word (.docx) profesionist — cover, tabele, KPI, semnaturi configurabile.</div>'+
   '<div class="rg">'+
     '<div class="rc"><h3>Raport Anual CPIAAM</h3><p>Raport complet: IAAM + Autocontrol + Deseuri + Biocide. Design profesionist cu cover.</p>'+
-      '<button class="btn bp" onclick="genRaportAnualWord()">Word Anual</button></div>'+
+      '<div class="bg"><button class="btn bp" onclick="genRaportAnualWord()">Word Anual</button>'+aiBtn('genRaportAnualWordAI()')+'</div></div>'+
     '<div class="rc"><h3>Rapoarte Trimestriale</h3><p>Analiza IAAM pe trimestru.</p>'+
       '<div class="bg"><button class="btn bp" onclick="genTrimestrial(1)">T1</button><button class="btn bp" onclick="genTrimestrial(2)">T2</button><button class="btn bp" onclick="genTrimestrial(3)">T3</button><button class="btn bp" onclick="genTrimestrial(4)">T4</button></div></div>'+
     '<div class="rc"><h3>PV Sedinta CPIAAM</h3><p>Proces-verbal anual complet cu ordine de zi, date, masuri, semnaturi.</p>'+
       '<button class="btn bp" onclick="genPVCPIAAM()">PV Anual</button></div>'+
     '<div class="rc"><h3>Analiza IAAM</h3><p>Analiza detaliata: sectii, germeni, origine, MDR.</p>'+
-      '<div class="bg"><button class="btn bp" onclick="genAnalizaIAAMWord()">Word</button><button class="btn bs" onclick="genRegistruIAAMExcel()">'+T('rap_registru_iaam_excel')+'</button></div></div>'+
+      '<div class="bg"><button class="btn bp" onclick="genAnalizaIAAMWord()">Word</button>'+aiBtn('genAnalizaIAAMWordAI()')+'<button class="btn bs" onclick="genRegistruIAAMExcel()" style="margin-left:6px">'+T('rap_registru_iaam_excel')+'</button></div></div>'+
     '<div class="rc"><h3>Analiza Autocontrol</h3><p>Probe pe tipuri, sectii, neconformitati detaliate.</p>'+
-      '<div class="bg"><button class="btn bp" onclick="genAnalizaAutoWord()">Word</button><button class="btn bs" onclick="genAutoExcel()">Excel</button></div></div>'+
+      '<div class="bg"><button class="btn bp" onclick="genAnalizaAutoWord()">Word</button>'+aiBtn('genAnalizaAutoWordAI()')+'<button class="btn bs" onclick="genAutoExcel()" style="margin-left:6px">Excel</button></div></div>'+
     '<div class="rc"><h3>Analiza Deseuri</h3><p>Evolutie lunara, coduri, indicator kg/om-zi.</p>'+
-      '<button class="btn bp" onclick="genAnalizaDesWord()">Word</button></div>'+
+      '<div class="bg"><button class="btn bp" onclick="genAnalizaDesWord()">Word</button>'+aiBtn('genAnalizaDesWordAI()')+'</div></div>'+
     '<div class="rc"><h3>Consum Antibiotice DDD/AWaRe</h3><p>DDD/100 zile-pat, clasificare AWaRe, comparatie ESAC-Net.</p>'+
-      '<button class="btn bp" onclick="genConsumATBWord()">Word</button></div>'+
+      '<div class="bg"><button class="btn bp" onclick="genConsumATBWord()">Word</button>'+aiBtn('genConsumATBWordAI()')+'</div></div>'+
     '<div class="rc"><h3>Anchete Epidemiologice</h3><p>Din modulul IAAM — butonul pe fiecare caz.</p>'+
       '<button class="btn bo" onclick="nav(\'iaam\')">Mergi la IAAM</button></div>'+
     '<div class="rc"><h3>Backup / Transfer</h3><p>Export/import JSON — backup sau transfer la colegi.</p>'+
@@ -5245,7 +5297,7 @@ function updateLangUI(){
 function getPageTitle(p){
   const map={dashboard:'pt_dashboard',iaam:'pt_iaam',autocontrol:'pt_autocontrol',deseuri:'pt_deseuri',
     biocide:'pt_biocide',pps:'pt_pps',consum_atb:'pt_consum_atb',antibiograma:'pt_antibiograma',documente:'pt_documente',termene:'pt_termene',calendar:'pt_calendar',
-    audituri:'pt_audituri',instruire:'pt_instruire',rapoarte:'pt_rapoarte',
+    audituri:'pt_audituri',instruire:'pt_instruire',rapoarte:'pt_rapoarte',multian:'pt_multian',
     config:'pt_config',ajutor:'pt_ajutor',manual:'pt_manual',changelog:'pt_changelog',about:'pt_despre',terms:'pt_terms'};
   return T(map[p]||'pt_dashboard')}
 function applyDark(){
@@ -5279,6 +5331,10 @@ async function buildNotifications(){
     if(diff<0)n.push({icon:'⚫',text:(isEN?'Deadline overdue: ':'Termen depasit: ')+t.name,link:'termene',urgent:true});
     else if(diff<=ms7)n.push({icon:'🔴',text:(isEN?'Deadline in '+dz+' days: ':'Termen in '+dz+' zile: ')+t.name,link:'termene',urgent:true});
     else if(diff<=ms30)n.push({icon:'🟡',text:(isEN?'Deadline in '+dz+' days: ':'Termen in '+dz+' zile: ')+t.name,link:'termene'})});
+  // SPC focar alerts
+  if(A._spcData&&A._dashChartData){const spc=A._spcData,ibm=A._dashChartData.ibm;
+    ibm.forEach((v,i)=>{if(v>spc.ucl){const msg=T('spc_focar_alert').replace('{m}',MO[i]).replace('{v}',v).replace('{u}',spc.ucl);
+      n.push({icon:'🔴',text:msg,link:'dashboard',urgent:true})}});}
   // Backup
   if(CFG.last_backup){const lb=new Date(CFG.last_backup);const diff=now-lb;
     if(diff>=(CFG.backup_interval_days||7)*86400000)n.push({icon:'💾',text:(isEN?'No backup for '+Math.ceil(diff/86400000)+' days. Go to Config → Date & Backup':'Nu ai facut backup de '+Math.ceil(diff/86400000)+' zile. Mergi la Configurare \u2192 Date \u0219i backup'),link:'config',cfgTab:'date'})}
@@ -5395,7 +5451,9 @@ async function syncReconnect(){
     }catch(e){console.warn('Handle permission failed:',e)}
   }
   // If handle restore failed, let user pick the existing file
-  try{const[fh]=await window.showOpenFilePicker({types:[{description:'JSON',accept:{'application/json':['.json']}}]});
+  const _srOpts={types:[{description:'JSON',accept:{'application/json':['.json']}}]};
+  if(stored)_srOpts.startIn=stored;
+  try{const[fh]=await window.showOpenFilePicker(_srOpts);
     _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();
     await saveFileHandle(fh);
     await _syncAfterReconnect();
@@ -5418,7 +5476,9 @@ async function _syncAfterReconnect(){
 }
 async function syncPickFile(){
   if(!window.showSaveFilePicker){alert('Browserul tau nu suporta File System Access API. Foloseste Chrome sau Edge.');return}
-  try{_fileHandle=await window.showSaveFilePicker({suggestedName:'CPIAAM_data.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]});
+  try{const _spOpts={suggestedName:'CPIAAM_data.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]};
+    const _spSh=await loadFileHandle().catch(()=>null);if(_spSh)_spOpts.startIn=_spSh;
+    _fileHandle=await window.showSaveFilePicker(_spOpts);
     CFG.sync_file_name=_fileHandle.name;await saveCfg();
     await saveFileHandle(_fileHandle);
     await syncWrite();updateSyncIndicator();
@@ -5454,7 +5514,9 @@ async function syncWrite(){
 }
 async function syncReadFile(){
   if(!window.showOpenFilePicker){alert('Browserul tau nu suporta File System Access API. Foloseste Chrome/Edge.');return}
-  try{const[fh]=await window.showOpenFilePicker({types:[{description:'JSON',accept:{'application/json':['.json']}}]});
+  try{const _rfOpts={types:[{description:'JSON',accept:{'application/json':['.json']}}]};
+    const _rfSh=await loadFileHandle().catch(()=>null);if(_rfSh)_rfOpts.startIn=_rfSh;
+    const[fh]=await window.showOpenFilePicker(_rfOpts);
     _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();await saveFileHandle(fh);
     await _importFromHandle(fh,true);
   }catch(e){if(e.name!=='AbortError')alert('Eroare import: '+e.message)}}
@@ -6827,7 +6889,7 @@ async function dddDoBulkImport(){
   closeM();render();
 }
 
-async function genConsumATBWord(){
+async function genConsumATBWord(aiText){
   const data=await ga('atb_consum');
   const y=A.year;
   const mx=buildConsumMatrix(data,y,null,null);
@@ -6926,15 +6988,260 @@ async function genConsumATBWord(){
   recs.forEach(r=>children.push(wBul(r)));
   children.push(wSp(100));
 
+  if(aiText)children.push(...wAISection(aiText));
   children.push(...wSigBlock());
-  const doc=makeDoc(children,title,(E?'Antibiotic Consumption':'Consum Antibiotice'));
-  await saveDocx(doc,'Raport_Consum_ATB_'+y+'.docx');
+  const sfx=aiText?'_AI':'';
+  const doc=makeDoc(children,title+(aiText?' + AI':''),(E?'Antibiotic Consumption':'Consum Antibiotice'));
+  await saveDocx(doc,'Raport_Consum_ATB'+sfx+'_'+y+'.docx');
+  if(aiText)logActivity('Generat Raport Consum ATB AI '+y);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AI-ENHANCED WORD REPORTS (Cerinta 2 — v7.6)
+// ═══════════════════════════════════════════════════════════════
+function buildAIPrompt(type,safeData){
+  const lang=CFG.lang==='en'?'English':'Romanian';
+  const base='Esti expert in controlul infectiilor asociate asistentei medicale (IAAM) si epidemiologie spitaliceasca. Analizeaza urmatoarele date din spitalul "'+CFG.hospital_name+'" pentru anul '+A.year+'. Raspunde in '+lang+'. Structureaza raspunsul cu paragrafe clare, fara liste prea lungi.';
+  if(type==='annual')return base+'\n\nDate complete (IAAM + Autocontrol + Deseuri + Biocide):\n'+JSON.stringify(safeData,null,0)+'\n\nGenereaza: 1) Evaluare generala a activitatii CPIAAM, 2) Puncte forte identificate, 3) Probleme si riscuri, 4) Recomandari prioritizate pentru anul urmator, 5) Concluzii. Maximum 600 cuvinte.';
+  if(type==='iaam')return base+'\n\nDate IAAM (infectii asociate asistentei medicale):\n'+JSON.stringify(safeData.iaam||[],null,0)+'\nSectii: '+JSON.stringify(safeData.sections||[])+'\n\nAnalizeaza: distributie pe sectii, spectru etiologic, rata MDR, origini, tendinte. Identifica sectiile cu risc crescut si propune masuri specifice. Maximum 400 cuvinte.';
+  if(type==='auto')return base+'\n\nDate autocontrol microbiologic:\n'+JSON.stringify(safeData.autocontrol||[],null,0)+'\n\nAnalizeaza: rata conformitate pe tipuri de probe si sectii, neconformitati frecvente, tendinte. Propune masuri corective. Maximum 400 cuvinte.';
+  if(type==='deseuri')return base+'\n\nDate deseuri medicale:\n'+JSON.stringify(safeData.deseuri||[],null,0)+'\n\nAnalizeaza: evolutie lunara, indicator kg/om-zi, categorii predominante. Propune optimizari. Maximum 300 cuvinte.';
+  if(type==='atb')return base+'\n\nDate consum antibiotice DDD/100 zile-pat:\n'+JSON.stringify(safeData,null,0)+'\n\nAnalizeaza: clasificare AWaRe (tinta OMS >=60% Access), top substante, tendinte. Propune masuri de stewardship. Maximum 400 cuvinte.';
+  return base+'\n\nDate:\n'+JSON.stringify(safeData,null,0)+'\n\nGenereaza o analiza concisa. Maximum 300 cuvinte.';
+}
+function wAISection(aiText){
+  const children=[];
+  children.push(wPB());
+  children.push(wH1('Analiza Inteligenta Artificiala'));children.push(wSp(20));
+  children.push(wAlertBox(T('ai_disclaimer')));children.push(wSp(40));
+  const paragraphs=aiText.split(/\n\n|\n/).filter(p=>p.trim());
+  paragraphs.forEach(p=>{children.push(wP(p.trim()));children.push(wSp(20))});
+  return children;
+}
+async function callAIForReport(type,data){
+  const safeData=anonymizeForAI(data);
+  const prompt=buildAIPrompt(type,safeData);
+  return await callAI(prompt);
+}
+async function genRaportAnualWordAI(){
+  if(!await checkIncompleteIaam())return;
+  showGen(T('ai_generating'));
+  try{
+    const y=A.year,data=await collectAllData(y);
+    let aiText='';try{aiText=await callAIForReport('annual',data)}catch(e){console.error('AI error:',e);showToast(T('ai_error_fallback'));aiText=''}
+    const{ia,au,de,bi}=data;const AN=runAllAnalysis(data);const conf=au.filter(p=>p.result==='conform').length;
+    const totD=de.reduce((s,r)=>s+CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0),0);
+    const consBio=bi.filter(b=>b.type==='iesire').reduce((s,b)=>s+(+b.value_lei||0),0);
+    const mdr=ia.filter(r=>r.mdr).length;
+    const children=[...wCover('Raport de Activitate + Analiza AI',CFG.cpiaam_name+' — '+y)];
+    children.push(wH1('1. Infectii Asociate Asistentei Medicale'));children.push(wSp(40));addNarrative(children,AN.iaam);children.push(wSp(60));
+    if(ia.length>0){const WK=[2256,2256,2256,2256];children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WK,rows:[wTblHead(['Total IAAM','MDR','Non-MDR','% MDR'],WK),wTblRow([String(ia.length),String(mdr),String(ia.length-mdr),fp(mdr,ia.length)],WK)]}));
+      children.push(wSp(100));children.push(wH2('1.1. Distributie pe sectii'));children.push(wSp(40));
+      const sc={};ia.forEach(r=>{const sn=rSec(r.section);sc[sn]=(sc[sn]||0)+1});const WS=[4500,2263,2263];
+      children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WS,rows:[wTblHead(['Sectie','Nr. cazuri','%'],WS),...Object.entries(sc).sort((a,b)=>b[1]-a[1]).map(([s,n],i)=>wTblRow([s,String(n),fp(n,ia.length)],WS,i%2===1)),wTblRow([{text:'TOTAL',bold:true},{text:String(ia.length),bold:true},{text:'100%',bold:true}],WS)]}));
+      children.push(wSp(100));children.push(wH2('1.2. Spectru etiologic'));children.push(wSp(40));
+      const oc={};ia.forEach(r=>{if(r.organism)oc[r.organism]=(oc[r.organism]||0)+1});
+      children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WS,rows:[wTblHead(['Agent etiologic','Cazuri','%'],WS),...Object.entries(oc).sort((a,b)=>b[1]-a[1]).map(([o,n],i)=>wTblRow([o,String(n),fp(n,ia.length)],WS,i%2===1))]}));}
+    addRecs(children,AN.iaam,'1.4. Recomandari IAAM');
+    children.push(wPB());children.push(wH1('2. Autocontrol Microbiologic'));children.push(wSp(40));addNarrative(children,AN.auto);children.push(wSp(60));
+    const abt={};au.forEach(r=>{const pn=rProbe(r.probe_type);if(!abt[pn])abt[pn]={t:0,nc:0};abt[pn].t++;if(r.result==='neconform')abt[pn].nc++});const WA=[3500,1400,1400,1400,1326];
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WA,rows:[wTblHead(['Tip proba','Total','Conforme','Neconf.','Conformitate'],WA),...Object.entries(abt).sort((a,b)=>b[1].t-a[1].t).map(([t,d],i)=>wTblRow([t,String(d.t),String(d.t-d.nc),d.nc>0?d.nc:'0',fp(d.t-d.nc,d.t)],WA,i%2===1,d.nc>0)),wTblRow([{text:'TOTAL',bold:true},{text:String(au.length),bold:true},{text:String(conf),bold:true},{text:String(au.length-conf),bold:true},{text:fp(conf,au.length),bold:true}],WA)]}));
+    addRecs(children,AN.auto,'2.2. Recomandari Autocontrol');
+    children.push(wPB());children.push(wH1('3. Deseuri Medicale'));children.push(wSp(40));addNarrative(children,AN.deseuri);children.push(wSp(60));
+    const WD=[2400];MO.forEach(()=>WD.push(480));WD.push(826);const byMD={};de.forEach(r=>{byMD[r.month]=r});
+    const desRows=[];CFG.waste_codes.forEach((w,wi)=>{const cells=[w.code];let tot=0;MO.forEach((_,mi)=>{const v=+(byMD[mi+1]?.[w.id])||0;tot+=v;cells.push(v>0?String(Math.round(v*10)/10):'')});cells.push(String(Math.round(tot*10)/10));desRows.push(wTblRow(cells,WD,wi%2===1))});
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WD,rows:[wTblHead(['Cod',...MO,'TOTAL'],WD),...desRows]}));addRecs(children,AN.deseuri,'3.1. Recomandari Deseuri');
+    children.push(wPB());children.push(wH1('4. Consumul de Biocide'));children.push(wSp(40));addNarrative(children,AN.biocide);children.push(wSp(60));
+    const si=bi.filter(b=>b.type==='stoc_initial').reduce((s,b)=>s+(+b.value_lei||0),0);
+    const intr=bi.filter(b=>b.type==='intrare').reduce((s,b)=>s+(+b.value_lei||0),0);const WB=[3500,2763,2763];
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WB,rows:[wTblHead(['Indicator','Cantitate','Valoare (lei)'],WB),
+      wTblRow(['Stoc initial 01.01.'+y,'—',fn(Math.round(si))+' lei'],WB),wTblRow(['Intrari '+y,'—',fn(Math.round(intr))+' lei'],WB,true),
+      wTblRow(['Consum (iesiri)','—',fn(Math.round(consBio))+' lei'],WB),wTblRow([{text:'Stoc final 31.12.'+y,bold:true},'—',{text:fn(Math.round(si+intr-consBio))+' lei',bold:true}],WB,true)]}));
+    addRecs(children,AN.biocide,'4.1. Recomandari Biocide');
+    if(aiText)children.push(...wAISection(aiText));
+    children.push(...wSigBlock());
+    await saveDocx(makeDoc(children,'Raport Anual + AI '+y,'Raport_CPIAAM_AI_'+y),'Raport_Anual_CPIAAM_AI_'+y+'.docx');logActivity('Generat Raport Anual AI '+y);
+  }catch(e){console.error(e);alert('Eroare: '+e.message)}finally{hideGen()}
+}
+async function genAnalizaIAAMWordAI(){
+  if(!await checkIncompleteIaam())return;
+  showGen(T('ai_generating'));
+  try{
+    const y=A.year,data=await collectAllData(y);const{ia}=data;const AN=runAllAnalysis(data);
+    let aiText='';try{aiText=await callAIForReport('iaam',data)}catch(e){console.error('AI error:',e);showToast(T('ai_error_fallback'));aiText=''}
+    const children=[...wCover('Analiza IAAM + AI','Infectii Asociate Asistentei Medicale — '+y,WC.blue)];
+    children.push(wH1('1. Situatia Generala',WC.blue));children.push(wSp(40));addNarrative(children,AN.iaam);
+    if(ia.length>0){children.push(wSp(80));children.push(wH2('2. Lista Cazurilor',WC.blue));children.push(wSp(40));
+      const W=[500,800,1200,1800,1800,1400,1526];children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W,rows:[wTblHead(['#','Luna','Pacient','Sectie','Tip infectie','Germen','MDR'],W),
+        ...ia.sort((a,b)=>a.month-b.month).map((r,i)=>wTblRow([String(i+1),MO[r.month-1]||'?',r.patient||'—',rSec(r.section),rInf(r.infection_type),r.organism||'—',r.mdr?'DA':'Nu'],W,i%2===1,r.mdr))]}));
+      const W2=[4500,2263,2263];children.push(wSp(100));children.push(wH2('3. Distributie pe Sectii',WC.blue));children.push(wSp(40));
+      const sc={};ia.forEach(r=>{const sn=rSec(r.section);sc[sn]=(sc[sn]||0)+1});
+      children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W2,rows:[wTblHead(['Sectie','Cazuri','%'],W2),...Object.entries(sc).sort((a,b)=>b[1]-a[1]).map(([s,n],i)=>wTblRow([s,String(n),fp(n,ia.length)],W2,i%2===1))]}));}
+    children.push(wSp(100));children.push(wH1('Concluzii si Recomandari',WC.blue));children.push(wSp(40));addRecs(children,AN.iaam);
+    if(aiText)children.push(...wAISection(aiText));
+    children.push(...wSigBlock());await saveDocx(makeDoc(children,'Analiza IAAM AI '+y,'Analiza_IAAM_AI_'+y),'Analiza_IAAM_AI_'+y+'.docx');logActivity('Generat Analiza IAAM AI '+y);
+  }catch(e){console.error(e);alert('Eroare: '+e.message)}finally{hideGen()}
+}
+async function genAnalizaAutoWordAI(){
+  showGen(T('ai_generating'));
+  try{
+    const y=A.year,data=await collectAllData(y);const{au}=data;const AN=runAllAnalysis(data);
+    let aiText='';try{aiText=await callAIForReport('auto',data)}catch(e){console.error('AI error:',e);showToast(T('ai_error_fallback'));aiText=''}
+    const conf=au.filter(p=>p.result==='conform').length;
+    const children=[...wCover('Analiza Autocontrol + AI',CFG.cpiaam_name+' — '+y,WC.teal)];
+    children.push(wH1('1. Situatia Generala',WC.teal));children.push(wSp(40));addNarrative(children,AN.auto);children.push(wSp(60));
+    const abt={};au.forEach(r=>{const pn=rProbe(r.probe_type);if(!abt[pn])abt[pn]={t:0,nc:0};abt[pn].t++;if(r.result==='neconform')abt[pn].nc++});
+    const WA=[3500,1400,1400,1400,1326];
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WA,rows:[wTblHead(['Tip proba','Total','Conforme','Neconf.','Conformitate'],WA),...Object.entries(abt).sort((a,b)=>b[1].t-a[1].t).map(([t,d],i)=>wTblRow([t,String(d.t),String(d.t-d.nc),d.nc>0?d.nc:'0',fp(d.t-d.nc,d.t)],WA,i%2===1,d.nc>0)),wTblRow([{text:'TOTAL',bold:true},{text:String(au.length),bold:true},{text:String(conf),bold:true},{text:String(au.length-conf),bold:true},{text:fp(conf,au.length),bold:true}],WA)]}));
+    addRecs(children,AN.auto,'Recomandari Autocontrol');
+    if(aiText)children.push(...wAISection(aiText));
+    children.push(...wSigBlock());await saveDocx(makeDoc(children,'Analiza Autocontrol AI '+y,'Analiza_Auto_AI_'+y),'Analiza_Autocontrol_AI_'+y+'.docx');logActivity('Generat Analiza Autocontrol AI '+y);
+  }catch(e){console.error(e);alert('Eroare: '+e.message)}finally{hideGen()}
+}
+async function genAnalizaDesWordAI(){
+  showGen(T('ai_generating'));
+  try{
+    const y=A.year,data=await collectAllData(y);const{de}=data;const AN=runAllAnalysis(data);
+    let aiText='';try{aiText=await callAIForReport('deseuri',data)}catch(e){console.error('AI error:',e);showToast(T('ai_error_fallback'));aiText=''}
+    const children=[...wCover('Analiza Deseuri + AI',CFG.cpiaam_name+' — '+y,WC.amber)];
+    children.push(wH1('1. Situatia Generala',WC.amber));children.push(wSp(40));addNarrative(children,AN.deseuri);children.push(wSp(60));
+    const WD=[2400];MO.forEach(()=>WD.push(480));WD.push(826);const byMD={};de.forEach(r=>{byMD[r.month]=r});
+    const desRows=[];CFG.waste_codes.forEach((w,wi)=>{const cells=[w.code];let tot=0;MO.forEach((_,mi)=>{const v=+(byMD[mi+1]?.[w.id])||0;tot+=v;cells.push(v>0?String(Math.round(v*10)/10):'')});cells.push(String(Math.round(tot*10)/10));desRows.push(wTblRow(cells,WD,wi%2===1))});
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WD,rows:[wTblHead(['Cod',...MO,'TOTAL'],WD),...desRows]}));
+    addRecs(children,AN.deseuri,'Recomandari Deseuri');
+    if(aiText)children.push(...wAISection(aiText));
+    children.push(...wSigBlock());await saveDocx(makeDoc(children,'Analiza Deseuri AI '+y,'Analiza_Des_AI_'+y),'Analiza_Deseuri_AI_'+y+'.docx');logActivity('Generat Analiza Deseuri AI '+y);
+  }catch(e){console.error(e);alert('Eroare: '+e.message)}finally{hideGen()}
+}
+async function genConsumATBWordAI(){
+  showGen(T('ai_generating'));
+  try{
+    const y=A.year;
+    const atbData=(await ga('atb_consum')).filter(r=>r.year===y);
+    const safeATB={consumuri:atbData.map(r=>({month:r.month,substance:r.substance_name||r.substance,atc:r.atc_code,aware:r.aware_class,section:rSec(r.section),quantity_g:r.quantity_g,ddd_value:r.ddd_value,route:r.route})),sections:CFG.sections.map(s=>({name:s.name,beds:s.beds})),year:y};
+    let aiText='';try{aiText=await callAIForReport('atb',safeATB)}catch(e){console.error('AI error:',e);showToast(T('ai_error_fallback'));aiText=''}
+    hideGen();
+    await genConsumATBWord(aiText);
+  }catch(e){console.error(e);alert('Eroare: '+e.message);hideGen()}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MULTI-YEAR COMPARATIVE ANALYSIS (Cerinta 3 — v7.6)
+// ═══════════════════════════════════════════════════════════════
+var _multiAnCharts={};
+async function getAvailableYears(){
+  const all=await ga('iaam');const au=await ga('autocontrol');const de=await ga('deseuri');const atb=await ga('atb_consum');
+  const years=new Set();
+  all.forEach(r=>{if(r.year)years.add(r.year)});au.forEach(r=>{if(r.year)years.add(r.year)});
+  de.forEach(r=>{if(r.year)years.add(r.year)});atb.forEach(r=>{if(r.year)years.add(r.year)});
+  return [...years].sort();
+}
+const YEAR_COLORS=['#C0392B','#2563B0','#27AE60','#D4A017','#8E44AD','#E67E22','#1ABC9C','#E74C3C'];
+async function rMultiAn(el){
+  const isEN=CFG.lang==='en';const years=await getAvailableYears();
+  Object.values(_multiAnCharts).forEach(c=>{try{c.destroy()}catch(e){}});_multiAnCharts={};
+  if(years.length<2){
+    el.innerHTML='<div class="ib wrn">'+T('multian_need_2y')+'</div>';return;
+  }
+  const allIAAM=await ga('iaam'),allAuto=await ga('autocontrol'),allDes=await ga('deseuri'),allATB=await ga('atb_consum');
+  el.innerHTML='<div class="ib inf">'+(isEN?'Comparative analysis across '+years.length+' years ('+years.join(', ')+')':'Analiza comparativa pe '+years.length+' ani ('+years.join(', ')+')')+'</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">'+
+      '<div class="pn"><div class="ph"><h3>'+T('multian_iaam')+'</h3></div><div class="pb" style="height:280px"><canvas id="ma-c1"></canvas></div></div>'+
+      '<div class="pn"><div class="ph"><h3>'+T('multian_auto')+'</h3></div><div class="pb" style="height:280px"><canvas id="ma-c2"></canvas></div></div>'+
+      '<div class="pn"><div class="ph"><h3>'+T('multian_deseuri')+'</h3></div><div class="pb" style="height:280px"><canvas id="ma-c3"></canvas></div></div>'+
+      '<div class="pn"><div class="ph"><h3>'+T('multian_ddd')+'</h3></div><div class="pb" style="height:280px"><canvas id="ma-c4"></canvas></div></div>'+
+    '</div>'+
+    '<div class="pn"><div class="ph"><h3>'+(isEN?'Comparative Summary':'Sumar Comparativ')+'</h3></div><div class="pb" id="ma-table"></div></div>'+
+    '<div style="text-align:right;margin-top:16px"><button class="btn bp" onclick="exportMultiAnWord()">'+T('multian_export_word')+'</button></div>';
+  const tc=A.darkMode?'#94A3B8':'#64748B';
+  // Chart 1: IAAM monthly per year
+  const ds1=years.map((y,yi)=>{const yd=allIAAM.filter(r=>r.year===y);const ibm=Array(12).fill(0);yd.forEach(r=>{if(r.month>=1&&r.month<=12)ibm[r.month-1]++});
+    return{label:String(y),data:ibm,borderColor:YEAR_COLORS[yi%YEAR_COLORS.length],backgroundColor:YEAR_COLORS[yi%YEAR_COLORS.length]+'33',fill:false,tension:.3}});
+  _multiAnCharts.c1=new Chart(document.getElementById('ma-c1'),{type:'line',data:{labels:MO,datasets:ds1},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{stepSize:1,color:tc}},x:{ticks:{color:tc}}},plugins:{legend:{labels:{color:tc}}}}});
+  // Chart 2: Autocontrol quarterly conformity per year
+  const ds2=years.map((y,yi)=>{const yd=allAuto.filter(r=>r.year===y);const qd=[1,2,3,4].map(q=>{const qr=yd.filter(r=>r.quarter===q);return qr.length>0?Math.round(qr.filter(r=>r.result==='conform').length/qr.length*100):null});
+    return{label:String(y),data:qd,borderColor:YEAR_COLORS[yi%YEAR_COLORS.length],backgroundColor:YEAR_COLORS[yi%YEAR_COLORS.length]+'33',fill:false,tension:.3,spanGaps:true}});
+  _multiAnCharts.c2=new Chart(document.getElementById('ma-c2'),{type:'line',data:{labels:['T1','T2','T3','T4'],datasets:ds2},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',color:tc}},x:{ticks:{color:tc}}},plugins:{legend:{labels:{color:tc}}}}});
+  // Chart 3: Deseuri monthly total per year
+  const ds3=years.map((y,yi)=>{const yd=allDes.filter(r=>r.year===y);const dbm=Array(12).fill(0);yd.forEach(r=>{if(r.month>=1&&r.month<=12){let tot=0;CFG.waste_codes.forEach(w=>{tot+=(+r[w.id]||0)});dbm[r.month-1]=Math.round(tot*10)/10}});
+    return{label:String(y),data:dbm,borderColor:YEAR_COLORS[yi%YEAR_COLORS.length],backgroundColor:YEAR_COLORS[yi%YEAR_COLORS.length]+'33',fill:false,tension:.3}});
+  _multiAnCharts.c3=new Chart(document.getElementById('ma-c3'),{type:'line',data:{labels:MO,datasets:ds3},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{color:tc}},x:{ticks:{color:tc}}},plugins:{legend:{labels:{color:tc}}}}});
+  // Chart 4: DDD/100 bed-days monthly per year
+  const ds4=years.map((y,yi)=>{const yd=allATB.filter(r=>r.year===y);const dddm=Array(12).fill(0);
+    yd.forEach(r=>{if(r.month>=1&&r.month<=12)dddm[r.month-1]+=(+r.ddd_value||0)});
+    // Normalize per 100 bed-days
+    const wb=getTotalWeightedBeds(y);const bedDaysPerMonth=wb*365/12;
+    const normalized=dddm.map(v=>bedDaysPerMonth>0?Math.round(v/bedDaysPerMonth*100*100)/100:0);
+    return{label:String(y),data:normalized,borderColor:YEAR_COLORS[yi%YEAR_COLORS.length],backgroundColor:YEAR_COLORS[yi%YEAR_COLORS.length]+'33',fill:false,tension:.3}});
+  _multiAnCharts.c4=new Chart(document.getElementById('ma-c4'),{type:'line',data:{labels:MO,datasets:ds4},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{color:tc}},x:{ticks:{color:tc}}},plugins:{legend:{labels:{color:tc}}}}});
+  // Comparative table
+  const tbl=document.getElementById('ma-table');
+  let th='<table class="dt"><thead><tr><th>'+(isEN?'Indicator':'Indicator')+'</th>';years.forEach(y=>{th+='<th>'+y+'</th>'});th+='<th>'+(isEN?'Trend':'Tendinta')+'</th></tr></thead><tbody>';
+  // Row: Total IAAM
+  th+='<tr><td><strong>'+(isEN?'Total HAI cases':'Total cazuri IAAM')+'</strong></td>';
+  const iaamTotals=years.map(y=>allIAAM.filter(r=>r.year===y).length);
+  iaamTotals.forEach(v=>{th+='<td>'+v+'</td>'});th+='<td>'+trendArrow(iaamTotals)+'</td></tr>';
+  // Row: MDR %
+  th+='<tr><td><strong>% MDR</strong></td>';
+  const mdrPcts=years.map(y=>{const yd=allIAAM.filter(r=>r.year===y);return yd.length>0?Math.round(yd.filter(r=>r.mdr).length/yd.length*100):0});
+  mdrPcts.forEach(v=>{th+='<td>'+v+'%</td>'});th+='<td>'+trendArrow(mdrPcts)+'</td></tr>';
+  // Row: Autocontrol conformity
+  th+='<tr><td><strong>'+(isEN?'QC Compliance':'Conformitate autocontrol')+'</strong></td>';
+  const autoPcts=years.map(y=>{const yd=allAuto.filter(r=>r.year===y);return yd.length>0?Math.round(yd.filter(r=>r.result==='conform').length/yd.length*100):0});
+  autoPcts.forEach(v=>{th+='<td>'+v+'%</td>'});th+='<td>'+trendArrow(autoPcts,true)+'</td></tr>';
+  // Row: Total waste
+  th+='<tr><td><strong>'+(isEN?'Total waste (kg)':'Total deseuri (kg)')+'</strong></td>';
+  const desTotals=years.map(y=>{const yd=allDes.filter(r=>r.year===y);return Math.round(yd.reduce((s,r)=>s+CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0),0)*10)/10});
+  desTotals.forEach(v=>{th+='<td>'+fn(v)+'</td>'});th+='<td>'+trendArrow(desTotals)+'</td></tr>';
+  // Row: Total probes
+  th+='<tr><td><strong>'+(isEN?'Total QC samples':'Total probe autocontrol')+'</strong></td>';
+  const probeTotals=years.map(y=>allAuto.filter(r=>r.year===y).length);
+  probeTotals.forEach(v=>{th+='<td>'+v+'</td>'});th+='<td>'+trendArrow(probeTotals,true)+'</td></tr>';
+  th+='</tbody></table>';tbl.innerHTML=th;
+}
+function trendArrow(vals,upIsGood){
+  if(vals.length<2)return'—';const last=vals[vals.length-1],prev=vals[vals.length-2];
+  if(last===prev)return'<span style="color:var(--txtL)">→ '+T('multian_trend_stable')+'</span>';
+  const up=last>prev;const good=upIsGood?up:!up;
+  return'<span style="color:'+(good?'#27AE60':'#C0392B')+';font-weight:600">'+(up?'↑':'↓')+' '+(up?T('multian_trend_up'):T('multian_trend_down'))+'</span>';
+}
+async function exportMultiAnWord(){
+  showGen('Se genereaza raportul multi-an...');
+  try{
+    const isEN=CFG.lang==='en';const years=await getAvailableYears();
+    const allIAAM=await ga('iaam'),allAuto=await ga('autocontrol'),allDes=await ga('deseuri');
+    const children=[...wCover(isEN?'Multi-Year Comparative Analysis':'Analiza Comparativa Multi-An',CFG.cpiaam_name+' — '+years.join(', '))];
+    children.push(wH1(isEN?'1. Summary':'1. Sumar'));children.push(wSp(40));
+    // Summary table
+    const cols=[3000,...years.map(()=>Math.floor(6026/years.length))];
+    const hdr=[isEN?'Indicator':'Indicator',...years.map(String)];
+    const iaamRow=[isEN?'Total HAI':'Total IAAM',...years.map(y=>String(allIAAM.filter(r=>r.year===y).length))];
+    const mdrRow=['% MDR',...years.map(y=>{const yd=allIAAM.filter(r=>r.year===y);return yd.length>0?Math.round(yd.filter(r=>r.mdr).length/yd.length*100)+'%':'0%'})];
+    const autoRow=[isEN?'QC Compliance':'Conformitate AC',...years.map(y=>{const yd=allAuto.filter(r=>r.year===y);return yd.length>0?Math.round(yd.filter(r=>r.result==='conform').length/yd.length*100)+'%':'0%'})];
+    const desRow=[isEN?'Total waste (kg)':'Total deseuri (kg)',...years.map(y=>{const yd=allDes.filter(r=>r.year===y);return String(Math.round(yd.reduce((s,r)=>s+CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0),0)*10)/10)})];
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},rows:[wTblHead(hdr,cols),wTblRow(iaamRow,cols),wTblRow(mdrRow,cols,true),wTblRow(autoRow,cols),wTblRow(desRow,cols,true)]}));
+    children.push(wSp(80));
+    // IAAM per year per month
+    children.push(wH1(isEN?'2. HAI Cases by Month':'2. Cazuri IAAM pe Luna'));children.push(wSp(40));
+    const mcols=[1200,...years.map(()=>Math.floor(7826/years.length))];
+    const mhdr=[isEN?'Month':'Luna',...years.map(String)];
+    const mrows=[wTblHead(mhdr,mcols)];
+    MO.forEach((m,mi)=>{const cells=[m,...years.map(y=>String(allIAAM.filter(r=>r.year===y&&r.month===mi+1).length))];mrows.push(wTblRow(cells,mcols,mi%2===1))});
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},rows:mrows}));
+    children.push(wSp(40));
+    children.push(wP(isEN?'Note: Charts are available in the interactive application.':'Nota: Graficele sunt disponibile in aplicatia interactiva.'));
+    children.push(...wSigBlock());
+    await saveDocx(makeDoc(children,(isEN?'Multi-Year Analysis':'Analiza Multi-An'),'MultiAn'),'Analiza_MultiAn_'+years.join('-')+'.docx');
+    logActivity('Generat Analiza Multi-An');
+  }catch(e){console.error(e);alert('Eroare: '+e.message)}finally{hideGen()}
 }
 
 // ═══════════════════════════════════════════════════════════════
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'7.7',date:'2026-03-16',notes:'Fix: Dialogurile de selectare fisier (Reconecteaza, Conecteaza, Backup) se deschid acum in folderul corect — startIn cu handle-ul salvat pe toate apelurile showOpenFilePicker si showSaveFilePicker'},
+  {version:'7.6',date:'2026-03-16',notes:'Dashboard: Grafice SPC pe IAAM — linie medie, UCL, LCL (chartjs-plugin-annotation), puncte rosii daca depasesc UCL\nNotificari focar: alerta automata daca o luna depaseste UCL (limita superioara de control)\nRapoarte AI: buton "Word + Analiza AI" pe fiecare raport (Anual, IAAM, Autocontrol, Deseuri, Consum ATB)\nAI genereaza sectiune narativa adaugata in Word cu disclaimer — date anonimizate, fara informatii personale\nAnaliza Comparativa Multi-An: pagina noua cu 4 grafice overlay (IAAM, Autocontrol, Deseuri, DDD)\nTabel comparativ multi-an cu trend arrows (crestere/scadere/stabil)\nExport Word multi-an cu tabel sumar si evolutie lunara\nSidebar: link nou "Analiza Multi-An" in sectiunea Rapoarte'},
   {version:'7.5',date:'2026-03-16',notes:'Backup: showSaveFilePicker (retine ultimul folder), ramane pe pagina curenta dupa salvare\nFix: indicatorul de sincronizare se actualizeaza corect la schimbarea locatiei din Configurare\nSetup Wizard: 2 pasi noi — alegere locatie salvare date (browser/local/cloud) + folder atasamente\nFix: autocontrol — sectia se salva gresit (modal-scoped form queries)\nPlanificare autocontrol: buton individual "Salveaza" per proba nerecoltat cu feedback vizual\nDashboard: Calendar & Evenimente mutat deasupra KPI-urilor\nActivitate Recenta mutata sub grafice'},
   {version:'7.4',date:'2026-03-15',notes:'Modal fix: footer cu butoane salveaza vizibil permanent pe ecrane mici (1366x768)\nATB Consum: "Ruta" redenumit "Modalitate de administrare"\nAncheta epidemiologica: Nr. inregistrare in header (NR.X DIN LUNA AN)\nCamp domiciliu adaugat in Date pacient\nInternari anterioare structurate: spital, sectie, perioada — afisare ca tabel in Word\nBuletine analize multiple cu nr. si data validare\nSectiunea II restructurata: dispozitive medicale invazive, interventii chirurgicale\nEliminat sectiunea Concluzii din ancheta Word (ramane in wizard)'},
   {version:'7.3',date:'2026-03-15',notes:'Coduri IAAM conform Decizie UE 945/2018 — 63 coduri in 15 grupe (BJ, BSI, CNS, CRI, CVS, EENT, GI, LRI, NEO, PN, REPR, SSI, SST, SYS, UTI)\nRegistru Electronic IAAM (Excel) — conform Ordinul 1101/2016 cu 16 coloane\nDate pacient: camp unic initiale (eliminat duplicat), mediu ca dropdown\nComorbiditati: dropdown/chips cu checkbox-uri pinned si configurator (ca factorii de risc)\nContacti structurati: initiale, nr. FO, interval contact, salon/sectie — cu tabel in ancheta Word\nLegacy code map: codurile vechi sunt recunoscute si afisate corect'},
@@ -7627,7 +7934,9 @@ async function expAll(){const d={};for(const s of ST){if(s==='config')continue;d
   const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
   // Use File System Access API (remembers last folder) with fallback
   if(window.showSaveFilePicker){
-    try{const fh=await window.showSaveFilePicker({suggestedName:fname,types:[{description:'JSON',accept:{'application/json':['.json']}}]});
+    try{const _bkOpts={suggestedName:fname,types:[{description:'JSON',accept:{'application/json':['.json']}}]};
+      const _bkSh=await loadFileHandle().catch(()=>null);if(_bkSh)_bkOpts.startIn=_bkSh;
+      const fh=await window.showSaveFilePicker(_bkOpts);
       _lastBackupName=fh.name;const wr=await fh.createWritable();await wr.write(blob);await wr.close();
     }catch(e){if(e.name==='AbortError')return;saveAs(blob,fname)}
   }else{saveAs(blob,fname)}

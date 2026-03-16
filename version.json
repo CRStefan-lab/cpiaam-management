@@ -1,13 +1,7 @@
 {
-  "version": "7.5",
+  "version": "7.7",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Backup: showSaveFilePicker (retine ultimul folder), ramane pe pagina curenta",
-    "Fix: indicator sincronizare se actualizeaza la schimbarea locatiei din Configurare",
-    "Setup Wizard: 2 pasi noi — locatie salvare date + folder atasamente",
-    "Fix: autocontrol — sectia se salva gresit (modal-scoped queries)",
-    "Planificare autocontrol: buton Salveaza individual per proba cu feedback vizual",
-    "Dashboard: Calendar & Evenimente mutat deasupra KPI-urilor",
-    "Activitate Recenta mutata sub grafice"
+    "Fix: Dialogurile de selectare fisier se deschid in folderul corect (startIn pe toate picker-urile)"
   ]
 }

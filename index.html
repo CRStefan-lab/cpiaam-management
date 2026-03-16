@@ -929,7 +929,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='7.4';
+const APP_VERSION='7.5';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1712,7 +1712,7 @@ function getTotalWeightedBeds(year){return CFG.sections.reduce((s,sec)=>s+getWei
 // ═══════════════════════════════════════════════════════════════
 // SETUP WIZARD (cerinta 10)
 // ═══════════════════════════════════════════════════════════════
-var WZ={hospital_name:'',cpiaam_name:'C.P.I.A.A.M.',sections:[],personnel:[],author_name:''};
+var WZ={hospital_name:'',cpiaam_name:'C.P.I.A.A.M.',sections:[],personnel:[],author_name:'',file_location:'browser',_filePicked:false,_filePickedName:'',_attDirPicked:false,_attDirName:''};
 
 function showWizard(){
   document.getElementById('wiz-ov').style.display='flex';
@@ -1764,7 +1764,7 @@ function wizSkipImport(){
 
 function renderWizStep(step){
   const c=document.getElementById('wiz-card');
-  const steps=[1,2,3,4,5];
+  const steps=[1,2,3,4,5,6,7];
   const bar='<div class="wiz-steps">'+steps.map(s=>'<div class="wiz-step'+(s<step?' done':'')+(s===step?' active':'')+'"></div>').join('')+'</div>';
 
   if(step===1){
@@ -1820,9 +1820,43 @@ function renderWizStep(step){
       '<h2>Cum te numesti tu?</h2><p class="wiz-sub">Numele tau va aparea in creditul aplicatiei si in footer-ul documentelor generate.</p>'+
       '<div class="fg"><label>Numele complet</label><input id="wz-author" value="'+WZ.author_name+'" placeholder="ex: Dr. Popescu Ion"></div>'+
       '<div class="wiz-note">'+GDPR_NOTE+'</div>'+
-      '<div class="wiz-nav"><button class="btn bo" onclick="renderWizStep(3)">&#8592; Inapoi</button><button class="btn bp" onclick="wizNext(4)">Finalizeaza &#8594;</button></div>';
+      '<div class="wiz-nav"><button class="btn bo" onclick="renderWizStep(3)">&#8592; Inapoi</button><button class="btn bp" onclick="wizNext(4)">Continua &#8594;</button></div>';
   }
   else if(step===5){
+    // Data file location
+    const curLoc=WZ.file_location||'browser';
+    c.innerHTML=bar+
+      '<h2>Unde vrei sa salvezi datele aplicatiei?</h2>'+
+      '<p class="wiz-sub">Alegerea afecteaza modul in care datele sunt stocate si sincronizate.</p>'+
+      '<div style="display:flex;flex-direction:column;gap:10px;margin:16px 0">'+
+        '<label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:12px;border-radius:8px;border:2px solid '+(curLoc==='browser'?'var(--navy)':'var(--brd)')+';background:'+(curLoc==='browser'?'#EEF2FF':'var(--bg)')+'">'+
+          '<input type="radio" name="wz-floc" value="browser"'+(curLoc==='browser'?' checked':'')+' onchange="WZ.file_location=this.value;renderWizStep(5)" style="accent-color:var(--navy);margin-top:3px">'+
+          '<div><strong>Doar in browser</strong> <span style="color:var(--red);font-size:11px">(nu recomand)</span><br><span style="font-size:12px;color:var(--txtL)">Datele se stocheaza doar in IndexedDB. Se pierd la stergerea datelor de navigare.</span></div></label>'+
+        '<label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:12px;border-radius:8px;border:2px solid '+(curLoc==='local'?'var(--navy)':'var(--brd)')+';background:'+(curLoc==='local'?'#EEF2FF':'var(--bg)')+'">'+
+          '<input type="radio" name="wz-floc" value="local"'+(curLoc==='local'?' checked':'')+' onchange="WZ.file_location=this.value;renderWizStep(5)" style="accent-color:var(--navy);margin-top:3px">'+
+          '<div><strong>Fisier local pe acest calculator</strong><br><span style="font-size:12px;color:var(--txtL)">Creaza un fisier JSON pe disc. Datele sunt salvate automat la fiecare modificare.</span></div></label>'+
+        '<label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:12px;border-radius:8px;border:2px solid '+(curLoc==='cloud'?'var(--navy)':'var(--brd)')+';background:'+(curLoc==='cloud'?'#EEF2FF':'var(--bg)')+'">'+
+          '<input type="radio" name="wz-floc" value="cloud"'+(curLoc==='cloud'?' checked':'')+' onchange="WZ.file_location=this.value;renderWizStep(5)" style="accent-color:var(--navy);margin-top:3px">'+
+          '<div><strong>Fisier in OneDrive / Google Drive</strong> <span style="color:var(--green);font-size:11px">(recomandat)</span><br><span style="font-size:12px;color:var(--txtL)">Alege un folder din cloud. Datele sunt sincronizate automat intre calculatoare.</span></div></label>'+
+      '</div>'+
+      (WZ._filePicked?'<div class="ib suc" style="font-size:12px">&#128994; Fisier creat: <strong>'+esc(WZ._filePickedName||'')+'</strong></div>':'')+
+      (!window.showSaveFilePicker?'<div class="ib wrn" style="font-size:12px">&#9888; Browserul tau nu suporta salvarea pe disc. Foloseste Chrome sau Edge pentru aceasta functionalitate.</div>':'')+
+      '<div class="wiz-nav"><button class="btn bo" onclick="renderWizStep(4)">&#8592; Inapoi</button><button class="btn bp" onclick="wizNext(5)">Continua &#8594;</button></div>';
+  }
+  else if(step===6){
+    // Attachments folder
+    c.innerHTML=bar+
+      '<h2>Alege un folder pentru atasamente (optional)</h2>'+
+      '<p class="wiz-sub">Aici se vor salva documentele atasate la biocide (avize, fise tehnice, SDS), documente scanate, etc. Recomandam un subfolder in acelasi loc cu fisierul de date.</p>'+
+      (WZ._attDirPicked?'<div class="ib suc" style="margin:14px 0;font-size:12px">&#128193; Folder selectat: <strong>'+esc(WZ._attDirName||'')+'</strong></div>':
+       '<div class="ib inf" style="margin:14px 0;font-size:12px">Niciun folder selectat inca. Poti alege acum sau mai tarziu din Configurare.</div>')+
+      '<div style="display:flex;gap:10px;margin:14px 0">'+
+        '<button class="btn bp" onclick="wizPickAttDir()">&#128193; Alege folder</button>'+
+        '<button class="btn bo" onclick="renderWizStep(7)">Sari peste</button>'+
+      '</div>'+
+      '<div class="wiz-nav"><button class="btn bo" onclick="renderWizStep(5)">&#8592; Inapoi</button><button class="btn bp" onclick="wizNext(6)">Continua &#8594;</button></div>';
+  }
+  else if(step===7){
     c.innerHTML=bar+
       '<div style="text-align:center;padding:20px 0">'+
       '<div style="font-size:48px;margin-bottom:16px">&#9989;</div>'+
@@ -1854,7 +1888,33 @@ function wizNext(step){
     WZ.author_name=document.getElementById('wz-author').value.trim();
     if(!WZ.author_name){alert('Completeaza numele tau.');return}
     renderWizStep(5);
+  } else if(step===5){
+    // File location step — create file if needed
+    if(WZ.file_location==='local'||WZ.file_location==='cloud'){
+      if(!WZ._filePicked&&window.showSaveFilePicker){
+        wizPickDataFile().then(ok=>{if(ok)renderWizStep(6);});return;
+      }
+    }
+    renderWizStep(6);
+  } else if(step===6){
+    renderWizStep(7);
   }
+}
+async function wizPickDataFile(){
+  if(!window.showSaveFilePicker){alert('Browserul nu suporta File System Access API. Foloseste Chrome/Edge.');return false}
+  try{
+    _fileHandle=await window.showSaveFilePicker({suggestedName:'CPIAAM_data.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]});
+    WZ._filePicked=true;WZ._filePickedName=_fileHandle.name;
+    return true;
+  }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message);return false}
+}
+async function wizPickAttDir(){
+  if(!window.showDirectoryPicker){alert('Browserul nu suporta Directory Picker. Foloseste Chrome/Edge.');return}
+  try{
+    const dh=await window.showDirectoryPicker({mode:'readwrite'});
+    _attDirHandle=dh;WZ._attDirPicked=true;WZ._attDirName=dh.name;
+    renderWizStep(6);
+  }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}
 }
 
 async function finishWizard(){
@@ -1862,8 +1922,12 @@ async function finishWizard(){
   CFG.sections=WZ.sections.map(s=>({...s,id:s.id||genId('sec'),bed_periods:s.bed_periods||[]}));
   CFG.personnel=WZ.personnel.map(p=>({...p,id:p.id||genId('pers')}));
   CFG.author_name=WZ.author_name;
+  CFG.file_location=WZ.file_location||'browser';
   CFG.setup_complete=true;
   ensureConfigIds();
+  // Save file handle + att dir if picked during wizard
+  if(_fileHandle){CFG.sync_file_name=_fileHandle.name;await saveFileHandle(_fileHandle);await syncWrite()}
+  if(_attDirHandle&&WZ._attDirPicked){CFG.att_dir_name=_attDirHandle.name;await saveAttDirHandle(_attDirHandle)}
   await saveCfg();hideWizard();
   localStorage.setItem('cpiaam_had_data','true');
   document.getElementById('app-sb').style.display='flex';
@@ -2053,26 +2117,28 @@ async function rDash(el){
   dls.forEach(d=>{if(!d.due_date||d.status==='trimis')return;if(new Date(d.due_date)<new Date())urgentItems.push({icon:'⚫',text:(isEN?'Overdue: ':'Depasit: ')+d.name,link:'termene'})});
 
   let h='<div class="print-header"></div>';
-  // 1. CONFIG BAR — line under toolbar with arrow
+  // CONFIG BAR
   const _dw=CFG.dash_widgets||{};
   const _dwItems=[['kpi','KPI-uri principale'],['docsKpi','Documente & Raportari'],['audKpi','Audituri & Instruiri'],['atpKpi','ATP / UV'],['miniCal','Calendar & Evenimente'],['activity','Activitate Recenta'],['charts','Grafice IAAM/Auto'],['desChart','Grafice Deseuri/Sectii']];
   h+='<div class="dash-cfg-bar"><button id="dash-cfg-btn" onclick="toggleDashCfg()" title="'+(isEN?'Configure sections':'Configureaza sectiuni')+'">'+(isEN?'Customize dashboard':'Personalizeaza dashboard')+' &#9660;</button></div>';
   h+='<div id="dash-cfg-panel" class="dash-cfg-panel">';
   _dwItems.forEach(([k,l])=>{h+='<label><input type="checkbox" '+(_dw[k]!==false?'checked':'')+' onchange="toggleWidget(\''+k+'\')"> '+l+'</label>'});
   h+='</div>';
-  // 2. URGENT BANNER (if any expired/overdue) — always visible
-  if(urgentItems.length>0){
-    h+='<div class="dash-urgent"><div class="dash-urgent-icon">&#9888;&#65039;</div><div class="dash-urgent-list">'+
-      '<strong>'+T('cal_urgent_title')+'</strong><br>'+
-      urgentItems.map(u=>u.icon+' '+u.text+' <a onclick="nav(\''+u.link+'\');return false">'+(isEN?'View':'Deschide')+'</a>').join('<br>')+
-    '</div></div>'}
-  // 3. QUICK ACTIONS
+  // 1. QUICK ACTIONS
   h+='<div class="dash-quick">'+
     '<button onclick="nav(\'iaam\');setTimeout(()=>editIAAM(),100)"><span class="qicon">&#128737;</span> '+(isEN?'IAAM Case':'Caz IAAM')+'</button>'+
     '<button onclick="nav(\'autocontrol\');setTimeout(()=>editAuto(),100)"><span class="qicon">&#128300;</span> '+(isEN?'Sample':'Proba Autocontrol')+'</button>'+
     '<button onclick="nav(\'audituri\');setTimeout(()=>editAudit(),100)"><span class="qicon">&#128203;</span> '+(isEN?'New Audit':'Audit Nou')+'</button>'+
     '<button onclick="nav(\'rapoarte\')"><span class="qicon">&#128196;</span> '+(isEN?'Generate Report':'Genereaza Raport')+'</button>'+
   '</div>';
+  // 2. CALENDAR & EVENIMENTE — moved up
+  h+='<div class="dash-section'+(_dw.miniCal===false?' hidden':'')+'" data-dw="miniCal"><div id="dash-mini-cal"></div></div>';
+  // 3. URGENT BANNER (if any expired/overdue)
+  if(urgentItems.length>0){
+    h+='<div class="dash-urgent"><div class="dash-urgent-icon">&#9888;&#65039;</div><div class="dash-urgent-list">'+
+      '<strong>'+T('cal_urgent_title')+'</strong><br>'+
+      urgentItems.map(u=>u.icon+' '+u.text+' <a onclick="nav(\''+u.link+'\');return false">'+(isEN?'View':'Deschide')+'</a>').join('<br>')+
+    '</div></div>'}
   // 4. KPI cards
   h+='<div class="dash-section'+(_dw.kpi===false?' hidden':'')+'" data-dw="kpi"><div class="kg">'+
     '<div class="kc rd"><div class="kl"><span>'+T('kpi_iaam')+'</span>'+sparkSVG(ibm,50,16,'#C0392B')+'</div><div class="kv">'+ia.length+'</div><div class="ks">'+y+'</div>'+kpiTrend(ia.length,pIaC,true,pIa.length>0)+'</div>'+
@@ -2081,13 +2147,13 @@ async function rDash(el){
     '<div class="kc bl"><div class="kl"><span>'+T('kpi_biocide')+'</span>'+sparkSVG(bbm,50,16,'#2563B0')+'</div><div class="kv">'+fn(Math.round(consBio))+' lei</div><div class="ks">'+y+'</div>'+kpiTrend(Math.round(consBio),Math.round(pConsBio),true,pBi.length>0)+'</div>'+
     '<div class="kc gn"><div class="kl"><span>'+T('kpi_paturi')+'</span></div><div class="kv">'+wb.toFixed(0)+'</div><div class="ks">'+T('kpi_capacitate')+' '+y+'</div></div>'+
   '</div></div>';
-  // Docs & deadlines KPI
+  // 5. Docs & deadlines KPI
   h+='<div class="dash-section'+(_dw.docsKpi===false?' hidden':'')+'" data-dw="docsKpi"><div class="kg">'+
     '<div class="kc gn"><div class="kl">'+T('kpi_docs_val')+'</div><div class="kv">'+docsValid+'</div><div class="ks">'+(docsExpSoon>0?docsExpSoon+(isEN?' expiring soon':' expira curand'):T('kpi_ok'))+'</div></div>'+
     (docsExpired>0?'<div class="kc rd"><div class="kl">'+(isEN?'EXPIRED DOCUMENTS':'DOCUMENTE EXPIRATE')+'</div><div class="kv">'+docsExpired+'</div></div>':'')+
     '<div class="kc am"><div class="kl">'+T('kpi_rap_30z')+'</div><div class="kv">'+dlsUp+'</div><div class="ks"><a href="#" onclick="nav(\'termene\');return false" style="color:var(--amber);font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
   '</div></div>';
-  // Audituri + Instruire KPI
+  // 6. Audituri + Instruire KPI
   const audits=(await ga('audits')).filter(r=>r.year===y);
   const trains=(await ga('trainings')).filter(r=>r.year===y);
   const avgCompl=audits.length>0?Math.round(audits.reduce((s,r)=>s+(r.compliance_pct||0),0)/audits.length*10)/10:0;
@@ -2108,9 +2174,17 @@ async function rDash(el){
       (uvData.length>0?'<div class="kc bl"><div class="kl"><span>UV / Fluorescenta</span></div><div class="kv">'+uvData.length+'</div><div class="ks">'+(uvNC>0?'<span style="color:var(--red)">'+uvNC+' neconforme</span>':'Toate conforme')+'</div></div>':'')+
     '</div></div>';
   }
-  // Mini-calendar — visible by default
-  h+='<div class="dash-section'+(_dw.miniCal===false?' hidden':'')+'" data-dw="miniCal"><div id="dash-mini-cal"></div></div>';
-  // Activity feed
+  // 7. Charts IAAM/Auto
+  h+='<div class="dash-section'+(_dw.charts===false?' hidden':'')+'" data-dw="charts"><div class="cr">'+
+    '<div class="cb"><h4>'+T('ch_iaam_lunar')+'</h4><div class="cc"><canvas id="c1"></canvas></div></div>'+
+    '<div class="cb"><h4>'+T('ch_auto_conf')+'</h4><div class="cc"><canvas id="c2"></canvas></div></div>'+
+  '</div></div>';
+  // Charts Deseuri/Sectii
+  h+='<div class="dash-section'+(_dw.desChart===false?' hidden':'')+'" data-dw="desChart"><div class="cr">'+
+    '<div class="cb"><h4>'+T('ch_deseuri_lunar')+'</h4><div class="cc"><canvas id="c3"></canvas></div></div>'+
+    '<div class="cb"><h4>'+T('ch_iaam_sectii')+'</h4><div class="cc"><canvas id="c4"></canvas></div></div>'+
+  '</div></div>';
+  // 8. Activity feed
   const actLog=getActivityLog();
   h+='<div class="dash-section'+(_dw.activity===false?' hidden':'')+'" data-dw="activity">';
   if(actLog.length>0){
@@ -2122,16 +2196,6 @@ async function rDash(el){
     h+='</div>';
   }
   h+='</div>';
-  // Charts IAAM/Auto
-  h+='<div class="dash-section'+(_dw.charts===false?' hidden':'')+'" data-dw="charts"><div class="cr">'+
-    '<div class="cb"><h4>'+T('ch_iaam_lunar')+'</h4><div class="cc"><canvas id="c1"></canvas></div></div>'+
-    '<div class="cb"><h4>'+T('ch_auto_conf')+'</h4><div class="cc"><canvas id="c2"></canvas></div></div>'+
-  '</div></div>';
-  // Charts Deseuri/Sectii
-  h+='<div class="dash-section'+(_dw.desChart===false?' hidden':'')+'" data-dw="desChart"><div class="cr">'+
-    '<div class="cb"><h4>'+T('ch_deseuri_lunar')+'</h4><div class="cc"><canvas id="c3"></canvas></div></div>'+
-    '<div class="cb"><h4>'+T('ch_iaam_sectii')+'</h4><div class="cc"><canvas id="c4"></canvas></div></div>'+
-  '</div></div>';
   el.innerHTML=h;
   // Store chart data for lazy init
   A._dashChartData={ibm,conf,totP,dbm,ia,MO};
@@ -3164,13 +3228,14 @@ function renderAutoTab2(data,allData,matrix,probeTypes,sections,isEN,qLabel){
 }
 
 function renderPlanItem(idx,ptName,secName,tagClass,subText,isEN){
-  let h='<div class="ac-plan-item"><label><input type="checkbox" id="acp-'+idx+'" onchange="togglePlanDates('+idx+')"> <strong>'+ptName+' — '+secName+'</strong> <span class="ac-plan-tag '+tagClass+'">'+tagClass+'</span></label></div>';
+  let h='<div class="ac-plan-item"><label><input type="checkbox" id="acp-'+idx+'" onchange="togglePlanDates('+idx+')"> <strong>'+ptName+' — '+secName+'</strong> <span class="ac-plan-tag '+tagClass+'">'+tagClass+'</span></label>';
+  h+='<span id="acpok-'+idx+'" style="display:none;color:var(--green);font-size:12px;margin-left:8px">&#10003; Planificat</span></div>';
   h+='<div class="ac-plan-sub">'+subText+'</div>';
   h+='<div class="ac-plan-dates" id="acpd-'+idx+'" style="display:none">';
-  h+='<div><label>'+(isEN?'Start date':'Data start')+'</label><br><input type="date" id="acps-'+idx+'"></div>';
+  h+='<div><label>'+(isEN?'Start date':'Data planificata')+'</label><br><input type="date" id="acps-'+idx+'"></div>';
   h+='<div><label>'+(isEN?'Deadline':'Termen')+'</label><br><input type="date" id="acpe-'+idx+'"></div>';
+  h+='<div style="display:flex;align-items:flex-end"><button class="btn bs bsm" onclick="saveOnePlanItem('+idx+')" title="'+(isEN?'Save this to Calendar':'Salveaza in Calendar')+'">&#128197; '+(isEN?'Save':'Salveaza')+'</button></div>';
   h+='</div>';
-  // Store metadata
   h+='<input type="hidden" id="acpm-'+idx+'" value="'+ptName+' — '+secName+'">';
   return h;
 }
@@ -3208,6 +3273,24 @@ async function saveAutoPlanning(){
   }
   if(cnt>0){alert((isEN?cnt+' events saved to Calendar.':cnt+' evenimente salvate in Calendar.'));render()}
   else alert(isEN?'Check at least one item.':'Bifeaza cel putin un element.');
+}
+async function saveOnePlanItem(idx){
+  const isEN=CFG.lang==='en';
+  const meta=document.getElementById('acpm-'+idx)?.value||'';
+  const dateStart=document.getElementById('acps-'+idx)?.value||'';
+  const dateEnd=document.getElementById('acpe-'+idx)?.value||'';
+  if(!meta)return;
+  if(!dateStart){alert(isEN?'Please set a date.':'Seteaza o data.');return}
+  await pt('events',{
+    title:(isEN?'Sampling: ':'Recoltare: ')+meta,
+    date_start:dateStart,date_end:dateEnd||'',
+    category:'autocontrol',all_day:true,
+    notes:(isEN?'Auto-generated from sampling plan':'Generat automat din planificarea recoltarii')
+  });
+  // Visual feedback
+  const ok=document.getElementById('acpok-'+idx);if(ok)ok.style.display='inline';
+  const dates=document.getElementById('acpd-'+idx);if(dates)dates.style.opacity='0.5';
+  showToast((isEN?'Event saved for ':'Eveniment salvat pentru ')+dateStart);
 }
 
 // ═══ TAB 3 — PROBE ═══
@@ -3317,9 +3400,10 @@ async function editAuto(id){
   setTimeout(()=>{addDatePreview('f-dt');attachDirtyTracking()},50);
 }
 async function saveAuto(id){
-  const v=s=>document.getElementById(s).value;
+  const mc=document.getElementById('mdc');
+  const v=s=>{const el=mc.querySelector('#'+s)||document.getElementById(s);return el?el.value:''};
   const rec={year:A.year,quarter:+v('f-q'),month:+v('f-mo'),date:v('f-dt'),probe_type:v('f-tp'),section:v('f-sec'),result:v('f-res'),organism:v('f-org').trim(),dsp_parallel:v('f-dsp')==='true',notes:v('f-n').trim()};
-  if(rec.result==='neconform'){rec.nc_details=(document.getElementById('f-nc')?.value||'').trim()}
+  if(rec.result==='neconform'){rec.nc_details=(mc.querySelector('#f-nc')?.value||'').trim()}
   if(!rec.probe_type||!rec.section){alert('Completeaza tipul si sectia.');return}
   if(id)rec.id=id;await pt('autocontrol',rec);logActivity((id?'Editat':'Adaugat')+' proba autocontrol — '+rSec(rec.section));closeM();render();
 }
@@ -5358,7 +5442,7 @@ async function saveFileLocation(){
   if(sel){CFG.file_location=sel.value;await saveCfg();updateSyncIndicator()}
   closeM()}
 async function saveFileLocationCfg(v){
-  CFG.file_location=v;await saveCfg();updateSyncIndicator()}
+  CFG.file_location=v;await saveCfg();updateSyncIndicator();render()}
 async function syncWrite(){
   if(!_fileHandle)return;
   try{
@@ -6705,7 +6789,8 @@ function dddUpdatePreview(){
 }
 
 async function saveConsumATB(id){
-  const v=s=>document.getElementById(s).value;
+  const mc=document.getElementById('mdc');
+  const v=s=>{const el=mc.querySelector('#'+s)||document.getElementById(s);return el?el.value:''};
   const sec=v('f-sec'),mo=+v('f-mo'),atc=v('f-atc'),qty=parseFloat(v('f-qty'))||0,route=v('f-route'),notes=v('f-n').trim();
   if(!sec){alert('Selecteaza sectia.');return}
   if(!atc){alert('Selecteaza antibioticul.');return}
@@ -6850,6 +6935,7 @@ async function genConsumATBWord(){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'7.5',date:'2026-03-16',notes:'Backup: showSaveFilePicker (retine ultimul folder), ramane pe pagina curenta dupa salvare\nFix: indicatorul de sincronizare se actualizeaza corect la schimbarea locatiei din Configurare\nSetup Wizard: 2 pasi noi — alegere locatie salvare date (browser/local/cloud) + folder atasamente\nFix: autocontrol — sectia se salva gresit (modal-scoped form queries)\nPlanificare autocontrol: buton individual "Salveaza" per proba nerecoltat cu feedback vizual\nDashboard: Calendar & Evenimente mutat deasupra KPI-urilor\nActivitate Recenta mutata sub grafice'},
   {version:'7.4',date:'2026-03-15',notes:'Modal fix: footer cu butoane salveaza vizibil permanent pe ecrane mici (1366x768)\nATB Consum: "Ruta" redenumit "Modalitate de administrare"\nAncheta epidemiologica: Nr. inregistrare in header (NR.X DIN LUNA AN)\nCamp domiciliu adaugat in Date pacient\nInternari anterioare structurate: spital, sectie, perioada — afisare ca tabel in Word\nBuletine analize multiple cu nr. si data validare\nSectiunea II restructurata: dispozitive medicale invazive, interventii chirurgicale\nEliminat sectiunea Concluzii din ancheta Word (ramane in wizard)'},
   {version:'7.3',date:'2026-03-15',notes:'Coduri IAAM conform Decizie UE 945/2018 — 63 coduri in 15 grupe (BJ, BSI, CNS, CRI, CVS, EENT, GI, LRI, NEO, PN, REPR, SSI, SST, SYS, UTI)\nRegistru Electronic IAAM (Excel) — conform Ordinul 1101/2016 cu 16 coloane\nDate pacient: camp unic initiale (eliminat duplicat), mediu ca dropdown\nComorbiditati: dropdown/chips cu checkbox-uri pinned si configurator (ca factorii de risc)\nContacti structurati: initiale, nr. FO, interval contact, salon/sectie — cu tabel in ancheta Word\nLegacy code map: codurile vechi sunt recunoscute si afisate corect'},
   {version:'7.2',date:'2026-03-15',notes:'5B.4 — Consum Antibiotice DDD/AWaRe\nModul nou: Consum Antibiotice — monitorizare consum antibiotice dupa metodologia OMS\nDDD (Defined Daily Dose) / 100 zile-pat per sectie si total spital\nClasificare AWaRe (Access/Watch/Reserve) conform OMS 2023\nTinta OMS: >=60% Access — indicatie vizuala in KPI si raport\nGrafic AWaRe (doughnut) cu distributie Access/Watch/Reserve\nComparatie ESAC-Net: spital vs Romania vs EU/EEA\nAdaugare consum: per substanta, sectie, luna, ruta administrare\nImport CSV bulk din farmacia spitalului\nRaport Word profesionist cu KPI, top 10, evolutie lunara, recomandari\nATB_LIST extins cu valori DDD si clasificare AWaRe pentru ~85 antibiotice'},
@@ -7512,6 +7598,7 @@ function downloadApp(){
   saveAs(new Blob([html],{type:'text/html;charset=utf-8'}),'CPIAAM_Management.html');
   logActivity('Descarcat aplicatia pe calculator');
 }
+var _lastBackupName='';
 async function expAll(){const d={};for(const s of ST){if(s==='config')continue;d[s]=await ga(s)}
   // Re-embed on_disk attachments as base64 for portable backup
   if(_attDirHandle){
@@ -7536,7 +7623,15 @@ async function expAll(){const d={};for(const s of ST){if(s==='config')continue;d
   }
   CFG.last_backup=new Date().toISOString();await saveCfg();
   const out={version:APP_VERSION,exported:new Date().toISOString(),config:CFG,...d};
-  saveAs(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}),'CPIAAM_Backup_'+A.year+'_'+new Date().toISOString().slice(0,10)+'.json');logActivity('Backup exportat')}
+  const fname=_lastBackupName||('CPIAAM_Backup_'+A.year+'_'+new Date().toISOString().slice(0,10)+'.json');
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  // Use File System Access API (remembers last folder) with fallback
+  if(window.showSaveFilePicker){
+    try{const fh=await window.showSaveFilePicker({suggestedName:fname,types:[{description:'JSON',accept:{'application/json':['.json']}}]});
+      _lastBackupName=fh.name;const wr=await fh.createWritable();await wr.write(blob);await wr.close();
+    }catch(e){if(e.name==='AbortError')return;saveAs(blob,fname)}
+  }else{saveAs(blob,fname)}
+  logActivity('Backup exportat');showToast('Backup salvat cu succes!')}
 function impAll(){if(!confirm('Importul inlocuieste datele existente. Continua?'))return;
   const inp=document.createElement('input');inp.type='file';inp.accept='.json';
   inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;

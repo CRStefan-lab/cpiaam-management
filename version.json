@@ -1,14 +1,13 @@
 {
-  "version": "7.4",
+  "version": "7.5",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Modal fix: footer vizibil permanent pe ecrane mici (1366x768)",
-    "ATB Consum: Ruta redenumit Modalitate de administrare",
-    "Ancheta: Nr. inregistrare in header (NR.X DIN LUNA AN)",
-    "Camp domiciliu in Date pacient",
-    "Internari anterioare structurate (spital, sectie, perioada)",
-    "Buletine analize multiple cu nr. si data validare",
-    "Sectiunea II: dispozitive invazive, interventii chirurgicale",
-    "Eliminat sectiunea Concluzii din ancheta Word"
+    "Backup: showSaveFilePicker (retine ultimul folder), ramane pe pagina curenta",
+    "Fix: indicator sincronizare se actualizeaza la schimbarea locatiei din Configurare",
+    "Setup Wizard: 2 pasi noi — locatie salvare date + folder atasamente",
+    "Fix: autocontrol — sectia se salva gresit (modal-scoped queries)",
+    "Planificare autocontrol: buton Salveaza individual per proba cu feedback vizual",
+    "Dashboard: Calendar & Evenimente mutat deasupra KPI-urilor",
+    "Activitate Recenta mutata sub grafice"
   ]
 }

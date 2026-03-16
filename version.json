@@ -1,7 +1,7 @@
 {
-  "version": "7.7",
+  "version": "7.8",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Fix: Dialogurile de selectare fisier se deschid in folderul corect (startIn pe toate picker-urile)"
+    "Fix: Evenimentele din planificarea autocontrol nu apareau in Calendar (date_start -> date)"
   ]
 }

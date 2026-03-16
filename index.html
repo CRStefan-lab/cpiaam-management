@@ -931,7 +931,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='7.7';
+const APP_VERSION='7.8';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -3310,7 +3310,7 @@ async function saveAutoPlanning(){
       if(meta){
         await pt('events',{
           title:(isEN?'Sampling: ':'Recoltare: ')+meta,
-          date_start:dateStart||new Date().toISOString().slice(0,10),
+          date:dateStart||new Date().toISOString().slice(0,10),
           date_end:dateEnd||'',
           category:'autocontrol',
           all_day:true,
@@ -3333,7 +3333,7 @@ async function saveOnePlanItem(idx){
   if(!dateStart){alert(isEN?'Please set a date.':'Seteaza o data.');return}
   await pt('events',{
     title:(isEN?'Sampling: ':'Recoltare: ')+meta,
-    date_start:dateStart,date_end:dateEnd||'',
+    date:dateStart,date_end:dateEnd||'',
     category:'autocontrol',all_day:true,
     notes:(isEN?'Auto-generated from sampling plan':'Generat automat din planificarea recoltarii')
   });
@@ -7240,6 +7240,7 @@ async function exportMultiAnWord(){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'7.8',date:'2026-03-16',notes:'Fix: Evenimentele din planificarea autocontrol nu apareau in Calendar — camp "date_start" corectat in "date" (conform structurii events store)'},
   {version:'7.7',date:'2026-03-16',notes:'Fix: Dialogurile de selectare fisier (Reconecteaza, Conecteaza, Backup) se deschid acum in folderul corect — startIn cu handle-ul salvat pe toate apelurile showOpenFilePicker si showSaveFilePicker'},
   {version:'7.6',date:'2026-03-16',notes:'Dashboard: Grafice SPC pe IAAM — linie medie, UCL, LCL (chartjs-plugin-annotation), puncte rosii daca depasesc UCL\nNotificari focar: alerta automata daca o luna depaseste UCL (limita superioara de control)\nRapoarte AI: buton "Word + Analiza AI" pe fiecare raport (Anual, IAAM, Autocontrol, Deseuri, Consum ATB)\nAI genereaza sectiune narativa adaugata in Word cu disclaimer — date anonimizate, fara informatii personale\nAnaliza Comparativa Multi-An: pagina noua cu 4 grafice overlay (IAAM, Autocontrol, Deseuri, DDD)\nTabel comparativ multi-an cu trend arrows (crestere/scadere/stabil)\nExport Word multi-an cu tabel sumar si evolutie lunara\nSidebar: link nou "Analiza Multi-An" in sectiunea Rapoarte'},
   {version:'7.5',date:'2026-03-16',notes:'Backup: showSaveFilePicker (retine ultimul folder), ramane pe pagina curenta dupa salvare\nFix: indicatorul de sincronizare se actualizeaza corect la schimbarea locatiei din Configurare\nSetup Wizard: 2 pasi noi — alegere locatie salvare date (browser/local/cloud) + folder atasamente\nFix: autocontrol — sectia se salva gresit (modal-scoped form queries)\nPlanificare autocontrol: buton individual "Salveaza" per proba nerecoltat cu feedback vizual\nDashboard: Calendar & Evenimente mutat deasupra KPI-urilor\nActivitate Recenta mutata sub grafice'},

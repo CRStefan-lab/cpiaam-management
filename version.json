@@ -1,5 +1,5 @@
 {
-  "version": "8.0",
+  "version": "8.1",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
     "Fix CRITIC: ID-uri NaN la setup wizard — genId() si ensureConfigIds() cu protectie badId()",

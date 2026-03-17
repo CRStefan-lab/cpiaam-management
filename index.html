@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v8.1</title>
+<title>CPIAAM — Sistem de Management v8.2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -685,6 +685,58 @@ body{display:block!important;background:#fff!important}
 .dark .ddd-aw-r{background:#7F1D1D;color:#FCA5A5}.dark .ddd-aw-x{background:#1E293B;color:#94A3B8}
 .dark .ddd-chart-box{background:var(--card);border-color:var(--brd)}
 .dark .ddd-chart-box h4{color:#818CF8}
+/* ═══ AUDITURI IPC — Calup CSS ═══ */
+.aud-scard{background:var(--card);border:1px solid var(--brd);border-radius:10px;margin-bottom:16px;overflow:hidden}
+.aud-shdr{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--brd);background:var(--color-background-secondary,#f8fafc)}
+.aud-shdr h4{margin:0;font-size:13px;color:var(--navy)}
+.aud-sbody{padding:10px}
+.aud-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.aud-tbl th{background:var(--color-background-secondary,#f8fafc);padding:6px 8px;text-align:center;font-size:10px;font-weight:600;color:var(--txtL);border-bottom:1px solid var(--brd)}
+.aud-tbl td{padding:4px 6px;border-bottom:1px solid var(--brd);text-align:center;vertical-align:middle}
+.aud-tbl td:first-child{text-align:left;font-size:11px}
+.aud-mcell{display:flex;flex-direction:column;align-items:center;gap:2px}
+.aud-da,.aud-nu{display:inline-block;width:30px;height:24px;line-height:24px;text-align:center;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid #CBD5E1;color:#94A3B8;background:transparent;transition:all .15s}
+.aud-da.on{background:#16A34A;color:#fff;border-color:#16A34A}
+.aud-nu.on{background:#DC2626;color:#fff;border-color:#DC2626}
+.aud-da:hover{border-color:#16A34A}.aud-nu:hover{border-color:#DC2626}
+.aud-sub-sel{display:flex;gap:2px;margin-top:2px}
+.aud-fr,.aud-sp{display:inline-block;width:24px;height:18px;line-height:18px;text-align:center;border-radius:3px;font-size:9px;font-weight:600;cursor:pointer;border:1px solid #CBD5E1;color:#94A3B8;background:transparent;transition:all .15s}
+.aud-fr.on{background:#2563EB;color:#fff;border-color:#2563EB}
+.aud-sp.on{background:#7C3AED;color:#fff;border-color:#7C3AED}
+.aud-man{display:inline-block;width:24px;height:18px;line-height:18px;text-align:center;border-radius:3px;font-size:9px;cursor:pointer;border:1px solid #CBD5E1;color:#94A3B8;background:transparent;transition:all .15s}
+.aud-man.on{background:#EA580C;color:#fff;border-color:#EA580C}
+.m1c{background:#1565C0;color:#fff}.m2c{background:#00897B;color:#fff}.m3c{background:#E65100;color:#fff}.m4c{background:#6A1B9A;color:#fff}.m5c{background:#C62828;color:#fff}
+.m1c,.m2c,.m3c,.m4c,.m5c{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600}
+.aud-type-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.aud-type-card{background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:16px;cursor:pointer;transition:all .2s;text-align:center}
+.aud-type-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.aud-type-card .aud-tc-icon{font-size:28px;margin-bottom:8px}
+.aud-type-card .aud-tc-name{font-size:13px;font-weight:600;color:var(--navy)}
+.aud-type-card .aud-tc-count{font-size:11px;color:var(--txtL);margin-top:4px}
+.aud-score-bar{height:8px;border-radius:4px;background:#E2E8F0;overflow:hidden;margin-top:8px}
+.aud-score-fill{height:100%;border-radius:4px;transition:width .3s}
+.aud-gen-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--brd)}
+.aud-gen-item:last-child{border-bottom:none}
+.aud-gen-nr{width:28px;text-align:center;font-size:11px;color:var(--txtL);font-weight:600}
+.aud-gen-text{flex:1;font-size:12px}
+.aud-gen-ref{font-size:10px;color:var(--txtL);width:60px}
+.aud-gen-btns{display:flex;gap:4px}
+.aud-gen-btn{width:36px;height:28px;line-height:28px;text-align:center;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid #CBD5E1;color:#94A3B8;background:transparent;transition:all .15s}
+.aud-gen-btn.c-on{background:#16A34A;color:#fff;border-color:#16A34A}
+.aud-gen-btn.nc-on{background:#DC2626;color:#fff;border-color:#DC2626}
+.aud-gen-btn.na-on{background:#64748B;color:#fff;border-color:#64748B}
+.aud-dot-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.aud-dot-tbl th{background:var(--color-background-secondary,#f8fafc);padding:6px 8px;font-size:10px;font-weight:600;border-bottom:1px solid var(--brd)}
+.aud-dot-tbl td{padding:4px 6px;border-bottom:1px solid var(--brd);text-align:center}
+.dark .aud-shdr{background:var(--color-background-secondary,#1E293B)}
+.dark .aud-tbl th,.dark .aud-dot-tbl th{background:var(--color-background-secondary,#1E293B)}
+.dark .aud-da{border-color:#475569;color:#64748B}.dark .aud-nu{border-color:#475569;color:#64748B}
+.dark .aud-fr,.dark .aud-sp,.dark .aud-man{border-color:#475569;color:#64748B}
+.dark .aud-gen-btn{border-color:#475569;color:#64748B}
+.dark .aud-type-card{background:var(--card);border-color:var(--brd)}
+.dark .aud-type-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.dark .aud-score-bar{background:#334155}
+
 @media print{.sb,.tb,.man-print,.man-top{display:none!important}.mn{margin-left:0!important}.man-sec{page-break-inside:avoid}.ct{padding:10px!important}}
 
 </style>
@@ -725,8 +777,9 @@ body{display:block!important;background:#fff!important}
     <!-- Raportari/Termene moved to Calendar module -->
     <a class="ni" data-p="calendar" onclick="nav('calendar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="1"/><circle cx="12" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg><span data-t="sb_calendar">Calendar</span></a>
     <div class="ns">Calitate</div>
-    <a class="ni" data-p="audituri" onclick="nav('audituri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg><span>Audituri</span></a>
-    <a class="ni" data-p="instruire" onclick="nav('instruire')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>Instruire Personal</span></a>
+    <a class="ni" data-p="audituri" onclick="nav('audituri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg><span data-t="sb_audituri">Audituri IPC</span></a>
+    <a class="ni" data-p="obiective" onclick="nav('obiective')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span data-t="sb_obiective">Obiective SMART</span></a>
+    <a class="ni" data-p="instruire" onclick="nav('instruire')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span data-t="sb_instruire">Instruire Personal</span></a>
     <div class="ns" data-t="sb_rapoarte">Rapoarte</div>
     <a class="ni" data-p="multian" onclick="nav('multian')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-8"/><circle cx="7" cy="16" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="19" cy="4" r="1.5"/></svg><span data-t="sb_multian">Analiza Multi-An</span></a>
     <a class="ni" data-p="rapoarte" onclick="nav('rapoarte')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg><span data-t="sb_gen_rapoarte">Generare Rapoarte</span></a>
@@ -795,7 +848,7 @@ body{display:block!important;background:#fff!important}
 // CPIAAM — Core — IndexedDB & ID System
 // ═════════════════════════════════════════════════════════════
 
-const DB='CPIAAM4',VER=5,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum'];
+const DB='CPIAAM4',VER=6,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum','objectives'];
 function odb(){return new Promise((ok,no)=>{const r=indexedDB.open(DB,VER);r.onupgradeneeded=e=>{const d=e.target.result;ST.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id',autoIncrement:true})})};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function ga(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function pt(s,i){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).put(i);r.onsuccess=()=>{ok(r.result);_syncDebounce()};r.onerror=()=>no(r.error)})}
@@ -1060,7 +1113,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='8.1';
+const APP_VERSION='8.2';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1105,6 +1158,8 @@ var CFG={
   ai_provider:'', ai_api_key:'', ai_model:'', ai_endpoint:'',
   backup_interval_days:7, last_backup:null, setup_complete:false, tutorial_shown:false, lang:'ro',
   dark_mode:false, file_location:'', changelog:[], dash_widgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true},
+  ipc_categories:[],
+  audit_prof_categories:['Medic','Asistent medical','Infirmiera','Brancardier','Altul'],
   atp_surface_types:[
     {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
     {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -1165,6 +1220,27 @@ async function loadCfg(){
       {id:'uv_001',name:'Pat salon'},{id:'uv_002',name:'Noptiera'},{id:'uv_003',name:'Podea'},
       {id:'uv_004',name:'Perete'},{id:'uv_005',name:'Alte suprafete'}
     ];
+  }
+  // Migrate: populate ipc_categories if missing
+  if(!CFG.ipc_categories||!CFG.ipc_categories.length){
+    CFG.ipc_categories=[
+      {id:genId('ipc'),name_ro:'Igiena mainilor',name_en:'Hand hygiene',color:'#1565C0',source_module:'audit',audit_type:'igm',standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Dotare puncte igiena',name_en:'Hygiene point equipment',color:'#2E7D32',source_module:'audit',audit_type:'dotare_igiena',standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Curatenie si dezinfectie',name_en:'Cleaning & disinfection',color:'#E65100',source_module:'audit',audit_type:'curatenie',standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Rotatie biocide',name_en:'Biocide rotation',color:'#6A1B9A',source_module:'audit',audit_type:'rotatie_biocide',standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Sterilizare si reprocesare',name_en:'Sterilization & reprocessing',color:'#00695C',source_module:'audit',audit_type:'sterilizare',standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Pregatire preoperatorie',name_en:'Preoperative preparation',color:'#AD1457',source_module:'audit',audit_type:'preoperator',standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Supraveghere epidemiologica',name_en:'Epidemiological surveillance',color:'#0D47A1',source_module:'iaam',audit_type:null,standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Dispozitive invazive',name_en:'Invasive devices',color:'#B71C1C',source_module:'iaam',audit_type:null,standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Infectii chirurgicale',name_en:'Surgical site infections',color:'#4E342E',source_module:'iaam',audit_type:null,standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Antibiotic Stewardship',name_en:'Antibiotic Stewardship',color:'#1B5E20',source_module:'atb_consum',audit_type:null,standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Educatie si formare',name_en:'Education & training',color:'#FF6F00',source_module:'trainings',audit_type:null,standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Audit si conformitate',name_en:'Audit & compliance',color:'#6366F1',source_module:'audit',audit_type:'agregat',standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Focare epidemice',name_en:'Outbreak management',color:'#D32F2F',source_module:null,audit_type:null,standard:true,active:true}
+    ];
+  }
+  if(!CFG.audit_prof_categories||!CFG.audit_prof_categories.length){
+    CFG.audit_prof_categories=['Medic','Asistent medical','Infirmiera','Brancardier','Altul'];
   }
   if(!CFG.risk_factors_config||!CFG.risk_factors_config.length){
     CFG.risk_factors_config=[
@@ -1374,6 +1450,8 @@ function ensureConfigIds(){
   // ATP/UV surface types
   (CFG.atp_surface_types||[]).forEach(s=>{if(badId(s.id)){s.id=genId('atp');changed=true}});
   (CFG.uv_surface_types||[]).forEach(s=>{if(badId(s.id)){s.id=genId('uv');changed=true}});
+  // IPC categories
+  (CFG.ipc_categories||[]).forEach(c=>{if(badId(c.id)){c.id=genId('ipc');changed=true}});
   // IAAM custom categories
   if(!CFG.iaam_custom_cats)CFG.iaam_custom_cats=[];
   // Comorbidities defaults
@@ -1560,7 +1638,7 @@ ro:{
   pt_dashboard:'Dashboard',pt_iaam:'IAAM / Anchete Epidemiologice',pt_autocontrol:'Autocontrol Microbiologic',
   pt_deseuri:'Deseuri Medicale',pt_biocide:'Gestiune Biocide',pt_pps:'PPS / Farmacovigilenta — Antibiotice',
   pt_documente:'Documente / Autorizatii',pt_termene:'Raportari / Termene',pt_calendar:'Calendar',
-  pt_audituri:'Audituri',pt_instruire:'Instruire Personal',pt_rapoarte:'Generare Rapoarte',pt_multian:'Analiza Comparativa Multi-An',
+  pt_audituri:'Audituri IPC',pt_instruire:'Instruire Personal',pt_rapoarte:'Generare Rapoarte',pt_multian:'Analiza Comparativa Multi-An',
   pt_config:'Configurare Sistem',pt_ajutor:'Ajutor / FAQ',pt_manual:'Manual de Utilizare',pt_changelog:'Istoric Versiuni',
   pt_despre:'Despre',pt_terms:'Termeni si Conditii',
   // Calendar
@@ -1674,7 +1752,49 @@ ro:{
   multian_iaam:'IAAM — Cazuri lunare',multian_auto:'Autocontrol — Conformitate trimestriala',
   multian_deseuri:'Deseuri — Total lunar (kg)',multian_ddd:'Antibiotice — DDD/100 zile-pat',
   multian_trend_up:'Crestere',multian_trend_down:'Scadere',multian_trend_stable:'Stabil',
-  multian_export_word:'Export Word'
+  multian_export_word:'Export Word',
+  // Obiective SMART IPC
+  sb_obiective:'Obiective SMART',pt_obiective:'Obiective SMART IPC',
+  obj_total_active:'OBIECTIVE ACTIVE',obj_conforme:'CONFORME',obj_atentie_neconf:'ATENTIE / NECONFORME',obj_grad_global:'GRAD CONFORMITATE',
+  obj_status_conform:'Conform',obj_status_atentie:'Atentie',obj_status_neconform:'Neconform',obj_status_neinregistrat:'Neinregistrat',
+  obj_monitorizare:'Monitorizare',obj_configurare:'Configurare',obj_export_word:'Export Raport Word',
+  obj_adauga:'+ Adauga obiectiv',obj_reseteaza_tinte:'Reseteaza toate tintele la standard',obj_reseteaza_obj:'Reseteaza la standard',
+  obj_copiaza_an:'Copiaza configuratia din',obj_template_standard:'Incarca template standard',
+  obj_auto:'Auto',obj_manual:'Manual',obj_frecventa:'Frecventa',obj_tinta:'Tinta',obj_valoare:'Valoare',obj_indicator:'Indicator',
+  obj_toate:'Toate',obj_filtru_conform:'Conform',obj_filtru_atentie:'Atentie',obj_filtru_neconform:'Neconform',obj_filtru_neinregistrat:'Neinregistrat',
+  obj_cod:'Cod',obj_titlu:'Titlu',obj_sursa:'Sursa',obj_status:'Status',obj_activ:'Activ',obj_inactiv:'Inactiv',
+  obj_no_data:'Niciun obiectiv configurat pentru acest an.',obj_init_prompt:'Doriti sa initializati obiectivele?',
+  obj_standard:'Standard',obj_personalizat:'Personalizat',obj_operator_gte:'>=',obj_operator_lte:'<=',
+  obj_inregistreaza:'Inregistreaza valoare',obj_perioada:'Perioada',obj_nota:'Nota',obj_istoric:'Istoric valori',
+  obj_word_titlu:'Raport Monitorizare Obiective SMART IPC',obj_word_sumar:'Sumar general',
+  obj_ipc_categorii:'Categorii IPC',obj_ipc_add:'+ Adauga categorie IPC',obj_ipc_sursa:'Sursa modul',obj_ipc_audit_type:'Sub-tip audit',
+  obj_ipc_activa:'Activa',obj_ipc_inactiva:'Inactiva',
+  sb_instruire:'Instruire Personal',
+  // Audituri IPC
+  sb_audituri:'Audituri IPC',pt_audituri:'Audituri IPC',
+  aud_total:'TOTAL AUDITURI',aud_conformitate_medie:'CONFORMITATE MEDIE',aud_neconformitati:'NECONFORMITATI',aud_sectii_auditate:'SECTII AUDITATE',
+  aud_toate:'Toate',aud_nou:'+ Audit Nou',aud_export_word:'Export Word',aud_fisa_goala:'Fisa goala',aud_inapoi:'Inapoi la lista',
+  aud_data:'Data audit',aud_sectie:'Sectia',aud_auditor:'Auditor',aud_observatii:'Observatii',aud_recomandari:'Recomandari',
+  aud_conform:'Conform (DA)',aud_neconform:'Neconform (NU)',aud_na:'N/A',aud_scor:'Scor conformitate',
+  aud_masuri_corective:'Masuri corective',aud_termen:'Termen',aud_responsabil:'Responsabil',
+  aud_subtip:'Subtip audit',aud_planificat:'Planificat',aud_inopinat:'Inopinat',aud_tematic:'Tematic',
+  aud_durata:'Durata (min)',aud_nr_calupuri:'Nr. calupuri',
+  aud_igm_moment:'Moment',aud_igm_fr:'Frecare (FR)',aud_igm_sp:'Spalare (SP)',aud_igm_manusi:'Manusi',
+  aud_igm_calup:'Calup observatie',aud_igm_adauga_sec:'+ Adauga sectie',aud_igm_adauga_calup:'+ Calup',
+  aud_igm_cat_prof:'Categorie profesionala',aud_igm_m1:'Inainte de contactul cu pacientul',
+  aud_igm_m2:'Inainte de procedura aseptica',aud_igm_m3:'Dupa riscul la expunere',
+  aud_igm_m4:'Dupa contactul cu pacientul',aud_igm_m5:'Dupa contactul cu mediul pacientului',
+  aud_igm_da:'DA',aud_igm_nu:'NU',
+  aud_items_curatenie:'Elemente Curatenie si Dezinfectie',aud_items_rotatie:'Elemente Rotatie Biocide',
+  aud_items_sterilizare:'Elemente Sterilizare',aud_items_preoperator:'Elemente Pregatire Preoperatorie',
+  aud_items_dotare:'Elemente Dotare Puncte Igiena',
+  aud_agregat_titlu:'Audit Agregat IPC — Matrice Trimestriala',aud_scor_mediu:'Scor mediu',
+  aud_trimestru:'Trimestru',aud_mentinere:'Mentinere',aud_plan_corectiv:'Plan corectiv necesar',
+  aud_concluzii:'Concluzii',aud_nr_crt:'Nr.',aud_element:'Element verificat',aud_referinta:'Referinta',
+  aud_rezultat:'Rezultat',aud_nota:'Nota',aud_custom:'Audit personalizat',
+  aud_adauga_item:'+ Adauga element',aud_sterge_item:'Sterge',
+  aud_sect_a:'Sectiunea A',aud_sect_b:'Sectiunea B',
+  aud_echipament:'Echipament',aud_prezent:'Prezent',aud_functional:'Functional',aud_curat:'Curat',aud_accesibil:'Accesibil',aud_obs:'Obs'
 },
 en:{
   months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
@@ -1688,7 +1808,7 @@ en:{
   pt_dashboard:'Dashboard',pt_iaam:'HAI / Epidemiological Investigations',pt_autocontrol:'Microbiological Quality Control',
   pt_deseuri:'Medical Waste Management',pt_biocide:'Biocide Management',pt_pps:'PPS / Pharmacovigilance — Antibiotics',
   pt_documente:'Documents / Authorizations',pt_termene:'Reports / Deadlines',pt_calendar:'Calendar',
-  pt_audituri:'Audits',pt_instruire:'Staff Training',pt_rapoarte:'Generate Reports',pt_multian:'Multi-Year Comparative Analysis',
+  pt_audituri:'IPC Audits',pt_instruire:'Staff Training',pt_rapoarte:'Generate Reports',pt_multian:'Multi-Year Comparative Analysis',
   pt_config:'System Settings',pt_ajutor:'Help / FAQ',pt_manual:'User Manual',pt_changelog:'Version History',
   pt_despre:'About',pt_terms:'Terms and Conditions',
   cal_today:'Today',cal_add_event:'Add Event',cal_events:'Events',cal_deadline:'Reporting deadline',
@@ -1790,7 +1910,49 @@ en:{
   multian_iaam:'HAI — Monthly Cases',multian_auto:'Quality Control — Quarterly Compliance',
   multian_deseuri:'Waste — Monthly Total (kg)',multian_ddd:'Antibiotics — DDD/100 bed-days',
   multian_trend_up:'Increase',multian_trend_down:'Decrease',multian_trend_stable:'Stable',
-  multian_export_word:'Export Word'
+  multian_export_word:'Export Word',
+  // SMART IPC Objectives
+  sb_obiective:'SMART Objectives',pt_obiective:'SMART IPC Objectives',
+  obj_total_active:'ACTIVE OBJECTIVES',obj_conforme:'COMPLIANT',obj_atentie_neconf:'WARNING / NON-COMPLIANT',obj_grad_global:'COMPLIANCE RATE',
+  obj_status_conform:'Compliant',obj_status_atentie:'Warning',obj_status_neconform:'Non-compliant',obj_status_neinregistrat:'Not recorded',
+  obj_monitorizare:'Monitoring',obj_configurare:'Configuration',obj_export_word:'Export Word Report',
+  obj_adauga:'+ Add objective',obj_reseteaza_tinte:'Reset all targets to standard',obj_reseteaza_obj:'Reset to standard',
+  obj_copiaza_an:'Copy configuration from',obj_template_standard:'Load standard template',
+  obj_auto:'Auto',obj_manual:'Manual',obj_frecventa:'Frequency',obj_tinta:'Target',obj_valoare:'Value',obj_indicator:'Indicator',
+  obj_toate:'All',obj_filtru_conform:'Compliant',obj_filtru_atentie:'Warning',obj_filtru_neconform:'Non-compliant',obj_filtru_neinregistrat:'Not recorded',
+  obj_cod:'Code',obj_titlu:'Title',obj_sursa:'Source',obj_status:'Status',obj_activ:'Active',obj_inactiv:'Inactive',
+  obj_no_data:'No objectives configured for this year.',obj_init_prompt:'Do you want to initialize objectives?',
+  obj_standard:'Standard',obj_personalizat:'Custom',obj_operator_gte:'>=',obj_operator_lte:'<=',
+  obj_inregistreaza:'Record value',obj_perioada:'Period',obj_nota:'Note',obj_istoric:'Value history',
+  obj_word_titlu:'SMART IPC Objectives Monitoring Report',obj_word_sumar:'General summary',
+  obj_ipc_categorii:'IPC Categories',obj_ipc_add:'+ Add IPC category',obj_ipc_sursa:'Source module',obj_ipc_audit_type:'Audit sub-type',
+  obj_ipc_activa:'Active',obj_ipc_inactiva:'Inactive',
+  sb_instruire:'Staff Training',
+  // Audituri IPC
+  sb_audituri:'IPC Audits',pt_audituri:'IPC Audits',
+  aud_total:'TOTAL AUDITS',aud_conformitate_medie:'AVERAGE COMPLIANCE',aud_neconformitati:'NON-COMPLIANCES',aud_sectii_auditate:'SECTIONS AUDITED',
+  aud_toate:'All',aud_nou:'+ New Audit',aud_export_word:'Export Word',aud_fisa_goala:'Blank form',aud_inapoi:'Back to list',
+  aud_data:'Audit date',aud_sectie:'Section',aud_auditor:'Auditor',aud_observatii:'Observations',aud_recomandari:'Recommendations',
+  aud_conform:'Compliant (YES)',aud_neconform:'Non-compliant (NO)',aud_na:'N/A',aud_scor:'Compliance score',
+  aud_masuri_corective:'Corrective measures',aud_termen:'Deadline',aud_responsabil:'Responsible',
+  aud_subtip:'Audit subtype',aud_planificat:'Planned',aud_inopinat:'Unannounced',aud_tematic:'Thematic',
+  aud_durata:'Duration (min)',aud_nr_calupuri:'No. of calups',
+  aud_igm_moment:'Moment',aud_igm_fr:'Rubbing (HR)',aud_igm_sp:'Washing (HW)',aud_igm_manusi:'Gloves',
+  aud_igm_calup:'Observation calup',aud_igm_adauga_sec:'+ Add section',aud_igm_adauga_calup:'+ Calup',
+  aud_igm_cat_prof:'Professional category',aud_igm_m1:'Before patient contact',
+  aud_igm_m2:'Before aseptic procedure',aud_igm_m3:'After exposure risk',
+  aud_igm_m4:'After patient contact',aud_igm_m5:'After contact with patient environment',
+  aud_igm_da:'YES',aud_igm_nu:'NO',
+  aud_items_curatenie:'Cleaning & Disinfection Items',aud_items_rotatie:'Biocide Rotation Items',
+  aud_items_sterilizare:'Sterilization Items',aud_items_preoperator:'Preoperative Preparation Items',
+  aud_items_dotare:'Hygiene Point Equipment Items',
+  aud_agregat_titlu:'IPC Aggregate Audit — Quarterly Matrix',aud_scor_mediu:'Average score',
+  aud_trimestru:'Quarter',aud_mentinere:'Maintenance',aud_plan_corectiv:'Corrective plan needed',
+  aud_concluzii:'Conclusions',aud_nr_crt:'No.',aud_element:'Verified element',aud_referinta:'Reference',
+  aud_rezultat:'Result',aud_nota:'Note',aud_custom:'Custom audit',
+  aud_adauga_item:'+ Add item',aud_sterge_item:'Delete',
+  aud_sect_a:'Section A',aud_sect_b:'Section B',
+  aud_echipament:'Equipment',aud_prezent:'Present',aud_functional:'Functional',aud_curat:'Clean',aud_accesibil:'Accessible',aud_obs:'Obs'
 }
 };
 
@@ -1881,7 +2043,7 @@ function optsO(obj,sel){return Object.entries(obj).map(([k,v])=>'<option value="
 // NAVIGATION, MODAL, UTILITIES
 // ═══════════════════════════════════════════════════════════════
 const PT={dashboard:'Dashboard',iaam:'IAAM / Anchete Epidemiologice',autocontrol:'Autocontrol Microbiologic',
-  deseuri:'Deseuri Medicale',biocide:'Gestiune Biocide',pps:'PPS / Farmacovigilenta — Antibiotice',
+  deseuri:'Deseuri Medicale',biocide:'Gestiune Biocide',pps:'PPS / Farmacovigilenta — Antibiotice',obiective:'Obiective SMART IPC',
   documente:'Documente / Autorizatii',termene:'Raportari / Termene',multian:'Analiza Comparativa Multi-An',
   rapoarte:'Generare Rapoarte',config:'Configurare Sistem',ajutor:'Ajutor / FAQ',changelog:'Istoric Versiuni',about:'Despre',terms:'Termeni si Conditii'};
 
@@ -1936,7 +2098,7 @@ async function renderPage(p){const el=document.getElementById('pc');dch();switch
   case'dashboard':return rDash(el);case'iaam':return rIAAM(el);case'autocontrol':return rAuto(el);
   case'deseuri':return rDes(el);case'biocide':return rBio(el);case'pps':return rPPS(el);
   case'consum_atb':return rConsumATB(el);case'antibiograma':return rAntibiograma(el);case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
-  case'audituri':return rAudit(el);case'instruire':return rInstr(el);
+  case'audituri':return rAudit(el);case'obiective':return rObiective(el);case'instruire':return rInstr(el);
   case'rapoarte':return rRap(el);case'multian':return rMultiAn(el);case'config':return rCfg(el);case'ajutor':return rAjutor(el);
   case'manual':return rManual(el);case'changelog':return rChangelog(el);case'about':return rAbout(el);case'terms':return rTerms(el);
   default:el.innerHTML='<p>Pagina nu exista.</p>'}}
@@ -1964,7 +2126,7 @@ function updateLangUI(){
 function getPageTitle(p){
   const map={dashboard:'pt_dashboard',iaam:'pt_iaam',autocontrol:'pt_autocontrol',deseuri:'pt_deseuri',
     biocide:'pt_biocide',pps:'pt_pps',consum_atb:'pt_consum_atb',antibiograma:'pt_antibiograma',documente:'pt_documente',termene:'pt_termene',calendar:'pt_calendar',
-    audituri:'pt_audituri',instruire:'pt_instruire',rapoarte:'pt_rapoarte',multian:'pt_multian',
+    audituri:'pt_audituri',obiective:'pt_obiective',instruire:'pt_instruire',rapoarte:'pt_rapoarte',multian:'pt_multian',
     config:'pt_config',ajutor:'pt_ajutor',manual:'pt_manual',changelog:'pt_changelog',about:'pt_despre',terms:'pt_terms'};
   return T(map[p]||'pt_dashboard')}
 function applyDark(){
@@ -5342,261 +5504,1656 @@ async function renderDashCalendar(){
 </script>
 <script>
 // ═════════════════════════════════════════════════════════════
-// CPIAAM — Audituri
+// CPIAAM — Audituri IPC — Complete Module
+// TIP A: Igiena Mainilor (WHO 5 Momente, calupuri)
+// TIP B: Generic Checklist (curatenie, rotatie, sterilizare, preoperator, custom)
+// Special: Dotare Puncte Igiena, Agregat IPC
 // ═════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════
-var _auditFilters={type:'',sec:'',dateFrom:'',dateTo:'',search:''};
-const AUDIT_TYPES=[
-  {id:'igm',name:'Igiena Mainilor (OMS 5 Momente)',icon:'🖐️'},
-  {id:'curat',name:'Curatenie / Dezinfectie',icon:'🧹'},
-  {id:'izol',name:'Precautiuni Izolare',icon:'🛡️'},
-  {id:'custom',name:'Audit Custom',icon:'📋'}
+// ═══ WHO 5 MOMENTS ═══
+const WHO_MOM=[
+  {id:'m1',n:'1',label_ro:'Inainte de contactul cu pacientul',label_en:'Before patient contact',cl:'m1c',bg:'#E3F2FD',border:'#1565C0'},
+  {id:'m2',n:'2',label_ro:'Inainte de procedura aseptica',label_en:'Before aseptic procedure',cl:'m2c',bg:'#E8F5E9',border:'#2E7D32'},
+  {id:'m3',n:'3',label_ro:'Dupa riscul la expunere',label_en:'After exposure risk',cl:'m3c',bg:'#FFF3E0',border:'#E65100'},
+  {id:'m4',n:'4',label_ro:'Dupa contactul cu pacientul',label_en:'After patient contact',cl:'m4c',bg:'#F3E5F5',border:'#6A1B9A'},
+  {id:'m5',n:'5',label_ro:'Dupa contactul cu mediul pacientului',label_en:'After contact with patient environment',cl:'m5c',bg:'#E0F2F1',border:'#00695C'}
 ];
-const OMS5=[
-  'Inainte de contactul cu pacientul',
-  'Inainte de procedura aseptica',
-  'Dupa expunerea la fluide corporale',
-  'Dupa contactul cu pacientul',
-  'Dupa contactul cu mediul pacientului'
-];
-const CLEAN_ITEMS=[
-  'Pardoseala — curatenie generala','Pardoseala — dezinfectie','Suprafete de lucru',
-  'Paturi — cadru metalic','Paturi — saltele','Paturi — lenjerie','Noptiere/mesute',
-  'Echipamente medicale','Baie/grup sanitar — pardoseala','Baie — obiecte sanitare',
-  'Baie — dozatoare sapun/dezinfectant','Manere usi','Intrerupatoare','Cos deseuri',
-  'Lift/brancarda','Statie asistente — suprafete','Frigider medicamente',
-  'Dispensere prosoape','Zona preparare medicamente','Zona curata/murdara separata'
-];
-const IZOL_ITEMS=[
-  'Semnalizare usa (tip izolare)','Echipament protectie disponibil','Halat/sort disponibil',
-  'Manusi disponibile','Masca FFP2/chirurgicala','Viziera/ochelari protectie',
-  'Dezinfectant maini la intrare','Eliminare corecta deseuri infectioase',
-  'Lenjerie separata','Instrumentar dedicat','Curatenie dedicata',
-  'Limitare acces vizitatori','Instructaj personal realizat','Transport pacient — masuri',
-  'Documentatie izolare in foaia de observatie'
-];
+const NCC_MOM={
+  m1:{ro:'Reamintire protocoale, afisaj la intrarea in salon, sesiune formare individuala.',en:'Protocol reminder, display at ward entrance, individual training session.'},
+  m2:{ro:'Verificare disponibilitate SHA la punctul de ingrijire; reforjare proceduri aseptice.',en:'Verify ABHR availability at point of care; reinforce aseptic procedures.'},
+  m3:{ro:'Reforjare proceduri post-expunere; verificare dotare chiuvete si dispensere SHA.',en:'Reinforce post-exposure procedures; verify sink and ABHR dispenser availability.'},
+  m4:{ro:'Campanie constientizare; monitorizare directa perioade de varf activitate.',en:'Awareness campaign; direct monitoring during peak activity periods.'},
+  m5:{ro:'Reforjare igiena mediului pacientului; afisaj Momentul 5 in saloane.',en:'Reinforce patient environment hygiene; display Moment 5 in wards.'}
+};
 
-function auditTypeName(id){const t=AUDIT_TYPES.find(x=>x.id===id);return t?t.name:id}
-function auditTypeIcon(id){const t=AUDIT_TYPES.find(x=>x.id===id);return t?t.icon:'📋'}
+// ═══ PREDEFINED AUDIT ITEMS ═══
+const AUDIT_ITEMS={
+  curatenie:[
+    {text_ro:'Pardoseala — curatenie generala si dezinfectie',text_en:'Floor — general cleaning and disinfection',ref:'OMS 1101/2016'},
+    {text_ro:'Suprafete de lucru (mese, blaturi)',text_en:'Work surfaces (tables, countertops)',ref:'OMS 1101/2016'},
+    {text_ro:'Paturi — cadru metalic + tablie',text_en:'Beds — metal frame + headboard',ref:'OMS 1101/2016'},
+    {text_ro:'Paturi — saltele (protectie, curatenie)',text_en:'Beds — mattresses (protection, cleanliness)',ref:'OMS 1101/2016'},
+    {text_ro:'Paturi — lenjerie curata, schimbata conform protocol',text_en:'Beds — clean linens, changed per protocol',ref:'OMS 1101/2016'},
+    {text_ro:'Noptiere / mesute pacient',text_en:'Bedside tables / patient tables',ref:'OMS 1101/2016'},
+    {text_ro:'Echipamente medicale (stative, aparate)',text_en:'Medical equipment (stands, devices)',ref:'OMS 1101/2016'},
+    {text_ro:'Baie / grup sanitar — pardoseala si obiecte sanitare',text_en:'Bathroom — floor and sanitary objects',ref:'OMS 1101/2016'},
+    {text_ro:'Dozatoare sapun / dezinfectant funcionale si alimentate',text_en:'Soap / disinfectant dispensers functional and stocked',ref:'OMS 1101/2016'},
+    {text_ro:'Manere usi si intrerupatoare',text_en:'Door handles and light switches',ref:'OMS 1101/2016'},
+    {text_ro:'Cos deseuri cu capac, functional, etichetat',text_en:'Waste bin with lid, functional, labeled',ref:'OMS 1101/2016'},
+    {text_ro:'Zona curata / murdara separata si marcata',text_en:'Clean / dirty zone separated and marked',ref:'OMS 1101/2016'},
+    {text_ro:'Evidenta si respectare protocol curatenie (fisele de curatenie)',text_en:'Cleaning protocol records maintained (cleaning sheets)',ref:'OMS 1101/2016'}
+  ],
+  rotatie_biocide:[
+    {text_ro:'Planul de rotatie biocide exista si este actualizat',text_en:'Biocide rotation plan exists and is up to date',ref:'OMS 1101/2016'},
+    {text_ro:'Rotatia biocidelor se face conform planului',text_en:'Biocide rotation follows the plan',ref:'OMS 1101/2016'},
+    {text_ro:'Concentratia solutiilor este corecta',text_en:'Solution concentrations are correct',ref:'OMS 1101/2016'},
+    {text_ro:'Solutiile sunt preparate zilnic / conform instructiunilor',text_en:'Solutions are prepared daily / per instructions',ref:'OMS 1101/2016'},
+    {text_ro:'Recipientele sunt etichetate (produs, concentratie, data preparare)',text_en:'Containers are labeled (product, concentration, preparation date)',ref:'OMS 1101/2016'},
+    {text_ro:'Biocidele sunt depozitate corect (temp, lumina, termen)',text_en:'Biocides are stored correctly (temp, light, expiry)',ref:'OMS 1101/2016'},
+    {text_ro:'Personalul cunoaste protocoalele de dilutie',text_en:'Staff knows dilution protocols',ref:'OMS 1101/2016'},
+    {text_ro:'Registrul de biocide este completat la zi',text_en:'Biocide registry is up to date',ref:'OMS 1101/2016'}
+  ],
+  sterilizare:[
+    // Section A: Procesul de sterilizare
+    {text_ro:'Autoclavele sunt verificate tehnic si au buletin metrologic valid',text_en:'Autoclaves are technically verified with valid metrological certificate',ref:'OMS 1101/2016',section:'A'},
+    {text_ro:'Testele Bowie-Dick se efectueaza zilnic',text_en:'Bowie-Dick tests are performed daily',ref:'OMS 1101/2016',section:'A'},
+    {text_ro:'Indicatorii chimici sunt utilizati pe fiecare pachet',text_en:'Chemical indicators are used on every package',ref:'OMS 1101/2016',section:'A'},
+    {text_ro:'Controlul biologic se efectueaza saptamanal',text_en:'Biological control is performed weekly',ref:'OMS 1101/2016',section:'A'},
+    {text_ro:'Parametrii ciclului sunt inregistrati si verificati',text_en:'Cycle parameters are recorded and verified',ref:'OMS 1101/2016',section:'A'},
+    {text_ro:'Materialele sterile sunt depozitate corect',text_en:'Sterile materials are stored correctly',ref:'OMS 1101/2016',section:'A'},
+    {text_ro:'Termenul de valabilitate a sterilizarii este respectat',text_en:'Sterilization expiry date is respected',ref:'OMS 1101/2016',section:'A'},
+    // Section B: Reprocesare instrumente
+    {text_ro:'Decontaminarea instrumentelor se face imediat dupa utilizare',text_en:'Instrument decontamination is done immediately after use',ref:'OMS 1101/2016',section:'B'},
+    {text_ro:'Curatarea si spalarea instrumentelor respecta protocolul',text_en:'Instrument cleaning and washing follows protocol',ref:'OMS 1101/2016',section:'B'},
+    {text_ro:'Ambalarea materialelor este corecta si integra',text_en:'Material packaging is correct and intact',ref:'OMS 1101/2016',section:'B'},
+    {text_ro:'Trasabilitatea instrumentelor este asigurata',text_en:'Instrument traceability is ensured',ref:'OMS 1101/2016',section:'B'},
+    {text_ro:'Personalul are instruire specifica documentata',text_en:'Staff has documented specific training',ref:'OMS 1101/2016',section:'B'}
+  ],
+  preoperator:[
+    {text_ro:'Pregatirea preoperatorie a pielii pacientului este conformа',text_en:'Patient skin preoperative preparation is compliant',ref:'OMS Checklist'},
+    {text_ro:'Tunderea (nu barbieritul) zonei operatorii — daca este necesar',text_en:'Clipping (not shaving) of surgical site — if necessary',ref:'OMS Checklist'},
+    {text_ro:'Antibioticoprofilaxia administrata in intervalul corect (30-60 min)',text_en:'Antibiotic prophylaxis administered in correct interval (30-60 min)',ref:'OMS Checklist'},
+    {text_ro:'Igiena mainilor echipei chirurgicale — conformitate',text_en:'Surgical team hand hygiene — compliance',ref:'WHO'},
+    {text_ro:'Echipament protectie steril complet (halat, manusi, masca, boneta)',text_en:'Complete sterile protective equipment (gown, gloves, mask, cap)',ref:'OMS 1101/2016'},
+    {text_ro:'Campul operator steril mentinut corect',text_en:'Sterile operative field correctly maintained',ref:'OMS 1101/2016'},
+    {text_ro:'Temperatura in sala de operatii conform normelor',text_en:'Operating room temperature per standards',ref:'OMS 1101/2016'},
+    {text_ro:'Verificare checklist chirurgical OMS (Sign In, Time Out, Sign Out)',text_en:'WHO surgical checklist verified (Sign In, Time Out, Sign Out)',ref:'WHO Checklist'},
+    {text_ro:'Circuitele curat/murdar respectate in blocul operator',text_en:'Clean/dirty circuits respected in operating block',ref:'OMS 1101/2016'},
+    {text_ro:'Curatenia si dezinfectia intre interventii',text_en:'Cleaning and disinfection between procedures',ref:'OMS 1101/2016'}
+  ],
+  dotare_igiena:[
+    {text_ro:'Dozator sapun lichid',text_en:'Liquid soap dispenser',ref:''},
+    {text_ro:'Dozator SHA (solutie hidroalcoolica)',text_en:'ABHR dispenser (alcohol-based hand rub)',ref:''},
+    {text_ro:'Prosoape hartie / uscator maini',text_en:'Paper towels / hand dryer',ref:''},
+    {text_ro:'Cos deseuri cu capac si pedala',text_en:'Waste bin with lid and pedal',ref:''},
+    {text_ro:'Afis igiena mainilor (WHO)',text_en:'Hand hygiene poster (WHO)',ref:''}
+  ]
+};
 
+// ═══ PAGE STATE ═══
+var _auditView='list';
+var _auditFilter='';
+var _auditSearch='';
+var _igmSecs=[];
+var _igmEditId=null;
+var _genItems=[];
+var _genEditId=null;
+var _dotareData={};
+var _dotareEditId=null;
+var _agregatData={};
+var _agregatEditId=null;
+var _customItems=[];
+var _customEditId=null;
+
+// ═══ HELPERS ═══
+function _audCatName(catId){
+  var c=ipcCatById(catId);if(!c)return catId||'—';
+  return (CFG.lang==='en')?(c.name_en||c.name_ro):c.name_ro;
+}
+function _audCatColor(catId){var c=ipcCatById(catId);return c?c.color:'#64748B'}
+function _audCatAuditType(catId){var c=ipcCatById(catId);return c?c.audit_type:null}
+function _getAuditCats(){return activeIpcCats().filter(c=>c.source_module==='audit')}
+function _persOpts(selId){return (CFG.personnel||[]).map(p=>'<option value="'+p.id+'"'+(p.id===selId?' selected':'')+'>'+esc(p.name||p.id)+'</option>').join('')}
+function _persName(id){var p=(CFG.personnel||[]).find(x=>x.id===id);return p?(p.name||p.id):(id||'—')}
+function _mkCalup(){var c={id:genId('cal'),cat:(CFG.audit_prof_categories||[])[0]||'Medic'};WHO_MOM.forEach(function(m){c[m.id]=null;});return c}
+function _momLabel(m){return (CFG.lang==='en')?m.label_en:m.label_ro}
+function _nccLabel(mid){var n=NCC_MOM[mid];return n?((CFG.lang==='en')?n.en:n.ro):''}
+
+// ═══ MAIN PAGE RENDERER ═══
 async function rAudit(el){
-  const allData=(await ga('audits')).filter(r=>r.year===A.year);
-  const f=_auditFilters;
-  const data=allData.filter(r=>{
-    if(f.type&&r.audit_type!==f.type)return false;
-    if(f.sec&&r.section!==f.sec)return false;
-    if(f.dateFrom&&r.date<f.dateFrom)return false;
-    if(f.dateTo&&r.date>f.dateTo)return false;
-    if(f.search){const q=f.search.toLowerCase();
-      const fields=[auditTypeName(r.audit_type),rSec(r.section),r.evaluator||'',r.date||'',r.observations||''];
-      if(!fields.some(x=>x.toLowerCase().includes(q)))return false}
+  if(_auditView==='igm')return _renderIgmAudit(el,_igmEditId);
+  if(_auditView==='generic')return _renderGenericAudit(el,_genEditId);
+  if(_auditView==='dotare')return _renderDotareAudit(el,_dotareEditId);
+  if(_auditView==='agregat')return _renderAgregatAudit(el,_agregatEditId);
+  if(_auditView==='custom')return _renderCustomAudit(el,_customEditId);
+
+  // ── LIST VIEW ──
+  var allData=(await ga('audits')).filter(r=>r.year===A.year);
+  var f=_auditFilter;var q=(_auditSearch||'').toLowerCase();
+  var data=allData.filter(r=>{
+    if(f&&r.audit_type!==f)return false;
+    if(q){var fields=[_audCatName(r.audit_type),rSec(r.section),_persName(r.auditor),r.date||'',r.observations||''];
+      if(!fields.some(x=>(x||'').toLowerCase().includes(q)))return false}
     return true;
   }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 
   // KPIs
-  const total=allData.length;
-  const avgCompl=total>0?Math.round(allData.reduce((s,r)=>s+(r.compliance_pct||0),0)/total*10)/10:0;
-  const byType={};AUDIT_TYPES.forEach(t=>{byType[t.id]=allData.filter(r=>r.audit_type===t.id).length});
+  var total=allData.length;
+  var avgC=total>0?Math.round(allData.reduce((s,r)=>s+(r.compliance_pct||0),0)/total*10)/10:0;
+  var ncCount=allData.reduce((s,r)=>s+((r.total_items||0)-(r.conform_items||0)),0);
+  var secsAud=new Set(allData.map(r=>r.section).filter(Boolean));
 
-  let h='<div class="kg">'+
-    '<div class="kc bl"><div class="kl">Total Audituri</div><div class="kv">'+total+'</div></div>'+
-    '<div class="kc '+(avgCompl>=80?'gn':avgCompl>=60?'am':'rd')+'"><div class="kl">Conformitate Medie</div><div class="kv">'+avgCompl+'%</div></div>'+
-    AUDIT_TYPES.map(t=>'<div class="kc tl"><div class="kl">'+t.icon+' '+t.name.split('(')[0].trim()+'</div><div class="kv">'+(byType[t.id]||0)+'</div></div>').join('')+
+  var h='<div class="kg">'+
+    '<div class="kc bl"><div class="kl">'+T('aud_total')+'</div><div class="kv">'+total+'</div></div>'+
+    '<div class="kc '+(avgC>=80?'gn':avgC>=60?'am':'rd')+'"><div class="kl">'+T('aud_conformitate_medie')+'</div><div class="kv">'+avgC+'%</div></div>'+
+    '<div class="kc '+(ncCount>0?'rd':'gn')+'"><div class="kl">'+T('aud_neconformitati')+'</div><div class="kv">'+ncCount+'</div></div>'+
+    '<div class="kc tl"><div class="kl">'+T('aud_sectii_auditate')+'</div><div class="kv">'+secsAud.size+'</div></div>'+
   '</div>';
 
-  // Filter bar
-  h+='<div class="ac-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">'+
-    '<input type="text" placeholder="Cauta..." value="'+esc(f.search)+'" oninput="_auditFilters.search=this.value;render()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px">'+
-    '<select onchange="_auditFilters.type=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
-      '<option value="">Toate tipurile</option>'+AUDIT_TYPES.map(t=>'<option value="'+t.id+'"'+(f.type===t.id?' selected':'')+'>'+t.name+'</option>').join('')+'</select>'+
-    '<select onchange="_auditFilters.sec=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
-      '<option value="">Toate sectiile</option>'+secOpts(f.sec)+'</select>'+
-    '<input type="date" value="'+esc(f.dateFrom)+'" onchange="_auditFilters.dateFrom=this.value;render()" title="De la" style="padding:5px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
-    '<input type="date" value="'+esc(f.dateTo)+'" onchange="_auditFilters.dateTo=this.value;render()" title="Pana la" style="padding:5px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
-    '<button class="btn bo bsm" onclick="_auditFilters={type:\'\',sec:\'\',dateFrom:\'\',dateTo:\'\',search:\'\'};render()">Reset</button>'+
+  // Audit type grid
+  var cats=_getAuditCats();
+  h+='<div class="aud-type-grid">'+cats.map(c=>{
+    var cnt=allData.filter(r=>r.audit_type===c.id).length;
+    var avg=cnt>0?Math.round(allData.filter(r=>r.audit_type===c.id).reduce((s,r)=>s+(r.compliance_pct||0),0)/cnt):0;
+    var clr=avg>=80?'#16A34A':avg>=60?'#F59E0B':'#DC2626';
+    return '<div class="aud-type-card" onclick="_startNewAudit(\''+c.id+'\')">'+
+      '<div class="aud-tc-icon" style="color:'+c.color+'">&#128203;</div>'+
+      '<div class="aud-tc-name" style="color:'+c.color+'">'+esc(_audCatName(c.id))+'</div>'+
+      '<div class="aud-tc-count">'+cnt+' '+T('aud_total').toLowerCase()+'</div>'+
+      (cnt>0?'<div class="aud-score-bar"><div class="aud-score-fill" style="width:'+avg+'%;background:'+clr+'"></div></div>':'')+'</div>';
+  }).join('')+'</div>';
+
+  // Filter tabs
+  h+='<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:14px">'+
+    '<button class="btn '+(f?'bo':'bp')+' bsm" onclick="_auditFilter=\'\';render()">'+T('aud_toate')+' ('+allData.length+')</button>'+
+    cats.map(c=>{var cnt=allData.filter(r=>r.audit_type===c.id).length;
+      return '<button class="btn '+(f===c.id?'bp':'bo')+' bsm" style="'+(f===c.id?'background:'+c.color+';border-color:'+c.color:'')+'" onclick="_auditFilter=\''+c.id+'\';render()">'+esc(_audCatName(c.id))+' ('+cnt+')</button>';
+    }).join('')+
+    '<input type="text" placeholder="'+T('aud_toate')+'..." value="'+esc(_auditSearch)+'" oninput="_auditSearch=this.value;render()" style="padding:5px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px;margin-left:auto">'+
   '</div>';
 
   // Action bar
-  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px">'+
-    '<button class="btn bp" onclick="editAudit()">+ Audit Nou</button></div>';
+  h+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px">'+
+    '<button class="btn bp" onclick="_showAuditTypeModal()">'+T('aud_nou')+'</button>'+
+  '</div>';
 
   // Table
   h+='<div class="pn"><div class="pb" style="overflow-x:auto">';
   if(data.length===0){
-    h+='<div class="es"><p>Niciun audit '+(f.type||f.sec||f.search?'gasit cu filtrele selectate':'pentru '+A.year)+'.</p>'+
-      '<button class="btn bp" onclick="editAudit()">Adauga primul audit</button></div>';
+    h+='<div class="es"><p>Niciun audit '+(f||q?'gasit cu filtrele selectate':'pentru '+A.year)+'.</p>'+
+      '<button class="btn bp" onclick="_showAuditTypeModal()">'+T('aud_nou')+'</button></div>';
   } else {
-    h+='<table class="dt"><thead><tr><th>#</th><th>Data</th><th>Tip</th><th>Sectie</th><th>Evaluator</th><th>Scor %</th><th>Actiuni</th></tr></thead><tbody>'+
-    data.map((r,i)=>{
-      const pct=r.compliance_pct||0;const pCls=pct>=80?'bdg-g':pct>=60?'bdg-a':'bdg-r';
-      return '<tr><td>'+(i+1)+'</td><td>'+fmtDate(r.date)+'</td>'+
-        '<td>'+auditTypeIcon(r.audit_type)+' '+auditTypeName(r.audit_type)+'</td>'+
-        '<td>'+rSec(r.section)+'</td><td>'+(r.evaluator||'—')+'</td>'+
+    h+='<table class="dt"><thead><tr><th>#</th><th>'+T('aud_data')+'</th><th>Tip</th><th>'+T('aud_sectie')+'</th><th>'+T('aud_auditor')+'</th><th>'+T('aud_scor')+'</th><th>'+T('aud_rezultat')+'</th></tr></thead><tbody>';
+    data.forEach((r,i)=>{
+      var pct=r.compliance_pct||0;var pCls=pct>=80?'bdg-g':pct>=60?'bdg-a':'bdg-r';
+      var catClr=_audCatColor(r.audit_type);
+      h+='<tr><td>'+(i+1)+'</td><td>'+fmtDate(r.date)+'</td>'+
+        '<td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+catClr+';margin-right:4px"></span>'+esc(_audCatName(r.audit_type))+'</td>'+
+        '<td>'+rSec(r.section)+'</td><td>'+esc(_persName(r.auditor))+'</td>'+
         '<td><span class="bdg '+pCls+'">'+pct+'%</span></td>'+
-        '<td class="act"><button onclick="editAudit('+r.id+')" title="Editeaza">&#9998;</button>'+
-          '<button onclick="genAuditWord('+r.id+')" title="Raport Word">&#128196;</button>'+
+        '<td class="act">'+
+          '<button onclick="_editExistingAudit('+r.id+')" title="Editeaza">&#9998;</button>'+
+          '<button onclick="_genAuditWord('+r.id+')" title="Export Word">&#128196;</button>'+
           '<button onclick="delRec(\'audits\','+r.id+')" title="Sterge">&#128465;</button></td></tr>';
-    }).join('')+
-    '</tbody></table>';
+    });
+    h+='</tbody></table>';
   }
   h+='</div></div>';
   el.innerHTML=h;
 }
 
-function getAuditDefItems(type,izoTip){
-  if(type==='igm')return OMS5.map(l=>({label:l,result:'',note:''}));
-  if(type==='curat')return CLEAN_ITEMS.map(l=>({label:l,result:'',note:''}));
-  if(type==='izol')return IZOL_ITEMS.map(l=>({label:l,result:'',note:''}));
-  return [{label:'',result:'',note:''}];
+// ═══ AUDIT TYPE SELECTOR MODAL ═══
+function _showAuditTypeModal(){
+  var cats=_getAuditCats();
+  var body='<div class="aud-type-grid">'+cats.map(c=>{
+    return '<div class="aud-type-card" onclick="closeM();_startNewAudit(\''+c.id+'\')">'+
+      '<div class="aud-tc-icon" style="color:'+c.color+'">&#128203;</div>'+
+      '<div class="aud-tc-name" style="color:'+c.color+'">'+esc(_audCatName(c.id))+'</div>'+
+    '</div>';
+  }).join('')+'</div>';
+  openM(T('aud_nou')+' — Selecteaza tipul',body,'<button class="btn bo" onclick="closeM()">Anuleaza</button>');
 }
 
-var _auditEditItems=[];
-var _auditEditType='';
-
-async function editAudit(id){
-  let r=id?(await ga('audits')).find(x=>x.id===id):null;
-  if(!r)r={year:A.year,audit_type:'',section:'',date:new Date().toISOString().slice(0,10),evaluator:getCoord()?getCoord().name:'',
-    items:[],compliance_pct:0,total_items:0,conform_items:0,observations:'',recommendations:''};
-  _auditEditType=r.audit_type;
-  _auditEditItems=r.items&&r.items.length?JSON.parse(JSON.stringify(r.items)):[];
-
-  openM(id?'Editare Audit':'Audit Nou',
-    '<div class="fr"><div class="fg"><label>Tip Audit</label><select id="f-atype" onchange="onAuditTypeChange(this.value)">'+
-      '<option value="">— Alege tipul —</option>'+AUDIT_TYPES.map(t=>'<option value="'+t.id+'"'+(r.audit_type===t.id?' selected':'')+'>'+t.icon+' '+t.name+'</option>').join('')+
-    '</select></div>'+
-    '<div class="fg"><label>Data</label><input type="date" id="f-adate" value="'+(r.date||'')+'"></div></div>'+
-    '<div class="fr"><div class="fg"><label>Sectia</label><select id="f-asec"><option value="">—</option>'+secOpts(r.section)+'</select></div>'+
-    '<div class="fg"><label>Evaluator</label><input id="f-aeval" value="'+(r.evaluator||'')+'"></div></div>'+
-    (r.audit_type==='izol'?'<div class="fg"><label>Tip izolare</label><select id="f-aizol">'+
-      '<option value="contact"'+(r.isolation_type==='contact'?' selected':'')+'>Contact</option>'+
-      '<option value="aerogen"'+(r.isolation_type==='aerogen'?' selected':'')+'>Aerogen</option>'+
-      '<option value="picaturi"'+(r.isolation_type==='picaturi'?' selected':'')+'>Picaturi</option></select></div>':'')+
-    '<div id="audit-items-container">'+renderAuditItemsHTML()+'</div>'+
-    '<div class="fr"><div class="fg"><label>Observatii</label><textarea id="f-aobs" rows="2">'+(r.observations||'')+'</textarea></div>'+
-    '<div class="fg"><label>Recomandari</label><textarea id="f-arec" rows="2">'+(r.recommendations||'')+'</textarea></div></div>',
-  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveAudit('+(id||'null')+')">Salveaza</button>');
-  setTimeout(()=>{addDatePreview('f-adate');attachDirtyTracking()},50);
-}
-
-function onAuditTypeChange(type){
-  _auditEditType=type;
-  _auditEditItems=getAuditDefItems(type);
-  document.getElementById('audit-items-container').innerHTML=renderAuditItemsHTML();
-  // Toggle isolation type field
-  const existing=document.getElementById('f-aizol');
-  if(type==='izol'&&!existing){
-    const evalDiv=document.getElementById('f-aeval').closest('.fr');
-    if(evalDiv){const d=document.createElement('div');d.className='fg';d.innerHTML='<label>Tip izolare</label><select id="f-aizol"><option value="contact">Contact</option><option value="aerogen">Aerogen</option><option value="picaturi">Picaturi</option></select>';
-      evalDiv.parentNode.insertBefore(d,evalDiv.nextSibling)}
+function _startNewAudit(ipcCatId){
+  var at=_audCatAuditType(ipcCatId);
+  if(at==='igm'){_igmEditId=null;_igmSecs=[];_auditView='igm';render();return}
+  if(at==='dotare_igiena'){_dotareEditId=null;_dotareData={catId:ipcCatId,sections:{}};_auditView='dotare';render();return}
+  if(at==='agregat'){_agregatEditId=null;_agregatData={catId:ipcCatId};_auditView='agregat';render();return}
+  if(at==='curatenie'||at==='rotatie_biocide'||at==='sterilizare'||at==='preoperator'){
+    _genEditId=null;
+    _genItems=(AUDIT_ITEMS[at]||[]).map((it,i)=>({id:genId('gi'),text_ro:it.text_ro,text_en:it.text_en,ref:it.ref||'',section:it.section||'',result:'',note:''}));
+    _auditView='generic';_genEditCatId=ipcCatId;render();return;
   }
+  // Custom or unknown
+  _customEditId=null;_customItems=[{id:genId('ci'),text_ro:'',text_en:'',ref:'',result:'',note:''}];
+  _auditView='custom';_customCatId=ipcCatId;render();
 }
 
-function renderAuditItemsHTML(){
-  if(!_auditEditType)return '<div class="ib inf" style="margin:10px 0">Selecteaza tipul de audit pentru a vedea checklist-ul.</div>';
-  const isCustom=_auditEditType==='custom';
-  const isIgm=_auditEditType==='igm';
-  let h='<div style="margin:12px 0"><h4 style="color:var(--navy);font-size:13px;margin-bottom:8px">'+(isIgm?'Observatii Igiena Mainilor':'Checklist Audit')+'</h4>';
-  h+='<table class="dt" style="font-size:12px"><thead><tr><th style="width:40%">Item</th>';
-  if(isIgm){h+='<th>Oportunitate</th><th>Actiune corecta</th>';}
-  else {h+='<th>Conform</th><th>Neconform</th><th>N/A</th>';}
-  h+='<th>Observatii</th>';
-  if(isCustom)h+='<th style="width:40px"></th>';
-  h+='</tr></thead><tbody>';
-  _auditEditItems.forEach((it,i)=>{
-    h+='<tr><td>'+(isCustom?'<input value="'+esc(it.label)+'" onchange="_auditEditItems['+i+'].label=this.value" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:12px">':it.label)+'</td>';
-    if(isIgm){
-      h+='<td style="text-align:center"><input type="checkbox" '+(it.result==='OP'||it.result==='C'?'checked':'')+' onchange="setAuditItem('+i+',\'opp\',this.checked)"></td>';
-      h+='<td style="text-align:center"><input type="checkbox" '+(it.result==='C'?'checked':'')+' onchange="setAuditItem('+i+',\'act\',this.checked)"></td>';
-    } else {
-      h+='<td style="text-align:center"><input type="radio" name="ai'+i+'" '+(it.result==='C'?'checked':'')+' onchange="_auditEditItems['+i+'].result=\'C\'"></td>';
-      h+='<td style="text-align:center"><input type="radio" name="ai'+i+'" '+(it.result==='NC'?'checked':'')+' onchange="_auditEditItems['+i+'].result=\'NC\'"></td>';
-      h+='<td style="text-align:center"><input type="radio" name="ai'+i+'" '+(it.result==='NA'?'checked':'')+' onchange="_auditEditItems['+i+'].result=\'NA\'"></td>';
+async function _editExistingAudit(id){
+  var r=(await ga('audits')).find(x=>x.id===id);if(!r)return;
+  var at=_audCatAuditType(r.audit_type);
+  if(at==='igm'){_igmEditId=id;_igmSecs=JSON.parse(JSON.stringify(r.sections||[]));_auditView='igm';render();return}
+  if(at==='dotare_igiena'){_dotareEditId=id;_dotareData=JSON.parse(JSON.stringify(r));_auditView='dotare';render();return}
+  if(at==='agregat'){_agregatEditId=id;_agregatData=JSON.parse(JSON.stringify(r));_auditView='agregat';render();return}
+  if(at==='curatenie'||at==='rotatie_biocide'||at==='sterilizare'||at==='preoperator'){
+    _genEditId=id;_genItems=JSON.parse(JSON.stringify(r.items||[]));_genEditCatId=r.audit_type;_auditView='generic';render();return;
+  }
+  // Custom
+  _customEditId=id;_customItems=JSON.parse(JSON.stringify(r.items||[]));_customCatId=r.audit_type;_auditView='custom';render();
+}
+
+function _backToList(){_auditView='list';_igmEditId=null;_genEditId=null;_dotareEditId=null;_agregatEditId=null;_customEditId=null;render()}
+
+// ═══════════════════════════════════════════════════════════════
+// TIP A: HAND HYGIENE AUDIT (WHO 5 Moments with calups)
+// ═══════════════════════════════════════════════════════════════
+var _igmMeta={};
+
+async function _renderIgmAudit(el,id){
+  var r=null;
+  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r&&!_igmSecs.length)_igmSecs=JSON.parse(JSON.stringify(r.sections||[]))}
+  if(!r)r={date:new Date().toISOString().slice(0,10),auditor:'',audit_subtype:'planif',duration:60};
+  _igmMeta=r;
+
+  // Find igm category
+  var igmCat=(CFG.ipc_categories||[]).find(c=>c.audit_type==='igm');
+  var catId=igmCat?igmCat.id:'';
+
+  var h='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'+
+    '<button class="btn bo bsm" onclick="_backToList()">&#8592; '+T('aud_inapoi')+'</button>'+
+    '<h3 style="margin:0;color:var(--navy)">'+T('aud_igm_m1').split(' ')[0]+' '+T('pt_audituri')+' — '+T('aud_igm_calup')+'</h3>'+
+  '</div>';
+
+  // Metadata card
+  h+='<div class="pn"><div class="ph"><h3>Date identificare audit</h3></div><div class="pb">'+
+    '<div class="fr">'+
+      '<div class="fg"><label>'+T('aud_data')+'</label><input type="date" id="f-igm-date" value="'+(r.date||'')+'"></div>'+
+      '<div class="fg"><label>'+T('aud_auditor')+'</label><select id="f-igm-auditor"><option value="">—</option>'+_persOpts(r.auditor)+'</select></div>'+
+      '<div class="fg"><label>'+T('aud_subtip')+'</label><select id="f-igm-subtype">'+
+        '<option value="planif"'+(r.audit_subtype==='planif'?' selected':'')+'>'+T('aud_planificat')+'</option>'+
+        '<option value="inopinat"'+(r.audit_subtype==='inopinat'?' selected':'')+'>'+T('aud_inopinat')+'</option>'+
+        '<option value="tematic"'+(r.audit_subtype==='tematic'?' selected':'')+'>'+T('aud_tematic')+'</option>'+
+      '</select></div>'+
+      '<div class="fg"><label>'+T('aud_durata')+'</label><input type="number" id="f-igm-dur" value="'+(r.duration||60)+'" min="10" max="480"></div>'+
+    '</div>'+
+  '</div></div>';
+
+  // Add section row
+  h+='<div style="display:flex;gap:8px;align-items:center;margin:12px 0">'+
+    '<select id="igm-sec-sel"><option value="">— '+T('aud_sectie')+' —</option>'+secOpts('')+'</select>'+
+    '<button class="btn bp bsm" onclick="_igmAddSec()">'+T('aud_igm_adauga_sec')+'</button>'+
+  '</div>';
+
+  // Sections
+  if(!_igmSecs.length){
+    h+='<div class="ib inf">Nu a fost adaugata nicio sectie. Selectati din lista de mai sus.</div>';
+  } else {
+    _igmSecs.forEach(sec=>{
+      var sc=_igmCalcScore(sec);
+      var scBdg=sc.pct!=null?'<span class="bdg '+(sc.pct>=80?'bdg-g':sc.pct>=50?'bdg-a':'bdg-r')+'">'+sc.pct+'% ('+sc.da+'/'+sc.tot+')</span>':'<span style="font-size:11px;color:var(--txtL)">fara date</span>';
+      h+='<div class="aud-scard" id="igm-sec-'+sec.id+'">';
+      h+='<div class="aud-shdr" onclick="_igmTogSec(\''+sec.id+'\')">'+
+        '<div><h4 style="margin:0;display:inline">'+esc(sec.name)+'</h4> <span style="font-size:11px;color:var(--txtL)">('+sec.calups.length+' calupuri)</span></div>'+
+        '<div style="display:flex;align-items:center;gap:8px">'+
+          '<span id="igm-sc-'+sec.id+'">'+scBdg+'</span>'+
+          '<button class="btn bo bsm" onclick="event.stopPropagation();_igmRemSec(\''+sec.id+'\')" style="padding:2px 8px;font-size:14px">&#215;</button>'+
+        '</div>'+
+      '</div>';
+      h+='<div class="aud-sbody" id="igm-bd-'+sec.id+'" style="display:block">';
+      h+='<div style="font-size:11px;color:var(--txtL);margin-bottom:8px">Un calup = o persoana observata. Bifati DA/NU pentru fiecare moment OMS aplicabil.</div>';
+      h+='<div style="overflow-x:auto"><table class="aud-tbl"><thead><tr><th style="text-align:left;min-width:120px">'+T('aud_igm_cat_prof')+'</th>';
+      WHO_MOM.forEach(m=>{
+        h+='<th style="background:'+m.bg+';border-bottom:2px solid '+m.border+';min-width:80px"><div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span class="'+m.cl+'">'+m.n+'</span><span style="font-size:9px;color:'+m.border+'">M'+m.n+'</span></div></th>';
+      });
+      h+='<th style="width:30px"></th></tr></thead><tbody id="igm-tb-'+sec.id+'">';
+      sec.calups.forEach(c=>{h+=_igmRowHTML(sec,c)});
+      h+='</tbody></table></div>';
+      h+='<div style="margin-top:8px"><button class="btn bo bsm" onclick="_igmAddCalup(\''+sec.id+'\')">'+T('aud_igm_adauga_calup')+'</button></div>';
+      h+='</div></div>';
+    });
+  }
+
+  // Actions
+  h+='<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
+    '<button class="btn bp" onclick="_saveIgmAudit()" style="background:#16A34A;border-color:#16A34A">Salveaza audit</button>'+
+    '<button class="btn bo" onclick="_backToList()">Anuleaza</button>'+
+    '<button class="btn bo bsm" onclick="genIgmBlankForm()" style="margin-left:auto">'+T('aud_fisa_goala')+'</button>'+
+  '</div>';
+
+  el.innerHTML=h;
+}
+
+function _igmRowHTML(sec,c){
+  var catOpts=(CFG.audit_prof_categories||[]).map(p=>'<option value="'+esc(p)+'"'+(c.cat===p?' selected':'')+'>'+esc(p)+'</option>').join('');
+  var mc=WHO_MOM.map(m=>{
+    var obs=c[m.id];var v=obs?obs.val:null;
+    var pref=sec.id+c.id+m.id;
+    var subHtml='';
+    if(v==='DA'){
+      subHtml='<div class="aud-sub-sel">'+
+        '<span class="aud-fr'+(obs.met==='FR'?' on':'')+'" onclick="_igmSetMet(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\',\'FR\')">FR</span>'+
+        '<span class="aud-sp'+(obs.met==='SP'?' on':'')+'" onclick="_igmSetMet(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\',\'SP\')">SP</span></div>';
+    } else if(v==='NU'){
+      subHtml='<div class="aud-sub-sel">'+
+        '<span class="aud-man'+(obs.man?' on':'')+'" onclick="_igmSetMan(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\')" title="Manusi">&#129380;</span></div>';
     }
-    h+='<td><input value="'+esc(it.note||'')+'" onchange="_auditEditItems['+i+'].note=this.value" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>';
-    if(isCustom)h+='<td><button onclick="removeAuditItem('+i+')" class="btn-x" style="font-size:16px">&#10005;</button></td>';
-    h+='</tr>';
+    return '<td style="background:'+m.bg+'"><div class="aud-mcell">'+
+      '<div style="display:flex;gap:3px">'+
+        '<span class="aud-da'+(v==='DA'?' on':'')+'" id="da-'+pref+'" onclick="_igmSetVal(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\',\'DA\')">DA</span>'+
+        '<span class="aud-nu'+(v==='NU'?' on':'')+'" id="nu-'+pref+'" onclick="_igmSetVal(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\',\'NU\')">NU</span>'+
+      '</div><div id="sub-'+pref+'">'+subHtml+'</div></div></td>';
+  }).join('');
+  return '<tr id="igm-r-'+c.id+'"><td><select style="font-size:11px;padding:3px;border:1px solid var(--brd);border-radius:4px;max-width:120px" onchange="_igmSetCat(\''+sec.id+'\',\''+c.id+'\',this.value)">'+catOpts+'</select></td>'+mc+
+    '<td><button style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--txtL)" onclick="_igmRemCalup(\''+sec.id+'\',\''+c.id+'\')" title="Sterge calup">&#215;</button></td></tr>';
+}
+
+function _igmAddSec(){
+  var sel=document.getElementById('igm-sec-sel');if(!sel||!sel.value)return;
+  var secId=sel.value;var secName=rSec(secId);
+  if(_igmSecs.find(s=>s.id===secId)){alert('Sectia este deja adaugata.');return}
+  var calups=[];for(var i=0;i<10;i++)calups.push(_mkCalup());
+  _igmSecs.push({id:secId,name:secName,calups:calups});
+  render();
+}
+function _igmRemSec(sid){if(!confirm('Eliminati sectia din audit?'))return;_igmSecs=_igmSecs.filter(s=>s.id!==sid);render()}
+function _igmTogSec(sid){var bd=document.getElementById('igm-bd-'+sid);if(bd)bd.style.display=bd.style.display==='none'?'block':'none'}
+function _igmAddCalup(sid){var s=_igmSecs.find(x=>x.id===sid);if(!s)return;s.calups.push(_mkCalup());_igmRenderTbody(sid);_igmUpdScore(sid)}
+function _igmRemCalup(sid,cid){var s=_igmSecs.find(x=>x.id===sid);if(!s)return;s.calups=s.calups.filter(x=>x.id!==cid);_igmRenderTbody(sid);_igmUpdScore(sid)}
+function _igmSetCat(sid,cid,val){var s=_igmSecs.find(x=>x.id===sid);if(!s)return;var c=s.calups.find(x=>x.id===cid);if(c)c.cat=val}
+
+function _igmSetVal(sid,cid,mid,val){
+  var s=_igmSecs.find(x=>x.id===sid);if(!s)return;
+  var c=s.calups.find(x=>x.id===cid);if(!c)return;
+  var cur=c[mid];
+  if(cur&&cur.val===val){c[mid]=null}
+  else if(val==='DA'){c[mid]={val:'DA',met:'FR'}}
+  else{c[mid]={val:'NU',man:false}}
+  _igmUpdCellUI(sid,cid,mid,c[mid]);_igmUpdScore(sid);
+}
+function _igmSetMet(sid,cid,mid,met){
+  var s=_igmSecs.find(x=>x.id===sid);if(!s)return;
+  var c=s.calups.find(x=>x.id===cid);if(!c||!c[mid]||c[mid].val!=='DA')return;
+  c[mid].met=met;_igmUpdCellUI(sid,cid,mid,c[mid]);
+}
+function _igmSetMan(sid,cid,mid){
+  var s=_igmSecs.find(x=>x.id===sid);if(!s)return;
+  var c=s.calups.find(x=>x.id===cid);if(!c||!c[mid]||c[mid].val!=='NU')return;
+  c[mid].man=!c[mid].man;_igmUpdCellUI(sid,cid,mid,c[mid]);
+}
+
+function _igmUpdCellUI(sid,cid,mid,obs){
+  var pref=sid+cid+mid;
+  var da=document.getElementById('da-'+pref);var nu=document.getElementById('nu-'+pref);var sub=document.getElementById('sub-'+pref);
+  if(!da||!nu||!sub)return;
+  var v=obs?obs.val:null;
+  da.className='aud-da'+(v==='DA'?' on':'');
+  nu.className='aud-nu'+(v==='NU'?' on':'');
+  if(v==='DA'){
+    sub.innerHTML='<div class="aud-sub-sel">'+
+      '<span class="aud-fr'+(obs.met==='FR'?' on':'')+'" onclick="_igmSetMet(\''+sid+'\',\''+cid+'\',\''+mid+'\',\'FR\')">FR</span>'+
+      '<span class="aud-sp'+(obs.met==='SP'?' on':'')+'" onclick="_igmSetMet(\''+sid+'\',\''+cid+'\',\''+mid+'\',\'SP\')">SP</span></div>';
+  } else if(v==='NU'){
+    sub.innerHTML='<div class="aud-sub-sel">'+
+      '<span class="aud-man'+(obs.man?' on':'')+'" onclick="_igmSetMan(\''+sid+'\',\''+cid+'\',\''+mid+'\')" title="Manusi">&#129380;</span></div>';
+  } else {sub.innerHTML=''}
+}
+
+function _igmCalcScore(sec){
+  var da=0,nu=0,tot=0,fr=0,sp=0,man=0;
+  sec.calups.forEach(c=>{WHO_MOM.forEach(m=>{var o=c[m.id];if(!o)return;
+    if(o.val==='DA'){da++;tot++;if(o.met==='FR')fr++;else sp++}
+    else if(o.val==='NU'){nu++;tot++;if(o.man)man++}
+  })});
+  return{da:da,nu:nu,tot:tot,fr:fr,sp:sp,man:man,pct:tot>0?Math.round(da/tot*100):null};
+}
+
+function _igmUpdScore(sid){
+  var s=_igmSecs.find(x=>x.id===sid);if(!s)return;
+  var sc=_igmCalcScore(s);var el=document.getElementById('igm-sc-'+sid);if(!el)return;
+  if(sc.pct!=null){var cls=sc.pct>=80?'bdg-g':sc.pct>=50?'bdg-a':'bdg-r';el.innerHTML='<span class="bdg '+cls+'">'+sc.pct+'% ('+sc.da+'/'+sc.tot+')</span>'}
+  else{el.innerHTML='<span style="font-size:11px;color:var(--txtL)">fara date</span>'}
+}
+
+function _igmRenderTbody(sid){
+  var s=_igmSecs.find(x=>x.id===sid);if(!s)return;
+  var tb=document.getElementById('igm-tb-'+sid);if(!tb)return;
+  tb.innerHTML=s.calups.map(c=>_igmRowHTML(s,c)).join('');
+}
+
+async function _saveIgmAudit(){
+  var v=s=>{var el=document.getElementById(s);return el?el.value:''};
+  var date=v('f-igm-date');if(!date){alert('Selectati data.');return}
+  if(!_igmSecs.length){alert('Adaugati cel putin o sectie.');return}
+  var igmCat=(CFG.ipc_categories||[]).find(c=>c.audit_type==='igm');
+  var catId=igmCat?igmCat.id:'';
+  // Global score
+  var da=0,nu=0,tot=0;
+  _igmSecs.forEach(sec=>{var sc=_igmCalcScore(sec);da+=sc.da;nu+=sc.nu;tot+=sc.tot});
+  var pct=tot>0?Math.round(da/tot*100):0;
+  var secNames=_igmSecs.map(s=>s.name).filter(Boolean).join(', ');
+  var rec={year:A.year,audit_type:catId,date:date,auditor:v('f-igm-auditor'),
+    section:secNames,
+    audit_subtype:v('f-igm-subtype'),duration:parseInt(v('f-igm-dur'))||60,
+    sections:JSON.parse(JSON.stringify(_igmSecs)),
+    compliance_pct:pct,total_items:tot,conform_items:da,
+    observations:'',recommendations:'',created_at:new Date().toISOString()};
+  if(_igmEditId)rec.id=_igmEditId;
+  await pt('audits',rec);
+  logActivity((_igmEditId?'Editat':'Adaugat')+' audit Igiena Mainilor — '+pct+'%');
+  _backToList();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TIP B: GENERIC CHECKLIST AUDIT
+// ═══════════════════════════════════════════════════════════════
+var _genEditCatId='';
+
+async function _renderGenericAudit(el,id){
+  var r=null;
+  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r&&!_genItems.length)_genItems=JSON.parse(JSON.stringify(r.items||[]))}
+  if(!r)r={date:new Date().toISOString().slice(0,10),auditor:'',section:'',observations:'',recommendations:'',measures:'',measure_deadline:'',measure_responsible:''};
+
+  var catName=_audCatName(_genEditCatId);
+  var at=_audCatAuditType(_genEditCatId);
+  var hasSections=(at==='sterilizare');
+
+  var h='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'+
+    '<button class="btn bo bsm" onclick="_backToList()">&#8592; '+T('aud_inapoi')+'</button>'+
+    '<h3 style="margin:0;color:'+_audCatColor(_genEditCatId)+'">'+esc(catName)+'</h3>'+
+  '</div>';
+
+  // Metadata
+  h+='<div class="pn"><div class="ph"><h3>Date identificare</h3></div><div class="pb">'+
+    '<div class="fr">'+
+      '<div class="fg"><label>'+T('aud_data')+'</label><input type="date" id="f-gen-date" value="'+(r.date||'')+'"></div>'+
+      '<div class="fg"><label>'+T('aud_sectie')+'</label><select id="f-gen-sec"><option value="">—</option>'+secOpts(r.section)+'</select></div>'+
+      '<div class="fg"><label>'+T('aud_auditor')+'</label><select id="f-gen-auditor"><option value="">—</option>'+_persOpts(r.auditor)+'</select></div>'+
+    '</div>'+
+  '</div></div>';
+
+  // Items checklist
+  if(hasSections){
+    var secA=_genItems.filter(it=>it.section==='A');
+    var secB=_genItems.filter(it=>it.section==='B');
+    h+=_genSectionHTML(T('aud_sect_a')+': Procesul de sterilizare',secA);
+    h+=_genSectionHTML(T('aud_sect_b')+': Reprocesare instrumente',secB);
+  } else {
+    h+=_genSectionHTML(esc(catName),_genItems);
+  }
+
+  // Observations and measures
+  h+='<div class="pn"><div class="ph"><h3>'+T('aud_observatii')+' / '+T('aud_recomandari')+'</h3></div><div class="pb">'+
+    '<div class="fr"><div class="fg"><label>'+T('aud_observatii')+'</label><textarea id="f-gen-obs" rows="2">'+(r.observations||'')+'</textarea></div>'+
+    '<div class="fg"><label>'+T('aud_recomandari')+'</label><textarea id="f-gen-rec" rows="2">'+(r.recommendations||'')+'</textarea></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+T('aud_masuri_corective')+'</label><textarea id="f-gen-measures" rows="2">'+(r.measures||'')+'</textarea></div>'+
+    '<div class="fg"><label>'+T('aud_termen')+'</label><input type="date" id="f-gen-deadline" value="'+(r.measure_deadline||'')+'"></div>'+
+    '<div class="fg"><label>'+T('aud_responsabil')+'</label><input id="f-gen-resp" value="'+(r.measure_responsible||'')+'"></div></div>'+
+  '</div></div>';
+
+  // Actions
+  h+='<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
+    '<button class="btn bp" onclick="_saveGenericAudit()" style="background:#16A34A;border-color:#16A34A">Salveaza audit</button>'+
+    '<button class="btn bo" onclick="_backToList()">Anuleaza</button>'+
+    '<button class="btn bo bsm" onclick="genAuditBlankForm(\''+_genEditCatId+'\')" style="margin-left:auto">'+T('aud_fisa_goala')+'</button>'+
+  '</div>';
+
+  el.innerHTML=h;
+}
+
+function _genSectionHTML(title,items){
+  var h='<div class="pn" style="margin-top:12px"><div class="ph"><h3>'+title+'</h3></div><div class="pb">';
+  items.forEach((it,idx)=>{
+    var globalIdx=_genItems.indexOf(it);
+    var txt=(CFG.lang==='en')?(it.text_en||it.text_ro):it.text_ro;
+    h+='<div class="aud-gen-item">'+
+      '<div class="aud-gen-nr">'+(idx+1)+'</div>'+
+      '<div class="aud-gen-text">'+esc(txt)+'</div>'+
+      '<div class="aud-gen-ref">'+esc(it.ref)+'</div>'+
+      '<div class="aud-gen-btns">'+
+        '<span class="aud-gen-btn'+(it.result==='C'?' c-on':'')+'" onclick="_genSetResult('+globalIdx+',\'C\')">C</span>'+
+        '<span class="aud-gen-btn'+(it.result==='NC'?' nc-on':'')+'" onclick="_genSetResult('+globalIdx+',\'NC\')">NC</span>'+
+        '<span class="aud-gen-btn'+(it.result==='NA'?' na-on':'')+'" onclick="_genSetResult('+globalIdx+',\'NA\')">N/A</span>'+
+      '</div>'+
+      '<div style="width:120px"><input value="'+esc(it.note||'')+'" onchange="_genItems['+globalIdx+'].note=this.value" placeholder="'+T('aud_nota')+'" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></div>'+
+    '</div>';
   });
-  h+='</tbody></table>';
-  if(isCustom)h+='<button class="btn bo bsm" onclick="addAuditItem()" style="margin-top:6px">+ Adauga item</button>';
-  h+='</div>';
+  h+='</div></div>';
   return h;
 }
 
-function setAuditItem(i,field,val){
-  if(field==='opp')_auditEditItems[i].result=val?'OP':'';
-  else if(field==='act')_auditEditItems[i].result=val?'C':'OP';
-}
-function addAuditItem(){_auditEditItems.push({label:'',result:'',note:''});document.getElementById('audit-items-container').innerHTML=renderAuditItemsHTML()}
-function removeAuditItem(i){_auditEditItems.splice(i,1);document.getElementById('audit-items-container').innerHTML=renderAuditItemsHTML()}
-
-async function saveAudit(id){
-  const v=s=>document.getElementById(s)?document.getElementById(s).value:'';
-  const type=v('f-atype');if(!type){alert('Selecteaza tipul de audit.');return}
-  const sec=v('f-asec');if(!sec){alert('Selecteaza sectia.');return}
-  const items=_auditEditItems.filter(it=>it.label);
-  // Calculate compliance
-  let totalEval=0,conform=0;
-  if(type==='igm'){
-    items.forEach(it=>{if(it.result==='OP'||it.result==='C'){totalEval++;if(it.result==='C')conform++}});
-  } else {
-    items.forEach(it=>{if(it.result==='C'||it.result==='NC'){totalEval++;if(it.result==='C')conform++}});
-  }
-  const pct=totalEval>0?Math.round(conform/totalEval*1000)/10:0;
-  const rec={year:A.year,audit_type:type,section:sec,date:v('f-adate'),evaluator:v('f-aeval').trim(),
-    isolation_type:type==='izol'?v('f-aizol'):'',
-    items,compliance_pct:pct,total_items:totalEval,conform_items:conform,
-    observations:v('f-aobs').trim(),recommendations:v('f-arec').trim()};
-  if(id)rec.id=id;await pt('audits',rec);
-  logActivity((id?'Editat':'Adaugat')+' audit '+auditTypeName(type)+' — '+rSec(sec));
-  closeM();render();
+function _genSetResult(idx,val){
+  if(_genItems[idx].result===val)_genItems[idx].result='';
+  else _genItems[idx].result=val;
+  render();
 }
 
-async function genAuditWord(id){
-  const r=(await ga('audits')).find(x=>x.id===id);if(!r)return;
-  showGen('Se genereaza PV Audit...');
+async function _saveGenericAudit(){
+  var v=s=>{var el=document.getElementById(s);return el?el.value:''};
+  var date=v('f-gen-date');if(!date){alert('Selectati data.');return}
+  var sec=v('f-gen-sec');if(!sec){alert('Selectati sectia.');return}
+  var items=_genItems;
+  var totalEval=0,conform=0;
+  items.forEach(it=>{if(it.result==='C'||it.result==='NC'){totalEval++;if(it.result==='C')conform++}});
+  var pct=totalEval>0?Math.round(conform/totalEval*1000)/10:0;
+  var rec={year:A.year,audit_type:_genEditCatId,section:sec,date:date,auditor:v('f-gen-auditor'),
+    items:JSON.parse(JSON.stringify(items)),
+    compliance_pct:pct,total_items:totalEval,conform_items:conform,
+    observations:v('f-gen-obs').trim(),recommendations:v('f-gen-rec').trim(),
+    measures:v('f-gen-measures').trim(),measure_deadline:v('f-gen-deadline'),measure_responsible:v('f-gen-resp').trim(),
+    created_at:new Date().toISOString()};
+  if(_genEditId)rec.id=_genEditId;
+  await pt('audits',rec);
+  logActivity((_genEditId?'Editat':'Adaugat')+' audit '+_audCatName(_genEditCatId)+' — '+pct+'%');
+  _backToList();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DOTARE PUNCTE IGIENA (section × equipment table)
+// ═══════════════════════════════════════════════════════════════
+
+async function _renderDotareAudit(el,id){
+  var r=null;
+  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r)_dotareData=JSON.parse(JSON.stringify(r))}
+  if(!r)r={date:new Date().toISOString().slice(0,10),auditor:''};
+  var dotareCat=(CFG.ipc_categories||[]).find(c=>c.audit_type==='dotare_igiena');
+  var catId=dotareCat?dotareCat.id:(_dotareData.catId||'');
+  var dotItems=AUDIT_ITEMS.dotare_igiena||[];
+  var cols=[T('aud_prezent'),T('aud_functional'),T('aud_curat'),T('aud_accesibil'),T('aud_obs')];
+
+  // Ensure sections data
+  if(!_dotareData.sections)_dotareData.sections={};
+  var secList=CFG.sections||[];
+
+  var h='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'+
+    '<button class="btn bo bsm" onclick="_backToList()">&#8592; '+T('aud_inapoi')+'</button>'+
+    '<h3 style="margin:0;color:'+_audCatColor(catId)+'">'+esc(_audCatName(catId))+'</h3>'+
+  '</div>';
+
+  h+='<div class="pn"><div class="ph"><h3>Date identificare</h3></div><div class="pb">'+
+    '<div class="fr">'+
+      '<div class="fg"><label>'+T('aud_data')+'</label><input type="date" id="f-dot-date" value="'+(r.date||'')+'"></div>'+
+      '<div class="fg"><label>'+T('aud_auditor')+'</label><select id="f-dot-auditor"><option value="">—</option>'+_persOpts(r.auditor)+'</select></div>'+
+    '</div>'+
+  '</div></div>';
+
+  // Table per section
+  secList.forEach(sec=>{
+    if(!_dotareData.sections[sec.id])_dotareData.sections[sec.id]={};
+    var sd=_dotareData.sections[sec.id];
+    h+='<div class="aud-scard"><div class="aud-shdr"><h4 style="margin:0">'+esc(sec.name||sec.id)+'</h4></div>';
+    h+='<div class="aud-sbody"><table class="aud-dot-tbl"><thead><tr><th style="text-align:left">'+T('aud_echipament')+'</th>';
+    cols.forEach(c=>{h+='<th>'+esc(c)+'</th>'});
+    h+='</tr></thead><tbody>';
+    dotItems.forEach((it,ii)=>{
+      var key=ii;var txt=(CFG.lang==='en')?(it.text_en||it.text_ro):it.text_ro;
+      if(!sd[key])sd[key]={p:false,f:false,c:false,a:false,obs:''};
+      var d=sd[key];
+      h+='<tr><td style="text-align:left;font-size:12px">'+esc(txt)+'</td>';
+      ['p','f','c','a'].forEach(fld=>{
+        h+='<td><input type="checkbox" '+(d[fld]?'checked':'')+' onchange="_dotareData.sections[\''+sec.id+'\']['+key+'].'+fld+'=this.checked"></td>';
+      });
+      h+='<td><input value="'+esc(d.obs||'')+'" onchange="_dotareData.sections[\''+sec.id+'\']['+key+'].obs=this.value" style="width:80px;padding:2px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td></tr>';
+    });
+    h+='</tbody></table></div></div>';
+  });
+
+  // Observations
+  h+='<div class="pn"><div class="ph"><h3>'+T('aud_observatii')+'</h3></div><div class="pb">'+
+    '<textarea id="f-dot-obs" rows="3">'+(r.observations||'')+'</textarea>'+
+  '</div></div>';
+
+  h+='<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
+    '<button class="btn bp" onclick="_saveDotareAudit()" style="background:#16A34A;border-color:#16A34A">Salveaza audit</button>'+
+    '<button class="btn bo" onclick="_backToList()">Anuleaza</button>'+
+  '</div>';
+
+  el.innerHTML=h;
+}
+
+async function _saveDotareAudit(){
+  var v=s=>{var el=document.getElementById(s);return el?el.value:''};
+  var date=v('f-dot-date');if(!date){alert('Selectati data.');return}
+  var dotareCat=(CFG.ipc_categories||[]).find(c=>c.audit_type==='dotare_igiena');
+  var catId=dotareCat?dotareCat.id:'';
+  var dotItems=AUDIT_ITEMS.dotare_igiena||[];
+  // Calc compliance: each section×item where all 4 checks are true = conform
+  var totalEval=0,conform=0;
+  Object.keys(_dotareData.sections).forEach(secId=>{
+    var sd=_dotareData.sections[secId];
+    dotItems.forEach((it,ii)=>{
+      var d=sd[ii];if(!d)return;
+      if(d.p||d.f||d.c||d.a){totalEval++;if(d.p&&d.f&&d.c&&d.a)conform++}
+    });
+  });
+  var pct=totalEval>0?Math.round(conform/totalEval*1000)/10:0;
+  var rec={year:A.year,audit_type:catId,section:'',date:date,auditor:v('f-dot-auditor'),
+    sections_data:JSON.parse(JSON.stringify(_dotareData.sections)),
+    compliance_pct:pct,total_items:totalEval,conform_items:conform,
+    observations:v('f-dot-obs').trim(),created_at:new Date().toISOString()};
+  if(_dotareEditId)rec.id=_dotareEditId;
+  await pt('audits',rec);
+  logActivity((_dotareEditId?'Editat':'Adaugat')+' audit Dotare Puncte Igiena — '+pct+'%');
+  _backToList();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AGREGAT IPC (quarterly matrix)
+// ═══════════════════════════════════════════════════════════════
+
+async function _renderAgregatAudit(el,id){
+  var r=null;
+  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r)_agregatData=JSON.parse(JSON.stringify(r))}
+  if(!r)r={date:new Date().toISOString().slice(0,10),auditor:'',quarter:Math.ceil((new Date().getMonth()+1)/3),conclusions:''};
+  var agregCat=(CFG.ipc_categories||[]).find(c=>c.audit_type==='agregat');
+  var catId=agregCat?agregCat.id:'';
+
+  // Get all audits for this year to auto-populate matrix
+  var allAudits=(await ga('audits')).filter(a=>a.year===A.year&&a.audit_type!==catId);
+  var auditCats=_getAuditCats().filter(c=>c.audit_type!=='agregat');
+  var secList=CFG.sections||[];
+
+  // Build matrix: section × auditCat → avg compliance
+  if(!_agregatData.matrix)_agregatData.matrix={};
+  if(!_agregatData.overrides)_agregatData.overrides={};
+  if(!_agregatData.measures)_agregatData.measures=[];
+
+  var h='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'+
+    '<button class="btn bo bsm" onclick="_backToList()">&#8592; '+T('aud_inapoi')+'</button>'+
+    '<h3 style="margin:0;color:'+_audCatColor(catId)+'">'+T('aud_agregat_titlu')+'</h3>'+
+  '</div>';
+
+  h+='<div class="pn"><div class="ph"><h3>Date identificare</h3></div><div class="pb">'+
+    '<div class="fr">'+
+      '<div class="fg"><label>'+T('aud_data')+'</label><input type="date" id="f-agr-date" value="'+(r.date||'')+'"></div>'+
+      '<div class="fg"><label>'+T('aud_auditor')+'</label><select id="f-agr-auditor"><option value="">—</option>'+_persOpts(r.auditor)+'</select></div>'+
+      '<div class="fg"><label>'+T('aud_trimestru')+'</label><select id="f-agr-q">'+
+        [1,2,3,4].map(q=>'<option value="'+q+'"'+(q===(r.quarter||1)?' selected':'')+'>T'+q+'</option>').join('')+
+      '</select></div>'+
+    '</div>'+
+  '</div></div>';
+
+  // Matrix table
+  h+='<div class="pn"><div class="ph"><h3>Matrice Conformitate Sectii × Tipuri Audit</h3></div><div class="pb" style="overflow-x:auto">';
+  h+='<table class="dt" style="font-size:11px"><thead><tr><th style="text-align:left">'+T('aud_sectie')+'</th>';
+  auditCats.forEach(c=>{h+='<th style="background:'+c.color+';color:#fff;font-size:10px;min-width:70px">'+esc(_audCatName(c.id).substring(0,15))+'</th>'});
+  h+='<th>'+T('aud_scor_mediu')+'</th></tr></thead><tbody>';
+
+  secList.forEach(sec=>{
+    if(!_agregatData.matrix[sec.id])_agregatData.matrix[sec.id]={};
+    var rowVals=[];
+    h+='<tr><td style="text-align:left;font-weight:600">'+esc(sec.name||sec.id)+'</td>';
+    auditCats.forEach(c=>{
+      var oKey=sec.id+'_'+c.id;
+      var autoVal=null;
+      // Auto-calc: average compliance of audits for this section and this audit type
+      var matching=allAudits.filter(a=>a.audit_type===c.id&&(a.section===sec.id||(a.sections||[]).find(s=>s.id===sec.id)));
+      if(matching.length>0)autoVal=Math.round(matching.reduce((s,a)=>s+(a.compliance_pct||0),0)/matching.length);
+      var val=_agregatData.overrides[oKey]!=null?_agregatData.overrides[oKey]:autoVal;
+      if(val!=null)rowVals.push(val);
+      _agregatData.matrix[sec.id][c.id]=val;
+      var bg=val!=null?(val>=80?'#DCFCE7':val>=60?'#FEF9C3':'#FEE2E2'):'';
+      h+='<td style="background:'+bg+'"><input type="number" min="0" max="100" value="'+(val!=null?val:'')+'" onchange="_agregatOverride(\''+sec.id+'\',\''+c.id+'\',this.value)" style="width:50px;padding:2px;border:1px solid var(--brd);border-radius:3px;font-size:11px;text-align:center"></td>';
+    });
+    var avg=rowVals.length>0?Math.round(rowVals.reduce((s,v)=>s+v,0)/rowVals.length):null;
+    var avgClr=avg!=null?(avg>=80?'#16A34A':avg>=60?'#F59E0B':'#DC2626'):'var(--txtL)';
+    h+='<td style="font-weight:700;color:'+avgClr+'">'+(avg!=null?avg+'%':'—')+'</td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+
+  // Conclusions
+  h+='<div class="pn"><div class="ph"><h3>'+T('aud_concluzii')+'</h3></div><div class="pb">'+
+    '<textarea id="f-agr-conclusions" rows="3">'+(r.conclusions||'')+'</textarea>'+
+  '</div></div>';
+
+  h+='<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
+    '<button class="btn bp" onclick="_saveAgregatAudit()" style="background:#16A34A;border-color:#16A34A">Salveaza audit</button>'+
+    '<button class="btn bo" onclick="_backToList()">Anuleaza</button>'+
+  '</div>';
+
+  el.innerHTML=h;
+}
+
+function _agregatOverride(secId,catId,val){
+  var oKey=secId+'_'+catId;
+  if(val===''||isNaN(parseInt(val))){delete _agregatData.overrides[oKey]}
+  else{_agregatData.overrides[oKey]=parseInt(val)}
+}
+
+async function _saveAgregatAudit(){
+  var v=s=>{var el=document.getElementById(s);return el?el.value:''};
+  var date=v('f-agr-date');if(!date){alert('Selectati data.');return}
+  var agregCat=(CFG.ipc_categories||[]).find(c=>c.audit_type==='agregat');
+  var catId=agregCat?agregCat.id:'';
+  // Calc overall compliance from matrix
+  var vals=[];
+  Object.keys(_agregatData.matrix||{}).forEach(secId=>{
+    var row=_agregatData.matrix[secId];
+    Object.keys(row).forEach(cId=>{if(row[cId]!=null)vals.push(row[cId])});
+  });
+  var pct=vals.length>0?Math.round(vals.reduce((s,v)=>s+v,0)/vals.length):0;
+  var rec={year:A.year,audit_type:catId,date:date,auditor:v('f-agr-auditor'),
+    quarter:parseInt(v('f-agr-q'))||1,
+    matrix:JSON.parse(JSON.stringify(_agregatData.matrix||{})),
+    overrides:JSON.parse(JSON.stringify(_agregatData.overrides||{})),
+    measures:JSON.parse(JSON.stringify(_agregatData.measures||[])),
+    conclusions:v('f-agr-conclusions').trim(),
+    compliance_pct:pct,total_items:vals.length,conform_items:vals.filter(v=>v>=80).length,
+    created_at:new Date().toISOString()};
+  if(_agregatEditId)rec.id=_agregatEditId;
+  await pt('audits',rec);
+  logActivity((_agregatEditId?'Editat':'Adaugat')+' audit Agregat IPC T'+rec.quarter+' — '+pct+'%');
+  _backToList();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOM AUDIT
+// ═══════════════════════════════════════════════════════════════
+var _customCatId='';
+
+async function _renderCustomAudit(el,id){
+  var r=null;
+  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r&&!_customItems.length)_customItems=JSON.parse(JSON.stringify(r.items||[]))}
+  if(!r)r={date:new Date().toISOString().slice(0,10),auditor:'',section:'',observations:'',recommendations:''};
+
+  var h='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'+
+    '<button class="btn bo bsm" onclick="_backToList()">&#8592; '+T('aud_inapoi')+'</button>'+
+    '<h3 style="margin:0;color:var(--navy)">'+T('aud_custom')+'</h3>'+
+  '</div>';
+
+  h+='<div class="pn"><div class="ph"><h3>Date identificare</h3></div><div class="pb">'+
+    '<div class="fr">'+
+      '<div class="fg"><label>'+T('aud_data')+'</label><input type="date" id="f-cust-date" value="'+(r.date||'')+'"></div>'+
+      '<div class="fg"><label>'+T('aud_sectie')+'</label><select id="f-cust-sec"><option value="">—</option>'+secOpts(r.section)+'</select></div>'+
+      '<div class="fg"><label>'+T('aud_auditor')+'</label><select id="f-cust-auditor"><option value="">—</option>'+_persOpts(r.auditor)+'</select></div>'+
+    '</div>'+
+  '</div></div>';
+
+  // Items
+  h+='<div class="pn"><div class="ph"><h3>Checklist</h3><button class="btn bp bsm" onclick="_customAddItem()">'+T('aud_adauga_item')+'</button></div><div class="pb">';
+  _customItems.forEach((it,i)=>{
+    h+='<div class="aud-gen-item">'+
+      '<div class="aud-gen-nr">'+(i+1)+'</div>'+
+      '<div class="aud-gen-text"><input value="'+esc(it.text_ro||'')+'" onchange="_customItems['+i+'].text_ro=this.value" placeholder="Element verificat" style="width:100%;padding:4px;border:1px solid var(--brd);border-radius:4px;font-size:12px"></div>'+
+      '<div class="aud-gen-btns">'+
+        '<span class="aud-gen-btn'+(it.result==='C'?' c-on':'')+'" onclick="_customSetResult('+i+',\'C\')">C</span>'+
+        '<span class="aud-gen-btn'+(it.result==='NC'?' nc-on':'')+'" onclick="_customSetResult('+i+',\'NC\')">NC</span>'+
+        '<span class="aud-gen-btn'+(it.result==='NA'?' na-on':'')+'" onclick="_customSetResult('+i+',\'NA\')">N/A</span>'+
+      '</div>'+
+      '<div style="width:100px"><input value="'+esc(it.note||'')+'" onchange="_customItems['+i+'].note=this.value" placeholder="'+T('aud_nota')+'" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></div>'+
+      '<button style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--txtL)" onclick="_customRemItem('+i+')">&#215;</button>'+
+    '</div>';
+  });
+  h+='</div></div>';
+
+  // Observations
+  h+='<div class="pn"><div class="ph"><h3>'+T('aud_observatii')+'</h3></div><div class="pb">'+
+    '<div class="fr"><div class="fg"><label>'+T('aud_observatii')+'</label><textarea id="f-cust-obs" rows="2">'+(r.observations||'')+'</textarea></div>'+
+    '<div class="fg"><label>'+T('aud_recomandari')+'</label><textarea id="f-cust-rec" rows="2">'+(r.recommendations||'')+'</textarea></div></div>'+
+  '</div></div>';
+
+  h+='<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
+    '<button class="btn bp" onclick="_saveCustomAudit()" style="background:#16A34A;border-color:#16A34A">Salveaza audit</button>'+
+    '<button class="btn bo" onclick="_backToList()">Anuleaza</button>'+
+  '</div>';
+
+  el.innerHTML=h;
+}
+
+function _customAddItem(){_customItems.push({id:genId('ci'),text_ro:'',text_en:'',ref:'',result:'',note:''});render()}
+function _customRemItem(i){_customItems.splice(i,1);render()}
+function _customSetResult(i,val){if(_customItems[i].result===val)_customItems[i].result='';else _customItems[i].result=val;render()}
+
+async function _saveCustomAudit(){
+  var v=s=>{var el=document.getElementById(s);return el?el.value:''};
+  var date=v('f-cust-date');if(!date){alert('Selectati data.');return}
+  var sec=v('f-cust-sec');
+  var items=_customItems.filter(it=>it.text_ro);
+  var totalEval=0,conform=0;
+  items.forEach(it=>{if(it.result==='C'||it.result==='NC'){totalEval++;if(it.result==='C')conform++}});
+  var pct=totalEval>0?Math.round(conform/totalEval*1000)/10:0;
+  var rec={year:A.year,audit_type:_customCatId,section:sec,date:date,auditor:v('f-cust-auditor'),
+    items:JSON.parse(JSON.stringify(items)),
+    compliance_pct:pct,total_items:totalEval,conform_items:conform,
+    observations:v('f-cust-obs').trim(),recommendations:v('f-cust-rec').trim(),
+    created_at:new Date().toISOString()};
+  if(_customEditId)rec.id=_customEditId;
+  await pt('audits',rec);
+  logActivity((_customEditId?'Editat':'Adaugat')+' audit custom — '+pct+'%');
+  _backToList();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WORD EXPORT — Completed audit
+// ═══════════════════════════════════════════════════════════════
+
+async function _genAuditWord(id){
+  var r=(await ga('audits')).find(x=>x.id===id);if(!r)return;
+  var at=_audCatAuditType(r.audit_type);
+  if(at==='igm')return genAuditWordIgm(r);
+  if(at==='agregat')return genAuditWordAgregat(r);
+  return genAuditWordGeneric(r);
+}
+
+async function genAuditWordIgm(r){
+  showGen('Se genereaza raport Audit Igiena Mainilor...');
   try{
-    const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,AlignmentType,ShadingType,BorderStyle,VerticalAlign}=docx;
-    const items=r.items||[];
-    const tW=[5000,1500,1500,1500,2000];
-    const isIgm=r.audit_type==='igm';
-    const headCells=isIgm?['Item','Oportunitate','Actiune OK','','Observatii']:['Item','C','NC','N/A','Observatii'];
+    var {Table,WidthType}=docx;
+    var secs=r.sections||[];
+    // Global stats
+    var da=0,nu=0,tot=0,fr=0,sp=0,man=0,secSc=[],mD={};
+    WHO_MOM.forEach(m=>{mD[m.id]={da:0,nu:0,tot:0,fr:0,sp:0,man:0}});
+    secs.forEach(sec=>{
+      var sc=_igmCalcScore(sec);secSc.push({name:sec.name,da:sc.da,nu:sc.nu,tot:sc.tot,pct:sc.pct});
+      da+=sc.da;nu+=sc.nu;tot+=sc.tot;fr+=sc.fr;sp+=sc.sp;man+=sc.man;
+      sec.calups.forEach(c=>{WHO_MOM.forEach(m=>{
+        var o=c[m.id];if(!o)return;
+        if(o.val==='DA'){mD[m.id].da++;mD[m.id].tot++;mD[m.id].fr+=(o.met==='FR'?1:0);mD[m.id].sp+=(o.met==='SP'?1:0)}
+        else if(o.val==='NU'){mD[m.id].nu++;mD[m.id].tot++;mD[m.id].man+=(o.man?1:0)}
+      })});
+    });
+    var pct=tot>0?Math.round(da/tot*100):0;
+    var tW=[3000,1500,1500,1500,1500,2000];
 
-    const rows=[wTblHead(headCells,tW)];
-    items.forEach((it,i)=>{
-      let rCls=it.result==='C'?'27AE60':it.result==='NC'?'C0392B':it.result==='NA'?'95A5A6':'FFFFFF';
-      if(isIgm)rCls=it.result==='C'?'27AE60':it.result==='OP'?'D4A017':'95A5A6';
-      const vals=isIgm?
-        [it.label,it.result==='OP'||it.result==='C'?'DA':'—',it.result==='C'?'DA':'—','',it.note||'']:
-        [it.label,it.result==='C'?'✓':'',it.result==='NC'?'✗':'',it.result==='NA'?'—':'',it.note||''];
-      rows.push(wTblRow(vals,tW,i%2===1));
+    // Results table
+    var resRows=[wTblHead(['Indicator','Valoare'],tW.slice(0,2))];
+    resRows.push(wTblRow(['Total oportunitati',tot],tW.slice(0,2)));
+    resRows.push(wTblRow(['Conforme (DA)',da],tW.slice(0,2),true));
+    resRows.push(wTblRow(['Neconforme (NU)',nu],tW.slice(0,2)));
+    resRows.push(wTblRow(['Rata conformitate',pct+'%'],tW.slice(0,2),true));
+    resRows.push(wTblRow(['Metoda FR (frecare SHA)',fr+' ('+(da>0?Math.round(fr/da*100):0)+'%)'],tW.slice(0,2)));
+    resRows.push(wTblRow(['Metoda SP (spalare)',sp+' ('+(da>0?Math.round(sp/da*100):0)+'%)'],tW.slice(0,2),true));
+    resRows.push(wTblRow(['NU cu manusi',man+' ('+(nu>0?Math.round(man/nu*100):0)+'%)'],tW.slice(0,2)));
+
+    // Sections table
+    var secRows=[wTblHead(['Sectie','DA','NU','Total','Rata (%)'],tW.slice(0,5))];
+    secSc.forEach((s,i)=>{secRows.push(wTblRow([s.name,s.da,s.nu,s.tot,s.pct!=null?s.pct+'%':'—'],tW.slice(0,5),i%2===1))});
+
+    // Moments table
+    var momRows=[wTblHead(['Moment WHO','DA','FR','SP','NU','Manusi','Total','Rata (%)'],tW.concat([1000,1000]))];
+    WHO_MOM.forEach((m,i)=>{
+      var md=mD[m.id];var mp=md.tot>0?Math.round(md.da/md.tot*100):null;
+      momRows.push(wTblRow(['M'+m.n+' — '+_momLabel(m),md.da,md.fr,md.sp,md.nu,md.man,md.tot,mp!=null?mp+'%':'—'],tW.concat([1000,1000]),i%2===1));
     });
 
-    const children=[
-      ...wCover('RAPORT AUDIT\n'+auditTypeName(r.audit_type),CFG.hospital_name+' — '+r.date,WC.navy),
+    // Non-conformities
+    var ncP=[];
+    WHO_MOM.forEach(m=>{var md=mD[m.id];if(md.nu>0){
+      var np=md.tot>0?Math.round(md.nu/md.tot*100):0;
+      ncP.push(wP('Momentul '+m.n+' — '+_momLabel(m)+': '+md.nu+' neconforme din '+md.tot+' ('+np+'%)',{bold:true}));
+      ncP.push(wP('Masura corectiva: '+_nccLabel(m.id)));ncP.push(wSp(40));
+    }});
+    if(!ncP.length)ncP.push(wP('Nu au fost identificate neconformitati.'));
+
+    var children=[
+      ...wCover('RAPORT AUDIT IGIENA MAINILOR\nWHO 5 Momente',CFG.hospital_name+' — '+r.date,WC.navy),
       wH1('DATE GENERALE'),
-      wP('Tip audit: '+auditTypeName(r.audit_type)),
-      wP('Data: '+fmtDate(r.date)),
-      wP(secLabel(r.section)),
-      wP('Evaluator: '+(r.evaluator||'—')),
-      ...(r.audit_type==='izol'?[wP('Tip izolare: '+(r.isolation_type||'—'))]:[]),
-      wH1('REZULTATE EVALUARE'),
-      new Table({rows,width:{size:11000,type:WidthType.DXA}}),
+      wP('Data auditului: '+fmtDate(r.date)),
+      wP('Auditor: '+_persName(r.auditor)),
+      wP('Tip audit: '+(r.audit_subtype||'planificat')),
+      wP('Durata sesiune: '+(r.duration||60)+' min'),
+      wP('Referinte: Ord. MS 1101/2016, WHO Hand Hygiene 5 Moments, ECDC, ANMCS'),
       wSp(100),
-      wH2('SCOR CONFORMITATE'),
-      wP('Total itemi evaluati: '+r.total_items,{bold:true}),
-      wP('Conformi: '+r.conform_items,{bold:true,color:'27AE60'}),
-      wP('Scor: '+r.compliance_pct+'%',{bold:true,size:24,color:r.compliance_pct>=80?'27AE60':r.compliance_pct>=60?'D4A017':'C0392B'}),
-      ...(r.observations?[wH2('OBSERVATII'),wP(r.observations)]:[]),
-      ...(r.recommendations?[wH2('RECOMANDARI'),wP(r.recommendations)]:[]),
+      wH1('1. REZULTATE GLOBALE'),
+      new Table({rows:resRows,width:{size:11000,type:WidthType.DXA}}),
+      wSp(100),
+      wH1('2. SCORURI PE SECTII'),
+      new Table({rows:secRows,width:{size:11000,type:WidthType.DXA}}),
+      wSp(100),
+      wH1('3. CONFORMITATE PE MOMENTE WHO'),
+      new Table({rows:momRows,width:{size:11000,type:WidthType.DXA}}),
+      wSp(100),
+      wH1('4. NECONFORMITATI SI MASURI CORECTIVE'),
+      ...ncP,
       ...wSigBlock()
     ];
-    const doc=makeDoc(children,'Audit — '+rSec(r.section),'Audit_'+r.date);
-    await saveDocx(doc,'Audit_'+auditTypeName(r.audit_type).replace(/[^a-zA-Z0-9]/g,'_')+'_'+r.date+'.docx');
+    var doc=makeDoc(children,'Audit Igiena Mainilor','AuditIgm_'+r.date);
+    await saveDocx(doc,'Audit_Igiena_Mainilor_'+r.date+'.docx');
   }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
   finally{hideGen()}
 }
 
+async function genAuditWordGeneric(r){
+  showGen('Se genereaza raport Audit...');
+  try{
+    var {Table,WidthType}=docx;
+    var catName=_audCatName(r.audit_type);
+    var items=r.items||[];
+    var tW=[500,4000,1200,800,800,800,2000];
+    var headCells=[T('aud_nr_crt'),T('aud_element'),T('aud_referinta'),'C','NC','N/A',T('aud_nota')];
+    var rows=[wTblHead(headCells,tW)];
+    items.forEach((it,i)=>{
+      var txt=(CFG.lang==='en')?(it.text_en||it.text_ro):it.text_ro;
+      rows.push(wTblRow([i+1,txt,it.ref||'',it.result==='C'?'DA':'',it.result==='NC'?'DA':'',it.result==='NA'?'DA':'',it.note||''],tW,i%2===1,it.result==='NC'));
+    });
+    var children=[
+      ...wCover('RAPORT AUDIT\n'+catName,CFG.hospital_name+' — '+r.date,WC.navy),
+      wH1('DATE GENERALE'),
+      wP('Tip audit: '+catName),
+      wP('Data: '+fmtDate(r.date)),
+      wP(secLabel(r.section)),
+      wP('Auditor: '+_persName(r.auditor)),
+      wSp(100),
+      wH1('REZULTATE EVALUARE'),
+      new Table({rows:rows,width:{size:11000,type:WidthType.DXA}}),
+      wSp(100),
+      wH2('SCOR CONFORMITATE'),
+      wP('Total itemi evaluati: '+(r.total_items||0),{bold:true}),
+      wP('Conformi: '+(r.conform_items||0),{bold:true,color:'27AE60'}),
+      wP('Scor: '+(r.compliance_pct||0)+'%',{bold:true,size:24,color:(r.compliance_pct||0)>=80?'27AE60':(r.compliance_pct||0)>=60?'D4A017':'C0392B'}),
+      ...(r.observations?[wH2('OBSERVATII'),wP(r.observations)]:[]),
+      ...(r.recommendations?[wH2('RECOMANDARI'),wP(r.recommendations)]:[]),
+      ...(r.measures?[wH2('MASURI CORECTIVE'),wP(r.measures),wP('Termen: '+fmtDate(r.measure_deadline)),wP('Responsabil: '+(r.measure_responsible||'—'))]:[]),
+      ...wSigBlock()
+    ];
+    var doc=makeDoc(children,'Audit — '+catName,'Audit_'+r.date);
+    await saveDocx(doc,'Audit_'+catName.replace(/[^a-zA-Z0-9]/g,'_')+'_'+r.date+'.docx');
+  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  finally{hideGen()}
+}
+
+async function genAuditWordAgregat(r){
+  showGen('Se genereaza raport Audit Agregat...');
+  try{
+    var {Table,WidthType}=docx;
+    var auditCats=_getAuditCats().filter(c=>c.audit_type!=='agregat');
+    var secList=CFG.sections||[];
+    var matrix=r.matrix||{};
+
+    // Build header
+    var headCells=[T('aud_sectie')].concat(auditCats.map(c=>_audCatName(c.id).substring(0,18))).concat([T('aud_scor_mediu')]);
+    var colW=auditCats.map(()=>1200);
+    var tW=[2500].concat(colW).concat([1200]);
+    var rows=[wTblHead(headCells,tW)];
+
+    secList.forEach((sec,si)=>{
+      var rowData=[sec.name||sec.id];var vals=[];
+      auditCats.forEach(c=>{
+        var val=matrix[sec.id]?matrix[sec.id][c.id]:null;
+        if(val!=null)vals.push(val);
+        rowData.push(val!=null?val+'%':'—');
+      });
+      var avg=vals.length>0?Math.round(vals.reduce((s,v)=>s+v,0)/vals.length):null;
+      rowData.push(avg!=null?avg+'%':'—');
+      rows.push(wTblRow(rowData,tW,si%2===1));
+    });
+
+    var children=[
+      ...wCover('AUDIT AGREGAT IPC\nMatrice Trimestriala T'+(r.quarter||'?'),CFG.hospital_name+' — '+r.date,WC.navy),
+      wH1('DATE GENERALE'),
+      wP('Data: '+fmtDate(r.date)),
+      wP('Auditor: '+_persName(r.auditor)),
+      wP('Trimestru: T'+(r.quarter||'?')+' / '+A.year),
+      wSp(100),
+      wH1('MATRICE CONFORMITATE'),
+      new Table({rows:rows,width:{size:11000,type:WidthType.DXA}}),
+      wSp(100),
+      wH2('SCOR GENERAL: '+(r.compliance_pct||0)+'%'),
+      ...(r.conclusions?[wH2('CONCLUZII'),wP(r.conclusions)]:[]),
+      ...wSigBlock()
+    ];
+    var doc=makeDoc(children,'Audit Agregat IPC T'+(r.quarter||'?'),'AuditAgregat_T'+(r.quarter||0)+'_'+r.date);
+    await saveDocx(doc,'Audit_Agregat_IPC_T'+(r.quarter||0)+'_'+r.date+'.docx');
+  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  finally{hideGen()}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WORD EXPORT — Blank forms
+// ═══════════════════════════════════════════════════════════════
+
+async function genAuditBlankForm(ipcCatId){
+  showGen('Se genereaza fisa goala...');
+  try{
+    var {Table,WidthType}=docx;
+    var catName=_audCatName(ipcCatId);
+    var at=_audCatAuditType(ipcCatId);
+    var items=AUDIT_ITEMS[at]||[];
+    var tW=[500,4000,1200,800,800,800,2000];
+    var headCells=[T('aud_nr_crt'),T('aud_element'),T('aud_referinta'),'C','NC','N/A',T('aud_nota')];
+    var rows=[wTblHead(headCells,tW)];
+    items.forEach((it,i)=>{
+      var txt=(CFG.lang==='en')?(it.text_en||it.text_ro):it.text_ro;
+      rows.push(wTblRow([i+1,txt,it.ref||'','','','',''],tW,i%2===1));
+    });
+    var children=[
+      ...wCover('FISA AUDIT\n'+catName,CFG.hospital_name+' — C.P.I.A.A.M.',WC.navy),
+      wH1('DATE IDENTIFICARE'),
+      wP('Data auditului: _______________'),
+      wP('Sectia: _______________'),
+      wP('Auditor: _______________'),
+      wSp(100),
+      wH1('CHECKLIST AUDIT'),
+      new Table({rows:rows,width:{size:11000,type:WidthType.DXA}}),
+      wSp(100),
+      wH2('REZULTAT'),
+      wP('Total itemi evaluati: ______'),
+      wP('Conformi: ______'),
+      wP('Scor conformitate: ______%'),
+      wSp(100),
+      wH2('OBSERVATII'),wP('_______________________________________________'),
+      wH2('RECOMANDARI'),wP('_______________________________________________'),
+      wH2('MASURI CORECTIVE'),wP('_______________________________________________'),
+      wP('Termen: _______________  Responsabil: _______________'),
+      ...wSigBlock()
+    ];
+    var doc=makeDoc(children,'Fisa Audit — '+catName,'FisaAudit');
+    await saveDocx(doc,'Fisa_Audit_'+catName.replace(/[^a-zA-Z0-9]/g,'_')+'.docx');
+  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  finally{hideGen()}
+}
+
+async function genIgmBlankForm(){
+  showGen('Se genereaza fisa goala Igiena Mainilor...');
+  try{
+    var {Table,WidthType}=docx;
+    var momHeaders=['Cat. prof.'].concat(WHO_MOM.map(m=>'M'+m.n+' — '+_momLabel(m).substring(0,20))).concat(['Obs']);
+    var tW=[1500].concat(WHO_MOM.map(()=>1600)).concat([1500]);
+    var rows=[wTblHead(momHeaders,tW)];
+    for(var i=0;i<15;i++){
+      var cells=[''].concat(WHO_MOM.map(()=>'')).concat(['']);
+      rows.push(wTblRow(cells,tW,i%2===1));
+    }
+    var children=[
+      ...wCover('FISA AUDIT IGIENA MAINILOR\nWHO 5 Momente',CFG.hospital_name+' — C.P.I.A.A.M.',WC.navy),
+      wH1('DATE IDENTIFICARE'),
+      wP('Data auditului: _______________'),
+      wP('Sectia: _______________'),
+      wP('Auditor: _______________'),
+      wP('Durata sesiune: ______ min   Tip audit: _______________'),
+      wSp(100),
+      wH1('CALUPURI OBSERVATIE'),
+      wP('DA = igiena mainilor efectuata  |  NU = igiena mainilor neefectuata  |  FR = frecare (SHA)  |  SP = spalare  |  M = manusi',{size:16}),
+      new Table({rows:rows,width:{size:11000,type:WidthType.DXA}}),
+      wSp(100),
+      wH2('REZULTAT'),
+      wP('Total oportunitati: ______  Conforme (DA): ______  Neconforme (NU): ______'),
+      wP('Rata conformitate: ______%'),
+      wSp(100),
+      wH2('OBSERVATII'),wP('_______________________________________________'),
+      ...wSigBlock()
+    ];
+    var doc=makeDoc(children,'Fisa Audit Igiena Mainilor','FisaIgm');
+    await saveDocx(doc,'Fisa_Audit_Igiena_Mainilor.docx');
+  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  finally{hideGen()}
+}
+
+// ═══ BACKWARD COMPAT — keep old function names working for existing data ═══
+function auditTypeName(id){return _audCatName(id)}
+function auditTypeIcon(id){return '&#128203;'}
+
+</script>
+<script>
+// ═════════════════════════════════════════════════════════════
+// CPIAAM — Obiective SMART IPC
+// ═════════════════════════════════════════════════════════════
+
+// ═══ TEMPLATES ═══
+const OBJ_TEMPLATES=[
+  {code:'1',ipc_cat_name:'Igiena mainilor',title_ro:'Conformitate audit igiena mainilor',title_en:'Hand hygiene audit compliance',indicator_ro:'% conformitate OMS 5 momente',indicator_en:'% WHO 5 moments compliance',target_default:90,operator:'gte',unit:'%',frequency:'Lunar',source_type:'auto'},
+  {code:'2',ipc_cat_name:'Dotare puncte igiena',title_ro:'Dotare puncte de ingrijire',title_en:'Point-of-care equipment',indicator_ro:'% puncte dotate complet',indicator_en:'% fully equipped points',target_default:100,operator:'gte',unit:'%',frequency:'Trimestrial',source_type:'auto'},
+  {code:'3',ipc_cat_name:'Supraveghere epidemiologica',title_ro:'Rata IAAM',title_en:'HAI rate',indicator_ro:'Rata IAAM \u2030',indicator_en:'HAI rate \u2030',target_default:5,operator:'lte',unit:'\u2030',frequency:'Lunar',source_type:'auto'},
+  {code:'4',ipc_cat_name:'Supraveghere epidemiologica',title_ro:'Cazuri IAAM raportate in \u226424h',title_en:'HAI cases reported within \u226424h',indicator_ro:'% cazuri raportate la timp',indicator_en:'% cases reported on time',target_default:95,operator:'gte',unit:'%',frequency:'Lunar',source_type:'manual'},
+  {code:'5',ipc_cat_name:'Supraveghere epidemiologica',title_ro:'Timp reactie suspiciune focar',title_en:'Outbreak suspicion reaction time',indicator_ro:'Ore pana la masuri',indicator_en:'Hours until measures',target_default:24,operator:'lte',unit:'ore',frequency:'La fiecare eveniment',source_type:'manual'},
+  {code:'6',ipc_cat_name:'Dispozitive invazive',title_ro:'CAUTI',title_en:'CAUTI',indicator_ro:'CAUTI / 1000 zile-sonda',indicator_en:'CAUTI / 1000 catheter-days',target_default:2,operator:'lte',unit:'\u2030',frequency:'Lunar',source_type:'auto'},
+  {code:'7',ipc_cat_name:'Dispozitive invazive',title_ro:'CLABSI',title_en:'CLABSI',indicator_ro:'CLABSI / 1000 zile-cateter',indicator_en:'CLABSI / 1000 catheter-days',target_default:1,operator:'lte',unit:'\u2030',frequency:'Lunar',source_type:'auto'},
+  {code:'8',ipc_cat_name:'Dispozitive invazive',title_ro:'VAP',title_en:'VAP',indicator_ro:'VAP / 1000 zile-ventilator',indicator_en:'VAP / 1000 ventilator-days',target_default:2,operator:'lte',unit:'\u2030',frequency:'Lunar',source_type:'auto'},
+  {code:'9',ipc_cat_name:'Infectii chirurgicale',title_ro:'Rata SSI postoperatorie',title_en:'Postoperative SSI rate',indicator_ro:'% SSI / total interventii',indicator_en:'% SSI / total procedures',target_default:1,operator:'lte',unit:'%',frequency:'Trimestrial',source_type:'auto'},
+  {code:'10',ipc_cat_name:'Pregatire preoperatorie',title_ro:'Respectare protocol preoperator',title_en:'Preoperative protocol compliance',indicator_ro:'% pacienti pregatiti conform protocol',indicator_en:'% patients prepared per protocol',target_default:100,operator:'gte',unit:'%',frequency:'Trimestrial',source_type:'auto'},
+  {code:'11',ipc_cat_name:'Curatenie si dezinfectie',title_ro:'Conformitate curatenie si dezinfectie',title_en:'Cleaning & disinfection compliance',indicator_ro:'% spatii conforme la audit',indicator_en:'% compliant spaces',target_default:95,operator:'gte',unit:'%',frequency:'Lunar',source_type:'auto'},
+  {code:'12',ipc_cat_name:'Rotatie biocide',title_ro:'Rotatia biocidelor',title_en:'Biocide rotation',indicator_ro:'Conformitate rotatie biocide',indicator_en:'Biocide rotation compliance',target_default:100,operator:'gte',unit:'%',frequency:'Trimestrial',source_type:'auto'},
+  {code:'13',ipc_cat_name:'Sterilizare si reprocesare',title_ro:'Trasabilitate sterilizare',title_en:'Sterilization traceability',indicator_ro:'% cicluri validate complet',indicator_en:'% fully validated cycles',target_default:100,operator:'gte',unit:'%',frequency:'Permanent',source_type:'auto'},
+  {code:'14',ipc_cat_name:'Sterilizare si reprocesare',title_ro:'Performanta echipamente sterilizare',title_en:'Sterilization equipment performance',indicator_ro:'% teste conforme',indicator_en:'% compliant tests',target_default:100,operator:'gte',unit:'%',frequency:'Zilnic/Saptamanal',source_type:'auto'},
+  {code:'15',ipc_cat_name:'Antibiotic Stewardship',title_ro:'Consum antibiotice DDD',title_en:'Antibiotic consumption DDD',indicator_ro:'DDD/100 zile-pat',indicator_en:'DDD/100 bed-days',target_default:50,operator:'lte',unit:'nr.',frequency:'Trimestrial',source_type:'auto'},
+  {code:'16',ipc_cat_name:'Antibiotic Stewardship',title_ro:'Clasificare AWaRe \u2014 Access \u226560%',title_en:'AWaRe classification \u2014 Access \u226560%',indicator_ro:'% Access din total consum',indicator_en:'% Access of total consumption',target_default:60,operator:'gte',unit:'%',frequency:'Trimestrial',source_type:'auto'},
+  {code:'17',ipc_cat_name:'Educatie si formare',title_ro:'Instruire personal IPC',title_en:'IPC staff training',indicator_ro:'% personal instruit anual',indicator_en:'% staff trained annually',target_default:95,operator:'gte',unit:'%',frequency:'Trimestrial',source_type:'auto'},
+  {code:'18',ipc_cat_name:'Audit si conformitate',title_ro:'Scor mediu audit IPC',title_en:'Average IPC audit score',indicator_ro:'Scor mediu audit pe sectii',indicator_en:'Average audit score per ward',target_default:90,operator:'gte',unit:'%',frequency:'Trimestrial',source_type:'auto'},
+  {code:'19',ipc_cat_name:'Focare epidemice',title_ro:'Timp control focar epidemic',title_en:'Outbreak control time',indicator_ro:'Ore de la confirmare la control',indicator_en:'Hours from confirmation to control',target_default:72,operator:'lte',unit:'ore',frequency:'La fiecare eveniment',source_type:'manual'},
+  {code:'20',ipc_cat_name:'Pregatire preoperatorie',title_ro:'Audit pregatire preoperatorie',title_en:'Preoperative preparation audit',indicator_ro:'% pacienti conformi',indicator_en:'% compliant patients',target_default:100,operator:'gte',unit:'%',frequency:'Trimestrial',source_type:'auto'}
+];
+
+// ═══ STATE ═══
+var _objMode='monitor'; // 'monitor' | 'config'
+var _objFilter='toate';
+var _objExpanded={};
+var _objCodeCounter=0;
+
+// ═══ HELPERS ═══
+function _resolveIpcCatId(name_ro){
+  var c=(CFG.ipc_categories||[]).find(function(x){return x.name_ro===name_ro});
+  return c?c.id:null;
+}
+function _getObjStatus(value,target,operator){
+  if(value===null||value===undefined||value==='')return 'neinregistrat';
+  var v=+value,t=+target;
+  if(isNaN(v))return 'neinregistrat';
+  if(operator==='gte'){
+    if(v>=t)return 'conform';
+    if(v>=t*0.8)return 'atentie';
+    return 'neconform';
+  } else {
+    if(v<=t)return 'conform';
+    if(v<=t*1.3)return 'atentie';
+    return 'neconform';
+  }
+}
+function _statusBadge(status){
+  var colors={
+    conform:{bg:'#EAF3DE',text:'#3B6D11',bgD:'#1a3a0a',textD:'#7bc043'},
+    atentie:{bg:'#FAEEDA',text:'#BA7517',bgD:'#3d2a05',textD:'#e8a838'},
+    neconform:{bg:'#FCEBEB',text:'#A32D2D',bgD:'#3a0a0a',textD:'#e85050'},
+    neinregistrat:{bg:'var(--color-background-secondary,#f1f5f9)',text:'var(--color-text-secondary,#64748b)',bgD:'var(--color-background-secondary,#1e293b)',textD:'var(--color-text-secondary,#94a3b8)'}
+  };
+  var c=colors[status]||colors.neinregistrat;
+  var isDark=A.darkMode;
+  var label=T('obj_status_'+status);
+  return '<span class="bdg" style="background:'+(isDark?c.bgD:c.bg)+';color:'+(isDark?c.textD:c.text)+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">'+label+'</span>';
+}
+function _progressBar(value,target,operator,status){
+  if(value===null||value===undefined||value==='')return '<div style="height:8px;background:var(--brd);border-radius:4px;width:100%"></div>';
+  var v=+value,t=+target;if(isNaN(v)||!t)return '';
+  var pct;
+  if(operator==='gte'){pct=Math.min(100,Math.round(v/t*100))}
+  else{pct=v<=t?100:Math.max(0,Math.round((1-(v-t)/t)*100))}
+  var barColor={conform:'#3B6D11',atentie:'#BA7517',neconform:'#A32D2D',neinregistrat:'#94a3b8'}[status]||'#94a3b8';
+  return '<div style="height:8px;background:var(--brd);border-radius:4px;width:100%;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:4px;transition:width 0.3s"></div></div>';
+}
+
+// ═══ AUTO-CALCULATION ═══
+async function _calcAutoValue(obj,year){
+  var cat=ipcCatById(obj.ipc_category_id);
+  if(!cat||!cat.source_module)return null;
+  var sm=cat.source_module;
+  var at=cat.audit_type;
+
+  if(sm==='audit'){
+    var audits=(await ga('audits')).filter(function(a){return a.year===year});
+    if(at==='agregat'){
+      // Check for agregat audits first; fallback to average of all audits
+      var agregAudits=audits.filter(function(a){return a.audit_type===obj.ipc_category_id});
+      if(agregAudits.length){var s2=0;agregAudits.forEach(function(a){s2+=(a.compliance_pct||0)});return Math.round(s2/agregAudits.length*10)/10}
+      if(!audits.length)return null;
+      var sum=0;audits.forEach(function(a){sum+=(a.compliance_pct||0)});
+      return Math.round(sum/audits.length*10)/10;
+    }
+    var filtered=audits.filter(function(a){return a.audit_type===obj.ipc_category_id});
+    if(!filtered.length)return null;
+    var total=0;filtered.forEach(function(a){total+=(a.compliance_pct||0)});
+    return Math.round(total/filtered.length*10)/10;
+  }
+
+  if(sm==='iaam'){
+    var iaamAll=(await ga('iaam')).filter(function(r){return r.year===year});
+    var wb=getTotalWeightedBeds(year);
+    // Determine which metric based on objective title
+    var title=(obj.title_ro||'').toLowerCase();
+    if(title.includes('cauti')){
+      var cauti=iaamAll.filter(function(r){return(r.devices||[]).some(function(d){return(d||'').toLowerCase().includes('suv')||((typeof d==='string'?d:'')).toLowerCase().includes('sonda urin')})});
+      // Simplified: count CAUTI cases / estimated catheter-days
+      return cauti.length; // Raw count — full calculation needs catheter-days data
+    }
+    if(title.includes('clabsi')){
+      var clabsi=iaamAll.filter(function(r){return(r.devices||[]).some(function(d){return(d||'').toLowerCase().includes('cvc')||((typeof d==='string'?d:'')).toLowerCase().includes('cateter venos central')})});
+      return clabsi.length;
+    }
+    if(title.includes('vap')){
+      var vap=iaamAll.filter(function(r){return(r.devices||[]).some(function(d){return(d||'').toLowerCase().includes('iot')||((typeof d==='string'?d:'')).toLowerCase().includes('intubatie')})});
+      return vap.length;
+    }
+    if(title.includes('ssi')||title.includes('rata ssi')){
+      var ssi=iaamAll.filter(function(r){var cat=(r.iaam_category||'').toUpperCase();return cat.startsWith('SSI')});
+      return ssi.length;
+    }
+    // Default: IAAM rate per 1000 bed-days
+    if(!wb)return null;
+    var bedDays=wb*365;
+    return bedDays>0?Math.round(iaamAll.length/bedDays*1000*10)/10:null;
+  }
+
+  if(sm==='atb_consum'){
+    var atbAll=(await ga('atb_consum')).filter(function(r){return r.year===year});
+    if(!atbAll.length)return null;
+    var title2=(obj.title_ro||'').toLowerCase();
+    if(title2.includes('aware')||title2.includes('access')){
+      // Calculate % Access from AWaRe classification
+      var totalDDD=0,accessDDD=0;
+      atbAll.forEach(function(r){
+        var d=+(r.ddd_value||r.ddds||0);totalDDD+=d;
+        if(r.aware==='Access')accessDDD+=d;
+      });
+      return totalDDD>0?Math.round(accessDDD/totalDDD*1000)/10:null;
+    }
+    // DDD/100 bed-days
+    var wb2=getTotalWeightedBeds(year);
+    if(!wb2)return null;
+    var bedDays2=wb2*365;
+    var totalD=0;atbAll.forEach(function(r){totalD+=(+(r.ddd_value||r.ddds||0))});
+    return bedDays2>0?Math.round(totalD/bedDays2*100*10)/10:null;
+  }
+
+  if(sm==='trainings'){
+    var trainAll=(await ga('trainings')).filter(function(r){return r.year===year});
+    var totalPersonnel=(CFG.personnel||[]).length;
+    if(!totalPersonnel)return null;
+    // Count unique trained personnel
+    var trained=new Set();
+    trainAll.forEach(function(t){
+      (t.participants||[]).forEach(function(p){if(p)trained.add(p)});
+      if(t.participant_count)for(var i=0;i<t.participant_count;i++)trained.add('p_'+t.id+'_'+i);
+    });
+    return Math.round(Math.min(trained.size,totalPersonnel)/totalPersonnel*1000)/10;
+  }
+
+  return null;
+}
+
+// ═══ DATA FUNCTIONS ═══
+async function _loadObjectives(year){
+  var all=await ga('objectives');
+  return all.filter(function(o){return o.year===year});
+}
+
+async function _initYearFromTemplate(year){
+  var cats=CFG.ipc_categories||[];
+  var maxCode=0;
+  for(var i=0;i<OBJ_TEMPLATES.length;i++){
+    var t=OBJ_TEMPLATES[i];
+    var catId=_resolveIpcCatId(t.ipc_cat_name);
+    if(!catId)continue;
+    var obj={
+      id:genId('obj'),year:year,code:t.code,
+      ipc_category_id:catId,
+      title_ro:t.title_ro,title_en:t.title_en,
+      indicator_ro:t.indicator_ro,indicator_en:t.indicator_en,
+      target:t.target_default,target_default:t.target_default,
+      operator:t.operator,unit:t.unit,frequency:t.frequency,
+      active:true,standard:true,source_type:t.source_type,
+      recorded_values:[]
+    };
+    await pt('objectives',obj);
+    var cn=parseInt(t.code);if(cn>maxCode)maxCode=cn;
+  }
+  _objCodeCounter=maxCode;
+}
+
+async function _initYearFromPrev(year){
+  var prev=await _loadObjectives(year-1);
+  if(!prev.length)return false;
+  for(var i=0;i<prev.length;i++){
+    var p=prev[i];
+    var obj={
+      id:genId('obj'),year:year,code:p.code,
+      ipc_category_id:p.ipc_category_id,
+      title_ro:p.title_ro,title_en:p.title_en,
+      indicator_ro:p.indicator_ro,indicator_en:p.indicator_en,
+      target:p.target,target_default:p.target_default,
+      operator:p.operator,unit:p.unit,frequency:p.frequency,
+      active:p.active,standard:p.standard,source_type:p.source_type,
+      recorded_values:[]
+    };
+    await pt('objectives',obj);
+  }
+  return true;
+}
+
+async function _recordManualValue(objId,period,value,note){
+  var all=await ga('objectives');
+  var obj=all.find(function(o){return o.id===objId});
+  if(!obj)return;
+  if(!obj.recorded_values)obj.recorded_values=[];
+  obj.recorded_values.push({period:period,value:+value,date:new Date().toISOString().slice(0,10),note:note||''});
+  await pt('objectives',obj);
+  render();
+}
+
+// ═══ PAGE RENDERER ═══
+async function rObiective(el){
+  var y=A.year;
+  var objs=await _loadObjectives(y);
+  var cats=activeIpcCats();
+  var isEN=CFG.lang==='en';
+
+  // Empty state
+  if(!objs.length){
+    var prevObjs=await _loadObjectives(y-1);
+    el.innerHTML=
+      '<div class="pn" style="text-align:center;padding:40px">'+
+        '<h2>'+T('pt_obiective')+' \u2014 '+y+'</h2>'+
+        '<p style="color:var(--txtL);margin:20px 0">'+T('obj_no_data')+'</p>'+
+        '<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">'+
+          '<button class="btn bp" onclick="_initYearFromTemplate('+y+').then(function(){render()})">'+T('obj_template_standard')+' (20 obiective)</button>'+
+          (prevObjs.length?'<button class="btn bo" onclick="_initYearFromPrev('+y+').then(function(){render()})">'+T('obj_copiaza_an')+' '+(y-1)+'</button>':'')+
+        '</div>'+
+      '</div>';
+    return;
+  }
+
+  // Calculate auto values
+  for(var i=0;i<objs.length;i++){
+    if(objs[i].source_type==='auto'&&objs[i].active){
+      var autoVal=await _calcAutoValue(objs[i],y);
+      objs[i]._currentValue=autoVal;
+    } else if(objs[i].source_type==='manual'){
+      var rv=objs[i].recorded_values||[];
+      objs[i]._currentValue=rv.length?rv[rv.length-1].value:null;
+    }
+    objs[i]._status=_getObjStatus(objs[i]._currentValue,objs[i].target,objs[i].operator);
+  }
+
+  // Group by IPC category
+  var groups={};
+  objs.forEach(function(o){
+    if(!o.active&&_objMode==='monitor')return;
+    var cid=o.ipc_category_id;
+    if(!groups[cid])groups[cid]={cat:ipcCatById(cid),objs:[]};
+    groups[cid].objs.push(o);
+  });
+
+  // KPI calculations
+  var activeObjs=objs.filter(function(o){return o.active});
+  var conforme=activeObjs.filter(function(o){return o._status==='conform'}).length;
+  var atentie=activeObjs.filter(function(o){return o._status==='atentie'}).length;
+  var neconf=activeObjs.filter(function(o){return o._status==='neconform'}).length;
+  var evaluated=activeObjs.filter(function(o){return o._status!=='neinregistrat'}).length;
+  var gradConf=evaluated>0?Math.round(conforme/evaluated*1000)/10:0;
+
+  // Filter
+  var filterMap={toate:null,conform:'conform',atentie:'atentie',neconform:'neconform',neinregistrat:'neinregistrat'};
+  var activeFilter=filterMap[_objFilter];
+
+  var h='';
+
+  if(_objMode==='monitor'){
+    // ── HEADER ──
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">'+
+      '<h2 style="margin:0">'+T('pt_obiective')+' \u2014 '+y+'</h2>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+        '<button class="btn bo" onclick="_objMode=\'config\';render()">&#9881; '+T('obj_configurare')+'</button>'+
+        '<button class="btn bp" onclick="genObiectiveWord()">&#128196; '+T('obj_export_word')+'</button>'+
+      '</div></div>';
+
+    // ── KPIs ──
+    h+='<div class="kpi-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">'+
+      '<div class="kpi-card" style="background:var(--card);border-radius:10px;padding:14px;border-left:4px solid var(--navy)"><div style="font-size:11px;color:var(--txtL);text-transform:uppercase">'+T('obj_total_active')+'</div><div style="font-size:24px;font-weight:700;color:var(--navy)">'+activeObjs.length+'</div></div>'+
+      '<div class="kpi-card" style="background:var(--card);border-radius:10px;padding:14px;border-left:4px solid #3B6D11"><div style="font-size:11px;color:var(--txtL);text-transform:uppercase">'+T('obj_conforme')+'</div><div style="font-size:24px;font-weight:700;color:#3B6D11">'+conforme+'</div></div>'+
+      '<div class="kpi-card" style="background:var(--card);border-radius:10px;padding:14px;border-left:4px solid #BA7517"><div style="font-size:11px;color:var(--txtL);text-transform:uppercase">'+T('obj_atentie_neconf')+'</div><div style="font-size:24px;font-weight:700;color:#BA7517">'+(atentie+neconf)+'</div></div>'+
+      '<div class="kpi-card" style="background:var(--card);border-radius:10px;padding:14px;border-left:4px solid var(--teal)"><div style="font-size:11px;color:var(--txtL);text-transform:uppercase">'+T('obj_grad_global')+'</div><div style="font-size:24px;font-weight:700;color:var(--teal)">'+gradConf+' %</div></div>'+
+    '</div>';
+
+    // ── FILTER TABS ──
+    var filters=['toate','conform','atentie','neconform','neinregistrat'];
+    h+='<div class="ac-type-tabs" style="margin-bottom:16px">'+filters.map(function(f){
+      return '<div class="ac-ttab'+(f===_objFilter?' act':'')+'" onclick="_objFilter=\''+f+'\';render()">'+T(f==='toate'?'obj_toate':'obj_filtru_'+f)+'</div>';
+    }).join('')+'</div>';
+
+    // ── GROUPED CARDS ──
+    var catIds=Object.keys(groups);
+    catIds.forEach(function(cid){
+      var g=groups[cid];
+      var cat=g.cat||{name_ro:'Necategorizat',name_en:'Uncategorized',color:'#999'};
+      var catName=isEN?(cat.name_en||cat.name_ro):cat.name_ro;
+      var filteredObjs=activeFilter?g.objs.filter(function(o){return o._status===activeFilter}):g.objs;
+      if(!filteredObjs.length)return;
+
+      h+='<div class="pn" style="margin-bottom:12px;border-left:4px solid '+(cat.color||'#999')+'">'+
+        '<div class="ph" style="cursor:pointer" onclick="var c=this.nextElementSibling;c.style.display=c.style.display===\'none\'?\'block\':\'none\'">'+
+          '<h3 style="display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:'+(cat.color||'#999')+'"></span>'+esc(catName)+' <span class="bdg bdg-b" style="font-size:10px">'+filteredObjs.length+'</span></h3>'+
+        '</div>'+
+        '<div class="pb" style="padding:0">';
+
+      filteredObjs.forEach(function(o){
+        var title=isEN?(o.title_en||o.title_ro):o.title_ro;
+        var indicator=isEN?(o.indicator_en||o.indicator_ro):o.indicator_ro;
+        var curVal=o._currentValue;
+        var valStr=curVal!==null&&curVal!==undefined?fn(curVal)+' '+o.unit:'\u2014';
+        var targetStr=fn(o.target)+' '+o.unit;
+        var opSymbol=o.operator==='gte'?'\u2265':'\u2264';
+        var isExpanded=_objExpanded[o.id];
+
+        h+='<div style="padding:12px 16px;border-bottom:1px solid var(--brd);cursor:pointer" onclick="_objExpanded[\''+o.id+'\']=!_objExpanded[\''+o.id+'\'];render()">'+
+          '<div style="display:grid;grid-template-columns:1fr 200px auto;gap:12px;align-items:center">'+
+            '<div><span style="font-weight:700;color:var(--navy);margin-right:6px">'+esc(o.code)+'</span>'+esc(title)+'<div style="font-size:11px;color:var(--txtL);margin-top:2px">'+esc(indicator)+'</div></div>'+
+            '<div style="text-align:center"><div style="font-size:13px;margin-bottom:4px">'+valStr+' / '+opSymbol+' '+targetStr+'</div>'+_progressBar(curVal,o.target,o.operator,o._status)+'</div>'+
+            '<div style="display:flex;gap:6px;align-items:center">'+_statusBadge(o._status)+
+              '<span class="bdg" style="font-size:9px;background:var(--brd);padding:2px 6px;border-radius:8px">'+esc(o.frequency)+'</span>'+
+              '<span class="bdg" style="font-size:9px;background:'+(o.source_type==='auto'?'#EFF6FF':'#FFF7ED')+';color:'+(o.source_type==='auto'?'#2563B0':'#C2410C')+';padding:2px 6px;border-radius:8px">'+(o.source_type==='auto'?T('obj_auto'):T('obj_manual'))+'</span>'+
+            '</div>'+
+          '</div>';
+
+        // Expanded section
+        if(isExpanded){
+          h+='<div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--brd)">';
+          // Value history
+          var rv=o.recorded_values||[];
+          if(rv.length){
+            h+='<h4 style="font-size:12px;margin-bottom:6px">'+T('obj_istoric')+'</h4>'+
+              '<table class="dt" style="font-size:11px;margin-bottom:12px"><thead><tr><th>'+T('obj_perioada')+'</th><th>'+T('obj_valoare')+'</th><th>'+T('data')+'</th><th>'+T('obj_nota')+'</th></tr></thead><tbody>'+
+              rv.slice(-6).reverse().map(function(v){return '<tr><td>'+esc(v.period||'')+'</td><td><strong>'+fn(v.value)+' '+o.unit+'</strong></td><td>'+fmtDate(v.date)+'</td><td>'+esc(v.note||'')+'</td></tr>'}).join('')+
+              '</tbody></table>';
+          }
+          // Manual recording form
+          if(o.source_type==='manual'){
+            h+='<div style="background:var(--color-background-secondary,#f8fafc);padding:10px;border-radius:8px">'+
+              '<h4 style="font-size:12px;margin-bottom:6px">'+T('obj_inregistreaza')+'</h4>'+
+              '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">'+
+                '<div class="fg" style="flex:1;min-width:100px"><label>'+T('obj_perioada')+'</label><input id="obj-rv-per-'+o.id+'" placeholder="ex: T1 2025, Ian 2025"></div>'+
+                '<div class="fg" style="width:100px"><label>'+T('obj_valoare')+' ('+o.unit+')</label><input type="number" id="obj-rv-val-'+o.id+'" step="0.1"></div>'+
+                '<div class="fg" style="flex:1;min-width:100px"><label>'+T('obj_nota')+'</label><input id="obj-rv-note-'+o.id+'"></div>'+
+                '<button class="btn bp bsm" onclick="var p=document.getElementById(\'obj-rv-per-'+o.id+'\').value.trim(),v=document.getElementById(\'obj-rv-val-'+o.id+'\').value;if(p&&v!==\'\'){_recordManualValue(\''+o.id+'\',p,v,document.getElementById(\'obj-rv-note-'+o.id+'\').value)}else{alert(\'Completeaza perioada si valoarea\')}">'+T('btn_save')+'</button>'+
+              '</div></div>';
+          }
+          h+='</div>';
+        }
+
+        h+='</div>';
+      });
+
+      h+='</div></div>';
+    });
+
+  } else {
+    // ══ CONFIG MODE ══
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px">'+
+      '<h2 style="margin:0">'+T('obj_configurare')+' \u2014 '+y+'</h2>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+        '<button class="btn bo" onclick="_objMode=\'monitor\';render()">&#8592; '+T('obj_monitorizare')+'</button>'+
+        '<button class="btn bo" onclick="_resetAllTargets('+y+')">\u21BA '+T('obj_reseteaza_tinte')+'</button>'+
+        '<button class="btn bp" onclick="_showAddObjModal('+y+')">'+T('obj_adauga')+'</button>'+
+      '</div></div>';
+
+    var catIds2=Object.keys(groups);
+    catIds2.forEach(function(cid){
+      var g=groups[cid];
+      var cat=g.cat||{name_ro:'?',name_en:'?',color:'#999'};
+      var catName=isEN?(cat.name_en||cat.name_ro):cat.name_ro;
+
+      h+='<div class="pn" style="margin-bottom:12px;border-left:4px solid '+(cat.color||'#999')+'">'+
+        '<div class="ph"><h3><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:'+(cat.color||'#999')+'"></span> '+esc(catName)+'</h3></div>'+
+        '<div class="pb" style="padding:0">';
+
+      g.objs.forEach(function(o){
+        var title=isEN?(o.title_en||o.title_ro):o.title_ro;
+        var diffTarget=o.target!==o.target_default;
+        h+='<div style="padding:10px 16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
+          '<div style="width:60px"><input value="'+esc(o.code)+'" onchange="_updateObj(\''+o.id+'\',\'code\',this.value)" style="width:50px;text-align:center;border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:12px;font-weight:700"></div>'+
+          '<div style="flex:1;min-width:200px"><strong>'+esc(title)+'</strong>'+
+            '<div style="font-size:10px;color:var(--txtL)">'+esc(isEN?(o.indicator_en||o.indicator_ro):o.indicator_ro)+'</div></div>'+
+          '<div style="width:120px;text-align:center">'+
+            '<label style="font-size:10px;color:var(--txtL)">'+T('obj_tinta')+' ('+(o.operator==='gte'?'\u2265':'\u2264')+') '+o.unit+'</label>'+
+            '<input type="number" value="'+o.target+'" onchange="_updateObj(\''+o.id+'\',\'target\',+this.value)" style="width:80px;text-align:center;border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:13px;font-weight:600">'+
+            (diffTarget?'<div style="font-size:9px;color:var(--txtL)">Standard: '+o.target_default+' '+o.unit+'</div>':'')+
+          '</div>'+
+          '<div style="display:flex;gap:6px;align-items:center">'+
+            '<span class="bdg '+(o.standard?'bdg-b':'bdg-g')+'" style="font-size:9px">'+(o.standard?T('obj_standard'):T('obj_personalizat'))+'</span>'+
+            '<label style="font-size:11px;cursor:pointer"><input type="checkbox" '+(o.active?'checked':'')+' onchange="_updateObj(\''+o.id+'\',\'active\',this.checked)" style="accent-color:#6366F1"> '+T('obj_activ')+'</label>'+
+            (diffTarget?'<button class="btn bo bsm" onclick="_updateObj(\''+o.id+'\',\'target\','+o.target_default+')" style="font-size:10px" title="'+T('obj_reseteaza_obj')+'">\u21BA</button>':'')+
+            (!o.standard?'<button class="btn bo bsm" onclick="_deleteObj(\''+o.id+'\')" style="font-size:10px;color:var(--red)">&#128465;</button>':'')+
+          '</div>'+
+        '</div>';
+      });
+
+      h+='</div></div>';
+    });
+  }
+
+  el.innerHTML=h;
+}
+
+// ═══ CONFIG ACTIONS ═══
+async function _updateObj(id,field,value){
+  var all=await ga('objectives');
+  var obj=all.find(function(o){return o.id===id});
+  if(!obj)return;
+  obj[field]=value;
+  await pt('objectives',obj);
+  render();
+}
+
+async function _deleteObj(id){
+  if(!confirm(T('confirma_stergere')))return;
+  await dl('objectives',id);
+  render();
+}
+
+async function _resetAllTargets(year){
+  if(!confirm(T('obj_reseteaza_tinte')+'?'))return;
+  var all=await _loadObjectives(year);
+  for(var i=0;i<all.length;i++){
+    if(all[i].target_default!==undefined){
+      all[i].target=all[i].target_default;
+      await pt('objectives',all[i]);
+    }
+  }
+  render();
+}
+
+function _showAddObjModal(year){
+  var cats=activeIpcCats();
+  var catOpts=cats.map(function(c){var nm=CFG.lang==='en'?(c.name_en||c.name_ro):c.name_ro;return '<option value="'+c.id+'">'+esc(nm)+'</option>'}).join('');
+  openM(T('obj_adauga'),
+    '<div class="fr"><div class="fg"><label>'+T('obj_ipc_categorii')+'</label><select id="obj-new-cat">'+catOpts+'</select></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+T('obj_titlu')+' RO</label><input id="obj-new-tro"></div>'+
+    '<div class="fg"><label>'+T('obj_titlu')+' EN</label><input id="obj-new-ten"></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+T('obj_indicator')+' RO</label><input id="obj-new-iro"></div>'+
+    '<div class="fg"><label>'+T('obj_indicator')+' EN</label><input id="obj-new-ien"></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+T('obj_tinta')+'</label><input type="number" id="obj-new-target" value="90"></div>'+
+    '<div class="fg"><label>Operator</label><select id="obj-new-op"><option value="gte">\u2265 (mai mare)</option><option value="lte">\u2264 (mai mic)</option></select></div>'+
+    '<div class="fg"><label>Unitate</label><input id="obj-new-unit" value="%" style="width:60px"></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+T('obj_frecventa')+'</label><select id="obj-new-freq"><option>Lunar</option><option>Trimestrial</option><option>Permanent</option><option>La fiecare eveniment</option></select></div>'+
+    '<div class="fg"><label>'+T('obj_sursa')+'</label><select id="obj-new-src"><option value="auto">'+T('obj_auto')+'</option><option value="manual">'+T('obj_manual')+'</option></select></div></div>',
+    '<button class="btn bp" onclick="_saveNewObj('+year+')">'+T('btn_save')+'</button> <button class="btn bo" onclick="closeM()">'+T('btn_cancel')+'</button>'
+  );
+  attachDirtyTracking();
+}
+
+async function _saveNewObj(year){
+  var tro=document.getElementById('obj-new-tro').value.trim();
+  if(!tro){alert('Titlul RO este obligatoriu.');return}
+  var target=+(document.getElementById('obj-new-target').value)||0;
+  // Auto-increment code
+  var existing=await _loadObjectives(year);
+  var maxCode=0;existing.forEach(function(o){var n=parseInt(o.code);if(n>maxCode)maxCode=n});
+  var obj={
+    id:genId('obj'),year:year,code:''+(maxCode+1),
+    ipc_category_id:document.getElementById('obj-new-cat').value,
+    title_ro:tro,title_en:document.getElementById('obj-new-ten').value.trim()||tro,
+    indicator_ro:document.getElementById('obj-new-iro').value.trim(),
+    indicator_en:document.getElementById('obj-new-ien').value.trim(),
+    target:target,target_default:target,
+    operator:document.getElementById('obj-new-op').value,
+    unit:document.getElementById('obj-new-unit').value.trim()||'%',
+    frequency:document.getElementById('obj-new-freq').value,
+    active:true,standard:false,
+    source_type:document.getElementById('obj-new-src').value,
+    recorded_values:[]
+  };
+  await pt('objectives',obj);
+  closeM();render();
+}
+
+// ═══ WORD EXPORT ═══
+async function genObiectiveWord(){
+  showGen(T('gen_se_genereaza'));
+  try{
+    var y=A.year;
+    var objs=await _loadObjectives(y);
+    var isEN=CFG.lang==='en';
+
+    // Calculate values
+    for(var i=0;i<objs.length;i++){
+      if(objs[i].source_type==='auto'){
+        objs[i]._currentValue=await _calcAutoValue(objs[i],y);
+      } else {
+        var rv=objs[i].recorded_values||[];
+        objs[i]._currentValue=rv.length?rv[rv.length-1].value:null;
+      }
+      objs[i]._status=_getObjStatus(objs[i]._currentValue,objs[i].target,objs[i].operator);
+    }
+
+    var activeObjs=objs.filter(function(o){return o.active});
+    var conforme=activeObjs.filter(function(o){return o._status==='conform'}).length;
+    var atentie=activeObjs.filter(function(o){return o._status==='atentie'}).length;
+    var neconf=activeObjs.filter(function(o){return o._status==='neconform'}).length;
+    var evaluated=activeObjs.filter(function(o){return o._status!=='neinregistrat'}).length;
+    var gradConf=evaluated>0?Math.round(conforme/evaluated*1000)/10:0;
+
+    var title=T('obj_word_titlu')+' \u2014 '+y;
+    var docName='Obiective_SMART_IPC_'+y;
+
+    var children=[...wCover(title,'',WC.navy)];
+    children.push(wSp(200));
+
+    // Summary table
+    children.push(wH1(T('obj_word_sumar')));
+    var sumWidths=[3000,1500,1500,1500,1500];
+    children.push(wTblHead([isEN?'Indicator':'Indicator',isEN?'Total':'Total',isEN?'Compliant':'Conforme',isEN?'Warning/Non-c.':'Atentie/Neconf.',isEN?'Rate':'Grad'],sumWidths));
+    children.push(wTblRow([isEN?'Active objectives':'Obiective active',''+activeObjs.length,''+conforme,''+(atentie+neconf),gradConf+' %'],sumWidths));
+    children.push(wSp(100));
+
+    // Group by category
+    var groups={};
+    activeObjs.forEach(function(o){
+      var cid=o.ipc_category_id;
+      if(!groups[cid])groups[cid]={cat:ipcCatById(cid),objs:[]};
+      groups[cid].objs.push(o);
+    });
+
+    var catIds=Object.keys(groups);
+    catIds.forEach(function(cid){
+      var g=groups[cid];
+      var cat=g.cat||{name_ro:'?',name_en:'?',color:'999'};
+      var catName=isEN?(cat.name_en||cat.name_ro):cat.name_ro;
+
+      children.push(wH2(catName,cat.color?cat.color.replace('#',''):WC.navy));
+      var colWidths=[600,2400,2000,1000,1000,1000];
+      children.push(wTblHead([T('obj_cod'),T('obj_titlu'),T('obj_indicator'),T('obj_tinta'),T('obj_valoare'),T('obj_status')],colWidths));
+
+      g.objs.forEach(function(o,idx){
+        var title2=isEN?(o.title_en||o.title_ro):o.title_ro;
+        var ind=isEN?(o.indicator_en||o.indicator_ro):o.indicator_ro;
+        var op=o.operator==='gte'?'\u2265':'\u2264';
+        var valStr=o._currentValue!==null&&o._currentValue!==undefined?fn(o._currentValue)+' '+o.unit:'\u2014';
+        var statusLabel=T('obj_status_'+o._status);
+        var isWarn=o._status==='atentie'||o._status==='neconform';
+        children.push(wTblRow([o.code,title2,ind,op+' '+fn(o.target)+' '+o.unit,valStr,statusLabel],colWidths,idx%2===1,isWarn));
+      });
+
+      children.push(wSp(80));
+    });
+
+    children.push(wPB());
+    children.push(...wSigBlock());
+
+    var doc=makeDoc(children,title,docName);
+    var blob=await docx.Packer.toBlob(doc);
+    saveAs(blob,docName+'.docx');
+    hideGen();
+  }catch(e){
+    hideGen();
+    console.error('Word export error:',e);
+    alert('Eroare la generare: '+e.message);
+  }
+}
 
 </script>
 <script>
@@ -6363,7 +7920,42 @@ async function rCfg(el){
   '</div></div>';
 
   } else if(_cfgTab==='dateintro'){
+  // ── IPC Categories Registry ──
+  var _ipcSrcOpts='<option value="">— Manual —</option><option value="audit">Audit</option><option value="iaam">IAAM</option><option value="autocontrol">Autocontrol</option><option value="atb_consum">Consum ATB</option><option value="trainings">Instruire</option>';
   h+=
+  '<div class="pn"><div class="ph"><h3>'+T('obj_ipc_categorii')+'</h3><button class="btn bp bsm" onclick="showAddIpcCat()">'+T('obj_ipc_add')+'</button></div><div class="pb">'+
+    '<div class="ib inf">Categoriile IPC sunt partajate intre Obiective SMART si Audituri IPC. Categoriile standard nu pot fi sterse, doar dezactivate.</div>'+
+    '<table class="dt" style="font-size:12px"><thead><tr><th style="width:30px">&#127912;</th><th>Denumire RO</th><th>Denumire EN</th><th>'+T('obj_ipc_sursa')+'</th><th>Tip</th><th style="width:60px">Activ</th><th style="width:50px">&#215;</th></tr></thead>'+
+    '<tbody>'+(CFG.ipc_categories||[]).map((c,i)=>{
+      var isEN=CFG.lang==='en';var nm=isEN?(c.name_en||c.name_ro):c.name_ro;
+      return '<tr>'+
+      '<td><span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:'+(c.color||'#999')+'" title="'+(c.color||'')+'"></span></td>'+
+      '<td>'+esc(c.name_ro||'')+'</td>'+
+      '<td>'+esc(c.name_en||'')+'</td>'+
+      '<td>'+(c.source_module||'Manual')+(c.audit_type?' <span style="font-size:10px;color:var(--txtL)">('+c.audit_type+')</span>':'')+'</td>'+
+      '<td><span class="bdg '+(c.standard?'bdg-b':'bdg-g')+'" style="font-size:9px">'+(c.standard?T('obj_standard'):T('obj_personalizat'))+'</span></td>'+
+      '<td style="text-align:center"><input type="checkbox" '+(c.active!==false?'checked':'')+' onchange="CFG.ipc_categories['+i+'].active=this.checked;saveCfg();render()" style="accent-color:'+(c.color||'#6366F1')+'"></td>'+
+      '<td class="act">'+(c.standard?'':'<button onclick="CFG.ipc_categories.splice('+i+',1);saveCfg();render()">&#128465;</button>')+'</td></tr>'}).join('')+
+    '</tbody></table>'+
+    '<div id="ipc-cat-add-form" style="display:none;margin-top:12px;padding:12px;background:var(--color-background-secondary,#f8fafc);border-radius:8px;border:1px solid var(--brd)">'+
+      '<div class="fr"><div class="fg"><label>Denumire RO</label><input id="ipc-new-ro" placeholder="Denumire romaneasca"></div>'+
+      '<div class="fg"><label>Denumire EN</label><input id="ipc-new-en" placeholder="English name"></div>'+
+      '<div class="fg" style="width:80px"><label>Culoare</label><input type="color" id="ipc-new-color" value="#6366F1" style="width:100%;height:34px;border:1px solid var(--brd);border-radius:4px"></div></div>'+
+      '<div class="fr" style="margin-top:8px"><div class="fg"><label>'+T('obj_ipc_sursa')+'</label><select id="ipc-new-src">'+_ipcSrcOpts+'</select></div>'+
+      '<div class="fg"><label>'+T('obj_ipc_audit_type')+'</label><input id="ipc-new-atype" placeholder="ex: igm, curatenie"></div></div>'+
+      '<div style="margin-top:10px;display:flex;gap:8px">'+
+        '<button class="btn bp" onclick="saveNewIpcCat()">Salveaza</button>'+
+        '<button class="btn bo" onclick="document.getElementById(\'ipc-cat-add-form\').style.display=\'none\'">Anuleaza</button>'+
+      '</div>'+
+    '</div>'+
+  '</div></div>'+
+
+  '<div class="pn"><div class="ph"><h3>Categorii Profesionale (Audit Igien\u0103 M\u00e2ini)</h3></div><div class="pb">'+
+    '<div class="ib inf">Categorii profesionale folosite la completarea calupurilor de observatie pentru auditul igienei mainilor.</div>'+
+    '<div class="tag-list">'+(CFG.audit_prof_categories||[]).map((c,i)=>'<span class="tag">'+esc(c)+'<span class="tag-x" onclick="CFG.audit_prof_categories.splice('+i+',1);saveCfg();render()">&#215;</span></span>').join('')+'</div>'+
+    '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-prof-cat" placeholder="Categorie profesionala noua"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-prof-cat\').value.trim();if(v){if(!CFG.audit_prof_categories)CFG.audit_prof_categories=[];CFG.audit_prof_categories.push(v);saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
+  '</div></div>'+
+
   '<div class="pn"><div class="ph"><h3>Tipuri de Probe (Autocontrol)</h3></div><div class="pb">'+
     '<div class="tag-list">'+CFG.probe_types.map((p,i)=>{const nm=typeof p==='string'?p:(p.name||p.id||'?');return '<span class="tag">'+nm+'<span class="tag-x" onclick="CFG.probe_types.splice('+i+',1);saveCfg();render()">&#215;</span></span>'}).join('')+'</div>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-probe" placeholder="Tip proba nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-probe\').value.trim();if(v){CFG.probe_types.push({id:genId(\'probe\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
@@ -6666,6 +8258,27 @@ async function testAiConnection(){
     hideGen();alert('Conexiune reusita! Raspuns: '+(resp||'(gol)').substring(0,100));
   }catch(e){hideGen();alert('Eroare conexiune: '+e.message)}
 }
+
+// ═══ IPC CATEGORIES HELPERS ═══
+function showAddIpcCat(){document.getElementById('ipc-cat-add-form').style.display='block'}
+function saveNewIpcCat(){
+  var ro=document.getElementById('ipc-new-ro').value.trim();
+  var en=document.getElementById('ipc-new-en').value.trim();
+  var color=document.getElementById('ipc-new-color').value;
+  var src=document.getElementById('ipc-new-src').value||null;
+  var atype=document.getElementById('ipc-new-atype').value.trim()||null;
+  if(!ro){alert('Denumirea RO este obligatorie.');return}
+  if(!CFG.ipc_categories)CFG.ipc_categories=[];
+  CFG.ipc_categories.push({id:genId('ipc'),name_ro:ro,name_en:en||ro,color:color,source_module:src,audit_type:atype,standard:false,active:true});
+  saveCfg();render();
+}
+function ipcCatName(id){
+  var c=(CFG.ipc_categories||[]).find(function(x){return x.id===id});
+  if(!c)return '—';
+  return (CFG.lang==='en'&&c.name_en)?c.name_en:c.name_ro;
+}
+function ipcCatById(id){return (CFG.ipc_categories||[]).find(function(x){return x.id===id})}
+function activeIpcCats(){return (CFG.ipc_categories||[]).filter(function(c){return c.active!==false})}
 
 </script>
 <script>
@@ -7820,6 +9433,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'8.2',date:'2026-03-17',notes:'NOU: Modul Audituri IPC complet — inlocuieste vechiul sistem de audituri\nNOU: TIP A — Audit Igiena Mainilor WHO 5 Momente cu calupuri (DA/NU, FR/SP, Manusi)\nNOU: TIP B — Audit Generic Checklist (Curatenie 13 itemi, Rotatie Biocide 8, Sterilizare 12, Preoperator 10)\nNOU: Dotare Puncte Igiena — matrice sectii x echipamente (prezent/functional/curat/accesibil)\nNOU: Audit Agregat IPC — matrice trimestriala sectii x tipuri audit cu auto-calcul\nNOU: Export Word raport audit completat + fisa goala imprimabila A4\nNOU: Tipuri audit dinamice din Registrul Categorii IPC (nu hardcodate)\nNOU: Categorii profesionale configurabile pentru audit igiena mainilor\nObiective SMART: calcul auto actualizat sa filtreze audituri dupa ID categorie IPC'},
+  {version:'8.1',date:'2026-03-17',notes:'NOU: Registru Categorii IPC — 13 categorii standard, partajat intre Obiective si Audituri\nNOU: Obiective SMART IPC — 20 obiective preincarcate, mod monitorizare + configurare\nObiective SMART: calcul automat valori din Audituri, IAAM, Consum ATB, Instruire\nObiective SMART: export raport Word cu sumar si status per categorie IPC\nConfigurare: sectiune noua Categorii IPC in tab Introducere date'},
   {version:'8.0',date:'2026-03-17',notes:'Fix CRITIC: ID-uri NaN la setup wizard — genId() si ensureConfigIds() cu protectie badId()\nFix: Indicator sincronizare se actualizeaza corect dupa wizard\nSetup Wizard: mesaj informativ despre paturi variabile\nIAAM Comorbiditati: actualizat la 8 pinned + 10 unpinned (HTA, Diabet tip 1/2, Cardiopatie, BPOC, IRC, Neoplasm, Obezitate + altele)\nSectii: camp tip (sectie/compartiment) + helper secLabel() — afecteaza Word si interfata\nIAAM: Dispozitive invazive cu checkboxuri pinned + dropdown + chips (ca factorii de risc)\nAutocontrol: auto-populare trimestru/luna din data selectata\nAutocontrol: camp nou "Detalii proba" cu text liber\nAutocontrol: campuri UFC si germen apar conditional doar pentru neconform\nAntibiograma: filtru rapid cautare antibiotice\nBiocide: campuri Producator/Distribuitor cu autocomplete din config\nPersonal: 7 roluri (Coordonator, Manager, Sef Sectie, Asistent Sef, Administrator, Responsabil deseuri, Altul)\nDate statistice lunare: zile spitalizare, pacienti externati, paturi ocupate — KPI derivate pe Dashboard\nFix CRITIC: Autocontrol salva sectia gresit — form IDs unice f-auto-* + mc.querySelector scoped'},
   {version:'7.8',date:'2026-03-16',notes:'Fix: Evenimentele din planificarea autocontrol nu apareau in Calendar — camp "date_start" corectat in "date" (conform structurii events store)'},
   {version:'7.7',date:'2026-03-16',notes:'Fix: Dialogurile de selectare fisier (Reconecteaza, Conecteaza, Backup) se deschid acum in folderul corect — startIn cu handle-ul salvat pe toate apelurile showOpenFilePicker si showSaveFilePicker'},

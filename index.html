@@ -931,7 +931,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // ═══════════════════════════════════════════════════════════════
 // STATE & CONFIG — ZERO date personale hardcodate
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION='7.8';
+const APP_VERSION='8.0';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1246,9 +1246,9 @@ const SEC_TPL={
     {name:'Medicina Interna',code:'MI',beds:50,id:genId('sec')},{name:'Chirurgie Generala',code:'CH',beds:30,id:genId('sec')},
     {name:'Obstetrica-Ginecologie',code:'OG',beds:20,id:genId('sec')},{name:'Pediatrie',code:'PED',beds:20,id:genId('sec')},
     {name:'Ortopedie si Traumatologie',code:'ORT',beds:18,id:genId('sec')},{name:'O.R.L.',code:'ORL',beds:9,id:genId('sec')},
-    {name:'R.M.F.B.',code:'RMFB',beds:15,id:genId('sec')},{name:'A.T.I.',code:'ATI',beds:6,id:genId('sec')},
-    {name:'Neurologie',code:'NEU',beds:20,id:genId('sec')},{name:'Bloc Operator',code:'BO',beds:0,id:genId('sec')},
-    {name:'U.P.U./C.P.U.',code:'UPU',beds:0,id:genId('sec')}]},
+    {name:'R.M.F.B.',code:'RMFB',beds:15,id:genId('sec')},{name:'A.T.I.',code:'ATI',beds:6,id:genId('sec'),type:'compartiment'},
+    {name:'Neurologie',code:'NEU',beds:20,id:genId('sec')},{name:'Bloc Operator',code:'BO',beds:0,id:genId('sec'),type:'compartiment'},
+    {name:'U.P.U./C.P.U.',code:'UPU',beds:0,id:genId('sec'),type:'compartiment'}]},
   judetean:{label:'Spital judetean tip',sections:[
     {name:'Medicina Interna I',code:'MI1',beds:60,id:genId('sec')},{name:'Medicina Interna II',code:'MI2',beds:40,id:genId('sec')},
     {name:'Chirurgie Generala I',code:'CH1',beds:40,id:genId('sec')},{name:'Chirurgie Generala II',code:'CH2',beds:30,id:genId('sec')},
@@ -1256,9 +1256,9 @@ const SEC_TPL={
     {name:'Ortopedie si Traumatologie',code:'ORT',beds:25,id:genId('sec')},{name:'O.R.L.',code:'ORL',beds:15,id:genId('sec')},
     {name:'Oftalmologie',code:'OFT',beds:15,id:genId('sec')},{name:'Urologie',code:'URO',beds:20,id:genId('sec')},
     {name:'Dermatologie',code:'DER',beds:15,id:genId('sec')},{name:'Neurologie',code:'NEU',beds:25,id:genId('sec')},
-    {name:'A.T.I.',code:'ATI',beds:12,id:genId('sec')},{name:'Cardiologie',code:'CAR',beds:30,id:genId('sec')},
-    {name:'Neonatologie',code:'NEO',beds:15,id:genId('sec')},{name:'R.M.F.B.',code:'RMFB',beds:20,id:genId('sec')},
-    {name:'Bloc Operator',code:'BO',beds:0,id:genId('sec')},{name:'U.P.U./C.P.U.',code:'UPU',beds:0,id:genId('sec')}]}
+    {name:'A.T.I.',code:'ATI',beds:12,id:genId('sec'),type:'compartiment'},{name:'Cardiologie',code:'CAR',beds:30,id:genId('sec')},
+    {name:'Neonatologie',code:'NEO',beds:15,id:genId('sec'),type:'compartiment'},{name:'R.M.F.B.',code:'RMFB',beds:20,id:genId('sec')},
+    {name:'Bloc Operator',code:'BO',beds:0,id:genId('sec'),type:'compartiment'},{name:'U.P.U./C.P.U.',code:'UPU',beds:0,id:genId('sec'),type:'compartiment'}]}
 };
 
 async function loadCfg(){
@@ -1298,12 +1298,25 @@ async function loadCfg(){
   let _comorbAdded=false;
   if(!CFG.comorbidities_config||!CFG.comorbidities_config.length){
     CFG.comorbidities_config=[
-      {name:'Diabet zaharat',pinned:true},{name:'Hipertensiune arteriala',pinned:true},
-      {name:'Boala renala cronica',pinned:true},{name:'Insuficienta cardiaca',pinned:true},
-      {name:'BPOC',pinned:true},{name:'Neoplasm activ',pinned:true},{name:'Imunosupresie',pinned:true},
-      {name:'Ciroza hepatica',pinned:false},{name:'Obezitate',pinned:false},{name:'AVC',pinned:false},
-      {name:'Dementa',pinned:false},{name:'Transplant organ',pinned:false},{name:'HIV/SIDA',pinned:false},
-      {name:'Boala autoimuna',pinned:false}
+      {name:'HTA (Hipertensiune arteriala)',pinned:true},{name:'Diabet zaharat tip 1',pinned:true},
+      {name:'Diabet zaharat tip 2',pinned:true},{name:'Cardiopatie ischemica',pinned:true},
+      {name:'BPOC',pinned:true},{name:'Insuficienta renala cronica',pinned:true},
+      {name:'Neoplasm (activ sau in antecedente)',pinned:true},{name:'Obezitate',pinned:true},
+      {name:'Fibrilatie atriala',pinned:false},{name:'Insuficienta cardiaca',pinned:false},
+      {name:'Ciroza hepatica',pinned:false},{name:'Boala cerebrovasculara (AVC)',pinned:false},
+      {name:'Dementa',pinned:false},{name:'Depresie',pinned:false},
+      {name:'Boala autoimuna',pinned:false},{name:'Transplant organ',pinned:false},
+      {name:'Imunodepresie (HIV, chimioterapie)',pinned:false},{name:'Insuficienta hepatica',pinned:false}
+    ];_comorbAdded=true;
+  }
+  if(!CFG.devices_config||!CFG.devices_config.length){
+    CFG.devices_config=[
+      {name:'SUV (Sonda urinara vezicala)',pinned:true},{name:'CVC (Cateter venos central)',pinned:true},
+      {name:'CVP (Cateter venos periferic)',pinned:true},{name:'IOT (Intubatie orotraheala)',pinned:true},
+      {name:'TR.ST (Traheostomie)',pinned:true},{name:'SNG (Sonda nazogastrica)',pinned:true},
+      {name:'Dren chirurgical',pinned:false},{name:'Cateter de dializa',pinned:false},
+      {name:'Cateter arterial',pinned:false},{name:'Cateter epidural',pinned:false},
+      {name:'Pacemaker temporar',pinned:false},{name:'ECMO',pinned:false}
     ];_comorbAdded=true;
   }
   // Ensure all config items have unique IDs
@@ -1331,10 +1344,14 @@ function getCoord(){return getP('coordinator')}
 // ═══ ID SYSTEM ═══
 // Generate unique ID with prefix
 var _idCounter=0;
-function genId(prefix){return prefix+'_'+Date.now().toString(36)+'_'+(++_idCounter).toString(36)}
+function genId(prefix){if(typeof _idCounter!=='number'||isNaN(_idCounter))_idCounter=0;return prefix+'_'+Date.now().toString(36)+'_'+(++_idCounter).toString(36)}
 
 // Resolve ID→name for each config type. Returns name or '(dezactivat)' if not found.
 function rSec(id){if(!id)return '—';const s=CFG.sections.find(x=>x.id===id)||CFG.sections.find(x=>x.name===id);return s?(s.name||s.id):id}
+function secLabel(secId){const sec=CFG.sections.find(s=>s.id===secId)||CFG.sections.find(s=>s.name===secId);if(!sec)return 'Sectia —';const prefix=(sec.type||'sectie')==='compartiment'?'Compartimentul':'Sectia';return prefix+' '+(sec.name||sec.id)}
+const ROLE_MAP={coordinator:'Coordonator CPIAAM',manager:'Manager / Director medical',sef_sectie:'Sef Sectie',asistent_sef:'Asistent Sef',administrator:'Administrator',responsabil_deseuri:'Responsabil deseuri',other:'Altul'};
+function roleOpts(sel){return Object.entries(ROLE_MAP).map(([v,n])=>'<option value="'+v+'"'+(sel===v?' selected':'')+'>'+n+'</option>').join('')}
+function roleName(role){return ROLE_MAP[role]||role||'Altul'}
 function rProbe(id){if(!id)return '—';const a=CFG.probe_types||[];const p=a.find(x=>x.id===id)||a.find(x=>x.name===id);return p?(p.name||p.id):id}
 function rInf(id){if(!id)return '—';return iaamCatLabel(id)}
 function rWaste(id){if(!id)return '—';const a=CFG.waste_codes||[];const w=a.find(x=>x.id===id)||a.find(x=>x.name===id)||a.find(x=>x.code===id);return w?(w.name||w.code):id}
@@ -1417,7 +1434,8 @@ function openAbgModal(gIdx){
   const sel=new Set(g.susceptibility.map(s=>s.atb_code));
   let h='<div class="abg-modal-body"><h4 style="margin-bottom:10px">'+T('abg_modal_title')+esc(g.name)+'</h4>';
   h+='<div class="abg-quick"><button onclick="abgQuickFill(\'neg\')">'+T('abg_quick_gram_neg')+'</button><button onclick="abgQuickFill(\'poz\')">'+T('abg_quick_gram_poz')+'</button><button onclick="abgQuickFill(\'clear\')">'+T('abg_quick_all')+'</button></div>';
-  h+='<div class="abg-atb-grid"><span class="abg-hdr">Antibiotic</span><span class="abg-hdr" style="text-align:center">S</span><span class="abg-hdr" style="text-align:center">I</span><span class="abg-hdr" style="text-align:center">R</span>';
+  h+='<div style="margin:8px 0"><input id="abg-search" placeholder="'+(CFG.lang==='en'?'Search antibiotic...':'Cauta antibiotic...')+'" oninput="abgFilterAtb(this.value)" style="width:100%;padding:7px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:var(--f)"></div>';
+  h+='<div class="abg-atb-grid" id="abg-atb-grid"><span class="abg-hdr">Antibiotic</span><span class="abg-hdr" style="text-align:center">S</span><span class="abg-hdr" style="text-align:center">I</span><span class="abg-hdr" style="text-align:center">R</span>';
   ATB_LIST.forEach(grp=>{
     h+='<div class="abg-grp-hdr">'+esc(grp.g)+'</div>';
     grp.items.forEach(atb=>{
@@ -1468,6 +1486,22 @@ function saveAbgModal(){
   g.susceptibility=sus;markFormDirty();
   closeAbgModal();
   document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards();
+}
+function abgFilterAtb(q){
+  const ov=document.getElementById('abg-ov');if(!ov)return;
+  const ql=q.toLowerCase().trim();
+  ov.querySelectorAll('.abg-atb-grid label').forEach(lbl=>{
+    const txt=(lbl.textContent||'').toLowerCase();
+    lbl.parentElement.style.display=(!ql||txt.includes(ql))?'':'none';
+    // Show S/I/R cells
+    const atc=lbl.querySelector('.abg-chk')?.dataset.atc;
+    if(atc){ov.querySelectorAll('.abg-radio input[name="abg_'+atc+'"]').forEach(r=>{r.closest('.abg-radio').style.display=(!ql||txt.includes(ql))?'':'none'})}
+  });
+  ov.querySelectorAll('.abg-grp-hdr').forEach(hdr=>{
+    let next=hdr.nextElementSibling,hasVisible=false;
+    while(next&&!next.classList.contains('abg-grp-hdr')){if(next.tagName==='LABEL'&&next.parentElement.style.display!=='none')hasVisible=true;next=next.nextElementSibling}
+    hdr.style.display=(!ql||hasVisible)?'':'none';
+  });
 }
 
 function renderAtbRows(){if(_iaamAtb.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun antibiotic adaugat.</div>';let h='<table class="dt" style="font-size:12px"><thead><tr><th>Antibiotic</th><th>Cale</th><th>Start</th><th>Stop</th><th>Zile</th><th style="width:30px"></th></tr></thead><tbody>';_iaamAtb.forEach((a,i)=>{const days=calcDays(a.date_start,a.date_stop);h+='<tr><td><strong>'+a.name+'</strong><br><span style="font-size:10px;color:var(--txtL)">'+a.atc+'</span></td><td>'+a.route+'</td><td><input type="date" value="'+(a.date_start||'')+'" onchange="_iaamAtb['+i+'].date_start=this.value;document.getElementById(\'f-atb-rows\').innerHTML=renderAtbRows()" style="font-size:11px;padding:2px;border:1px solid var(--brd);border-radius:4px"></td><td><input type="date" value="'+(a.date_stop||'')+'" onchange="_iaamAtb['+i+'].date_stop=this.value;document.getElementById(\'f-atb-rows\').innerHTML=renderAtbRows()" style="font-size:11px;padding:2px;border:1px solid var(--brd);border-radius:4px"></td><td>'+(days||'—')+'</td><td><button onclick="removeIaamAtb('+i+')" class="btn-x">&times;</button></td></tr>'});h+='</tbody></table>';return h}
@@ -1674,7 +1708,7 @@ function ensureConfigIds(){
       if(typeof item==='string'){
         out.push({id:genId(prefix),name:item});changed=true;
       } else if(item&&typeof item==='object'){
-        if(!item.id){item.id=genId(prefix);changed=true}
+        if(!item.id||item.id.includes('NaN')){item.id=genId(prefix);changed=true}
         // Fix missing name — try fallbacks
         if(!item.name||item.name==='undefined'){
           // Try to recover from defaults by index position
@@ -1689,17 +1723,24 @@ function ensureConfigIds(){
     return out;
   }
 
+  // Helper: detect invalid ID (missing, undefined, or contains NaN)
+  function badId(id){return !id||id==='undefined'||id.includes('NaN')}
+
   // Sections — these have more complex structure (beds, code, etc.)
   CFG.sections.forEach(s=>{
-    if(!s.id){s.id=genId('sec');changed=true}
+    if(badId(s.id)){s.id=genId('sec');changed=true}
     if(!s.name||s.name==='undefined'){s.name='Sectie '+(CFG.sections.indexOf(s)+1);changed=true}
   });
+  // Deduplicate section IDs (if NaN bug created identical IDs)
+  const seenSecIds=new Set();CFG.sections.forEach(s=>{if(seenSecIds.has(s.id)){s.id=genId('sec');changed=true}seenSecIds.add(s.id)});
+  // Migration: ensure section type field
+  CFG.sections.forEach(s=>{if(!s.type){s.type='sectie';changed=true}});
   // Probe types
   CFG.probe_types=normalizeArr(CFG.probe_types,'probe',DEF_PROBES);
   // Infection types
   CFG.infection_types=normalizeArr(CFG.infection_types,'inf',DEF_INF);
   // Waste codes: ensure IDs (these have code+name+dangerous structure — name is always present from waste_codes default)
-  (CFG.waste_codes||[]).forEach(w=>{if(!w.id){w.id=genId('waste');changed=true}});
+  (CFG.waste_codes||[]).forEach(w=>{if(badId(w.id)){w.id=genId('waste');changed=true}});
   // Biocide products (no defaults — user-defined)
   CFG.biocide_products=normalizeArr(CFG.biocide_products||[],'bio',null);
   // Document categories
@@ -1708,9 +1749,37 @@ function ensureConfigIds(){
     changed=true;
   }else{CFG.doc_categories=normalizeArr(CFG.doc_categories,'doccat',DEF_DOCCAT)}
   // Personnel: ensure IDs
-  (CFG.personnel||[]).forEach(p=>{if(!p.id){p.id=genId('pers');changed=true}});
+  (CFG.personnel||[]).forEach(p=>{if(badId(p.id)){p.id=genId('pers');changed=true}});
+  // ATP/UV surface types
+  (CFG.atp_surface_types||[]).forEach(s=>{if(badId(s.id)){s.id=genId('atp');changed=true}});
+  (CFG.uv_surface_types||[]).forEach(s=>{if(badId(s.id)){s.id=genId('uv');changed=true}});
   // IAAM custom categories
   if(!CFG.iaam_custom_cats)CFG.iaam_custom_cats=[];
+  // Comorbidities defaults
+  if(!CFG.comorbidities_config||!CFG.comorbidities_config.length){
+    CFG.comorbidities_config=[
+      {name:'HTA (Hipertensiune arteriala)',pinned:true},{name:'Diabet zaharat tip 1',pinned:true},
+      {name:'Diabet zaharat tip 2',pinned:true},{name:'Cardiopatie ischemica',pinned:true},
+      {name:'BPOC',pinned:true},{name:'Insuficienta renala cronica',pinned:true},
+      {name:'Neoplasm (activ sau in antecedente)',pinned:true},{name:'Obezitate',pinned:true},
+      {name:'Fibrilatie atriala',pinned:false},{name:'Insuficienta cardiaca',pinned:false},
+      {name:'Ciroza hepatica',pinned:false},{name:'Boala cerebrovasculara (AVC)',pinned:false},
+      {name:'Dementa',pinned:false},{name:'Depresie',pinned:false},
+      {name:'Boala autoimuna',pinned:false},{name:'Transplant organ',pinned:false},
+      {name:'Imunodepresie (HIV, chimioterapie)',pinned:false},{name:'Insuficienta hepatica',pinned:false}
+    ];changed=true;
+  }
+  // Devices defaults
+  if(!CFG.devices_config||!CFG.devices_config.length){
+    CFG.devices_config=[
+      {name:'SUV (Sonda urinara vezicala)',pinned:true},{name:'CVC (Cateter venos central)',pinned:true},
+      {name:'CVP (Cateter venos periferic)',pinned:true},{name:'IOT (Intubatie orotraheala)',pinned:true},
+      {name:'TR.ST (Traheostomie)',pinned:true},{name:'SNG (Sonda nazogastrica)',pinned:true},
+      {name:'Dren chirurgical',pinned:false},{name:'Cateter de dializa',pinned:false},
+      {name:'Cateter arterial',pinned:false},{name:'Cateter epidural',pinned:false},
+      {name:'Pacemaker temporar',pinned:false},{name:'ECMO',pinned:false}
+    ];changed=true;
+  }
 
   if(changed)console.log('[CPIAAM] Config IDs ensured/repaired, saving...');
   return changed;
@@ -1812,6 +1881,7 @@ function renderWizStep(step){
     let rows=WZ.sections.map((s,i)=>
       '<tr><td><input id="wz-sn-'+i+'" value="'+s.name+'" style="width:100%;padding:4px 6px;border:1px solid var(--brd);border-radius:4px;font-size:12px"></td>'+
       '<td><input id="wz-sc-'+i+'" value="'+(s.code||'')+'" style="width:100%;padding:4px 6px;border:1px solid var(--brd);border-radius:4px;font-size:12px;text-align:center;width:60px"></td>'+
+      '<td><select id="wz-st-'+i+'" style="padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px"><option value="sectie"'+((s.type||'sectie')!=='compartiment'?' selected':'')+'>Sectie</option><option value="compartiment"'+((s.type||'sectie')==='compartiment'?' selected':'')+'>Compartiment</option></select></td>'+
       '<td><input type="number" id="wz-sb-'+i+'" value="'+(s.beds||0)+'" min="0" style="width:60px;padding:4px 6px;border:1px solid var(--brd);border-radius:4px;font-size:12px;text-align:right"></td>'+
       '<td><button onclick="collectWzSec();WZ.sections.splice('+i+',1);renderWizStep(2)" style="background:none;border:none;cursor:pointer;font-size:14px">&#128465;</button></td></tr>').join('');
     c.innerHTML=bar+
@@ -1819,19 +1889,17 @@ function renderWizStep(step){
       '<div class="bg" style="margin-bottom:16px">'+
         '<button class="btn bo bsm" onclick="loadWzTpl(\'municipal\')">Spital municipal tip</button>'+
         '<button class="btn bo bsm" onclick="loadWzTpl(\'judetean\')">Spital judetean tip</button></div>'+
-      '<table class="dt"><thead><tr><th>Sectie</th><th style="width:70px">Cod</th><th style="width:70px">Paturi</th><th style="width:40px">&#215;</th></tr></thead>'+
+      '<table class="dt"><thead><tr><th>Sectie</th><th style="width:70px">Cod</th><th style="width:100px">Tip</th><th style="width:70px">Paturi</th><th style="width:40px">&#215;</th></tr></thead>'+
       '<tbody>'+rows+'</tbody></table>'+
       '<button class="btn bo bsm" onclick="collectWzSec();WZ.sections.push({name:\'\',code:\'\',beds:0});renderWizStep(2)" style="margin-top:8px">+ Adauga sectie</button>'+
+      '<div class="ib inf" style="margin-top:12px;font-size:12px">&#8505;&#65039; Introdu numarul curent de paturi pentru fiecare sectie. Daca numarul de paturi variaza in cursul anului (renovari, extinderi), poti configura perioade distincte ulterior din Configurare &#8594; Spital, folosind butonul de calendar din dreptul fiecarei sectii.</div>'+
       '<div class="wiz-nav"><button class="btn bo" onclick="collectWzSec();renderWizStep(1)">&#8592; Inapoi</button><button class="btn bp" onclick="wizNext(2)">Continua &#8594;</button></div>';
   }
   else if(step===3){
     let rows=WZ.personnel.map((p,i)=>
       '<tr><td><input id="wz-pn-'+i+'" value="'+p.name+'" style="width:100%;padding:4px 6px;border:1px solid var(--brd);border-radius:4px;font-size:12px"></td>'+
       '<td><input id="wz-pt-'+i+'" value="'+(p.title||'')+'" style="width:100%;padding:4px 6px;border:1px solid var(--brd);border-radius:4px;font-size:12px"></td>'+
-      '<td><select id="wz-pr-'+i+'" style="padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'+
-        '<option value="coordinator"'+(p.role==='coordinator'?' selected':'')+'>Coordonator</option>'+
-        '<option value="manager"'+(p.role==='manager'?' selected':'')+'>Manager</option>'+
-        '<option value="other"'+(p.role==='other'?' selected':'')+'>Altul</option></select></td>'+
+      '<td><select id="wz-pr-'+i+'" style="padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'+roleOpts(p.role)+'</select></td>'+
       '<td style="text-align:center"><input type="checkbox" id="wz-ps-'+i+'"'+(p.sign?' checked':'')+'></td>'+
       '<td><button onclick="collectWzPers();WZ.personnel.splice('+i+',1);renderWizStep(3)" style="background:none;border:none;cursor:pointer;font-size:14px">&#128465;</button></td></tr>').join('');
     c.innerHTML=bar+
@@ -1892,7 +1960,7 @@ function renderWizStep(step){
   }
 }
 
-function collectWzSec(){WZ.sections.forEach((s,i)=>{const el=document.getElementById('wz-sn-'+i);if(el){s.name=el.value.trim();s.code=document.getElementById('wz-sc-'+i).value.trim();s.beds=+document.getElementById('wz-sb-'+i).value||0}})}
+function collectWzSec(){WZ.sections.forEach((s,i)=>{const el=document.getElementById('wz-sn-'+i);if(el){s.name=el.value.trim();s.code=document.getElementById('wz-sc-'+i).value.trim();s.type=(document.getElementById('wz-st-'+i)?.value)||'sectie';s.beds=+document.getElementById('wz-sb-'+i).value||0}})}
 function collectWzPers(){WZ.personnel.forEach((p,i)=>{const el=document.getElementById('wz-pn-'+i);if(el){p.name=el.value.trim();p.title=document.getElementById('wz-pt-'+i).value.trim();p.role=document.getElementById('wz-pr-'+i).value;p.sign=document.getElementById('wz-ps-'+i).checked}})}
 function loadWzTpl(key){const t=SEC_TPL[key];if(t)WZ.sections=JSON.parse(JSON.stringify(t.sections));renderWizStep(2)}
 
@@ -1947,7 +2015,7 @@ async function wizPickAttDir(){
 
 async function finishWizard(){
   CFG.hospital_name=WZ.hospital_name;CFG.cpiaam_name=WZ.cpiaam_name;
-  CFG.sections=WZ.sections.map(s=>({...s,id:s.id||genId('sec'),bed_periods:s.bed_periods||[]}));
+  CFG.sections=WZ.sections.map(s=>({...s,id:s.id||genId('sec'),type:s.type||'sectie',bed_periods:s.bed_periods||[]}));
   CFG.personnel=WZ.personnel.map(p=>({...p,id:p.id||genId('pers')}));
   CFG.author_name=WZ.author_name;
   CFG.file_location=WZ.file_location||'browser';
@@ -1961,6 +2029,8 @@ async function finishWizard(){
   document.getElementById('app-sb').style.display='flex';
   document.getElementById('app-mn').style.display='block';
   updateSidebar();document.getElementById('ys').value=A.year;
+  // Ensure sync indicator updates after wizard (C2 fix)
+  setTimeout(()=>updateSyncIndicator(),100);
   if(!CFG.tutorial_shown){showPostWizard()}
   else{render()}
 }
@@ -2174,7 +2244,7 @@ async function rDash(el){
     '<div class="kc am"><div class="kl"><span>'+T('kpi_deseuri')+'</span>'+sparkSVG(dbm,50,16,'#D4A017')+'</div><div class="kv">'+fn(Math.round(totD))+' kg</div><div class="ks">'+y+'</div>'+kpiTrend(Math.round(totD),Math.round(pTotD),true,pDe.length>0)+'</div>'+
     '<div class="kc bl"><div class="kl"><span>'+T('kpi_biocide')+'</span>'+sparkSVG(bbm,50,16,'#2563B0')+'</div><div class="kv">'+fn(Math.round(consBio))+' lei</div><div class="ks">'+y+'</div>'+kpiTrend(Math.round(consBio),Math.round(pConsBio),true,pBi.length>0)+'</div>'+
     '<div class="kc gn"><div class="kl"><span>'+T('kpi_paturi')+'</span></div><div class="kv">'+wb.toFixed(0)+'</div><div class="ks">'+T('kpi_capacitate')+' '+y+'</div></div>'+
-  '</div></div>';
+    (()=>{const tzs=de.reduce((s,r)=>s+(+r.zile_spit||0),0);const iaam1000=tzs>0?((ia.length*1000)/tzs).toFixed(2):'—';const tpe=de.reduce((s,r)=>s+(+r.pac_ext||0),0);const des1000=tzs>0?((totD*1000)/tzs).toFixed(2):'—';const desPe=tpe>0?(totD/tpe).toFixed(2):'—';return (tzs>0?'<div class="kc bl"><div class="kl">IAAM/1000 zile spit.</div><div class="kv">'+iaam1000+'</div></div><div class="kc am"><div class="kl">kg des/1000 zile spit.</div><div class="kv">'+des1000+'</div></div>':'')+(tpe>0?'<div class="kc tl"><div class="kl">kg des/pac. ext.</div><div class="kv">'+desPe+'</div></div>':'')})()+'</div></div>';
   // 5. Docs & deadlines KPI
   h+='<div class="dash-section'+(_dw.docsKpi===false?' hidden':'')+'" data-dw="docsKpi"><div class="kg">'+
     '<div class="kc gn"><div class="kl">'+T('kpi_docs_val')+'</div><div class="kv">'+docsValid+'</div><div class="ks">'+(docsExpSoon>0?docsExpSoon+(isEN?' expiring soon':' expira curand'):T('kpi_ok'))+'</div></div>'+
@@ -2469,7 +2539,7 @@ function renderIaamSection(step){
     h='<div class="fg"><label>Istoric clinic (narativ)</label><textarea id="f-hist" rows="4">'+esc(d.clinical_history||'')+'</textarea></div>'+
       '<div class="fg"><label>'+T('iaam_comorbidities')+'</label>'+renderComorbSection()+'</div>'+
       '<div class="fg"><label>'+T('iaam_procedures_label')+'</label><textarea id="f-proc" rows="3">'+esc(d.procedures||'')+'</textarea></div>'+
-      '<div class="fg"><label>'+T('iaam_invasive_devices')+'</label><textarea id="f-devices" rows="2" placeholder="CVC, SVU, IOT, etc.">'+esc(d.invasive_devices||'')+'</textarea></div>';
+      '<div class="fg"><label>'+T('iaam_invasive_devices')+'</label>'+renderDevicesSection()+'</div>';
     break;
   case 7: // Contacts & outbreak
     {let cArr=d.contacts;if(typeof cArr==='string')cArr=cArr&&cArr!=='Fara contacti de salon'?[{initials:cArr,fo:'',interval:'',room:''}]:[];
@@ -2560,7 +2630,7 @@ function collectIaamSection(step){
     d.clinical_history=v('f-hist').trim();
     // comorbidities collected via toggleComorb/addComorbFromDropdown/removeComorbChip — already in _iaamDraft
     d.procedures=v('f-proc').trim();
-    d.invasive_devices=v('f-devices').trim();
+    // invasive_devices collected via toggleDevice/addDeviceFromDD/addDeviceCustom — already in _iaamDraft
     break;
   case 7:
     collectContactRows();d.outbreak=v('f-foc');d.outbreak_details=v('f-foc-det').trim();
@@ -2711,6 +2781,67 @@ function removeComorbChip(name){
   markFormDirty();
   const wrap=document.querySelector('#iw-content .fg:nth-child(2)');
   if(wrap)wrap.innerHTML='<label>'+T('iaam_comorbidities')+'</label>'+renderComorbSection();
+}
+
+// ═══ Invasive devices section (same pattern as risk factors) ═══
+function renderDevicesSection(){
+  const cfg=CFG.devices_config||[];
+  let sel=_iaamDraft.invasive_devices||[];
+  if(typeof sel==='string')sel=sel?sel.split(/[,;]+/).map(s=>s.trim()).filter(Boolean):[];
+  _iaamDraft.invasive_devices=sel;
+  const pinned=cfg.filter(f=>f.pinned),unpinned=cfg.filter(f=>!f.pinned);
+  let h='<div class="rf-checks">';
+  pinned.forEach(f=>{
+    const chk=sel.includes(f.name)?'checked':'';
+    h+='<label><input type="checkbox" '+chk+' onchange="toggleDevice(\''+esc(f.name).replace(/'/g,"\\'")+'\',this.checked)"> '+esc(f.name)+'</label>';
+  });
+  h+='</div>';
+  const avail=unpinned.filter(f=>!sel.includes(f.name));
+  if(avail.length>0){
+    h+='<div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">'+
+      '<select id="f-dev-dd" style="flex:1;padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+      '<option value="">— Adauga dispozitiv —</option>'+
+      avail.map(f=>'<option value="'+esc(f.name)+'">'+esc(f.name)+'</option>').join('')+
+      '</select><button class="btn bo bsm" onclick="addDeviceFromDD()">+ Adauga</button></div>';
+  }
+  h+='<div style="display:flex;gap:6px;align-items:center;margin-bottom:12px">'+
+    '<input id="f-dev-custom" placeholder="Dispozitiv personalizat..." style="flex:1;padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+    '<button class="btn bo bsm" onclick="addDeviceCustom()">+ Adauga</button></div>';
+  const chipItems=sel.filter(s=>!pinned.find(p=>p.name===s));
+  if(chipItems.length>0){
+    h+='<div class="rf-chips">';
+    chipItems.forEach(name=>{h+='<span class="rf-chip">'+esc(name)+'<button onclick="removeDeviceChip(\''+esc(name).replace(/'/g,"\\'")+'\')">&times;</button></span>'});
+    h+='</div>';
+  }
+  return h;
+}
+function toggleDevice(name,checked){
+  if(!Array.isArray(_iaamDraft.invasive_devices))_iaamDraft.invasive_devices=[];
+  if(checked&&!_iaamDraft.invasive_devices.includes(name))_iaamDraft.invasive_devices.push(name);
+  if(!checked)_iaamDraft.invasive_devices=_iaamDraft.invasive_devices.filter(n=>n!==name);
+  markFormDirty();
+}
+function addDeviceFromDD(){
+  const sel=document.getElementById('f-dev-dd');if(!sel||!sel.value)return;
+  if(!Array.isArray(_iaamDraft.invasive_devices))_iaamDraft.invasive_devices=[];
+  if(!_iaamDraft.invasive_devices.includes(sel.value)){_iaamDraft.invasive_devices.push(sel.value);markFormDirty()}
+  _rerenderDevices();
+}
+function addDeviceCustom(){
+  const inp=document.getElementById('f-dev-custom');if(!inp||!inp.value.trim())return;
+  if(!Array.isArray(_iaamDraft.invasive_devices))_iaamDraft.invasive_devices=[];
+  const val=inp.value.trim();
+  if(!_iaamDraft.invasive_devices.includes(val)){_iaamDraft.invasive_devices.push(val);markFormDirty()}
+  _rerenderDevices();
+}
+function removeDeviceChip(name){
+  if(!Array.isArray(_iaamDraft.invasive_devices))return;
+  _iaamDraft.invasive_devices=_iaamDraft.invasive_devices.filter(n=>n!==name);
+  markFormDirty();_rerenderDevices();
+}
+function _rerenderDevices(){
+  const wrap=document.querySelector('#iw-content .fg:last-child');
+  if(wrap)wrap.innerHTML='<label>'+T('iaam_invasive_devices')+'</label>'+renderDevicesSection();
 }
 
 // ═══ Structured contacts section ═══
@@ -3408,7 +3539,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
         '<td>'+rProbe(r.probe_type)+'</td>'+
         '<td>'+rSec(r.section)+'</td>'+
         '<td>'+(r.result==='conform'?'<span class="bdg bdg-g">Conform</span>':'<span class="bdg bdg-r">Neconform</span>')+'</td>'+
-        '<td style="font-size:11px">'+(r.organism||r.notes||'—')+'</td>'+
+        '<td style="font-size:11px">'+(r.organism?(r.organism+(r.ufc_count?' ('+r.ufc_count+' UFC)':'')):(r.details||r.notes||'—'))+(r.details&&r.organism?'<br><span style="color:var(--txtL)">'+esc(r.details)+'</span>':'')+'</td>'+
         '<td class="act"><button onclick="editAuto('+r.id+')">&#9998;</button><button onclick="delRec(\'autocontrol\','+r.id+')">&#128465;</button></td></tr>';
     });
     h+='</tbody></table>';
@@ -3431,34 +3562,59 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
 }
 
 // ═══ Edit / Save / CSV (logica neschimbata) ═══
+// Autocontrol germeni predefiniti (pentru neconform)
+const AUTO_GERMENI=['Staphylococcus spp.','Pseudomonas spp.','Enterobacter spp.','Coliformi','E. coli','Klebsiella spp.','Mucegaiuri / Fungi','Bacillus spp.'];
+function autoDateChanged(){
+  const dt=document.getElementById('f-auto-dt')?.value;if(!dt)return;
+  const d=new Date(dt);if(isNaN(d))return;
+  const mo=d.getMonth()+1,q=Math.ceil(mo/3);
+  const selMo=document.getElementById('f-auto-mo');if(selMo)selMo.value=mo;
+  const selQ=document.getElementById('f-auto-q');if(selQ)selQ.value=q;
+}
+function autoResChanged(){
+  const res=document.getElementById('f-auto-res')?.value;
+  const wrap=document.getElementById('f-auto-nc-wrap');if(wrap)wrap.style.display=res==='neconform'?'block':'none';
+}
 async function editAuto(id){
   const isEN=CFG.lang==='en';
   let r=id?(await ga('autocontrol')).find(x=>x.id===id):{year:A.year,month:new Date().getMonth()+1,result:'conform',quarter:Math.ceil((new Date().getMonth()+1)/3)};
   if(!r)r={year:A.year,month:new Date().getMonth()+1,result:'conform',quarter:1};
+  // Germen dropdown options
+  const germOpts='<option value="">— '+(isEN?'Select pathogen':'Selecteaza germen')+' —</option>'+
+    AUTO_GERMENI.map(g=>'<option value="'+g+'"'+(r.organism===g?' selected':'')+'>'+g+'</option>').join('')+
+    '<option value="__custom"'+(r.organism&&!AUTO_GERMENI.includes(r.organism)&&r.organism?' selected':'')+'>Altul (text liber)</option>';
+  const orgCustom=r.organism&&!AUTO_GERMENI.includes(r.organism)?r.organism:'';
   openM(id?(isEN?'Edit Sample':'Editare Proba'):(isEN?'New Sample':'Proba Noua'),
-    '<div class="fr"><div class="fg"><label>'+(isEN?'Sample Type':'Tip proba')+'</label><select id="f-tp">'+optsId(CFG.probe_types,r.probe_type)+'</select></div>'+
-    '<div class="fg"><label>'+(isEN?'Section':'Sectie')+'</label><select id="f-sec"><option value="">—</option>'+secOpts(r.section)+'</select></div></div>'+
-    '<div class="fr3"><div class="fg"><label>'+(isEN?'Sample Date':'Data recoltare')+'</label><input type="date" id="f-dt" value="'+(r.date||'')+'"></div>'+
-    '<div class="fg"><label>'+(isEN?'Quarter':'Trimestru')+'</label><select id="f-q">'+[1,2,3,4].map(q=>'<option value="'+q+'" '+(r.quarter===q?'selected':'')+'>T'+q+'</option>').join('')+'</select></div>'+
-    '<div class="fg"><label>'+(isEN?'Month':'Luna')+'</label><select id="f-mo">'+moOpts(r.month)+'</select></div></div>'+
-    '<div class="fr"><div class="fg"><label>'+(isEN?'Result':'Rezultat')+'</label><select id="f-res" onchange="document.getElementById(\'f-nc-wrap\').style.display=this.value===\'neconform\'?\'block\':\'none\'"><option value="conform" '+(r.result==='conform'?'selected':'')+'>Conform</option><option value="neconform" '+(r.result==='neconform'?'selected':'')+'>Neconform</option></select></div>'+
-    '<div class="fg"><label>'+(isEN?'Pathogen':'Germen')+'</label><input id="f-org" value="'+(r.organism||'')+'"></div>'+
-    '<div class="fg"><label>DSP</label><select id="f-dsp"><option value="false" '+(!r.dsp_parallel?'selected':'')+'>Nu</option><option value="true" '+(r.dsp_parallel?'selected':'')+'>Da</option></select></div></div>'+
-    '<div id="f-nc-wrap" style="display:'+(r.result==='neconform'?'block':'none')+'"><div class="fg"><label>'+(isEN?'Non-conformity details':'Neconformitati detaliate')+'</label><textarea id="f-nc" rows="2" placeholder="'+(isEN?'Describe non-conformities...':'Descrie neconformitatile...')+'">'+(r.nc_details||'')+'</textarea></div></div>'+
-    '<div class="fg"><label>'+(isEN?'Notes':'Observatii')+'</label><textarea id="f-n" rows="2">'+(r.notes||'')+'</textarea></div>',
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Sample Type':'Tip proba')+'</label><select id="f-auto-tp">'+optsId(CFG.probe_types,r.probe_type)+'</select></div>'+
+    '<div class="fg"><label>'+(isEN?'Section':'Sectie')+'</label><select id="f-auto-sec"><option value="">—</option>'+secOpts(r.section)+'</select></div></div>'+
+    '<div class="fr3"><div class="fg"><label>'+(isEN?'Sample Date':'Data recoltare')+'</label><input type="date" id="f-auto-dt" value="'+(r.date||'')+'" onchange="autoDateChanged()"></div>'+
+    '<div class="fg"><label>'+(isEN?'Quarter':'Trimestru')+'</label><select id="f-auto-q">'+[1,2,3,4].map(q=>'<option value="'+q+'" '+(r.quarter===q?'selected':'')+'>T'+q+'</option>').join('')+'</select></div>'+
+    '<div class="fg"><label>'+(isEN?'Month':'Luna')+'</label><select id="f-auto-mo">'+moOpts(r.month)+'</select></div></div>'+
+    '<div class="fg"><label>'+(isEN?'Sample Details':'Detalii proba')+'</label><input id="f-auto-det" value="'+esc(r.details||'')+'" placeholder="'+(isEN?'e.g. bed room 3, faucet, left wall':'ex: pat salon 3, robinet chiuveta proceduri, perete stang')+'"></div>'+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Result':'Rezultat')+'</label><select id="f-auto-res" onchange="autoResChanged()"><option value="conform" '+(r.result==='conform'?'selected':'')+'>Conform</option><option value="neconform" '+(r.result==='neconform'?'selected':'')+'>Neconform</option></select></div>'+
+    '<div class="fg"><label>DSP</label><select id="f-auto-dsp"><option value="false" '+(!r.dsp_parallel?'selected':'')+'>Nu</option><option value="true" '+(r.dsp_parallel?'selected':'')+'>Da</option></select></div></div>'+
+    '<div id="f-auto-nc-wrap" style="display:'+(r.result==='neconform'?'block':'none')+'">'+
+      '<div class="fr"><div class="fg"><label>Nr. UFC</label><input type="number" id="f-auto-ufc" value="'+(r.ufc_count||'')+'" min="0" placeholder="Unitati formatoare de colonii"></div>'+
+      '<div class="fg"><label>'+(isEN?'Pathogen':'Germen identificat')+'</label><select id="f-auto-org" onchange="var c=document.getElementById(\'f-auto-org-custom\');if(c)c.style.display=this.value===\'__custom\'?\'block\':\'none\'">'+germOpts+'</select>'+
+      '<input id="f-auto-org-custom" value="'+esc(orgCustom)+'" placeholder="'+(isEN?'Pathogen name...':'Nume germen...')+'" style="margin-top:4px;display:'+(r.organism&&!AUTO_GERMENI.includes(r.organism)&&r.organism?'block':'none')+'"></div></div>'+
+      '<div class="fg"><label>'+(isEN?'Non-conformity details':'Neconformitati detaliate')+'</label><textarea id="f-auto-nc" rows="2" placeholder="'+(isEN?'Describe non-conformities...':'Descrie neconformitatile...')+'">'+(r.nc_details||'')+'</textarea></div>'+
+    '</div>'+
+    '<div class="fg"><label>'+(isEN?'Notes':'Observatii')+'</label><textarea id="f-auto-n" rows="2">'+(r.notes||'')+'</textarea></div>',
   '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaza')+'</button><button class="btn bp" onclick="saveAuto('+(id||'null')+')">'+(isEN?'Save':'Salveaza')+'</button>');
-  setTimeout(()=>{addDatePreview('f-dt');attachDirtyTracking()},50);
+  setTimeout(()=>{addDatePreview('f-auto-dt');attachDirtyTracking()},50);
 }
 async function saveAuto(id){
   const mc=document.getElementById('mdc');
-  const v=s=>{const el=mc.querySelector('#'+s)||document.getElementById(s);return el?el.value:''};
-  const rec={year:A.year,quarter:+v('f-q'),month:+v('f-mo'),date:v('f-dt'),probe_type:v('f-tp'),section:v('f-sec'),result:v('f-res'),organism:v('f-org').trim(),dsp_parallel:v('f-dsp')==='true',notes:v('f-n').trim()};
-  if(rec.result==='neconform'){rec.nc_details=(mc.querySelector('#f-nc')?.value||'').trim()}
+  const v=s=>{const el=mc.querySelector('#'+s);return el?el.value:''};
+  const orgSel=v('f-auto-org');const orgCustom=v('f-auto-org-custom').trim();
+  const organism=orgSel==='__custom'?orgCustom:(orgSel||'');
+  const rec={year:A.year,quarter:+v('f-auto-q'),month:+v('f-auto-mo'),date:v('f-auto-dt'),probe_type:v('f-auto-tp'),section:v('f-auto-sec'),result:v('f-auto-res'),organism:organism,dsp_parallel:v('f-auto-dsp')==='true',notes:v('f-auto-n').trim(),details:v('f-auto-det').trim()};
+  if(rec.result==='neconform'){rec.nc_details=(mc.querySelector('#f-auto-nc')?.value||'').trim();rec.ufc_count=+v('f-auto-ufc')||null}
   if(!rec.probe_type||!rec.section){alert('Completeaza tipul si sectia.');return}
   if(id)rec.id=id;await pt('autocontrol',rec);logActivity((id?'Editat':'Adaugat')+' proba autocontrol — '+rSec(rec.section));closeM();render();
 }
 function expAutoCSV(){ga('autocontrol').then(d=>{const rows=d.filter(r=>r.year===A.year);if(!rows.length){alert('Nimic de exportat.');return}
-  const csv='\uFEFF'+'Trimestru,Luna,Data,Tip Proba,Sectie,Rezultat,Germen,DSP,Obs\n'+rows.map(r=>r.quarter+','+r.month+',"'+(r.date||'')+'","'+rProbe(r.probe_type)+'","'+rSec(r.section)+'",'+r.result+',"'+(r.organism||'')+'",'+( r.dsp_parallel?'Da':'Nu')+',"'+(r.notes||'')+'"').join('\n');
+  const csv='\uFEFF'+'Trimestru,Luna,Data,Tip Proba,Sectie,Rezultat,Germen,UFC,Detalii,DSP,Obs\n'+rows.map(r=>r.quarter+','+r.month+',"'+(r.date||'')+'","'+rProbe(r.probe_type)+'","'+rSec(r.section)+'",'+r.result+',"'+(r.organism||'')+'","'+(r.ufc_count||'')+'","'+(r.details||'')+'",'+( r.dsp_parallel?'Da':'Nu')+',"'+(r.notes||'')+'"').join('\n');
   saveAs(new Blob([csv],{type:'text/csv;charset=utf-8'}),'Autocontrol_'+A.year+'.csv')})}
 function impAutoCSV(){const inp=document.createElement('input');inp.type='file';inp.accept='.csv';inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;const t=await f.text();const lines=t.split('\n').slice(1).filter(l=>l.trim());let cnt=0;
   for(const l of lines){const cols=l.match(/(".*?"|[^,]+)/g)?.map(c=>c.replace(/^"|"$/g,'').trim())||[];if(cols.length<6)continue;
@@ -3474,8 +3630,8 @@ async function genAutoExcel(){
   if(au.length===0){alert('Nicio proba autocontrol pentru '+y+'.');return}
   const wb=XLSX.utils.book_new();
   // Sheet 1: Date brute
-  const raw=[['Trimestru','Luna','Data','Tip Proba','Sectie','Rezultat','Germen','DSP','Observatii']];
-  au.forEach(r=>raw.push([r.quarter||Math.ceil(r.month/3),MO[r.month-1]||r.month,r.date||'',rProbe(r.probe_type),rSec(r.section),r.result==='conform'?'Conform':'Neconform',r.organism||'',r.dsp_parallel?'Da':'Nu',r.notes||'']));
+  const raw=[['Trimestru','Luna','Data','Tip Proba','Sectie','Rezultat','Germen','UFC','Detalii','DSP','Observatii']];
+  au.forEach(r=>raw.push([r.quarter||Math.ceil(r.month/3),MO[r.month-1]||r.month,r.date||'',rProbe(r.probe_type),rSec(r.section),r.result==='conform'?'Conform':'Neconform',r.organism||'',r.ufc_count||'',r.details||'',r.dsp_parallel?'Da':'Nu',r.notes||'']));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(raw),'Date Brute');
   // Sheet 2: Pivot pe tipuri
   const byType={};au.forEach(r=>{const tn=rProbe(r.probe_type);if(!byType[tn])byType[tn]={t:0,c:0,nc:0};byType[tn].t++;r.result==='conform'?byType[tn].c++:byType[tn].nc++});
@@ -3750,7 +3906,34 @@ async function rDes(el){
   '</tbody></table></div></div>'+
   '<div class="pn"><div class="ph"><h3>Om-zile lunare</h3></div><div class="pb">'+
     '<div style="display:grid;grid-template-columns:repeat(12,1fr);gap:6px">'+MO.map((m,mi)=>'<div><label style="font-size:10px;font-weight:600;color:var(--txtL);display:block;margin-bottom:3px">'+m+'</label><input type="number" min="0" value="'+(byM[mi+1]?.om_zile||'')+'" style="width:100%;padding:4px;border:1px solid var(--brd);border-radius:4px;font-size:11px;text-align:right;font-family:var(--f)" onchange="sDes('+(mi+1)+',\'om_zile\',this.value)"></div>').join('')+
-  '</div></div></div>';
+  '</div></div></div>'+
+
+  // Monthly hospital stats section
+  '<div class="pn"><div class="ph"><h3>Date Statistice Lunare</h3></div><div class="pb">'+
+    '<div class="ib inf" style="margin-bottom:12px">Introdu datele lunare pentru calculul indicatorilor: IAAM/1000 zile spitalizare, kg deseuri/1000 zile spitalizare, etc.</div>'+
+    '<table class="dt" style="font-size:12px"><thead><tr><th>Luna</th><th style="text-align:right">Zile spitalizare</th><th style="text-align:right">Pacienti externati</th><th style="text-align:right">Paturi ocupate mediu</th></tr></thead><tbody>'+
+    MO.map((m,mi)=>{const rec=byM[mi+1]||{};return '<tr><td><strong>'+m+'</strong></td>'+
+      '<td><input type="number" min="0" value="'+(rec.zile_spit||'')+'" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px;text-align:right;font-family:var(--f)" onchange="sDes('+(mi+1)+',\'zile_spit\',this.value)"></td>'+
+      '<td><input type="number" min="0" value="'+(rec.pac_ext||'')+'" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px;text-align:right;font-family:var(--f)" onchange="sDes('+(mi+1)+',\'pac_ext\',this.value)"></td>'+
+      '<td><input type="number" min="0" step="0.1" value="'+(rec.pat_ocup||'')+'" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px;text-align:right;font-family:var(--f)" onchange="sDes('+(mi+1)+',\'pat_ocup\',this.value)"></td></tr>'}).join('')+
+    '</tbody></table>'+
+    (()=>{
+      let tzs=0,tpe=0,tpo=0;data.forEach(r=>{tzs+=(+r.zile_spit||0);tpe+=(+r.pac_ext||0);tpo+=(+r.pat_ocup||0)});
+      const iaamCount=(A._dashChartData?.ibm||[]).reduce((a,b)=>a+b,0)||0;
+      const iaam1000zs=tzs>0?((iaamCount*1000)/tzs).toFixed(2):'—';
+      const des1000zs=tzs>0?((gt*1000)/tzs).toFixed(2):'—';
+      const desPacExt=tpe>0?(gt/tpe).toFixed(2):'—';
+      const daysInYear=data.length*30.44;
+      const desPatZi=tpo>0&&daysInYear>0?(gt/(tpo*daysInYear/12*data.length)).toFixed(3):'—';
+      return '<div class="kg" style="margin-top:14px">'+
+        '<div class="kc bl"><div class="kl">Total zile spitalizare</div><div class="kv">'+fn(tzs)+'</div></div>'+
+        '<div class="kc gn"><div class="kl">Total pacienti externati</div><div class="kv">'+fn(tpe)+'</div></div>'+
+        '<div class="kc tl"><div class="kl">IAAM / 1000 zile spit.</div><div class="kv">'+iaam1000zs+'</div></div>'+
+        '<div class="kc am"><div class="kl">kg deseuri / 1000 zile spit.</div><div class="kv">'+des1000zs+'</div></div>'+
+        '<div class="kc rd"><div class="kl">kg deseuri / pacient ext.</div><div class="kv">'+desPacExt+'</div></div>'+
+      '</div>';
+    })()+
+  '</div></div>';
 }
 async function sDes(month,field,value){
   const data=(await ga('deseuri')).filter(r=>r.year===A.year);let rec=data.find(r=>r.month===month);
@@ -3806,6 +3989,13 @@ async function rBio(el){
   el.innerHTML=h;
 }
 var _editBioRec=null;
+function bioProdChanged(){
+  const sel=document.getElementById('f-prod');if(!sel||!sel.value)return;
+  const prod=CFG.biocide_products.find(p=>p.id===sel.value);if(!prod)return;
+  const mfr=document.getElementById('f-bio-mfr'),dist=document.getElementById('f-bio-dist');
+  if(mfr&&!mfr.value&&prod.manufacturer)mfr.value=prod.manufacturer;
+  if(dist&&!dist.value&&prod.distributor)dist.value=prod.distributor;
+}
 async function editBio(id){
   let r=id?(await ga('biocide')).find(x=>x.id===id):{year:A.year,type:'iesire',month:new Date().getMonth()+1};
   if(!r)r={year:A.year,type:'iesire',month:new Date().getMonth()+1};
@@ -3838,13 +4028,17 @@ async function editBio(id){
     attHtml='<div class="ib inf" style="margin-top:14px;font-size:11px">Documentele (aviz, fisa tehnica, SDS) pot fi atasate dupa salvarea produsului.</div>';
   }
   openM(id?'Editare':'Inregistrare Noua',
-    '<div class="fr"><div class="fg"><label>Produs</label><select id="f-prod"><option value="">— Selecteaza produs —</option>'+prods+'</select><div style="margin-top:4px"><input id="f-prod-custom" placeholder="sau introdu manual un produs nou" value="'+(CFG.biocide_products.find(p=>p.id===(r.product_id||r.product_name))?'':esc(r.product_name||''))+'" style="font-size:11px"></div></div>'+
+    '<div class="fr"><div class="fg"><label>Produs</label><select id="f-prod" onchange="bioProdChanged()"><option value="">— Selecteaza produs —</option>'+prods+'</select><div style="margin-top:4px"><input id="f-prod-custom" placeholder="sau introdu manual un produs nou" value="'+(CFG.biocide_products.find(p=>p.id===(r.product_id||r.product_name))?'':esc(r.product_name||''))+'" style="font-size:11px"></div></div>'+
     '<div class="fg"><label>UM</label><input id="f-um" value="'+(r.unit||'')+'" placeholder="buc 0.5L"></div></div>'+
     '<div class="fr3"><div class="fg"><label>Tip</label><select id="f-tp"><option value="stoc_initial" '+(r.type==='stoc_initial'?'selected':'')+'>Stoc initial</option><option value="intrare" '+(r.type==='intrare'?'selected':'')+'>Intrare</option><option value="iesire" '+(r.type==='iesire'?'selected':'')+'>Iesire</option></select></div>'+
     '<div class="fg"><label>Luna</label><select id="f-mo"><option value="">—</option>'+moOpts(r.month)+'</select></div>'+
     '<div class="fg"><label>Lot</label><input id="f-lot" value="'+(r.lot||'')+'"></div></div>'+
     '<div class="fr"><div class="fg"><label>Cantitate</label><input type="number" step="0.01" id="f-qty" value="'+(r.quantity||'')+'"></div>'+
-    '<div class="fg"><label>Valoare (lei)</label><input type="number" step="0.01" id="f-val" value="'+(r.value_lei||'')+'"></div></div>'+attHtml,
+    '<div class="fg"><label>Valoare (lei)</label><input type="number" step="0.01" id="f-val" value="'+(r.value_lei||'')+'"></div></div>'+
+    '<div class="fr"><div class="fg"><label>Producator</label><input id="f-bio-mfr" value="'+esc(r.manufacturer||'')+'" list="dl-bio-mfr" placeholder="Producator"></div>'+
+    '<div class="fg"><label>Distribuitor</label><input id="f-bio-dist" value="'+esc(r.distributor||'')+'" list="dl-bio-dist" placeholder="Distribuitor"></div></div>'+
+    '<datalist id="dl-bio-mfr">'+[...new Set(CFG.biocide_products.map(p=>p.manufacturer).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('')+'</datalist>'+
+    '<datalist id="dl-bio-dist">'+[...new Set(CFG.biocide_products.map(p=>p.distributor).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('')+'</datalist>'+attHtml,
   '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveBio('+(id||'null')+')">Salveaza</button>');
   setTimeout(()=>attachDirtyTracking(),50);
 }
@@ -3881,7 +4075,7 @@ async function saveBio(id){
   const prodVal=selVal||customVal;
   if(!prodVal){alert('Completeaza produsul.');return}
   const prodObj=CFG.biocide_products.find(p=>p.id===prodVal)||CFG.biocide_products.find(p=>p.name===prodVal);
-  const rec={year:A.year,product_id:prodObj?prodObj.id:prodVal,product_name:prodObj?prodObj.name:(customVal||prodVal),unit:v('f-um').trim(),type:v('f-tp'),month:+v('f-mo')||null,lot:v('f-lot').trim(),quantity:+v('f-qty')||0,value_lei:+v('f-val')||0};
+  const rec={year:A.year,product_id:prodObj?prodObj.id:prodVal,product_name:prodObj?prodObj.name:(customVal||prodVal),unit:v('f-um').trim(),type:v('f-tp'),month:+v('f-mo')||null,lot:v('f-lot').trim(),quantity:+v('f-qty')||0,value_lei:+v('f-val')||0,manufacturer:(document.getElementById('f-bio-mfr')?.value||'').trim(),distributor:(document.getElementById('f-bio-dist')?.value||'').trim()};
   if(id){const old=(await ga('biocide')).find(x=>x.id===id);if(old?.attachments)rec.attachments=old.attachments;rec.id=id}
   await pt('biocide',rec);logActivity((id?'Editat':'Adaugat')+' biocid — '+rec.product_name);closeM();render();
 }
@@ -4672,7 +4866,7 @@ async function genAuditWord(id){
       wH1('DATE GENERALE'),
       wP('Tip audit: '+auditTypeName(r.audit_type)),
       wP('Data: '+fmtDate(r.date)),
-      wP('Sectia: '+rSec(r.section)),
+      wP(secLabel(r.section)),
       wP('Evaluator: '+(r.evaluator||'—')),
       ...(r.audit_type==='izol'?[wP('Tip izolare: '+(r.isolation_type||'—'))]:[]),
       wH1('REZULTATE EVALUARE'),
@@ -4836,7 +5030,7 @@ async function genTrainingWord(id){
       wH1('DETALII INSTRUIRE'),
       wP('Data: '+fmtDate(r.date)),
       wP('Tema: '+(r.topic||'—'),{bold:true}),
-      wP('Sectia: '+rSec(r.section)),
+      wP(secLabel(r.section)),
       wP('Formator: '+(r.trainer||'—')),
       wP('Durata: '+(r.duration_hours||'—')+' ore'),
       wH1('LISTA PARTICIPANTI'),
@@ -4910,10 +5104,7 @@ async function rCfg(el){
     '<tbody>'+CFG.personnel.map((p,i)=>'<tr>'+
       '<td><input value="'+p.name+'" onchange="CFG.personnel['+i+'].name=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px"></td>'+
       '<td><input value="'+(p.title||'')+'" onchange="CFG.personnel['+i+'].title=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px"></td>'+
-      '<td><select onchange="CFG.personnel['+i+'].role=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px;width:100%">'+
-        '<option value="coordinator"'+(p.role==='coordinator'?' selected':'')+'>Coordonator</option>'+
-        '<option value="manager"'+(p.role==='manager'?' selected':'')+'>Manager</option>'+
-        '<option value="other"'+(p.role==='other'?' selected':'')+'>Altul</option></select></td>'+
+      '<td><select onchange="CFG.personnel['+i+'].role=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px;width:100%">'+roleOpts(p.role)+'</select></td>'+
       '<td style="text-align:center"><input type="checkbox" '+(p.sign?'checked':'')+' onchange="CFG.personnel['+i+'].sign=this.checked"></td>'+
       '<td class="act"><button onclick="CFG.personnel.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>').join('')+'</tbody></table>'+
     '<button class="btn bp" onclick="saveCfg();alert(\'Personal salvat!\')" style="margin-top:8px">Salveaza Personal</button>'+
@@ -4921,13 +5112,14 @@ async function rCfg(el){
 
   '<div class="pn"><div class="ph"><h3>Sectii si Paturi</h3><button class="btn bp bsm" onclick="addSection()">+ Adauga sectie</button></div><div class="pb">'+
     '<div class="ib inf">Fiecare sectie poate avea perioade cu numar diferit de paturi (renovari, extinderi). Click pe butonul de calendar pentru a configura.</div>'+
-    '<table class="dt"><thead><tr><th>Sectie</th><th style="width:70px">Cod</th><th style="width:160px">Paturi</th><th style="width:50px">&#215;</th></tr></thead>'+
+    '<table class="dt"><thead><tr><th>Sectie</th><th style="width:70px">Cod</th><th style="width:120px">Tip</th><th style="width:160px">Paturi</th><th style="width:50px">&#215;</th></tr></thead>'+
     '<tbody>'+CFG.sections.map((s,i)=>{
       const nPer=(s.bed_periods||[]).length;
       const wb=nPer>0?getWeightedBeds(s.name,A.year).toFixed(1):'';
       return '<tr>'+
       '<td><input value="'+s.name+'" onchange="CFG.sections['+i+'].name=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px"></td>'+
       '<td><input value="'+(s.code||'')+'" onchange="CFG.sections['+i+'].code=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px;text-align:center"></td>'+
+      '<td><select onchange="CFG.sections['+i+'].type=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px;width:100%"><option value="sectie"'+(s.type!=='compartiment'?' selected':'')+'>Sectie</option><option value="compartiment"'+(s.type==='compartiment'?' selected':'')+'>Compartiment</option></select></td>'+
       '<td><div style="display:flex;align-items:center;gap:4px">'+
         '<input type="number" value="'+(s.beds||0)+'" min="0" onchange="CFG.sections['+i+'].beds=+this.value" style="width:60px;border:1px solid var(--brd);border-radius:4px;padding:4px 6px;font-size:12px;text-align:right">'+
         '<button class="btn bo bsm" onclick="editBedPeriods('+i+')" title="Perioade paturi">&#128197;</button>'+
@@ -4974,9 +5166,25 @@ async function rCfg(el){
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-comorb" placeholder="Comorbiditate noua"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-comorb\').value.trim();if(v){if(!CFG.comorbidities_config)CFG.comorbidities_config=[];CFG.comorbidities_config.push({name:v,pinned:false});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
+  '<div class="pn"><div class="ph"><h3>Dispozitive Invazive IAAM</h3></div><div class="pb">'+
+    '<p style="font-size:12px;color:var(--txtL);margin-bottom:10px">Dispozitivele marcate ca "Afisat permanent" apar ca checkbox-uri in formularul IAAM. Restul sunt disponibile in dropdown.</p>'+
+    '<table class="dt" style="font-size:12px"><thead><tr><th>Nume dispozitiv</th><th style="width:130px">Afisat permanent</th><th style="width:50px">Actiuni</th></tr></thead>'+
+    '<tbody>'+(CFG.devices_config||[]).map((dv,i)=>
+      '<tr><td>'+esc(dv.name)+'</td>'+
+      '<td style="text-align:center"><input type="checkbox" '+(dv.pinned?'checked':'')+' onchange="CFG.devices_config['+i+'].pinned=this.checked;saveCfg()" style="accent-color:#6366F1"></td>'+
+      '<td class="act"><button onclick="CFG.devices_config.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>').join('')+
+    '</tbody></table>'+
+    '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-dev" placeholder="Dispozitiv invaziv nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-dev\').value.trim();if(v){if(!CFG.devices_config)CFG.devices_config=[];CFG.devices_config.push({name:v,pinned:false});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
+  '</div></div>'+
+
   '<div class="pn"><div class="ph"><h3>Produse Biocide</h3></div><div class="pb">'+
-    '<div class="tag-list">'+CFG.biocide_products.map((p,i)=>{const nm=typeof p==='string'?p:(p.name||p.id||'?');return '<span class="tag">'+nm+'<span class="tag-x" onclick="CFG.biocide_products.splice('+i+',1);saveCfg();render()">&#215;</span></span>'}).join('')+'</div>'+
-    '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-bio" placeholder="Produs biocid nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-bio\').value.trim();if(v){CFG.biocide_products.push({id:genId(\'bio\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
+    '<table class="dt" style="font-size:12px"><thead><tr><th>Produs</th><th>Producator</th><th>Distribuitor</th><th style="width:40px">&#215;</th></tr></thead><tbody>'+
+    CFG.biocide_products.map((p,i)=>{const nm=typeof p==='string'?p:(p.name||'?');return '<tr><td>'+esc(nm)+'</td>'+
+      '<td><input value="'+esc(p.manufacturer||'')+'" onchange="CFG.biocide_products['+i+'].manufacturer=this.value;saveCfg()" placeholder="Producator" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;width:100%;font-size:11px"></td>'+
+      '<td><input value="'+esc(p.distributor||'')+'" onchange="CFG.biocide_products['+i+'].distributor=this.value;saveCfg()" placeholder="Distribuitor" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;width:100%;font-size:11px"></td>'+
+      '<td class="act"><button onclick="CFG.biocide_products.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>'}).join('')+
+    '</tbody></table>'+
+    '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-bio" placeholder="Produs biocid nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-bio\').value.trim();if(v){CFG.biocide_products.push({id:genId(\'bio\'),name:v,manufacturer:\'\',distributor:\'\'});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
   '<div class="pn"><div class="ph"><h3>Coduri Deseuri</h3></div><div class="pb">'+
@@ -7240,6 +7448,7 @@ async function exportMultiAnWord(){
 // CHANGELOG PAGE (cerinta E)
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'8.0',date:'2026-03-17',notes:'Fix CRITIC: ID-uri NaN la setup wizard — genId() si ensureConfigIds() cu protectie badId()\nFix: Indicator sincronizare se actualizeaza corect dupa wizard\nSetup Wizard: mesaj informativ despre paturi variabile\nIAAM Comorbiditati: actualizat la 8 pinned + 10 unpinned (HTA, Diabet tip 1/2, Cardiopatie, BPOC, IRC, Neoplasm, Obezitate + altele)\nSectii: camp tip (sectie/compartiment) + helper secLabel() — afecteaza Word si interfata\nIAAM: Dispozitive invazive cu checkboxuri pinned + dropdown + chips (ca factorii de risc)\nAutocontrol: auto-populare trimestru/luna din data selectata\nAutocontrol: camp nou "Detalii proba" cu text liber\nAutocontrol: campuri UFC si germen apar conditional doar pentru neconform\nAntibiograma: filtru rapid cautare antibiotice\nBiocide: campuri Producator/Distribuitor cu autocomplete din config\nPersonal: 7 roluri (Coordonator, Manager, Sef Sectie, Asistent Sef, Administrator, Responsabil deseuri, Altul)\nDate statistice lunare: zile spitalizare, pacienti externati, paturi ocupate — KPI derivate pe Dashboard\nFix CRITIC: Autocontrol salva sectia gresit — form IDs unice f-auto-* + mc.querySelector scoped'},
   {version:'7.8',date:'2026-03-16',notes:'Fix: Evenimentele din planificarea autocontrol nu apareau in Calendar — camp "date_start" corectat in "date" (conform structurii events store)'},
   {version:'7.7',date:'2026-03-16',notes:'Fix: Dialogurile de selectare fisier (Reconecteaza, Conecteaza, Backup) se deschid acum in folderul corect — startIn cu handle-ul salvat pe toate apelurile showOpenFilePicker si showSaveFilePicker'},
   {version:'7.6',date:'2026-03-16',notes:'Dashboard: Grafice SPC pe IAAM — linie medie, UCL, LCL (chartjs-plugin-annotation), puncte rosii daca depasesc UCL\nNotificari focar: alerta automata daca o luna depaseste UCL (limita superioara de control)\nRapoarte AI: buton "Word + Analiza AI" pe fiecare raport (Anual, IAAM, Autocontrol, Deseuri, Consum ATB)\nAI genereaza sectiune narativa adaugata in Word cu disclaimer — date anonimizate, fara informatii personale\nAnaliza Comparativa Multi-An: pagina noua cu 4 grafice overlay (IAAM, Autocontrol, Deseuri, DDD)\nTabel comparativ multi-an cu trend arrows (crestere/scadere/stabil)\nExport Word multi-an cu tabel sumar si evolutie lunara\nSidebar: link nou "Analiza Multi-An" in sectiunea Rapoarte'},

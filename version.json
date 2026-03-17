@@ -1,7 +1,20 @@
 {
-  "version": "7.8",
+  "version": "8.0",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Fix: Evenimentele din planificarea autocontrol nu apareau in Calendar (date_start -> date)"
+    "Fix CRITIC: ID-uri NaN la setup wizard — genId() si ensureConfigIds() cu protectie badId()",
+    "Fix: Indicator sincronizare se actualizeaza corect dupa wizard",
+    "Setup Wizard: mesaj informativ despre paturi variabile",
+    "IAAM Comorbiditati: actualizat la 8 pinned + 10 unpinned",
+    "Sectii: camp tip (sectie/compartiment) + helper secLabel()",
+    "IAAM: Dispozitive invazive cu checkboxuri pinned + dropdown + chips",
+    "Autocontrol: auto-populare trimestru/luna din data selectata",
+    "Autocontrol: camp nou Detalii proba",
+    "Autocontrol: campuri UFC si germen conditional doar neconform",
+    "Antibiograma: filtru rapid cautare antibiotice",
+    "Biocide: campuri Producator/Distribuitor cu autocomplete",
+    "Personal: 7 roluri disponibile",
+    "Date statistice lunare: zile spitalizare, pacienti externati, paturi ocupate + KPI Dashboard",
+    "Fix CRITIC: Autocontrol salva sectia gresit — form IDs unice f-auto-*"
   ]
 }

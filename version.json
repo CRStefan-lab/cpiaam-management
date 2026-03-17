@@ -1,7 +1,12 @@
 {
-  "version": "8.2",
+  "version": "8.3",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
+    "Dashboard: KPI-uri clickable — navigheaza direct la modulul respectiv",
+    "Fix CRITIC: Obiective SMART config mode — ID-uri string necitate in onclick handlers",
+    "Fix: Audit Igiena Mainilor — camp sectie lipsa la salvare (coloana goala in tabel)",
+    "Fix: Titlu aplicatie actualizat la versiunea corecta",
+    "Fix: Instruire Personal — adaugat i18n pe sidebar (data-t + cheie LANG)",
     "NOU: Modul Audituri IPC complet — inlocuieste vechiul sistem de audituri",
     "NOU: TIP A — Audit Igiena Mainilor WHO 5 Momente cu calupuri (DA/NU, FR/SP, Manusi)",
     "NOU: TIP B — Audit Generic Checklist (Curatenie 13 itemi, Rotatie Biocide 8, Sterilizare 12, Preoperator 10)",

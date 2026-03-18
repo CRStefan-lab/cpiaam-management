@@ -2457,7 +2457,7 @@ async function rDash(el){
   const audits=(await ga('audits')).filter(r=>r.year===y);
   const trains=(await ga('trainings')).filter(r=>r.year===y);
   const avgCompl=audits.length>0?Math.round(audits.reduce((s,r)=>s+(r.compliance_pct||0),0)/audits.length*10)/10:0;
-  const trainedNames=new Set();trains.forEach(r=>(r.participants||[]).filter(p=>p.signed).forEach(p=>trainedNames.add(p.name)));
+  const trainedNames=new Set();trains.forEach(r=>{var pp=Array.isArray(r.participants)?r.participants:[];pp.filter(p=>p.signed).forEach(p=>trainedNames.add(p.name))});
   const trainedPct=(CFG.personnel||[]).length>0?Math.round(trainedNames.size/(CFG.personnel||[]).length*100):0;
   h+='<div class="dash-section'+(_dw.audKpi===false?' hidden':'')+'" data-dw="audKpi"><div class="kg">'+
     '<div class="kc tl" onclick="nav(\'audituri\')"><div class="kl">'+(isEN?'Audits':'Audituri')+'</div><div class="kv">'+audits.length+'</div><div class="ks">'+(isEN?'Avg compliance':'Conformitate medie')+': '+avgCompl+'%</div></div>'+
@@ -7363,7 +7363,7 @@ async function _calcAutoValue(obj,year){
     // Count unique trained personnel
     var trained=new Set();
     trainAll.forEach(function(t){
-      (t.participants||[]).forEach(function(p){if(p)trained.add(p)});
+      (Array.isArray(t.participants)?t.participants:[]).forEach(function(p){if(p&&p.name)trained.add(p.name);else if(p)trained.add(p)});
       if(t.participant_count)for(var i=0;i<t.participant_count;i++)trained.add('p_'+t.id+'_'+i);
     });
     return Math.round(Math.min(trained.size,totalPersonnel)/totalPersonnel*1000)/10;
@@ -7804,9 +7804,9 @@ async function rInstr(el){
   }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 
   const total=allData.length;
-  const totalPart=allData.reduce((s,r)=>s+(r.participants||[]).length,0);
+  const totalPart=allData.reduce((s,r)=>s+(Array.isArray(r.participants)?r.participants.length:(+r.participants||0)),0);
   // Unique trained personnel names
-  const trainedNames=new Set();allData.forEach(r=>(r.participants||[]).filter(p=>p.signed).forEach(p=>trainedNames.add(p.name)));
+  const trainedNames=new Set();allData.forEach(r=>{var pp=Array.isArray(r.participants)?r.participants:[];pp.filter(p=>p.signed).forEach(p=>trainedNames.add(p.name))});
   const allPersonnel=CFG.personnel||[];
   const trainedPct=allPersonnel.length>0?Math.round(trainedNames.size/allPersonnel.length*100):0;
 
@@ -7818,9 +7818,9 @@ async function rInstr(el){
 
   // Alert: untrained >12 months
   const oneYearAgo=new Date();oneYearAgo.setFullYear(oneYearAgo.getFullYear()-1);
-  const lastTrainDate={};allData.forEach(r=>(r.participants||[]).filter(p=>p.signed).forEach(p=>{
+  const lastTrainDate={};allData.forEach(r=>{var pp=Array.isArray(r.participants)?r.participants:[];pp.filter(p=>p.signed).forEach(p=>{
     if(!lastTrainDate[p.name]||r.date>lastTrainDate[p.name])lastTrainDate[p.name]=r.date;
-  }));
+  })});
   const untrained=allPersonnel.filter(p=>!lastTrainDate[p.name]||lastTrainDate[p.name]<oneYearAgo.toISOString().slice(0,10));
   if(untrained.length>0){
     h+='<div class="ib warn" style="margin-bottom:14px">&#128308; <strong>'+untrained.length+' persoane</strong> neinstruite in ultimele 12 luni: '+
@@ -7848,7 +7848,7 @@ async function rInstr(el){
     h+='<table class="dt"><thead><tr><th>#</th><th>Data</th><th>Tema</th><th>Sectie</th><th>Formator</th><th>Participanti</th><th>Durata</th><th>Actiuni</th></tr></thead><tbody>'+
     data.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+fmtDate(r.date)+'</td>'+
       '<td>'+(r.topic||'—')+'</td><td>'+rSec(r.section)+'</td>'+
-      '<td>'+(r.trainer||'—')+'</td><td>'+(r.participants||[]).length+'</td>'+
+      '<td>'+(r.trainer||'—')+'</td><td>'+(Array.isArray(r.participants)?r.participants.length:(+r.participants||0))+'</td>'+
       '<td>'+(r.duration_hours||'—')+' h</td>'+
       '<td class="act"><button onclick="editTraining('+r.id+')" title="Editeaza">&#9998;</button>'+
         '<button onclick="genTrainingWord('+r.id+')" title="PV Word">&#128196;</button>'+
@@ -7863,7 +7863,7 @@ async function editTraining(id){
   let r=id?(await ga('trainings')).find(x=>x.id===id):null;
   if(!r)r={year:A.year,date:new Date().toISOString().slice(0,10),topic:'',section:'',
     trainer:getCoord()?getCoord().name:'',participants:[],duration_hours:1,observations:''};
-  _instrParticipants=r.participants&&r.participants.length?JSON.parse(JSON.stringify(r.participants)):[];
+  _instrParticipants=Array.isArray(r.participants)&&r.participants.length?JSON.parse(JSON.stringify(r.participants)):[];
 
   openM(id?'Editare Instruire':'Instruire Noua',
     '<div class="fr"><div class="fg"><label>Data</label><input type="date" id="f-tdate" value="'+(r.date||'')+'"></div>'+
@@ -7916,7 +7916,7 @@ async function genTrainingWord(id){
   showGen('Se genereaza PV Instruire...');
   try{
     const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,AlignmentType,ShadingType,BorderStyle,VerticalAlign}=docx;
-    const parts=r.participants||[];
+    const parts=Array.isArray(r.participants)?r.participants:[];
     const pW=[500,3500,3000,2000,2000];
     const rows=[wTblHead(['Nr.','Nume si prenume','Functia','Semnatura','Observatii'],pW)];
     parts.forEach((p,i)=>{

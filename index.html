@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v9.0</title>
+<title>CPIAAM — Sistem de Management v9.3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -486,6 +486,27 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 /* ── Sparklines ── */
 .sparkline{display:inline-block;vertical-align:middle}
 
+/* ── User Pill ── */
+.user-pill{display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;padding:3px 10px 3px 3px;border-radius:14px;border:1px solid var(--brd);background:var(--card);transition:all .15s}
+.user-pill:hover{border-color:var(--blue)}
+.user-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;background:#DBEAFE;color:#1E40AF;flex-shrink:0}
+.user-pill-name{font-weight:500;white-space:nowrap}
+.user-pill-warn{background:#FEF3C7;border-color:#F59E0B}
+.user-pill-warn .user-pill-name{color:#92400E}
+.user-avatar-warn{background:#FDE68A;color:#92400E}
+.dark .user-avatar{background:#1E3A5F;color:#93C5FD}
+.dark .user-pill-warn{background:#422006;border-color:#D97706}
+.dark .user-pill-warn .user-pill-name{color:#FCD34D}
+.dark .user-avatar-warn{background:#78350F;color:#FCD34D}
+.user-menu{position:absolute;top:100%;left:0;margin-top:4px;background:var(--card);border:1px solid var(--brd);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:200px;z-index:100;display:none;font-size:12px}
+.user-menu.sh{display:block}
+.user-menu-item{padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s}
+.user-menu-item:hover{background:var(--bg)}
+.user-menu-item:first-child{border-radius:8px 8px 0 0}
+.user-menu-item:last-child{border-radius:0 0 8px 8px}
+.user-menu-item.active{font-weight:600;color:var(--blue)}
+.user-menu-hdr{padding:6px 12px;font-size:10px;color:var(--txtL);border-bottom:1px solid var(--brd);font-weight:500}
+
 /* ── Print Mode ── */
 @media print{
 body{display:block!important;background:#fff!important}
@@ -837,6 +858,9 @@ body{display:block!important;background:#fff!important}
 .dark .abg-s-label{color:#6EE7B7}
 .dark .abg-i-label{color:#FCD34D}
 .dark .abg-r-label{color:#FCA5A5}
+/* Dark mode — update success banner */
+.dark #update-success{background:#064E3B;color:#6EE7B7;border-bottom-color:#047857}
+.dark #update-success span{color:#34D399}
 
 @media print{.sb,.tb,.man-print,.man-top{display:none!important}.mn{margin-left:0!important}.man-sec{page-break-inside:avoid}.ct{padding:10px!important}}
 
@@ -902,6 +926,10 @@ body{display:block!important;background:#fff!important}
     <button class="sb-ham" id="sb-ham" onclick="toggleSidebar()" title="Menu">&#9776;</button>
     <h2 id="pt">Dashboard</h2>
     <div class="tb-actions">
+      <div id="user-pill" class="user-pill user-pill-warn" onclick="toggleUserMenu()" style="position:relative" title="Click pentru a schimba utilizatorul">
+        <div class="user-avatar user-avatar-warn">?</div>
+        <span class="user-pill-name">...</span>
+      </div>
       <div style="position:relative">
         <span id="sync-indicator" class="sync-pill sync-red" onclick="toggleSyncMenu()" title="Click pentru optiuni sincronizare">
           <span class="sync-dot"></span>
@@ -951,9 +979,22 @@ body{display:block!important;background:#fff!important}
 
 const DB='CPIAAM4',VER=6,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum','objectives'];
 function odb(){return new Promise((ok,no)=>{const r=indexedDB.open(DB,VER);r.onupgradeneeded=e=>{const d=e.target.result;ST.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id',autoIncrement:true})})};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
-async function ga(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
-async function pt(s,i){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).put(i);r.onsuccess=()=>{ok(r.result);_syncDebounce()};r.onerror=()=>no(r.error)})}
-async function dl(s,id){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).delete(id);r.onsuccess=()=>{ok();_syncDebounce()};r.onerror=()=>no(r.error)})}
+async function ga(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result.filter(function(x){return!x._deleted}));r.onerror=()=>no(r.error)})}
+async function gaAll(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+async function pt(s,i,preserveMeta){
+  if(!preserveMeta){
+    var user=getCurrentUser();
+    if(!i._createdBy){i._createdBy=user;i._createdAt=new Date().toISOString()}
+    i._modifiedBy=user;i._modifiedAt=new Date().toISOString();
+  }
+  const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).put(i);r.onsuccess=()=>{ok(r.result);_syncDebounce()};r.onerror=()=>no(r.error)})
+}
+async function dl(s,id){
+  const d=await odb();
+  var rec=await new Promise(function(ok){var t=d.transaction(s,'readonly'),r=t.objectStore(s).get(id);r.onsuccess=function(){ok(r.result)};r.onerror=function(){ok(null)}});
+  if(rec){rec._deleted=true;rec._deletedBy=getCurrentUser();rec._deletedAt=new Date().toISOString();await pt(s,rec,true)}
+  _syncDebounce();
+}
 var _syncTimer=null;function _syncDebounce(){if(!_fileHandle)return;clearTimeout(_syncTimer);_syncTimer=setTimeout(()=>syncWrite(),2000)}
 
 async function cl(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).clear();r.onsuccess=()=>ok();r.onerror=()=>no(r.error)})}
@@ -1119,14 +1160,14 @@ async function syncReconnect(){
   }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}
 }
 async function _syncAfterReconnect(){
-  // Check if local DB has data or is empty
-  const localData=await ga('iaam');const localAuto=await ga('autocontrol');
-  const hasLocalData=localData.length>0||localAuto.length>0;
+  var localData=await ga('iaam');var localAuto=await ga('autocontrol');
+  var hasLocalData=localData.length>0||localAuto.length>0;
   if(hasLocalData){
-    // Local DB has data — write to file (normal sync)
-    updateSyncIndicator();await syncWrite();
+    // Are date locale — citeste JSON cu merge INTAI, apoi scrie
+    try{await _importFromHandle(_fileHandle,true)}catch(e){console.warn('Merge read failed:',e)}
+    await syncWrite();updateSyncIndicator();
   } else {
-    // Local DB is empty — read from file to restore data
+    // DB gol — import simplu (prima deschidere pe acest calculator)
     try{await _importFromHandle(_fileHandle,true)}catch(e){
       console.warn('Import from sync file failed:',e);
       updateSyncIndicator();
@@ -1165,9 +1206,9 @@ async function saveFileLocationCfg(v){
 async function syncWrite(){
   if(!_fileHandle)return;
   try{
-    const d={};for(const s of ST){if(s==='config')continue;d[s]=await ga(s)}
-    const wr=await _fileHandle.createWritable();
-    await wr.write(JSON.stringify({version:APP_VERSION,exported:new Date().toISOString(),config:CFG,...d},null,2));
+    var d={};for(var s of ST){if(s==='config')continue;d[s]=await gaAll(s)}
+    var wr=await _fileHandle.createWritable();
+    await wr.write(JSON.stringify({version:APP_VERSION,exported:new Date().toISOString(),exportedBy:getCurrentUser(),config:CFG,...d},null,2));
     await wr.close()
   }catch(e){console.warn('Sync write failed:',e)}
 }
@@ -1182,13 +1223,165 @@ async function syncReadFile(){
 async function _importFromHandle(fh,skipReload){
   const file=await fh.getFile();const text=await file.text();const d=JSON.parse(text);
   if(d.config){const cfg=_extractCfg(d.config);if(cfg)Object.assign(CFG,cfg);CFG.sync_file_name=fh.name;await saveCfg()}
-  // Import all stores (by store name — new format)
-  for(const s of ST){if(d[s]&&Array.isArray(d[s])){await cl(s);for(const r of d[s])await pt(s,r)}}
-  // Also support old format keys (ia, au, de, bi, pp, docs, terms)
+  // Support old format keys → remap to current store names
   const oldMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
-  for(const[key,store] of Object.entries(oldMap)){if(d[key]&&!d[store]){for(const r of d[key])await pt(store,r)}}
-  if(skipReload){showToast('Import reusit!');updateSyncIndicator();render()}
-  else{alert('Import reusit!');location.reload()}
+  for(const[key,store] of Object.entries(oldMap)){if(d[key]&&!d[store])d[store]=d[key]}
+  // ── Smart Merge ──
+  var report={added:0,updated:0,deleted:0,kept:0,conflicts:0,byUser:{}};
+  for(const s of ST){
+    if(s==='config')continue;
+    var fileRecs=d[s];
+    if(!fileRecs||!Array.isArray(fileRecs))continue;
+    // Get all local records (including tombstones)
+    var localRecs=await gaAll(s);
+    var localMap={};for(var i=0;i<localRecs.length;i++)localMap[localRecs[i].id]=localRecs[i];
+    var fileMap={};for(var i=0;i<fileRecs.length;i++)fileMap[fileRecs[i].id]=fileRecs[i];
+    // Collect all unique IDs
+    var allIds={};
+    for(var i=0;i<localRecs.length;i++)allIds[localRecs[i].id]=true;
+    for(var i=0;i<fileRecs.length;i++)allIds[fileRecs[i].id]=true;
+    var merged=[];
+    var ids=Object.keys(allIds);
+    for(var k=0;k<ids.length;k++){
+      var id=ids[k];var loc=localMap[id]||null;var fil=fileMap[id]||null;
+      if(fil&&!loc){
+        // New from file
+        merged.push(fil);report.added++;
+        _mergeTrack(report,fil._modifiedBy||fil._createdBy||d.exportedBy||'?','added');
+      } else if(loc&&!fil){
+        // Local only — keep
+        merged.push(loc);report.kept++;
+      } else {
+        // Both exist — compare timestamps
+        var locT=loc._modifiedAt||loc._createdAt||'';
+        var filT=fil._modifiedAt||fil._createdAt||'';
+        if(fil._deleted&&!loc._deleted){
+          // File says deleted, local alive — newer wins
+          if(filT>=locT){merged.push(fil);report.deleted++;_mergeTrack(report,fil._deletedBy||d.exportedBy||'?','deleted')}
+          else{merged.push(loc);report.kept++}
+        } else if(loc._deleted&&!fil._deleted){
+          // Local deleted, file alive — file wins if newer (undelete)
+          if(filT>=locT){merged.push(fil);report.updated++;_mergeTrack(report,fil._modifiedBy||d.exportedBy||'?','updated')}
+          else{merged.push(loc);report.kept++}
+        } else {
+          // Both alive or both deleted — newer wins
+          if(filT>locT){merged.push(fil);report.updated++;_mergeTrack(report,fil._modifiedBy||d.exportedBy||'?','updated')}
+          else{merged.push(loc);report.kept++}
+        }
+      }
+    }
+    // Write merged data back
+    await cl(s);for(var i=0;i<merged.length;i++)await pt(s,merged[i],true);
+  }
+  if(skipReload){
+    if(report.added||report.updated||report.deleted){showMergePopup(report)}
+    else{showToast(CFG.lang==='en'?'Sync OK — no changes':'Sincronizare OK — fara modificari')}
+    updateSyncIndicator();render();
+  } else {
+    alert('Import reusit! +'+report.added+' noi, '+report.updated+' actualizate');
+    location.reload();
+  }
+}
+function _mergeTrack(report,user,action){
+  if(!user)user='?';
+  if(!report.byUser[user])report.byUser[user]={added:0,updated:0,deleted:0};
+  report.byUser[user][action]++;
+}
+function _mergeLabel(n,singRO,plurRO,singEN,plurEN){
+  var isEN=CFG.lang==='en';
+  if(n===1)return n+' '+(isEN?singEN:singRO);
+  return n+' '+(isEN?plurEN:plurRO);
+}
+function showMergePopup(report){
+  var isEN=CFG.lang==='en';
+  var h='<div style="font-size:13px;line-height:1.8">';
+  h+='<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">';
+  if(report.added)h+='<div style="background:#D1FAE5;color:#065F46;padding:6px 14px;border-radius:6px;font-size:12px"><strong>+'+report.added+'</strong> '+(isEN?'new':'noi')+'</div>';
+  if(report.updated)h+='<div style="background:#DBEAFE;color:#1E40AF;padding:6px 14px;border-radius:6px;font-size:12px"><strong>'+report.updated+'</strong> '+(isEN?'updated':'actualizate')+'</div>';
+  if(report.deleted)h+='<div style="background:#FEE2E2;color:#991B1B;padding:6px 14px;border-radius:6px;font-size:12px"><strong>'+report.deleted+'</strong> '+(isEN?'deleted':'sterse')+'</div>';
+  h+='</div>';
+  var users=Object.keys(report.byUser);
+  if(users.length>0){
+    h+='<table style="width:100%;font-size:12px;border-collapse:collapse">';
+    h+='<thead><tr style="border-bottom:2px solid var(--brd)"><th style="text-align:left;padding:6px 8px">'+(isEN?'User':'Utilizator')+'</th>';
+    h+='<th style="padding:6px 8px;color:#059669">+'+(isEN?' New':' Noi')+'</th>';
+    h+='<th style="padding:6px 8px;color:#2563EB">&#9998;'+(isEN?' Updated':' Modif.')+'</th>';
+    h+='<th style="padding:6px 8px;color:#DC2626">&#128465;'+(isEN?' Deleted':' Sterse')+'</th></tr></thead><tbody>';
+    for(var u=0;u<users.length;u++){
+      var name=users[u];var s=report.byUser[name];
+      h+='<tr style="border-bottom:1px solid var(--brd)"><td style="padding:6px 8px;font-weight:500">'+esc(name)+'</td>';
+      h+='<td style="text-align:center;padding:6px 8px">'+(s.added||'—')+'</td>';
+      h+='<td style="text-align:center;padding:6px 8px">'+(s.updated||'—')+'</td>';
+      h+='<td style="text-align:center;padding:6px 8px">'+(s.deleted||'—')+'</td></tr>';
+    }
+    h+='</tbody></table>';
+  }
+  h+='<p style="font-size:11px;color:var(--txtL);margin-top:12px">'+(isEN?'Conflicts resolved by timestamp — the newest version wins.':'Conflictele se rezolva prin timestamp — versiunea cea mai recenta castiga.')+'</p>';
+  h+='</div>';
+  openM(isEN?'Sync Summary':'Rezumat sincronizare',h,
+    '<button class="btn bp" onclick="closeM()">OK</button>');
+}
+
+// ── User Pill (toolbar) ──
+function getUserInitials(name){
+  if(!name)return '?';
+  var words=name.replace(/^(Dr\.|As\.|Prof\.|Ing\.)\s*/i,'').trim().split(/\s+/);
+  if(words.length>=2)return(words[0][0]+words[1][0]).toUpperCase();
+  return words[0].substring(0,2).toUpperCase();
+}
+function getUserShortName(name){
+  if(!name)return '';
+  var clean=name.replace(/^(Dr\.|As\.|Prof\.|Ing\.)\s*/i,'').trim();
+  if(clean.length<=15)return clean;
+  var words=clean.split(/\s+/);
+  return words[0]+(words[1]?' '+words[1][0]+'.':'');
+}
+function updateUserPill(){
+  var pill=document.getElementById('user-pill');if(!pill)return;
+  var user=getCurrentUser();
+  var isSet=CFG.current_user&&CFG.current_user!=='Necunoscut';
+  if(isSet){
+    pill.className='user-pill';
+    pill.innerHTML='<div class="user-avatar">'+getUserInitials(user)+'</div>'+
+      '<span class="user-pill-name">'+esc(getUserShortName(user))+'</span>';
+  } else {
+    pill.className='user-pill user-pill-warn';
+    pill.innerHTML='<div class="user-avatar user-avatar-warn">?</div>'+
+      '<span class="user-pill-name">'+(CFG.lang==='en'?'Set user':'Seteaza utilizatorul')+'</span>';
+  }
+}
+function toggleUserMenu(){
+  var existing=document.getElementById('user-menu');
+  if(existing){existing.remove();return}
+  var pill=document.getElementById('user-pill');
+  var isEN=CFG.lang==='en';
+  var h='<div class="user-menu sh" id="user-menu">';
+  h+='<div class="user-menu-hdr">'+(isEN?'Who is working now?':'Cine lucreaza acum?')+'</div>';
+  (CFG.personnel||[]).forEach(function(p){
+    if(!p.name)return;
+    var isActive=CFG.current_user===p.name;
+    var initials=getUserInitials(p.name);
+    h+='<div class="user-menu-item'+(isActive?' active':'')+'" onclick="setCurrentUser(\''+p.name.replace(/'/g,"\\'")+'\')">';
+    h+='<div class="user-avatar" style="width:20px;height:20px;font-size:8px">'+initials+'</div>';
+    h+='<div><div>'+esc(p.name)+'</div>';
+    if(p.title)h+='<div style="font-size:10px;color:var(--txtL)">'+esc(p.title)+'</div>';
+    h+='</div></div>';
+  });
+  h+='</div>';
+  pill.insertAdjacentHTML('beforeend',h);
+  setTimeout(function(){
+    document.addEventListener('click',function _closeUM(e){
+      if(!e.target.closest('#user-pill')){
+        var m=document.getElementById('user-menu');if(m)m.remove();
+        document.removeEventListener('click',_closeUM);
+      }
+    });
+  },10);
+}
+function setCurrentUser(name){
+  CFG.current_user=name;saveCfg();
+  var m=document.getElementById('user-menu');if(m)m.remove();
+  updateUserPill();
 }
 
 
@@ -1214,7 +1407,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='9.0';
+const APP_VERSION='9.3';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1223,6 +1416,7 @@ function T(key){const lang=CFG.lang||'ro';return LANG[lang]?.[key]||LANG.ro[key]
 function getMO(){return (LANG[CFG.lang||'ro']||LANG.ro).months}
 var MO=['Ian','Feb','Mar','Apr','Mai','Iun','Iul','Aug','Sep','Oct','Nov','Dec'];
 function updateMO(){MO=getMO()}
+function getCurrentUser(){return CFG.current_user||CFG.author_name||'Necunoscut'}
 
 const GDPR_NOTE='Utilizatorul este singurul responsabil pentru securitatea datelor pacientilor (din anchetele epidemiologice) si a oricaror alte date cu caracter personal introduse in aplicatie, in conformitate cu Regulamentul (UE) 2016/679 (GDPR) si legislatia nationala privind protectia datelor cu caracter personal. Prin utilizarea acestei aplicatii, utilizatorul confirma ca a citit, a inteles si accepta in totalitate Termenii si Conditiile de utilizare.';
 
@@ -1236,7 +1430,25 @@ Stocarea datelor: Toate datele sunt stocate exclusiv pe calculatorul utilizatoru
 
 Limitarea raspunderii: Dezvoltatorul nu poate fi tinut responsabil pentru nicio pierdere de date, nicio utilizare necorespunzatoare, nicio bresa de securitate, nicio dauna directa sau indirecta rezultata din utilizarea sau imposibilitatea utilizarii acestei aplicatii. Utilizarea aplicatiei se face pe riscul exclusiv al utilizatorului.
 
-Licenta: Aplicatia este distribuita gratuit. Vanzarea, comercializarea sau redistribuirea contra cost este interzisa.`;
+Drepturi de autor si licenta de utilizare:
+© 2025-2026 Dr. Chitu Robert Stefan, Romania. Toate drepturile morale rezervate.
+Aceasta aplicatie este opera originala a autorului Dr. Chitu Robert Stefan, protejata prin Legea nr. 8/1996 privind dreptul de autor si drepturile conexe, precum si prin legislatia europeana aplicabila.
+Aplicatia este distribuita in conditiile Licentei Creative Commons Atribuire-NeComercial-Partajare in Conditii Identice 4.0 International (CC BY-NC-SA 4.0).
+
+ESTE PERMIS:
+- Utilizarea gratuita in orice unitate sanitara sau institutie
+- Redistribuirea gratuita a aplicatiei, inclusiv intre colegi, pe orice suport (USB, e-mail, retea locala etc.)
+- Modificarea aplicatiei pentru uz propriu sau profesional
+- Redistribuirea gratuita a versiunilor modificate, cu conditia pastrarii aceleiasi licente si a mentionarii autorului original
+
+ESTE INTERZIS:
+- Vanzarea, comercializarea sau redistribuirea contra cost, sub orice forma, a aplicatiei sau a oricarei versiuni derivate
+- Eliminarea sau modificarea mentiunilor privind autorul si drepturile de autor
+- Utilizarea numelui autorului pentru a promova produse derivate fara acordul sau scris prealabil
+
+Text complet licenta: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ro
+Cod sursa: https://github.com/crstefan-lab/cpiaam-management
+Contact: cpiaam.app@gmail.com`;
 
 var CFG={
   id:1, hospital_name:'', hospital_short:'', cpiaam_name:'C.P.I.A.A.M.', hospital_code:'',
@@ -1392,7 +1604,7 @@ function updateSidebar(){
   document.querySelectorAll('[data-t]').forEach(el=>{el.textContent=T(el.dataset.t)});
   // Credit footer — HARDCODAT, nu se poate edita din interfata
   document.getElementById('sb-footer').innerHTML=
-    '<div>Dezvoltat de <strong>Dr. Chitu Robert Stefan</strong><br>cu asistenta Claude AI (Anthropic)<br>Gratuit &middot; Vanzarea interzisa</div>'+
+    '<div>Dezvoltat de <strong>Dr. Chitu Robert Stefan</strong><br>cu asistenta Claude AI (Anthropic)<br>&copy; 2025&ndash;2026 &middot; <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ro" target="_blank" style="color:#94A3B8;font-size:10px">CC BY-NC-SA 4.0</a></div>'+
     '<div style="margin-top:4px">v'+APP_VERSION+' &middot; Date locale — IndexedDB</div>'+
     '<div style="margin-top:4px"><a href="#" onclick="event.preventDefault();nav(\'terms\')" style="color:#94A3B8;font-size:10px;text-decoration:underline">'+T('sb_termeni')+'</a></div>';
 }
@@ -8515,6 +8727,11 @@ async function rCfg(el){
     '<div class="fg"><label>Cod spital PPS</label><input id="c-code" value="'+(CFG.hospital_code||'')+'"></div></div>'+
     '<div class="fr"><div class="fg"><label>Limita bugetara biocide (lei/an)</label><input type="number" id="c-bb" value="'+(CFG.biocide_budget||'')+'"></div>'+
     '<div class="fg"></div></div>'+
+    '<div class="fr" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--brd)"><div class="fg"><label>&#128100; Utilizator curent <span style="font-size:10px;color:var(--txtL)">(cine lucreaza acum pe acest calculator)</span></label>'+
+    '<select id="c-curuser" onchange="CFG.current_user=this.value;saveCfg()"><option value="">— '+esc(CFG.author_name||'Autor implicit')+' —</option>'+
+    (CFG.personnel||[]).map(function(p){return '<option value="'+esc(p.name)+'"'+(CFG.current_user===p.name?' selected':'')+'>'+esc(p.name)+(p.title?' ('+esc(p.title)+')':'')+'</option>'}).join('')+
+    '</select>'+
+    '<span style="font-size:11px;color:var(--txtL);display:block;margin-top:4px">'+(CFG.lang==='en'?'Used for tracking who made changes in multi-user sync.':'Folosit pentru urmarirea modificarilor in sincronizarea multi-utilizator.')+'</span></div></div>'+
     '<button class="btn bp" onclick="saveCfgForm()" style="margin-top:8px">Salveaza</button>'+
   '</div></div>'+
 
@@ -8793,6 +9010,7 @@ async function fullReset(){
 async function saveCfgForm(){
   const v=s=>document.getElementById(s).value;
   if(document.getElementById('c-name')){CFG.hospital_name=v('c-name');CFG.hospital_short=v('c-short');CFG.cpiaam_name=v('c-cpiaam');CFG.hospital_code=v('c-code');CFG.biocide_budget=+v('c-bb')||0}
+  var cuEl=document.getElementById('c-curuser');if(cuEl)CFG.current_user=cuEl.value;
   if(document.getElementById('c-datefmt'))CFG.dateFormat=v('c-datefmt');
   const bkpEl=document.getElementById('c-bkpint');if(bkpEl)CFG.backup_interval_days=+bkpEl.value||7;
   await saveCfg();alert('Setari salvate!');render();
@@ -9023,9 +9241,14 @@ function renderWizStep(step){
       '<div class="wiz-nav"><button class="btn bo" onclick="collectWzPers();renderWizStep(2)">&#8592; Inapoi</button><button class="btn bp" onclick="wizNext(3)">Continua &#8594;</button></div>';
   }
   else if(step===4){
+    var _wzPersNames=WZ.personnel.filter(function(p){return p.name}).map(function(p){return p.name});
     c.innerHTML=bar+
-      '<h2>Cum te numesti tu?</h2><p class="wiz-sub">Numele tau va aparea in creditul aplicatiei si in footer-ul documentelor generate.</p>'+
-      '<div class="fg"><label>Numele complet</label><input id="wz-author" value="'+WZ.author_name+'" placeholder="ex: Dr. Popescu Ion"></div>'+
+      '<h2>Cine esti tu?</h2><p class="wiz-sub">Numele tau va aparea in creditul aplicatiei si in footer-ul documentelor generate. De asemenea, va fi folosit pentru identificarea modificarilor cand lucrati mai multi pe acelasi fisier.</p>'+
+      (_wzPersNames.length>0?
+        '<div class="fg"><label>Alege din personalul adaugat</label><select id="wz-author-sel" onchange="document.getElementById(\'wz-author\').value=this.value"><option value="">— Scrie manual mai jos —</option>'+
+        _wzPersNames.map(function(n){return '<option value="'+esc(n)+'"'+(WZ.author_name===n?' selected':'')+'>'+esc(n)+'</option>'}).join('')+
+        '</select></div>':'')+
+      '<div class="fg"><label>Numele complet</label><input id="wz-author" value="'+esc(WZ.author_name)+'" placeholder="ex: Dr. Popescu Ion"></div>'+
       '<div class="wiz-note">'+GDPR_NOTE+'</div>'+
       '<div class="wiz-nav"><button class="btn bo" onclick="renderWizStep(3)">&#8592; Inapoi</button><button class="btn bp" onclick="wizNext(4)">Continua &#8594;</button></div>';
   }
@@ -9131,6 +9354,7 @@ async function finishWizard(){
   CFG.sections=WZ.sections.map(s=>({...s,id:s.id||genId('sec'),type:s.type||'sectie',bed_periods:s.bed_periods||[]}));
   CFG.personnel=WZ.personnel.map(p=>({...p,id:p.id||genId('pers')}));
   CFG.author_name=WZ.author_name;
+  CFG.current_user=WZ.author_name;
   CFG.file_location=WZ.file_location||'browser';
   CFG.setup_complete=true;
   ensureConfigIds();
@@ -10063,7 +10287,10 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
-  {version:'9.0',date:'2026-03-18',notes:'Fix: Auto-Update — descarca acum foloseste Blob URL (nu mai navigheaza la GitHub)\nFix: Dashboard gol — participants din trainings putea fi number (crash la .filter())\nFix: Grafic IAAM — UCL tradus in Limita sup., legenda explicativa sub grafic\nFix: Notificare focar — limita={u} in loc de UCL={u}\nFix: Autocontrol — tab Testare UV'},
+  {version:'9.3',date:'2026-03-18',notes:'NOU: Indicator utilizator curent in toolbar — pill vizibil permanent cu avatar si initiale\nNOU: Dropdown schimbare utilizator — click pe pill, lista personalului, schimbare instantanee\nNOU: Stare warning (galben) cand utilizatorul nu e setat — incurajeaza configurarea\nNOU: Dark mode complet pentru user pill si dropdown'},
+  {version:'9.2',date:'2026-03-18',notes:'NOU: Smart Merge — sincronizare multi-utilizator cu merge inteligent pe baza de timestamp\nNOU: Popup rezumat merge — arata ce s-a adaugat/modificat/sters, grupat per utilizator\nNOU: Metadate pe fiecare record — _createdBy, _modifiedBy, _modifiedAt, _deletedBy\nNOU: Tombstones — stergerea marcheaza _deleted in loc sa stearga fizic (permite sync corect)\nNOU: Utilizator curent — dropdown in Configurare si Wizard pentru identificare modificari\nNOU: Wizard step 4 — dropdown din personalul adaugat + explicatie multi-user'},
+  {version:'9.1',date:'2026-03-18',notes:'Fix critic: Auto-Update nu mai face location.reload() — elimina navigarea la GitHub de pe file://\nFix: Banner verde de succes cu instructiuni clare (Inchide si redeschide / Copiaza peste cel vechi)\nFix: Fallback foloseste saveAs (Blob) in loc de link cross-origin'},
+  {version:'9.0',date:'2026-03-18',notes:'Fix: Dashboard gol — participants din trainings putea fi number (crash la .filter())\nFix: Grafic IAAM — UCL tradus in Limita sup., legenda explicativa sub grafic\nFix: Notificare focar — limita={u} in loc de UCL={u}\nFix: Autocontrol — tab Testare UV'},
   {version:'8.8',date:'2026-03-18',notes:'Fix: Auto-Update — suprascrie fisierul curent pe disc cu File System Access API (showSaveFilePicker)\nFix: Fallback download cu instructiuni pas cu pas pentru browsere fara File System Access\nFix: Validare HTML la download — verifica ca fisierul descarcat este HTML valid'},
   {version:'8.7',date:'2026-03-18',notes:'NOU: Dropdown MDR contextual — arata doar mecanismele de rezistenta relevante per germen selectat\nNOU: Buton antibiograma vizibil — portocaliu daca necompletat, albastru daca completat\nNOU: Rezumat S/I/R sub germen — pills colorate grupate pe linii (S verde, I galben, R rosu)\nNOU: Mapare completa MDR_BY_CODE pentru toti germenii din nomenclator'},
   {version:'8.6',date:'2026-03-18',notes:'Fix: Antibiograma — cautarea antibioticelor ascundea tot gridul in loc de randuri individuale\nFix: Personal — Director medical si Manager separate in roluri distincte (anterior combinate)\nFix: getMgr() — cauta Director medical cu fallback pe Manager pentru semnaturi Word\nFix: Comorbiditati si Dispozitive invazive — layout uniform cu Factori de risc (2 coloane ordonate)'},
@@ -10114,12 +10341,16 @@ function rChangelog(el){
 
 // ═══════════════════════════════════════════════════════════════
 function rAbout(el){
+  var isEN=CFG.lang==='en';
   el.innerHTML='<div class="pn"><div class="pb" style="text-align:center;padding:40px">'+
     '<h2 style="color:var(--navy);margin-bottom:8px">CPIAAM — Sistem de Management</h2>'+
     '<p style="color:var(--txtL);margin-bottom:24px">Versiune '+APP_VERSION+' <button class="btn bo bsm" onclick="checkForUpdateManual(event)" style="margin-left:8px;font-size:11px">&#128260; Verifica update-uri</button></p>'+
     '<div style="background:var(--bg);border-radius:12px;padding:20px;text-align:left;max-width:500px;margin:0 auto 20px">'+
     '<p style="font-size:13px;line-height:1.6;color:var(--txt)">Dezvoltat de <strong>Dr. Chitu Robert Stefan</strong> cu asistenta <strong>Claude AI</strong> (Anthropic)</p>'+
-    '<p style="font-size:12px;color:var(--txtL);margin-top:4px">Gratuit &middot; Vanzarea interzisa</p></div>'+
+    '<p style="font-size:12px;color:var(--txtL);margin-top:4px">&copy; 2025&ndash;2026 Dr. Chitu Robert Stefan &middot; '+(isEN?'Infection Control Epidemiologist':'Medic primar epidemiolog')+'</p>'+
+    '<p style="font-size:12px;color:var(--txtL);margin-top:2px">Licenta: <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ro" target="_blank" style="color:var(--blue)">CC BY-NC-SA 4.0</a> &middot; Gratuit &middot; Uz necomercial</p>'+
+    '<p style="font-size:12px;color:var(--txtL);margin-top:2px">Contact: <a href="mailto:cpiaam.app@gmail.com" style="color:var(--blue)">cpiaam.app@gmail.com</a></p>'+
+    '<p style="font-size:12px;color:var(--txtL);margin-top:2px">Cod sursa: <a href="https://github.com/crstefan-lab/cpiaam-management" target="_blank" style="color:var(--blue)">github.com/crstefan-lab/cpiaam-management</a></p></div>'+
     '<div class="wiz-note" style="text-align:left;max-width:500px;margin:0 auto 20px">'+GDPR_NOTE+'</div>'+
     '<p style="font-size:11px;color:var(--txtL);margin-bottom:16px">Functioneaza 100% offline &middot; Date stocate local (IndexedDB)<br>Tehnologii: Chart.js, docx.js, FileSaver.js, SheetJS</p>'+
     '<p style="font-size:11px;color:var(--txtL);margin-top:8px">Setari avansate: Configurare Sistem &rarr; Date &amp; Backup</p>'+
@@ -10667,49 +10898,54 @@ async function downloadUpdate(url,version){
   showToast('Se descarca actualizarea...');
   try{
     var response=await fetch(url,{cache:'no-store'});
-    if(!response.ok)throw new Error('Download failed: '+response.status);
+    if(!response.ok)throw new Error('HTTP '+response.status);
     var newHTML=await response.text();
-    if(!newHTML.includes('<!DOCTYPE')&&!newHTML.includes('<html')){
-      throw new Error('Fisierul descarcat nu pare a fi HTML valid');
+    if(newHTML.length<1000||!newHTML.includes('APP_VERSION')){
+      throw new Error('Continut invalid');
     }
     if(window.showSaveFilePicker){
       try{
-        var currentFileName=location.pathname.split('/').pop()||'CPIAAM_Management.html';
-        if(currentFileName==='')currentFileName='CPIAAM_Management.html';
-        if(currentFileName.includes('_v'))currentFileName=currentFileName.replace(/_v[\d.]+/,'');
-        var opts={suggestedName:currentFileName,types:[{description:'HTML',accept:{'text/html':['.html']}}]};
-        var savedHandle=null;
-        try{savedHandle=await loadFileHandle()}catch(e){}
-        if(savedHandle)opts.startIn=savedHandle;
-        var fileHandle=await window.showSaveFilePicker(opts);
-        var writable=await fileHandle.createWritable();
-        await writable.write(newHTML);
-        await writable.close();
+        var pathParts=location.pathname.split('/');
+        var currentName=pathParts[pathParts.length-1]||'CPIAAM_Management.html';
+        try{currentName=decodeURIComponent(currentName)}catch(e){}
+        if(!currentName||currentName==='')currentName='CPIAAM_Management.html';
+        var opts={suggestedName:currentName,types:[{description:'HTML',accept:{'text/html':['.html']}}]};
+        var fh=await window.showSaveFilePicker(opts);
+        var wr=await fh.createWritable();
+        await wr.write(newHTML);
+        await wr.close();
         dismissUpdate();
-        showToast('\u2713 Actualizare instalata! Se reincarca...');
-        setTimeout(function(){location.reload()},1500);
+        showUpdateSuccess(version,true);
+        return;
       }catch(fsErr){
         if(fsErr.name==='AbortError'){showToast('Actualizare anulata');return}
-        console.warn('File System save failed, falling back:',fsErr);
-        fallbackDownload(newHTML,version);
+        console.warn('SaveFilePicker failed, using saveAs:',fsErr);
       }
-    }else{
-      fallbackDownload(newHTML,version);
     }
-  }catch(fetchErr){
-    console.error('Update download error:',fetchErr);
+    saveAs(new Blob([newHTML],{type:'text/html;charset=utf-8'}),'CPIAAM_Management.html');
+    dismissUpdate();
+    showUpdateSuccess(version,false);
+  }catch(err){
+    console.error('Update error:',err);
     showToast('\u26A0 Eroare la descarcare. Verifica conexiunea.');
   }
 }
-function fallbackDownload(htmlContent,version){
-  var blob=new Blob([htmlContent],{type:'text/html'});
-  var blobUrl=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=blobUrl;a.download='CPIAAM_Management_v'+(version||'new')+'.html';a.click();
-  setTimeout(function(){
-    URL.revokeObjectURL(blobUrl);
-    alert('Fisierul a fost descarcat in folderul Downloads.\n\nPentru a actualiza:\n1. Inchide aceasta pagina\n2. Copiaza fisierul descarcat PESTE cel vechi\n3. Redeschide aplicatia\n\nDatele tale sunt in siguranta — sunt stocate in browser, nu in fisier.');
-    dismissUpdate();
-  },500);
+function showUpdateSuccess(version,savedInPlace){
+  var banner=document.getElementById('update-banner');if(banner)banner.remove();
+  var b=document.createElement('div');b.id='update-success';
+  b.style.cssText='background:#D1FAE5;color:#065F46;padding:16px 20px;font-size:13px;border-bottom:2px solid #6EE7B7;font-family:var(--f);text-align:center;line-height:1.6';
+  if(savedInPlace){
+    b.innerHTML='<strong>\u2713 Versiunea '+esc(version)+' a fost salvata!</strong><br>'+
+      '<span style="font-size:12px">Inchide aceasta pagina si redeschide fisierul pentru a folosi versiunea noua.</span><br>'+
+      '<span style="font-size:11px;color:#047857">Datele tale sunt in siguranta — sunt stocate in browser, nu in fisier.</span>';
+  }else{
+    b.innerHTML='<strong>\u2713 Versiunea '+esc(version)+' a fost descarcata!</strong><br>'+
+      '<span style="font-size:12px">Copiaza fisierul descarcat PESTE cel vechi din folderul aplicatiei, apoi redeschide.</span><br>'+
+      '<span style="font-size:11px;color:#047857">Datele tale sunt in siguranta — sunt stocate in browser, nu in fisier.</span>';
+  }
+  var mn=document.getElementById('app-mn');
+  if(mn)mn.insertBefore(b,mn.firstChild);
+  else document.body.insertBefore(b,document.body.firstChild);
 }
 function dismissUpdate(){
   sessionStorage.setItem('cpiaam_update_dismissed','1');
@@ -10755,7 +10991,7 @@ function checkEmptyDB(){
     localStorage.setItem('cpiaam_had_data','true');
     document.getElementById('app-sb').style.display='flex';
     document.getElementById('app-mn').style.display='block';
-    updateSidebar();updateSyncIndicator();
+    updateSidebar();updateSyncIndicator();updateUserPill();
     document.getElementById('ys').value=A.year;
     render();
     // Restore file handles from IndexedDB (persists across refresh/close)

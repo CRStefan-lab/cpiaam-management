@@ -1,15 +1,10 @@
 {
-  "version": "9.0",
+  "version": "9.3",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Fix: Auto-Update — descarca acum foloseste Blob URL in loc de link cross-origin (nu mai navigheaza la GitHub)",
-    "Fix: Fallback download primeste continutul HTML si creeaza Blob URL pentru descarcare garantata",
-    "Fix: Dashboard gol — participants din trainings putea fi number in loc de array (crash la .filter())",
-    "Fix: Grafic IAAM — UCL tradus in Limita sup., Media in romana, legenda explicativa sub grafic",
-    "Fix: Notificare focar — UCL={u} inlocuit cu limita={u}",
-    "Fix: Autocontrol — tab Testare UV Check redenumit Testare UV",
-    "NOU: Dropdown MDR contextual per germen (ESBL, CRE, CPE, KPC, AmpC, MRSA, MRS, VRSA, VRE, MDR, XDR, PDR)",
-    "NOU: Buton antibiograma vizibil — portocaliu daca necompletat, albastru daca completat",
-    "NOU: Rezumat S/I/R sub germen — pills colorate (S verde, I galben, R rosu)"
+    "NOU: Indicator utilizator curent in toolbar — pill cu avatar si initiale",
+    "NOU: Dropdown schimbare utilizator — click pe pill, lista personalului",
+    "NOU: Stare warning (galben) cand utilizatorul nu e setat",
+    "NOU: Dark mode complet pentru user pill si dropdown"
   ]
 }

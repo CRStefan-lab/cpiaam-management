@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v8.8</title>
+<title>CPIAAM — Sistem de Management v8.9</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1214,7 +1214,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='8.8';
+const APP_VERSION='8.9';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1843,8 +1843,8 @@ ro:{
   iaam_bulletins:'Buletine de analize',iaam_bulletin_nr:'Nr. buletin',iaam_bulletin_date:'Data validare',
   iaam_add_bulletin:'+ Adauga buletin',iaam_no_bulletins:'Niciun buletin',
   iaam_invasive_devices:'Dispozitive medicale invazive',iaam_procedures_label:'Proceduri invazive / Interventii chirurgicale',
-  spc_mean:'Media',spc_ucl:'Limita superioara (UCL)',spc_lcl:'Limita inferioara (LCL)',
-  spc_focar_alert:'Posibil focar: luna {m} depaseste limita superioara de control ({v} cazuri vs UCL={u})',
+  spc_mean:'Media',spc_ucl:'Limita superioara de control',spc_lcl:'Limita inferioara de control',
+  spc_focar_alert:'Posibil focar: luna {m} depaseste limita superioara de control ({v} cazuri vs limita={u})',
   ai_report_btn:'Word + Analiza AI',ai_generating:'Se genereaza analiza AI...',ai_not_configured:'AI nu este configurat. Mergi la Configurare → AI.',
   ai_disclaimer:'Aceasta sectiune a fost generata automat de un model AI pe baza datelor agregate. Informatiile trebuie verificate de un specialist.',
   ai_error_fallback:'Analiza AI nu a putut fi generata. Raportul a fost creat fara sectiunea AI.',
@@ -2476,7 +2476,11 @@ async function rDash(el){
   }
   // 7. Charts IAAM/Auto
   h+='<div class="dash-section'+(_dw.charts===false?' hidden':'')+'" data-dw="charts"><div class="cr">'+
-    '<div class="cb"><h4>'+T('ch_iaam_lunar')+'</h4><div class="cc"><canvas id="c1"></canvas></div></div>'+
+    '<div class="cb"><h4>'+T('ch_iaam_lunar')+'</h4><div class="cc"><canvas id="c1"></canvas></div>'+
+    '<div style="font-size:10px;color:var(--txtL);padding:6px 10px;line-height:1.5">'+
+    '<span style="color:#2563B0;font-weight:600">— — —</span> '+(CFG.lang==='en'?'Mean':'Medie')+' · '+
+    '<span style="color:#C0392B;font-weight:600">· · · · ·</span> '+(CFG.lang==='en'?'Upper control limit — above = statistical alarm':'Limita superioara de control — peste = alarma statistica')+
+    '</div></div>'+
     '<div class="cb"><h4>'+T('ch_auto_conf')+'</h4><div class="cc"><canvas id="c2"></canvas></div></div>'+
   '</div></div>';
   // Charts Deseuri/Sectii
@@ -2524,12 +2528,13 @@ function initDashCharts(){
     const spcAnnotations={};
     if(spc){
       const lc=A.darkMode?'#94A3B8':'#64748B';
+      var isEN=CFG.lang==='en';
       spcAnnotations.meanLine={type:'line',yMin:spc.mean,yMax:spc.mean,borderColor:'#2563B0',borderWidth:2,borderDash:[6,4],
-        label:{display:true,content:T('spc_mean')+': '+spc.mean,position:'start',backgroundColor:'#2563B099',color:'#fff',font:{size:10}}};
+        label:{display:true,content:(isEN?'Mean':'Medie')+': '+spc.mean,position:'start',backgroundColor:'#2563B099',color:'#fff',font:{size:10}}};
       spcAnnotations.uclLine={type:'line',yMin:spc.ucl,yMax:spc.ucl,borderColor:'#C0392B',borderWidth:2,borderDash:[4,4],
-        label:{display:true,content:'UCL: '+spc.ucl,position:'end',backgroundColor:'#C0392B99',color:'#fff',font:{size:10}}};
+        label:{display:true,content:(isEN?'Upper limit':'Limita sup.')+': '+spc.ucl,position:'end',backgroundColor:'#C0392B99',color:'#fff',font:{size:10}}};
       if(spc.lcl>0)spcAnnotations.lclLine={type:'line',yMin:spc.lcl,yMax:spc.lcl,borderColor:'#27AE60',borderWidth:2,borderDash:[4,4],
-        label:{display:true,content:'LCL: '+spc.lcl,position:'end',backgroundColor:'#27AE6099',color:'#fff',font:{size:10}}};
+        label:{display:true,content:(isEN?'Lower limit':'Limita inf.')+': '+spc.lcl,position:'end',backgroundColor:'#27AE6099',color:'#fff',font:{size:10}}};
     }
     A.charts.c1=new Chart(document.getElementById('c1'),{type:'bar',data:{labels:d.MO,datasets:[{label:'Cazuri',data:d.ibm,backgroundColor:bgColors,borderColor:brdColors,borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{stepSize:1,color:tc}},x:{ticks:{color:tc}}},plugins:{legend:{display:false},annotation:{annotations:spcAnnotations}}}});
     A._spcData=spc;
@@ -3923,7 +3928,7 @@ async function rAuto(el){
   const isEN=CFG.lang==='en';
   // ── Top-level type tabs ──
   let h='<div class="ac-type-tabs">';
-  [['micro','🔬 '+(isEN?'Microbiological Samples':'Probe Microbiologice')],['atp','⚡ '+(isEN?'ATP Probes':'Probe ATP')],['uv','💡 '+(isEN?'UV Check':'Testare UV Check')]].forEach(([k,lbl])=>{
+  [['micro','🔬 '+(isEN?'Microbiological Samples':'Probe Microbiologice')],['atp','⚡ '+(isEN?'ATP Probes':'Probe ATP')],['uv','💡 '+(isEN?'UV Check':'Testare UV')]].forEach(([k,lbl])=>{
     h+='<span class="ac-ttab'+(_autoType===k?' act':'')+'" onclick="setAutoType(\''+k+'\')">'+lbl+'</span>';
   });
   h+='</div>';
@@ -10058,6 +10063,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'8.9',date:'2026-03-18',notes:'Fix: Dashboard gol — participants din trainings putea fi number in loc de array (crash la .filter())\nFix: Grafic IAAM — UCL tradus in Limita sup., Media in romana, legenda explicativa sub grafic\nFix: Notificare focar — UCL={u} inlocuit cu limita={u}\nFix: Autocontrol — tab Testare UV Check redenumit Testare UV'},
   {version:'8.8',date:'2026-03-18',notes:'Fix: Auto-Update — suprascrie fisierul curent pe disc cu File System Access API (showSaveFilePicker)\nFix: Fallback download cu instructiuni pas cu pas pentru browsere fara File System Access\nFix: Validare HTML la download — verifica ca fisierul descarcat este HTML valid'},
   {version:'8.7',date:'2026-03-18',notes:'NOU: Dropdown MDR contextual — arata doar mecanismele de rezistenta relevante per germen selectat\nNOU: Buton antibiograma vizibil — portocaliu daca necompletat, albastru daca completat\nNOU: Rezumat S/I/R sub germen — pills colorate grupate pe linii (S verde, I galben, R rosu)\nNOU: Mapare completa MDR_BY_CODE pentru toti germenii din nomenclator'},
   {version:'8.6',date:'2026-03-18',notes:'Fix: Antibiograma — cautarea antibioticelor ascundea tot gridul in loc de randuri individuale\nFix: Personal — Director medical si Manager separate in roluri distincte (anterior combinate)\nFix: getMgr() — cauta Director medical cu fallback pe Manager pentru semnaturi Word\nFix: Comorbiditati si Dispozitive invazive — layout uniform cu Factori de risc (2 coloane ordonate)'},

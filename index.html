@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v8.5</title>
+<title>CPIAAM — Sistem de Management v8.6</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -228,9 +228,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .iw-badge-opt{background:var(--brd);color:var(--txtL);font-size:9px;padding:2px 8px;border-radius:10px;font-weight:600}
 .iw-footer{padding:12px 22px;border-top:1px solid var(--brd);display:flex;justify-content:space-between;align-items:center;gap:8px}
 .iw-footer .iw-ft-left{display:flex;gap:8px}.iw-footer .iw-ft-right{display:flex;gap:8px}
-.rf-checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:10px}
-.rf-checks label{font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer}
-.rf-checks input{accent-color:#6366F1}
+.rf-checks{columns:2;column-gap:14px;margin-bottom:10px}
+.rf-checks label{font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0;break-inside:avoid}
+.rf-checks input[type="checkbox"]{accent-color:#6366F1;width:15px;height:15px;flex-shrink:0}
 .rf-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .rf-chip{background:var(--bg);border:1px solid var(--brd);border-radius:14px;padding:3px 10px;font-size:11px;display:inline-flex;align-items:center;gap:4px}
 .rf-chip button{background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:0;line-height:1}
@@ -1181,7 +1181,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='8.5';
+const APP_VERSION='8.6';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1365,7 +1365,7 @@ function updateSidebar(){
 }
 
 function getP(role){return CFG.personnel.find(p=>p.role===role)||{name:'—',title:''}}
-function getMgr(){return getP('manager')}
+function getMgr(){var d=getP('director_medical');return d.name!=='—'?d:getP('manager')}
 function getCoord(){return getP('coordinator')}
 
 
@@ -2058,7 +2058,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // Resolve ID→name for each config type. Returns name or '(dezactivat)' if not found.
 function rSec(id){if(!id)return '—';const s=CFG.sections.find(x=>x.id===id)||CFG.sections.find(x=>x.name===id);return s?(s.name||s.id):id}
 function secLabel(secId){const sec=CFG.sections.find(s=>s.id===secId)||CFG.sections.find(s=>s.name===secId);if(!sec)return 'Sectia —';const prefix=(sec.type||'sectie')==='compartiment'?'Compartimentul':'Sectia';return prefix+' '+(sec.name||sec.id)}
-const ROLE_MAP={coordinator:'Coordonator CPIAAM',manager:'Manager / Director medical',sef_sectie:'Sef Sectie',asistent_sef:'Asistent Sef',administrator:'Administrator',responsabil_deseuri:'Responsabil deseuri',other:'Altul'};
+const ROLE_MAP={coordinator:'Coordonator CPIAAM',director_medical:'Director medical',manager:'Manager',sef_sectie:'Sef Sectie',asistent_sef:'Asistent Sef',administrator:'Administrator',responsabil_deseuri:'Responsabil deseuri',other:'Altul'};
 function roleOpts(sel){return Object.entries(ROLE_MAP).map(([v,n])=>'<option value="'+v+'"'+(sel===v?' selected':'')+'>'+n+'</option>').join('')}
 function roleName(role){return ROLE_MAP[role]||role||'Altul'}
 function rProbe(id){if(!id)return '—';const a=CFG.probe_types||[];const p=a.find(x=>x.id===id)||a.find(x=>x.name===id);return p?(p.name||p.id):id}
@@ -2606,18 +2606,25 @@ function saveAbgModal(){
   document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards();
 }
 function abgFilterAtb(q){
-  const ov=document.getElementById('abg-ov');if(!ov)return;
-  const ql=q.toLowerCase().trim();
-  ov.querySelectorAll('.abg-atb-grid label').forEach(lbl=>{
-    const txt=(lbl.textContent||'').toLowerCase();
-    lbl.parentElement.style.display=(!ql||txt.includes(ql))?'':'none';
-    // Show S/I/R cells
-    const atc=lbl.querySelector('.abg-chk')?.dataset.atc;
-    if(atc){ov.querySelectorAll('.abg-radio input[name="abg_'+atc+'"]').forEach(r=>{r.closest('.abg-radio').style.display=(!ql||txt.includes(ql))?'':'none'})}
+  var ov=document.getElementById('abg-ov');if(!ov)return;
+  var ql=q.toLowerCase().trim();
+  ov.querySelectorAll('.abg-atb-grid label:has(.abg-chk)').forEach(function(lbl){
+    var txt=(lbl.textContent||'').toLowerCase();
+    var show=(!ql||txt.includes(ql));
+    var atc=lbl.querySelector('.abg-chk');
+    if(!atc)return;
+    var atcCode=atc.dataset.atc;
+    lbl.style.display=show?'':'none';
+    ov.querySelectorAll('.abg-radio input[name="abg_'+atcCode+'"]').forEach(function(r){
+      r.closest('.abg-radio').style.display=show?'':'none';
+    });
   });
-  ov.querySelectorAll('.abg-grp-hdr').forEach(hdr=>{
-    let next=hdr.nextElementSibling,hasVisible=false;
-    while(next&&!next.classList.contains('abg-grp-hdr')){if(next.tagName==='LABEL'&&next.parentElement.style.display!=='none')hasVisible=true;next=next.nextElementSibling}
+  ov.querySelectorAll('.abg-grp-hdr').forEach(function(hdr){
+    var next=hdr.nextElementSibling,hasVisible=false;
+    while(next&&!next.classList.contains('abg-grp-hdr')){
+      if(next.tagName==='LABEL'&&next.style.display!=='none')hasVisible=true;
+      next=next.nextElementSibling;
+    }
     hdr.style.display=(!ql||hasVisible)?'':'none';
   });
 }
@@ -9952,6 +9959,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'8.6',date:'2026-03-18',notes:'Fix: Antibiograma — cautarea antibioticelor ascundea tot gridul in loc de randuri individuale\nFix: Personal — Director medical si Manager separate in roluri distincte (anterior combinate)\nFix: getMgr() — cauta Director medical cu fallback pe Manager pentru semnaturi Word\nFix: Comorbiditati si Dispozitive invazive — layout uniform cu Factori de risc (2 coloane ordonate)'},
   {version:'8.5',date:'2026-03-18',notes:'Timeline: Bare cell-based — fiecare zi e un patrat cu border-radius (inlocuieste barele continue)\nTimeline: Mod An — toggle Luna/An, 12 coloane lunare, toate cazurile anului vizibile cu scroll\nTimeline: Culori infectie schimbate din portocaliu in rosu (#FF4444 dark / #DC2626 light)\nTimeline: Eliminat antibioterapia de pe bare — raman doar spitalizare (albastru) si infectie (rosu)\nTimeline: Legenda simplificata la 3 elemente (Spitalizare, Infectie, Cluster)\nTimeline: Default collapsed la deschiderea paginii IAAM\nNOU: Fisier test-data-complete.json cu date complete pentru toate modulele'},
   {version:'8.4',date:'2026-03-17',notes:'NOU: Cronologie IAAM — vizualizare Gantt-like cu bare spitalizare/infectie pe axa temporala lunara\nNOU: Detectare clustere — alerta cu patogeni clickabili, filtru vizual\nNOU: Checkboxuri selectie cazuri + toolbar selecteaza tot/deselecteaza/arata selectate\nNOU: Navigare lunara cu butoane ◀◀ ◀ ▶ ▶▶\nNOU: Legenda canvas cu swatch-uri colorate\nNOU: Status pill pe fiecare rand (in curs/inchis/deces/nou)\nNOU: Footer sumar cu afisate/active/inchise/MDR%/clustere\nNOU: Suport dark mode complet pentru toate elementele timeline'},
   {version:'8.3',date:'2026-03-17',notes:'Dashboard: KPI-uri clickable — navigheaza direct la modulul respectiv\nFix CRITIC: Obiective SMART config mode — ID-uri string necitate in onclick handlers\nFix: Audit Igiena Mainilor — camp sectie lipsa la salvare\nFix: Instruire Personal — adaugat i18n pe sidebar'},

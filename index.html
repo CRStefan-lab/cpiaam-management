@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v8.3</title>
+<title>CPIAAM — Sistem de Management v8.5</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -775,8 +775,11 @@ body{display:block!important;background:#fff!important}
 .tl-r-id{font-size:12px;font-weight:600;white-space:nowrap}
 .tl-r-type{font-size:10px;color:var(--txtL);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tl-mdr{font-size:8px;padding:1px 4px;border-radius:4px;font-weight:600;flex-shrink:0;background:#FEE2E2;color:#991B1B}
-.tl-cluster-dot{width:7px;height:7px;border-radius:50%;background:#F97316;flex-shrink:0}
-.tl-track{flex:1;position:relative;height:20px}
+.tl-cluster-dot{width:7px;height:7px;border-radius:50%;background:#DC2626;flex-shrink:0}
+.tl-track{flex:1;display:flex;height:20px;gap:1px}
+.tl-day{flex:1;position:relative;height:100%}
+.tl-day-hosp{position:absolute;top:1px;bottom:1px;left:0;right:0;border-radius:2px}
+.tl-day-inf{position:absolute;top:3px;bottom:3px;left:0;right:0;border-radius:3px}
 .tl-row-st{width:66px;flex-shrink:0;text-align:right}
 .tl-st{font-size:9px;padding:2px 7px;border-radius:8px;font-weight:600}
 .tl-st-c{background:#FEF3C7;color:#92400E}
@@ -795,7 +798,7 @@ body{display:block!important;background:#fff!important}
 .dark .tl-cluster-link.active-cluster{outline-color:#FCD34D}
 .dark .tl-filter-banner{background:#1E3A5F;color:#93C5FD}
 .dark .tl-mdr{background:#450A0A;color:#FCA5A5}
-.dark .tl-cluster-dot{background:#FB923C}
+.dark .tl-cluster-dot{background:#FF4444}
 .dark .tl-st-c{background:#422006;color:#FCD34D}
 .dark .tl-st-i{background:#064E3B;color:#6EE7B7}
 .dark .tl-st-r{background:#1E3A5F;color:#93C5FD}
@@ -1178,7 +1181,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='8.3';
+const APP_VERSION='8.5';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1867,7 +1870,7 @@ ro:{
   tl_deselecteaza:'Deselecteaza',tl_arata_selectate:'Arata doar selectate',tl_arata_toate:'Arata toate',
   tl_filtru:'Filtru',tl_cazuri_in:'cazuri in',tl_afisate:'Afisate',tl_active:'Active',
   tl_inchise:'Inchise',tl_raportate:'Raportate',tl_in_curs:'in curs',tl_deces:'deces',tl_nou:'nou',
-  tl_clustere_susp:'clustere suspectate',tl_azi:'Azi'
+  tl_clustere_susp:'clustere suspectate',tl_azi:'Azi',tl_luna_btn:'Luna',tl_an_btn:'An'
 },
 en:{
   months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
@@ -2033,7 +2036,7 @@ en:{
   tl_deselecteaza:'Deselect',tl_arata_selectate:'Show selected only',tl_arata_toate:'Show all',
   tl_filtru:'Filter',tl_cazuri_in:'cases in',tl_afisate:'Shown',tl_active:'Active',
   tl_inchise:'Closed',tl_raportate:'Reported',tl_in_curs:'ongoing',tl_deces:'deceased',tl_nou:'new',
-  tl_clustere_susp:'suspected clusters',tl_azi:'Today'
+  tl_clustere_susp:'suspected clusters',tl_azi:'Today',tl_luna_btn:'Month',tl_an_btn:'Year'
 }
 };
 
@@ -2642,7 +2645,7 @@ var _iaamGermeni=[];// [{code,name,mdr}]
 var _iaamAtb=[];// [{atc,name,route,date_start,date_stop}]
 var _iaamStep=0,_iaamDraft={},_iaamEditId=null;
 // Timeline state
-var _tlOpen=false,_tlChecked=new Set(),_tlShowOnly=false,_tlActiveCluster=null,_tlViewStart=1;
+var _tlOpen=false,_tlChecked=new Set(),_tlShowOnly=false,_tlActiveCluster=null,_tlViewStart=1,_tlMode='month';
 
 async function rIAAM(el){
   const isEN=CFG.lang==='en';
@@ -2667,8 +2670,19 @@ async function rIAAM(el){
   const complete=allData.filter(r=>r.completion>=100).length;
   const incomplete=allData.length-complete;
   const avgCompl=allData.length>0?Math.round(allData.reduce((s,r)=>s+r.completion,0)/allData.length):0;
+  // Timeline collapsible (above KPIs)
+  let h='';
+  if(allData.length>0){
+    var _tlHdrLabel=_tlMode==='year'?A.year:(MO[_tlGetMonth()-1]+' '+A.year);
+    h+='<div class="ac-collapse-hdr" onclick="_tlToggle()" style="background:'+(A.darkMode?'rgba(96,165,250,.12)':'rgba(59,130,246,.08)')+';border:1px solid '+(A.darkMode?'rgba(96,165,250,.3)':'rgba(59,130,246,.2)')+';border-radius:8px;margin-bottom:12px">'+
+      '<span><strong>'+T('tl_title')+'</strong> \u2014 '+_tlHdrLabel+'</span>'+
+      '<span class="ac-arrow'+(_tlOpen?' open':'')+'">&#9654;</span></div>';
+    h+='<div class="ac-collapse-body'+(_tlOpen?' open':'')+'" style="max-height:'+(_tlOpen?'5000px':'0')+'">';
+    h+=_renderTimeline(allData,isEN);
+    h+='</div>';
+  }
   // KPIs
-  let h='<div class="kg">'+
+  h+='<div class="kg">'+
     '<div class="kc rd"><div class="kl">'+(isEN?'Total Cases':'Total Cazuri')+'</div><div class="kv">'+allData.length+'</div></div>'+
     '<div class="kc am"><div class="kl">MDR</div><div class="kv">'+mdr+'</div><div class="ks">'+fp(mdr,allData.length)+'</div></div>'+
     '<div class="kc '+(avgCompl>=80?'gn':avgCompl>=50?'am':'rd')+'"><div class="kl">'+(isEN?'Avg Completion':'Completare medie')+'</div><div class="kv">'+avgCompl+'%</div><div class="ks">'+complete+' '+(isEN?'complete':'complete')+' / '+incomplete+' '+(isEN?'incomplete':'incomplete')+'</div></div>'+
@@ -2686,15 +2700,6 @@ async function rIAAM(el){
       '<option value="">MDR: '+(isEN?'All':'Toate')+'</option><option value="da"'+(f.mdr==='da'?' selected':'')+'>'+(isEN?'MDR only':'Doar MDR')+'</option><option value="nu"'+(f.mdr==='nu'?' selected':'')+'>Non-MDR</option></select>'+
     '<button class="btn bo bsm" onclick="_iaamFilters={search:\'\',sec:\'\',mdr:\'\',compl:\'\',month:\'\'};render()">Reset</button>'+
   '</div>';
-  // Timeline collapsible
-  if(allData.length>0){
-    h+='<div class="ac-collapse-hdr" onclick="_tlToggle()" style="background:'+(A.darkMode?'rgba(96,165,250,.12)':'rgba(59,130,246,.08)')+';border:1px solid '+(A.darkMode?'rgba(96,165,250,.3)':'rgba(59,130,246,.2)')+';border-radius:8px;margin-bottom:12px">'+
-      '<span><strong>'+T('tl_title')+'</strong> \u2014 '+MO[_tlGetMonth()-1]+' '+A.year+'</span>'+
-      '<span class="ac-arrow'+(_tlOpen?' open':'')+'">&#9654;</span></div>';
-    h+='<div class="ac-collapse-body'+(_tlOpen?' open':'')+'" style="max-height:'+(_tlOpen?'5000px':'0')+'">';
-    h+=_renderTimeline(allData,isEN);
-    h+='</div>';
-  }
   h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'+
     '<div class="bg"><button class="btn bo bsm" onclick="exportIAAM()">Export JSON</button></div>'+
     '<button class="btn bp" onclick="editIAAM()">+ '+(isEN?'New IAAM Case':'Caz IAAM Nou')+'</button></div>'+
@@ -3393,25 +3398,17 @@ function _tlDetectClusters(rows){
 }
 
 function _tlBuildLegend(DK){
-  var isEN=CFG.lang==='en';
   var h='<div class="tl-legend">';
   h+='<div class="tl-lg"><canvas id="tlLgH" width="20" height="8" style="border-radius:2px"></canvas>'+T('tl_spitalizare')+'</div>';
   h+='<div class="tl-lg"><canvas id="tlLgI" width="20" height="8" style="border-radius:2px"></canvas>'+T('tl_infectie')+'</div>';
-  h+='<div class="tl-lg"><canvas id="tlLgX" width="20" height="8" style="border-radius:2px"></canvas>'+T('tl_inf_atb')+'</div>';
-  h+='<div class="tl-lg"><canvas id="tlLgA" width="20" height="8" style="border-radius:2px"></canvas>'+T('tl_atb_post')+'</div>';
-  h+='<div class="tl-lg"><div style="width:7px;height:7px;border-radius:50%;background:'+(DK?'#FB923C':'#F97316')+'"></div>'+T('tl_cluster')+'</div>';
+  h+='<div class="tl-lg"><div style="width:7px;height:7px;border-radius:50%;background:'+(DK?'#FF4444':'#DC2626')+'"></div>'+T('tl_cluster')+'</div>';
   h+='</div>';
   return h;
 }
 function _tlPaintLegend(DK){
   var c1=document.getElementById('tlLgH');if(!c1)return;
   var ctx=c1.getContext('2d');ctx.globalAlpha=DK?0.30:0.18;ctx.fillStyle='#3B82F6';ctx.fillRect(0,0,20,8);
-  ctx=document.getElementById('tlLgI').getContext('2d');ctx.fillStyle=DK?'#FB923C':'#F97316';ctx.fillRect(0,0,20,8);
-  ctx=document.getElementById('tlLgX').getContext('2d');
-  ctx.fillStyle=DK?'#FB923C':'#F97316';ctx.fillRect(0,0,20,8);
-  ctx.strokeStyle=DK?'#A78BFA':'#8B5CF6';ctx.lineWidth=3;
-  for(var x=-10;x<30;x+=6){ctx.beginPath();ctx.moveTo(x,8);ctx.lineTo(x+8,0);ctx.stroke()}
-  ctx=document.getElementById('tlLgA').getContext('2d');ctx.globalAlpha=DK?0.6:0.45;ctx.fillStyle=DK?'#A78BFA':'#8B5CF6';ctx.fillRect(0,0,20,8);
+  ctx=document.getElementById('tlLgI').getContext('2d');ctx.fillStyle=DK?'#FF4444':'#DC2626';ctx.fillRect(0,0,20,8);
 }
 
 function _tlCheck(id){if(_tlChecked.has(id))_tlChecked.delete(id);else _tlChecked.add(id);render()}
@@ -3449,10 +3446,155 @@ function _tlNextM(){
 
 function _renderTimeline(allData,isEN){
   var DK=A.darkMode;
-  var mo=_tlGetMonth(),yr=A.year,D=new Date(yr,mo,0).getDate();
+  var yr=A.year;
+  var infColor=DK?'#FF4444':'#DC2626';
+  var hospBg='#3B82F6';var hospOp=DK?'0.30':'0.18';
+  var isYearMode=_tlMode==='year';
+  var MO_SHORT=isEN?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']:['Ian','Feb','Mar','Apr','Mai','Iun','Iul','Aug','Sep','Oct','Nov','Dec'];
+
+  if(isYearMode){
+    // YEAR MODE: show all cases for the year, 12 month columns
+    var cases=allData;
+    var todayM=-1;var now=new Date();
+    if(now.getFullYear()===yr)todayM=now.getMonth()+1;
+
+    // Enrich with month ranges
+    var rows=cases.map(function(r){
+      var admD=r.date_admission?new Date(r.date_admission+'T00:00:00'):null;
+      var disD=r.date_discharge?new Date(r.date_discharge+'T00:00:00'):null;
+      var confD=r.date_confirmed?new Date(r.date_confirmed+'T00:00:00'):null;
+      var hS=admD&&admD.getFullYear()===yr?admD.getMonth()+1:(admD&&admD<new Date(yr,0,1)?1:null);
+      var hE=disD&&disD.getFullYear()===yr?disD.getMonth()+1:(disD&&disD>new Date(yr,11,31)?12:(hS!=null?todayM>0?todayM:12:null));
+      if(hS==null&&r.month)hS=r.month;
+      if(hE==null&&hS!=null)hE=hS;
+      var iS=confD&&confD.getFullYear()===yr?confD.getMonth()+1:(confD&&confD<new Date(yr,0,1)?1:(hS||null));
+      var iE=hE;
+      var st=_tlStatus(r);
+      var germs=(r.germeni&&r.germeni.length)?r.germeni.map(function(g){return g.name}).join(', '):(r.organism||'');
+      var hasMDR=r.mdr||(r.germeni||[]).some(function(g){return g.mdr&&g.mdr!=='Nu'});
+      return {r:r,hS:hS,hE:hE,iS:iS,iE:iE,st:st,germs:germs,hasMDR:hasMDR};
+    });
+    rows.sort(function(a,b){return (rSec(a.r.section)||'').localeCompare(rSec(b.r.section)||'')||(a.hS||0)-(b.hS||0)});
+
+    var clusters=_tlDetectClusters(rows);
+    var cm={};clusters.forEach(function(cl){cl.ids.forEach(function(id){cm[id]=cl})});
+    var secFilter=_iaamFilters.sec;
+    var visRows=rows;
+    if(secFilter)visRows=visRows.filter(function(c){return c.r.section===secFilter});
+    if(_tlShowOnly)visRows=visRows.filter(function(c){return _tlChecked.has(c.r.id)});
+
+    var h='<div class="tl-wrap">';
+    // Nav (year mode: just year arrows + mode toggle)
+    h+='<div class="tl-nav">';
+    h+='<button class="tl-nav-btn" onclick="A.year--;_tlViewStart=1;render()" title="An anterior">&#9664;&#9664;</button>';
+    h+='<div class="tl-nav-label">'+yr+'</div>';
+    h+='<button class="tl-nav-btn" onclick="A.year++;_tlViewStart=1;render()" title="An urmator">&#9654;&#9654;</button>';
+    h+='<div style="display:flex;gap:4px;margin-left:8px">';
+    h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px" onclick="_tlMode=\'month\';_tlViewStart=1;render()">'+T('tl_luna_btn')+'</button>';
+    h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px;background:var(--blue);color:#fff;border-color:var(--blue)" onclick="_tlMode=\'year\';render()">'+T('tl_an_btn')+'</button>';
+    h+='</div></div>';
+    h+=_tlBuildLegend(DK);
+
+    if(cases.length===0){
+      h+='<div style="padding:20px;text-align:center;color:var(--txtL);font-size:12px">'+T('tl_no_cases')+'</div></div>';
+      return h;
+    }
+
+    h+='<div class="tl-card">';
+    // Clusters alert
+    h+='<div class="tl-alert-box" id="tlAlert"'+(clusters.length>0?' style="display:block"':'')+'>';
+    if(clusters.length>0){
+      h+='&#9888; <b>'+clusters.length+' '+T('tl_clustere_susp')+':</b> ';
+      clusters.forEach(function(cl){
+        var isA=_tlActiveCluster&&_tlActiveCluster.key===cl.key;
+        h+='<span class="tl-cluster-link'+(isA?' active-cluster':'')+'" onclick="_tlClickCluster(\''+cl.key.replace(/'/g,"\\'")+'\',\''+cl.ids.join(',')+'\')">'+esc(cl.pathogen)+' ('+cl.ids.length+')</span> ';
+      });
+    }
+    h+='</div>';
+    // Filter banner
+    h+='<div class="tl-filter-banner" id="tlFilterBanner"';
+    if(!_tlActiveCluster&&!_tlShowOnly)h+='>';
+    else if(_tlActiveCluster){
+      var acl=clusters.find(function(c){return c.key===_tlActiveCluster.key});
+      h+=' style="display:flex"><b>'+T('tl_filtru')+':</b> '+(acl?esc(acl.pathogen):'?')+' \u2014 '+(acl?acl.ids.length:'?')+' '+T('tl_cazuri_in')+' '+(acl?acl.sections.join(', '):'?');
+      h+='<button class="tl-clear-btn" onclick="_tlClearAll()">&#10005; '+T('tl_arata_toate')+'</button>';
+    } else if(_tlShowOnly){
+      h+=' style="display:flex"><b>'+T('tl_filtru')+':</b> '+_tlChecked.size+' '+T('tl_selectate').toLowerCase();
+      h+='<button class="tl-clear-btn" onclick="_tlClearAll()">&#10005; '+T('tl_arata_toate')+'</button>';
+    }
+    h+='</div>';
+    // Toolbar
+    h+='<div class="tl-toolbar">'+
+      '<span class="tl-tb-label">'+T('tl_selectate')+':</span>'+
+      '<span class="tl-tb-count">'+_tlChecked.size+'</span>'+
+      '<div class="tl-tb-actions">'+
+        '<button class="tl-tb-btn" onclick="_tlCheckAll(true)">'+T('tl_selecteaza_tot')+'</button>'+
+        '<button class="tl-tb-btn" onclick="_tlCheckAll(false)">'+T('tl_deselecteaza')+'</button>'+
+        '<button class="tl-tb-btn" onclick="_tlShowOnlySel()">'+(_tlShowOnly?T('tl_arata_toate'):T('tl_arata_selectate'))+'</button>'+
+      '</div></div>';
+    // Header — 12 month columns
+    h+='<div class="tl-hdr"><div class="tl-hdr-cb"><input type="checkbox" onchange="_tlCheckAll(this.checked)"></div>'+
+      '<div class="tl-hdr-spacer">'+(isEN?'Patient':'Pacient')+'</div><div class="tl-hdr-days">';
+    for(var mi=1;mi<=12;mi++){
+      h+='<div class="tl-hdr-d'+(mi===todayM?' tl-today':'')+'">'+MO_SHORT[mi-1]+'</div>';
+    }
+    h+='</div><div class="tl-hdr-status">Status</div></div>';
+    // Body
+    h+='<div class="tl-body" style="max-height:600px">';
+    var lastS='',tA=0,tC=0,tD=0;
+    visRows.forEach(function(c){
+      var secName=rSec(c.r.section);
+      if(secName!==lastS){h+='<div class="tl-sec-sep">'+esc(secName)+'</div>';lastS=secName}
+      if(c.st==='c'||c.st==='n')tA++;
+      if(c.st==='i')tC++;
+      if(c.st==='d')tD++;
+      var catLabel='';
+      try{var cl2=iaamCatLabel(c.r.iaam_category||c.r.infection_type);catLabel=cl2?cl2.split(' \u2014 ')[0]||cl2:''}catch(e){}
+      h+='<div class="tl-row"><div class="tl-row-cb"><input type="checkbox" data-id="'+c.r.id+'"'+(_tlChecked.has(c.r.id)?' checked':'')+' onchange="_tlCheck('+c.r.id+')"></div>';
+      h+='<div class="tl-row-info" onclick="editIAAM('+c.r.id+')" style="cursor:pointer">';
+      if(cm[c.r.id])h+='<div class="tl-cluster-dot" style="background:'+(DK?'#FF4444':'#DC2626')+'"></div>';
+      h+='<span class="tl-r-id">'+(c.r.patient_initials||c.r.patient||'P-'+c.r.id)+'</span>';
+      h+='<span class="tl-r-type">'+esc(catLabel)+'</span>';
+      if(c.hasMDR)h+='<span class="tl-mdr">MDR</span>';
+      h+='</div>';
+      // Track — 12 month cells
+      h+='<div class="tl-track">';
+      for(var m=1;m<=12;m++){
+        var isToM=m===todayM;
+        h+='<div class="tl-day">';
+        if(isToM)h+='<div style="position:absolute;inset:0;background:'+(DK?'rgba(129,140,248,0.15)':'rgba(99,102,241,0.08)')+';border-radius:2px"></div>';
+        if(c.hS!=null&&c.hE!=null&&m>=c.hS&&m<=c.hE)
+          h+='<div class="tl-day-hosp" style="background:'+hospBg+';opacity:'+hospOp+'"></div>';
+        if(c.iS!=null&&c.iE!=null&&m>=c.iS&&m<=c.iE)
+          h+='<div class="tl-day-inf" style="background:'+infColor+'"></div>';
+        h+='</div>';
+      }
+      h+='</div>';
+      var stCls=(_tlStMap[c.st]||['tl-st-n'])[0];
+      h+='<div class="tl-row-st"><span class="tl-st '+stCls+'">'+T(_tlStLabel[c.st]||'tl_nou')+'</span></div>';
+      h+='</div>';
+    });
+    h+='</div>';
+    // Footer
+    var mdrC=visRows.filter(function(c){return c.hasMDR}).length;
+    var mdrP=visRows.length?Math.round(mdrC/visRows.length*100):0;
+    h+='<div class="tl-footer">'+
+      '<span>'+T('tl_afisate')+': <span class="tl-fv">'+visRows.length+'/'+rows.length+'</span></span>'+
+      '<span>'+T('tl_active')+': <span class="tl-fv" style="color:'+(DK?'#FCD34D':'#92400E')+'">'+tA+'</span></span>'+
+      '<span>'+T('tl_inchise')+': <span class="tl-fv" style="color:'+(DK?'#6EE7B7':'#065F46')+'">'+tC+'</span></span>'+
+      (tD>0?'<span>'+T('tl_deces')+': <span class="tl-fv" style="color:'+(DK?'#FCA5A5':'#991B1B')+'">'+tD+'</span></span>':'')+
+      '<span>MDR: <span class="tl-fv" style="color:'+(DK?'#FCA5A5':'#991B1B')+'">'+mdrP+'%</span></span>'+
+      (clusters.length>0?'<span>Clusters: <span class="tl-fv" style="color:'+(DK?'#FF4444':'#DC2626')+'">'+clusters.length+'</span></span>':'')+
+    '</div>';
+    h+='</div></div>';
+    return h;
+  }
+
+  // MONTH MODE
+  var mo=_tlGetMonth(),D=new Date(yr,mo,0).getDate();
   var moStart=new Date(yr,mo-1,1),moEnd=new Date(yr,mo-1,D);
-  var todayD=-1;var now=new Date();
-  if(now.getFullYear()===yr&&now.getMonth()+1===mo)todayD=now.getDate();
+  var todayD=-1;var now2=new Date();
+  if(now2.getFullYear()===yr&&now2.getMonth()+1===mo)todayD=now2.getDate();
   var vEnd=Math.min(_tlViewStart+30,D);
 
   // Filter cases overlapping this month
@@ -3471,54 +3613,22 @@ function _renderTimeline(allData,isEN){
     var hE=_tlParseDay(r.date_discharge,mo,yr)||D;
     var iS=_tlParseDay(r.date_confirmed,mo,yr)||hS;
     var iE=hE;
-    // ATB range from antibiotics array
-    var aS=null,aE=null;
-    if(!r.no_antibiotic&&r.antibiotics&&r.antibiotics.length){
-      r.antibiotics.forEach(function(atb){
-        var s=_tlParseDay(atb.date_start,mo,yr);
-        var e=_tlParseDay(atb.date_stop,mo,yr);
-        if(s!=null){if(aS==null||s<aS)aS=s}
-        if(e!=null){if(aE==null||e>aE)aE=e}
-      });
-    }
     var st=_tlStatus(r);
     var germs=(r.germeni&&r.germeni.length)?r.germeni.map(function(g){return g.name}).join(', '):(r.organism||'');
     var hasMDR=r.mdr||(r.germeni||[]).some(function(g){return g.mdr&&g.mdr!=='Nu'});
-    return {r:r,hS:hS,hE:hE,iS:iS,iE:iE,aS:aS,aE:aE,st:st,germs:germs,hasMDR:hasMDR};
+    return {r:r,hS:hS,hE:hE,iS:iS,iE:iE,st:st,germs:germs,hasMDR:hasMDR};
   });
   rows.sort(function(a,b){return (rSec(a.r.section)||'').localeCompare(rSec(b.r.section)||'')||(a.iS||0)-(b.iS||0)});
 
-  // Clusters
   var clusters=_tlDetectClusters(rows);
   var cm={};clusters.forEach(function(cl){cl.ids.forEach(function(id){cm[id]=cl})});
 
-  // Visible rows
   var secFilter=_iaamFilters.sec;
   var visRows=rows;
   if(secFilter)visRows=visRows.filter(function(c){return c.r.section===secFilter});
   if(_tlShowOnly)visRows=visRows.filter(function(c){return _tlChecked.has(c.r.id)});
 
-  if(cases.length===0)return '<div style="padding:20px;text-align:center;color:var(--txtL);font-size:12px">'+T('tl_no_cases')+'</div>';
-
-  // SVG hatch
-  var hBg=DK?'#FB923C':'#F97316',hLine=DK?'#A78BFA':'#8B5CF6';
-  var svgPat='<svg style="position:absolute;width:0;height:0;pointer-events:none"><defs>'+
-    '<pattern id="tl-hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">'+
-    '<rect width="8" height="8" fill="'+hBg+'"/>'+
-    '<line x1="0" y1="0" x2="0" y2="8" stroke="'+hLine+'" stroke-width="4"/>'+
-    '</pattern></defs></svg>';
-
-  // Bar color helpers
-  var hospStyle='background:#3B82F6;opacity:'+(DK?'0.30':'0.18');
-  var infColor=DK?'#FB923C':'#F97316';
-  var atbColor=DK?'#A78BFA':'#8B5CF6';
-  var atbOp=DK?'0.6':'0.45';
-
-  var viewDays=vEnd-_tlViewStart+1;
-  function lpct(d){return Math.max(0,(Math.max(d,_tlViewStart)-_tlViewStart)/viewDays*100)}
-  function wpct(s,e){return Math.max(0,(Math.min(e,vEnd)-Math.max(s,_tlViewStart)+1)/viewDays*100)}
-
-  var h='<div class="tl-wrap">'+svgPat;
+  var h='<div class="tl-wrap">';
 
   // Nav
   h+='<div class="tl-nav">'+
@@ -3526,16 +3636,23 @@ function _renderTimeline(allData,isEN){
     '<button class="tl-nav-btn" onclick="_tlPrevD()">&#9664;</button>'+
     '<div class="tl-nav-label">'+MO[mo-1]+' '+yr+'</div>'+
     '<button class="tl-nav-btn" onclick="_tlNextD()">&#9654;</button>'+
-    '<button class="tl-nav-btn" onclick="_tlNextM()">&#9654;&#9654;</button>'+
-  '</div>';
+    '<button class="tl-nav-btn" onclick="_tlNextM()">&#9654;&#9654;</button>';
+  // Mode toggle
+  h+='<div style="display:flex;gap:4px;margin-left:8px">';
+  h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px;background:var(--blue);color:#fff;border-color:var(--blue)" onclick="_tlMode=\'month\';render()">'+T('tl_luna_btn')+'</button>';
+  h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px" onclick="_tlMode=\'year\';_tlViewStart=1;render()">'+T('tl_an_btn')+'</button>';
+  h+='</div></div>';
 
-  // Legend
   h+=_tlBuildLegend(DK);
 
-  // Card
+  if(cases.length===0){
+    h+='<div style="padding:20px;text-align:center;color:var(--txtL);font-size:12px">'+T('tl_no_cases')+'</div></div>';
+    return h;
+  }
+
   h+='<div class="tl-card">';
 
-  // Alert box (clusters)
+  // Alert box
   h+='<div class="tl-alert-box" id="tlAlert"'+(clusters.length>0?' style="display:block"':'')+'>';
   if(clusters.length>0){
     h+='&#9888; <b>'+clusters.length+' '+T('tl_clustere_susp')+':</b> ';
@@ -3548,7 +3665,8 @@ function _renderTimeline(allData,isEN){
 
   // Filter banner
   h+='<div class="tl-filter-banner" id="tlFilterBanner"';
-  if(_tlActiveCluster){
+  if(!_tlActiveCluster&&!_tlShowOnly)h+='>';
+  else if(_tlActiveCluster){
     var acl=clusters.find(function(c){return c.key===_tlActiveCluster.key});
     h+=' style="display:flex"><b>'+T('tl_filtru')+':</b> '+(acl?esc(acl.pathogen):'?')+' \u2014 '+(acl?acl.ids.length:'?')+' '+T('tl_cazuri_in')+' '+(acl?acl.sections.join(', '):'?');
     h+='<button class="tl-clear-btn" onclick="_tlClearAll()">&#10005; '+T('tl_arata_toate')+'</button>';
@@ -3568,7 +3686,7 @@ function _renderTimeline(allData,isEN){
       '<button class="tl-tb-btn" onclick="_tlShowOnlySel()">'+(_tlShowOnly?T('tl_arata_toate'):T('tl_arata_selectate'))+'</button>'+
     '</div></div>';
 
-  // Header
+  // Header — day cells
   h+='<div class="tl-hdr"><div class="tl-hdr-cb"><input type="checkbox" onchange="_tlCheckAll(this.checked)"></div>'+
     '<div class="tl-hdr-spacer">'+(isEN?'Patient':'Pacient')+'</div><div class="tl-hdr-days">';
   for(var d=_tlViewStart;d<=vEnd;d++){
@@ -3578,88 +3696,50 @@ function _renderTimeline(allData,isEN){
   }
   h+='</div><div class="tl-hdr-status">Status</div></div>';
 
-  // Grid background (for each row's track)
-  var slotW=100/viewDays;
-  var gH='';
-  for(var dd=_tlViewStart;dd<=vEnd;dd++){
-    var idx=dd-_tlViewStart,dw=new Date(yr,mo-1,dd).getDay();
-    if(dw===0||dw===6)gH+='<div style="position:absolute;left:'+idx*slotW+'%;width:'+slotW+'%;top:0;bottom:0;background:'+(DK?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.02)')+'"></div>';
-    if(dd===todayD)gH+='<div style="position:absolute;left:'+idx*slotW+'%;width:'+slotW+'%;top:0;bottom:0;background:'+(DK?'rgba(129,140,248,0.15)':'rgba(99,102,241,0.08)')+'"></div>';
-    if(idx>0)gH+='<div style="position:absolute;left:'+idx*slotW+'%;top:0;bottom:0;width:1px;background:'+(DK?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.05)')+'"></div>';
-  }
-
   // Body rows
   h+='<div class="tl-body">';
-  var lastS='',tA=0,tC=0,tR=0,tD=0;
+  var lastS='',tA=0,tC=0,tD=0;
   visRows.forEach(function(c){
     var secName=rSec(c.r.section);
     if(secName!==lastS){h+='<div class="tl-sec-sep">'+esc(secName)+'</div>';lastS=secName}
     if(c.st==='c'||c.st==='n')tA++;
     if(c.st==='i')tC++;
-    if(c.st==='r')tR++;
     if(c.st==='d')tD++;
 
     var catLabel='';
-    try{var cl=iaamCatLabel(c.r.iaam_category||c.r.infection_type);catLabel=cl?cl.split(' \u2014 ')[0]||cl:''}catch(e){}
+    try{var cl2=iaamCatLabel(c.r.iaam_category||c.r.infection_type);catLabel=cl2?cl2.split(' \u2014 ')[0]||cl2:''}catch(e){}
 
     h+='<div class="tl-row"><div class="tl-row-cb"><input type="checkbox" data-id="'+c.r.id+'"'+(_tlChecked.has(c.r.id)?' checked':'')+' onchange="_tlCheck('+c.r.id+')"></div>';
     h+='<div class="tl-row-info" onclick="editIAAM('+c.r.id+')" style="cursor:pointer">';
-    if(cm[c.r.id])h+='<div class="tl-cluster-dot"></div>';
+    if(cm[c.r.id])h+='<div class="tl-cluster-dot" style="background:'+(DK?'#FF4444':'#DC2626')+'"></div>';
     h+='<span class="tl-r-id">'+(c.r.patient_initials||c.r.patient||'P-'+c.r.id)+'</span>';
     h+='<span class="tl-r-type">'+esc(catLabel)+'</span>';
     if(c.hasMDR)h+='<span class="tl-mdr">MDR</span>';
     h+='</div>';
 
-    // Track
-    h+='<div class="tl-track">'+gH;
-
-    // Hospitalization bar
-    if(c.hS!=null&&c.hE!=null&&c.hE>=_tlViewStart&&c.hS<=vEnd){
-      h+='<div style="position:absolute;top:1px;bottom:1px;left:'+lpct(c.hS)+'%;width:'+wpct(c.hS,c.hE)+'%;'+hospStyle+';border-radius:3px"></div>';
+    // Track — cell-based per day
+    h+='<div class="tl-track">';
+    for(var dd=_tlViewStart;dd<=vEnd;dd++){
+      var ddow=new Date(yr,mo-1,dd).getDay();
+      var isWe=ddow===0||ddow===6;
+      var isTd=dd===todayD;
+      h+='<div class="tl-day">';
+      if(isWe)h+='<div style="position:absolute;inset:0;background:'+(DK?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.02)')+';border-radius:2px"></div>';
+      if(isTd)h+='<div style="position:absolute;inset:0;background:'+(DK?'rgba(129,140,248,0.15)':'rgba(99,102,241,0.08)')+';border-radius:2px"></div>';
+      if(c.hS!=null&&c.hE!=null&&dd>=c.hS&&dd<=c.hE)
+        h+='<div class="tl-day-hosp" style="background:'+hospBg+';opacity:'+hospOp+'"></div>';
+      if(c.iS!=null&&c.iE!=null&&dd>=c.iS&&dd<=c.iE)
+        h+='<div class="tl-day-inf" style="background:'+infColor+'"></div>';
+      h+='</div>';
     }
-
-    // Infection bar (complex: before ATB, overlap with ATB, after ATB)
-    if(c.iS!=null&&c.iE!=null&&c.iS<=vEnd&&c.iE>=_tlViewStart){
-      if(c.aS==null){
-        // No ATB — solid infection
-        h+='<div style="position:absolute;top:3px;bottom:3px;left:'+lpct(c.iS)+'%;width:'+wpct(c.iS,c.iE)+'%;background:'+infColor+';border-radius:3px"></div>';
-      } else {
-        // Infection before ATB
-        if(c.iS<c.aS){
-          var eB=Math.min(c.aS-1,c.iE);
-          if(eB>=_tlViewStart)
-            h+='<div style="position:absolute;top:3px;bottom:3px;left:'+lpct(c.iS)+'%;width:'+wpct(c.iS,eB)+'%;background:'+infColor+';border-radius:3px 0 0 3px"></div>';
-        }
-        // Infection + ATB overlap (hatched)
-        var oS=Math.max(c.iS,c.aS),oE=Math.min(c.iE,c.aE||c.iE);
-        if(oS<=oE&&oS<=vEnd&&oE>=_tlViewStart){
-          var rl=oS>c.iS?'0':'3px',rr=(oE<c.iE||(c.aE!=null&&c.aE>c.iE))?'0':'3px';
-          h+='<div style="position:absolute;top:3px;bottom:3px;left:'+lpct(oS)+'%;width:'+wpct(oS,oE)+'%;background:url(#tl-hatch);border-radius:'+rl+' '+rr+' '+rr+' '+rl+'"></div>';
-        }
-        // Infection after ATB
-        if(c.aE!=null&&c.iE>c.aE){
-          var sA=Math.max(c.aE+1,_tlViewStart);
-          if(sA<=vEnd&&c.iE>=_tlViewStart)
-            h+='<div style="position:absolute;top:3px;bottom:3px;left:'+lpct(sA)+'%;width:'+wpct(sA,c.iE)+'%;background:'+infColor+';border-radius:0 3px 3px 0"></div>';
-        }
-      }
-    }
-
-    // ATB bar after infection ends
-    if(c.aS!=null&&c.aE!=null&&c.iE!=null&&c.aE>c.iE){
-      var sP=Math.max(c.iE+1,_tlViewStart),eP=Math.min(c.aE,vEnd);
-      if(sP<=eP)
-        h+='<div style="position:absolute;top:3px;bottom:3px;left:'+lpct(sP)+'%;width:'+wpct(sP,eP)+'%;background:'+atbColor+';opacity:'+atbOp+';border-radius:0 3px 3px 0"></div>';
-    }
-
-    h+='</div>'; // end track
+    h+='</div>';
 
     // Status pill
     var stCls=(_tlStMap[c.st]||['tl-st-n'])[0];
     h+='<div class="tl-row-st"><span class="tl-st '+stCls+'">'+T(_tlStLabel[c.st]||'tl_nou')+'</span></div>';
-    h+='</div>'; // end row
+    h+='</div>';
   });
-  h+='</div>'; // end body
+  h+='</div>';
 
   // Footer
   var mdrC=visRows.filter(function(c){return c.hasMDR}).length;
@@ -3668,19 +3748,16 @@ function _renderTimeline(allData,isEN){
     '<span>'+T('tl_afisate')+': <span class="tl-fv">'+visRows.length+'/'+rows.length+'</span></span>'+
     '<span>'+T('tl_active')+': <span class="tl-fv" style="color:'+(DK?'#FCD34D':'#92400E')+'">'+tA+'</span></span>'+
     '<span>'+T('tl_inchise')+': <span class="tl-fv" style="color:'+(DK?'#6EE7B7':'#065F46')+'">'+tC+'</span></span>'+
-    '<span>'+T('tl_raportate')+': <span class="tl-fv" style="color:'+(DK?'#93C5FD':'#1E40AF')+'">'+tR+'</span></span>'+
+    (tD>0?'<span>'+T('tl_deces')+': <span class="tl-fv" style="color:'+(DK?'#FCA5A5':'#991B1B')+'">'+tD+'</span></span>':'')+
     '<span>MDR: <span class="tl-fv" style="color:'+(DK?'#FCA5A5':'#991B1B')+'">'+mdrP+'%</span></span>'+
-    (clusters.length>0?'<span>Clusters: <span class="tl-fv" style="color:'+(DK?'#FB923C':'#F97316')+'">'+clusters.length+'</span></span>':'')+
+    (clusters.length>0?'<span>Clusters: <span class="tl-fv" style="color:'+(DK?'#FF4444':'#DC2626')+'">'+clusters.length+'</span></span>':'')+
   '</div>';
 
-  h+='</div>'; // end card
-  h+='</div>'; // end tl-wrap
+  h+='</div></div>';
   return h;
 }
 
 // Paint legend canvases after DOM render
-var _tlPaintPending=false;
-var _origRIAAM_render=null;
 (function(){
   var _origRender=window.render;
   if(_origRender){
@@ -9875,6 +9952,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'8.5',date:'2026-03-18',notes:'Timeline: Bare cell-based — fiecare zi e un patrat cu border-radius (inlocuieste barele continue)\nTimeline: Mod An — toggle Luna/An, 12 coloane lunare, toate cazurile anului vizibile cu scroll\nTimeline: Culori infectie schimbate din portocaliu in rosu (#FF4444 dark / #DC2626 light)\nTimeline: Eliminat antibioterapia de pe bare — raman doar spitalizare (albastru) si infectie (rosu)\nTimeline: Legenda simplificata la 3 elemente (Spitalizare, Infectie, Cluster)\nTimeline: Default collapsed la deschiderea paginii IAAM\nNOU: Fisier test-data-complete.json cu date complete pentru toate modulele'},
+  {version:'8.4',date:'2026-03-17',notes:'NOU: Cronologie IAAM — vizualizare Gantt-like cu bare spitalizare/infectie pe axa temporala lunara\nNOU: Detectare clustere — alerta cu patogeni clickabili, filtru vizual\nNOU: Checkboxuri selectie cazuri + toolbar selecteaza tot/deselecteaza/arata selectate\nNOU: Navigare lunara cu butoane ◀◀ ◀ ▶ ▶▶\nNOU: Legenda canvas cu swatch-uri colorate\nNOU: Status pill pe fiecare rand (in curs/inchis/deces/nou)\nNOU: Footer sumar cu afisate/active/inchise/MDR%/clustere\nNOU: Suport dark mode complet pentru toate elementele timeline'},
   {version:'8.3',date:'2026-03-17',notes:'Dashboard: KPI-uri clickable — navigheaza direct la modulul respectiv\nFix CRITIC: Obiective SMART config mode — ID-uri string necitate in onclick handlers\nFix: Audit Igiena Mainilor — camp sectie lipsa la salvare\nFix: Instruire Personal — adaugat i18n pe sidebar'},
   {version:'8.2',date:'2026-03-17',notes:'NOU: Modul Audituri IPC complet — inlocuieste vechiul sistem de audituri\nNOU: TIP A — Audit Igiena Mainilor WHO 5 Momente cu calupuri (DA/NU, FR/SP, Manusi)\nNOU: TIP B — Audit Generic Checklist (Curatenie 13 itemi, Rotatie Biocide 8, Sterilizare 12, Preoperator 10)\nNOU: Dotare Puncte Igiena — matrice sectii x echipamente (prezent/functional/curat/accesibil)\nNOU: Audit Agregat IPC — matrice trimestriala sectii x tipuri audit cu auto-calcul\nNOU: Export Word raport audit completat + fisa goala imprimabila A4\nNOU: Tipuri audit dinamice din Registrul Categorii IPC (nu hardcodate)\nNOU: Categorii profesionale configurabile pentru audit igiena mainilor\nObiective SMART: calcul auto actualizat sa filtreze audituri dupa ID categorie IPC'},
   {version:'8.1',date:'2026-03-17',notes:'NOU: Registru Categorii IPC — 13 categorii standard, partajat intre Obiective si Audituri\nNOU: Obiective SMART IPC — 20 obiective preincarcate, mod monitorizare + configurare\nObiective SMART: calcul automat valori din Audituri, IAAM, Consum ATB, Instruire\nObiective SMART: export raport Word cu sumar si status per categorie IPC\nConfigurare: sectiune noua Categorii IPC in tab Introducere date'},

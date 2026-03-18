@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v8.6</title>
+<title>CPIAAM — Sistem de Management v8.8</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -805,6 +805,39 @@ body{display:block!important;background:#fff!important}
 .dark .tl-st-d{background:#450A0A;color:#FCA5A5}
 .dark .tl-st-n{background:#2E1065;color:#C4B5FD}
 
+/* Germen card */
+.germ-card{display:flex;flex-direction:column;gap:6px;padding:8px 12px;background:var(--bg);border:1px solid var(--brd);border-radius:8px;margin:4px 0}
+.germ-card-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+/* Antibiogram button */
+.abg-btn-new{font-size:12px;padding:6px 14px;border-radius:6px;border:1.5px solid;cursor:pointer;font-weight:500;display:inline-flex;align-items:center;gap:6px;font-family:var(--f);transition:.15s}
+.abg-btn-warn{border-color:#D97706;background:#FFFBEB;color:#92400E}
+.abg-btn-warn:hover{background:#FEF3C7}
+.abg-btn-done{border-color:#2563EB;background:#EFF6FF;color:#1E40AF}
+.abg-btn-done:hover{background:#DBEAFE}
+.abg-hint{font-size:10px;color:var(--txtL);margin-top:2px}
+/* Antibiogram results pills */
+.abg-results{margin-top:8px;border-top:1px solid var(--brd);padding-top:8px}
+.abg-line-label{font-size:10px;font-weight:600;margin-right:6px}
+.abg-s-label{color:#166534}
+.abg-i-label{color:#854D0E}
+.abg-r-label{color:#991B1B}
+.abg-pill{font-size:10px;padding:2px 8px;border-radius:12px;font-weight:500;display:inline-block;margin:1px 2px}
+.abg-pill-s{background:#DCFCE7;color:#166534}
+.abg-pill-i{background:#FEF9C3;color:#854D0E}
+.abg-pill-r{background:#FEE2E2;color:#991B1B}
+/* Dark mode — germen card & antibiogram */
+.dark .abg-btn-warn{border-color:#D97706;background:#422006;color:#FCD34D}
+.dark .abg-btn-warn:hover{background:#4A2608}
+.dark .abg-btn-done{border-color:#3B82F6;background:#1E3A5F;color:#93C5FD}
+.dark .abg-btn-done:hover{background:#1E4070}
+.dark .abg-hint{color:#64748B}
+.dark .abg-pill-s{background:#064E3B;color:#6EE7B7}
+.dark .abg-pill-i{background:#422006;color:#FCD34D}
+.dark .abg-pill-r{background:#450A0A;color:#FCA5A5}
+.dark .abg-s-label{color:#6EE7B7}
+.dark .abg-i-label{color:#FCD34D}
+.dark .abg-r-label{color:#FCA5A5}
+
 @media print{.sb,.tb,.man-print,.man-top{display:none!important}.mn{margin-left:0!important}.man-sec{page-break-inside:avoid}.ct{padding:10px!important}}
 
 </style>
@@ -1181,7 +1214,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='8.6';
+const APP_VERSION='8.8';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -2521,13 +2554,31 @@ function initDashCharts(){
 // ═════════════════════════════════════════════════════════════
 
 function renderGermeniCards(){if(_iaamGermeni.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun germen adaugat.</div>';return _iaamGermeni.map((g,i)=>{
-  let h='<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;background:var(--bg);border:1px solid var(--brd);border-radius:6px;margin:3px;flex-wrap:wrap">';
-  h+='<strong style="font-size:12px">'+esc(g.name)+' ('+esc(g.code)+')</strong>';
-  if(needsMDRo(g.code)){h+='<select onchange="_iaamGermeni['+i+'].mdr=this.value" style="padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'+MDR_OPTS.map(o=>'<option'+(g.mdr===o?' selected':'')+'>'+o+'</option>').join('')+'</select>'}
+  let h='<div class="germ-card">';
+  h+='<div class="germ-card-top">';
+  h+='<strong style="font-size:12px">'+esc(g.name)+' <span style="color:var(--txtL);font-size:10px">('+esc(g.code)+')</span></strong>';
+  if(needsMDRo(g.code)){var mdrOpts=getMdrOptions(g.code);if(mdrOpts.indexOf(g.mdr)<0)g.mdr='Nu';h+='<select onchange="_iaamGermeni['+i+'].mdr=this.value;markFormDirty()" style="padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'+mdrOpts.map(function(o){return'<option'+(g.mdr===o?' selected':'')+'>'+o+'</option>'}).join('')+'</select>'}
   if(needsCustomName(g.code)){h+='<input placeholder="Specifica (optional)" value="'+esc(g.name_custom||'')+'" onchange="_iaamGermeni['+i+'].name_custom=this.value;markFormDirty()" style="width:140px;padding:2px 4px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'}
+  h+='<button onclick="removeIaamGermen('+i+')" class="btn-x">&times;</button>';
+  h+='</div>';
   const nAbg=(g.susceptibility||[]).length;
-  h+='<button onclick="openAbgModal('+i+')" class="btn bo bsm" style="font-size:10px;padding:2px 8px" title="'+T('abg_btn_abg')+'">&#129516; '+T('abg_btn_abg')+(nAbg?' ('+nAbg+')':'')+'</button>';
-  h+='<button onclick="removeIaamGermen('+i+')" class="btn-x">&times;</button></div>';return h}).join('')}
+  if(nAbg>0){
+    h+='<button onclick="openAbgModal('+i+')" class="abg-btn-new abg-btn-done"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>Editeaza antibiograma ('+nAbg+' antibiotice)</button>';
+    var sArr=(g.susceptibility||[]).filter(function(s){return s.result==='S'});
+    var iArr=(g.susceptibility||[]).filter(function(s){return s.result==='I'});
+    var rArr=(g.susceptibility||[]).filter(function(s){return s.result==='R'});
+    if(sArr.length||iArr.length||rArr.length){
+      h+='<div class="abg-results">';
+      if(sArr.length){h+='<div style="margin-bottom:4px"><span class="abg-line-label abg-s-label">S:</span>';sArr.forEach(function(s){h+='<span class="abg-pill abg-pill-s">'+esc(s.atb_name)+'</span>'});h+='</div>'}
+      if(iArr.length){h+='<div style="margin-bottom:4px"><span class="abg-line-label abg-i-label">I:</span>';iArr.forEach(function(s){h+='<span class="abg-pill abg-pill-i">'+esc(s.atb_name)+'</span>'});h+='</div>'}
+      if(rArr.length){h+='<div><span class="abg-line-label abg-r-label">R:</span>';rArr.forEach(function(s){h+='<span class="abg-pill abg-pill-r">'+esc(s.atb_name)+'</span>'});h+='</div>'}
+      h+='</div>';
+    }
+  } else {
+    h+='<button onclick="openAbgModal('+i+')" class="abg-btn-new abg-btn-warn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>Completeaza antibiograma</button>';
+    h+='<div class="abg-hint">Antibiograma nu a fost completata — click pentru a introduce sensibilitatile</div>';
+  }
+  h+='</div>';return h}).join('')}
 function addIaamGermen(){const sel=document.getElementById('f-germ-sel');if(!sel||!sel.value)return;if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}if(_iaamGermeni.find(g=>g.code===sel.value))return;const name=germenName(sel.value);_iaamGermeni.push({code:sel.value,name,mdr:'Nu'});sel.value='';document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
 function selectGermenFromDD(code){if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}if(_iaamGermeni.find(g=>g.code===code))return;const name=germenName(code);_iaamGermeni.push({code,name,mdr:needsMDRo(code)?'Nu':''});markFormDirty();const si=document.getElementById('f-germ-search');if(si)si.value='';hideGermeniDD();document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
 function addGermenManual(){if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}const name=prompt('Numele germenului:');if(!name||!name.trim())return;_iaamGermeni.push({code:'MANUAL',name:name.trim(),mdr:'Nu'});markFormDirty();document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
@@ -2541,6 +2592,54 @@ function filterGermeniDropdown(q){const dd=document.getElementById('f-germ-dd');
     h+='<div onclick="selectGermenFromDD(\''+it.c+'\')" style="padding:5px 10px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--bg)" onmouseenter="this.style.background=\'var(--bg)\'" onmouseleave="this.style.background=\'\'">'+esc(it.n)+' <span style="color:var(--txtL);font-size:10px">('+it.c+')</span></div>'});
   dd.innerHTML=h;dd.style.display='block'}
 function removeIaamGermen(i){_iaamGermeni.splice(i,1);document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
+
+// ═══ MDR contextual per germen (by code) ═══
+const MDR_BY_CODE={
+  // Enterobacteriaceae — ESBL, CRE, CPE
+  KLEPNE:['Nu','ESBL','CRE','CPE','KPC','XDR','PDR'],KLEOXY:['Nu','ESBL','CRE','CPE','XDR','PDR'],KLEAER:['Nu','ESBL','CRE','CPE','XDR','PDR'],KLEOTH:['Nu','ESBL','CRE','CPE','XDR','PDR'],KLENSP:['Nu','ESBL','CRE','CPE','XDR','PDR'],
+  ESCCOL:['Nu','ESBL','CRE','CPE','XDR','PDR'],
+  ENBCLO:['Nu','ESBL','CRE','CPE','AmpC','XDR','PDR'],ENBAER:['Nu','ESBL','CRE','CPE','AmpC','XDR','PDR'],ENBAGG:['Nu','ESBL','CRE','CPE','XDR','PDR'],ENBSAK:['Nu','ESBL','CRE','CPE','XDR','PDR'],ENBGER:['Nu','ESBL','CRE','CPE','XDR','PDR'],ENBOTH:['Nu','ESBL','CRE','CPE','XDR','PDR'],ENBNSP:['Nu','ESBL','CRE','CPE','XDR','PDR'],
+  PRTMIR:['Nu','ESBL','CRE','CPE','XDR','PDR'],PRTVUL:['Nu','ESBL','CRE','CPE','XDR','PDR'],PRTOTH:['Nu','ESBL','CRE','CPE','XDR','PDR'],PRTNSP:['Nu','ESBL','CRE','CPE','XDR','PDR'],
+  SERMAR:['Nu','ESBL','CRE','CPE','XDR','PDR'],SERLIQ:['Nu','ESBL','CRE','CPE','XDR','PDR'],SEROTH:['Nu','ESBL','CRE','CPE','XDR','PDR'],SERNSP:['Nu','ESBL','CRE','CPE','XDR','PDR'],
+  CITFRE:['Nu','ESBL','CRE','CPE','AmpC','XDR','PDR'],CITDIV:['Nu','ESBL','CRE','CPE','XDR','PDR'],CITOTH:['Nu','ESBL','CRE','CPE','XDR','PDR'],CITNSP:['Nu','ESBL','CRE','CPE','XDR','PDR'],
+  MOGSPP:['Nu','ESBL','CRE','CPE','XDR','PDR'],PRVSPP:['Nu','ESBL','CRE','CPE','XDR','PDR'],HAFSPP:['Nu','ESBL','CRE','CPE','XDR','PDR'],
+  ETBOTH:['Nu','ESBL','CRE','CPE','XDR','PDR'],ETBNSP:['Nu','ESBL','CRE','CPE','XDR','PDR'],
+  // Salmonella, Shigella, Yersinia
+  SALENT:['Nu','ESBL','XDR','PDR'],SALTYP:['Nu','ESBL','XDR','PDR'],SALTYM:['Nu','ESBL','XDR','PDR'],SALNSP:['Nu','ESBL','XDR','PDR'],SALOTH:['Nu','ESBL','XDR','PDR'],
+  SHISPP:['Nu','ESBL','XDR','PDR'],YERSPP:['Nu','XDR','PDR'],
+  // Staphylococcus — MRSA / MRS
+  STAAUR:['Nu','MRSA','VRSA','XDR','PDR'],
+  STAEPI:['Nu','MRS','XDR','PDR'],STAHAE:['Nu','MRS','XDR','PDR'],STACNS:['Nu','MRS','XDR','PDR'],STAOTH:['Nu','MRS','XDR','PDR'],STANSP:['Nu','MRS','XDR','PDR'],
+  // Enterococcus — VRE
+  ENCFAE:['Nu','VRE','XDR','PDR'],ENCFAI:['Nu','VRE','XDR','PDR'],ENCOTH:['Nu','VRE','XDR','PDR'],ENCNSP:['Nu','VRE','XDR','PDR'],
+  // Non-fermentativi — MDR
+  PSEAER:['Nu','MDR','XDR','PDR'],ACIBAU:['Nu','MDR','XDR','PDR'],STEMAL:['Nu','MDR','XDR','PDR'],BURCEP:['Nu','MDR','XDR','PDR'],
+  ACICAL:['Nu','MDR','XDR','PDR'],ACIHAE:['Nu','MDR','XDR','PDR'],ACILWO:['Nu','MDR','XDR','PDR'],ACIOTH:['Nu','MDR','XDR','PDR'],ACINSP:['Nu','MDR','XDR','PDR'],
+  PSEOTH:['Nu','MDR','XDR','PDR'],PSENSP:['Nu','MDR','XDR','PDR'],
+  HAEINF:['Nu','MDR','XDR','PDR'],HAEPAI:['Nu','MDR','XDR','PDR'],HAEOTH:['Nu','MDR','XDR','PDR'],HAENSP:['Nu','MDR','XDR','PDR'],
+  // Streptococcus — minimal MDR
+  STRPNE:['Nu','MDR','XDR','PDR'],STRAGA:['Nu','XDR','PDR'],STRPYO:['Nu','XDR','PDR'],STRHCG:['Nu','XDR','PDR'],STROTH:['Nu','XDR','PDR'],STRNSP:['Nu','XDR','PDR'],
+  // Fungi — Candida
+  CANALB:['Nu'],CANPAR:['Nu'],CANTRO:['Nu'],CANKRU:['Nu','MDR'],CANGLA:['Nu','MDR'],CANOTH:['Nu','MDR'],CANNSP:['Nu','MDR'],
+  // C. difficile — no MDR
+  CLODIF:['Nu'],CLOOTH:['Nu'],
+  // Anaerobi — minimal
+  BATFRA:['Nu','MDR'],BATOTH:['Nu','MDR'],PROSPP:['Nu'],PRESPP:['Nu'],ANANSP:['Nu'],ANAOTH:['Nu'],
+  // Moraxella, Neisseria
+  MORCAT:['Nu','MDR'],MOROTH:['Nu','MDR'],MORNSP:['Nu','MDR'],
+  NEIMEN:['Nu','MDR'],NEIOTH:['Nu','MDR'],NEINSP:['Nu','MDR'],
+  // Legionella, misc gram-neg
+  LEGSPP:['Nu'],ACHSPP:['Nu','MDR'],AEMSPP:['Nu','MDR'],ALCSPP:['Nu','MDR'],CAMSPP:['Nu','MDR'],FLASPP:['Nu','MDR'],GARSPP:['Nu'],HELPYL:['Nu','MDR'],PASSPP:['Nu','MDR'],AGRSPP:['Nu'],
+  GNBNSP:['Nu','MDR','XDR','PDR'],GNBOTH:['Nu','MDR','XDR','PDR'],GNCNSP:['Nu','MDR'],GNCOTH:['Nu','MDR'],
+  // Bacili gram-pozitivi
+  CORSPP:['Nu'],BACSPP:['Nu'],LACSPP:['Nu'],LISMON:['Nu','MDR'],GPBNSP:['Nu'],GPBOTH:['Nu'],GPCNSP:['Nu','MDR'],GPCOTH:['Nu','MDR'],
+  // Mycobacterii
+  MYCATY:['Nu','MDR','XDR'],MYCTUB:['Nu','MDR','XDR'],CHLSPP:['Nu'],MYPSPP:['Nu'],ACTSPP:['Nu'],NOCSPP:['Nu'],BCTOTH:['Nu','MDR'],
+  // Fungi (Aspergillus etc)
+  ASPFUM:['Nu'],ASPNIG:['Nu'],ASPOTH:['Nu'],ASPNSP:['Nu'],YEAOTH:['Nu'],FUNOTH:['Nu'],FILOTH:['Nu'],PAROTH:['Nu']
+};
+const MDR_DEFAULT=['Nu','ESBL','CRE','CPE','MRSA','VRE','MDR','XDR','PDR'];
+function getMdrOptions(code){return MDR_BY_CODE[code]||MDR_DEFAULT}
 
 // ═══ Antibiograma per germen ═══
 const ABG_COMMON_GRAM_NEG=['J01CA01','J01CR02','J01CR05','J01DB04','J01DC02','J01DD01','J01DD02','J01DD04','J01DE01','J01DH02','J01DH51','J01DH03','J01GB03','J01GB06','J01MA02','J01MA12','J01EE01','J01XB01','J01DF01','J01AA12'];
@@ -9959,6 +10058,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'8.8',date:'2026-03-18',notes:'Fix: Auto-Update — suprascrie fisierul curent pe disc cu File System Access API (showSaveFilePicker)\nFix: Fallback download cu instructiuni pas cu pas pentru browsere fara File System Access\nFix: Validare HTML la download — verifica ca fisierul descarcat este HTML valid'},
+  {version:'8.7',date:'2026-03-18',notes:'NOU: Dropdown MDR contextual — arata doar mecanismele de rezistenta relevante per germen selectat\nNOU: Buton antibiograma vizibil — portocaliu daca necompletat, albastru daca completat\nNOU: Rezumat S/I/R sub germen — pills colorate grupate pe linii (S verde, I galben, R rosu)\nNOU: Mapare completa MDR_BY_CODE pentru toti germenii din nomenclator'},
   {version:'8.6',date:'2026-03-18',notes:'Fix: Antibiograma — cautarea antibioticelor ascundea tot gridul in loc de randuri individuale\nFix: Personal — Director medical si Manager separate in roluri distincte (anterior combinate)\nFix: getMgr() — cauta Director medical cu fallback pe Manager pentru semnaturi Word\nFix: Comorbiditati si Dispozitive invazive — layout uniform cu Factori de risc (2 coloane ordonate)'},
   {version:'8.5',date:'2026-03-18',notes:'Timeline: Bare cell-based — fiecare zi e un patrat cu border-radius (inlocuieste barele continue)\nTimeline: Mod An — toggle Luna/An, 12 coloane lunare, toate cazurile anului vizibile cu scroll\nTimeline: Culori infectie schimbate din portocaliu in rosu (#FF4444 dark / #DC2626 light)\nTimeline: Eliminat antibioterapia de pe bare — raman doar spitalizare (albastru) si infectie (rosu)\nTimeline: Legenda simplificata la 3 elemente (Spitalizare, Infectie, Cluster)\nTimeline: Default collapsed la deschiderea paginii IAAM\nNOU: Fisier test-data-complete.json cu date complete pentru toate modulele'},
   {version:'8.4',date:'2026-03-17',notes:'NOU: Cronologie IAAM — vizualizare Gantt-like cu bare spitalizare/infectie pe axa temporala lunara\nNOU: Detectare clustere — alerta cu patogeni clickabili, filtru vizual\nNOU: Checkboxuri selectie cazuri + toolbar selecteaza tot/deselecteaza/arata selectate\nNOU: Navigare lunara cu butoane ◀◀ ◀ ▶ ▶▶\nNOU: Legenda canvas cu swatch-uri colorate\nNOU: Status pill pe fiecare rand (in curs/inchis/deces/nou)\nNOU: Footer sumar cu afisate/active/inchise/MDR%/clustere\nNOU: Suport dark mode complet pentru toate elementele timeline'},
@@ -10556,10 +10657,48 @@ function showUpdateBanner(d){
   if(mn)mn.insertBefore(b,mn.firstChild);
   else document.body.insertBefore(b,document.body.firstChild);
 }
-function downloadUpdate(url,version){
-  const a=document.createElement('a');a.href=url;a.download='CPIAAM_Management_v'+(version||'new')+'.html';a.click();
-  setTimeout(()=>{
-    alert('Fisierul a fost descarcat.\n\nInlocuieste fisierul vechi cu cel nou si redeschide aplicatia.');
+async function downloadUpdate(url,version){
+  showToast('Se descarca actualizarea...');
+  try{
+    var response=await fetch(url,{cache:'no-store'});
+    if(!response.ok)throw new Error('Download failed: '+response.status);
+    var newHTML=await response.text();
+    if(!newHTML.includes('<!DOCTYPE')&&!newHTML.includes('<html')){
+      throw new Error('Fisierul descarcat nu pare a fi HTML valid');
+    }
+    if(window.showSaveFilePicker){
+      try{
+        var currentFileName=location.pathname.split('/').pop()||'index.html';
+        if(currentFileName.includes('_v'))currentFileName=currentFileName.replace(/_v[\d.]+/,'');
+        var opts={suggestedName:currentFileName,types:[{description:'HTML',accept:{'text/html':['.html']}}]};
+        var savedHandle=null;
+        try{savedHandle=await loadFileHandle()}catch(e){}
+        if(savedHandle)opts.startIn=savedHandle;
+        var fileHandle=await window.showSaveFilePicker(opts);
+        var writable=await fileHandle.createWritable();
+        await writable.write(newHTML);
+        await writable.close();
+        dismissUpdate();
+        showToast('\u2713 Actualizare instalata! Se reincarca...');
+        setTimeout(function(){location.reload()},1500);
+      }catch(fsErr){
+        if(fsErr.name==='AbortError'){showToast('Actualizare anulata');return}
+        console.warn('File System save failed, falling back:',fsErr);
+        fallbackDownload(url,version);
+      }
+    }else{
+      fallbackDownload(url,version);
+    }
+  }catch(fetchErr){
+    console.error('Update download error:',fetchErr);
+    showToast('\u26A0 Eroare la descarcare. Verifica conexiunea.');
+    fallbackDownload(url,version);
+  }
+}
+function fallbackDownload(url,version){
+  var a=document.createElement('a');a.href=url;a.download='CPIAAM_Management_v'+(version||'new')+'.html';a.click();
+  setTimeout(function(){
+    alert('Fisierul a fost descarcat in folderul Downloads.\n\nPentru a actualiza:\n1. Inchide aceasta pagina\n2. Copiaza fisierul descarcat PESTE cel vechi\n3. Redeschide aplicatia\n\nDatele tale sunt in siguranta — sunt stocate in browser, nu in fisier.');
     dismissUpdate();
   },500);
 }

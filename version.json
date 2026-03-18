@@ -1,17 +1,13 @@
 {
-  "version": "8.6",
+  "version": "8.8",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Fix: Antibiograma — cautarea antibioticelor ascundea tot gridul in loc de randuri individuale",
-    "Fix: Personal — Director medical si Manager separate in roluri distincte (anterior combinate)",
-    "Fix: getMgr() — cauta Director medical cu fallback pe Manager pentru semnaturi Word",
-    "Fix: Comorbiditati si Dispozitive invazive — layout uniform cu Factori de risc (2 coloane ordonate)",
-    "Timeline: Bare cell-based — fiecare zi e un patrat cu border-radius (inlocuieste barele continue)",
-    "Timeline: Mod An — toggle Luna/An, 12 coloane lunare, toate cazurile anului vizibile cu scroll",
-    "Timeline: Culori infectie schimbate din portocaliu in rosu (#FF4444 dark / #DC2626 light)",
-    "Timeline: Eliminat antibioterapia de pe bare — raman doar spitalizare (albastru) si infectie (rosu)",
-    "Timeline: Legenda simplificata la 3 elemente (Spitalizare, Infectie, Cluster)",
-    "Timeline: Default collapsed la deschiderea paginii IAAM",
-    "NOU: Fisier test-data-complete.json cu date complete pentru toate modulele"
+    "Fix: Auto-Update — suprascrie fisierul curent pe disc cu File System Access API (showSaveFilePicker)",
+    "Fix: Fallback download cu instructiuni pas cu pas pentru browsere fara File System Access",
+    "Fix: Validare HTML la download — verifica ca fisierul descarat este HTML valid inainte de salvare",
+    "NOU: Dropdown MDR contextual — arata doar mecanismele de rezistenta relevante per germen selectat",
+    "NOU: Buton antibiograma vizibil — portocaliu daca necompletat, albastru daca completat",
+    "NOU: Rezumat S/I/R sub germen — pills colorate grupate pe linii (S verde, I galben, R rosu)",
+    "NOU: Mapare completa MDR_BY_CODE pentru toti germenii din nomenclator"
   ]
 }

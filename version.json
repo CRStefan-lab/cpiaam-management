@@ -1,10 +1,11 @@
 {
-  "version": "9.3",
+  "version": "9.6",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Indicator utilizator curent in toolbar — pill cu avatar si initiale",
-    "NOU: Dropdown schimbare utilizator — click pe pill, lista personalului",
-    "NOU: Stare warning (galben) cand utilizatorul nu e setat",
-    "NOU: Dark mode complet pentru user pill si dropdown"
+    "NOU: Auto-sync non-intruziv — toast discret + notificare la clopot in loc de modal blocant",
+    "NOU: Istoric sincronizari persistent — ultimele 50 sync-uri salvate in Configurare",
+    "NOU: Detalii per utilizator — cine a adaugat/modificat/sters, accesibil oricand",
+    "NOU: Timp relativ in notificari — 'chiar acum', '5 min in urma', '2h in urma'",
+    "Fix: Timeline hatch — culorile hasurilor acum vizibile (encodare %23 in SVG data URI)"
   ]
 }

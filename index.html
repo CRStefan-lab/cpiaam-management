@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v9.8</title>
+<title>CPIAAM — Sistem de Management v9.8.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -43,7 +43,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .sb.sb-mini{width:52px;min-width:52px;overflow:visible}
 .sb-mini .sb-h h1,.sb-mini .sb-h small,.sb-mini .ns,.sb-mini .ni span,.sb-mini .sb-f{display:none}
 .sb-mini .sb-h{padding:10px 8px}
-.sb-mini .sb-nav{padding:6px 4px}
+.sb-mini .sb-nav{padding:6px 4px;overflow:visible}
 .sb-mini .ni{justify-content:center;padding:10px 0;gap:0}
 .sb-mini .ni svg{margin:0}
 .sb-mini .ni{position:relative}
@@ -1564,7 +1564,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='9.8';
+const APP_VERSION='9.8.1';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -10537,6 +10537,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'9.8.1',date:'2026-03-19',notes:'Fix: Sidebar mini — tooltip-urile apar acum la hover pe iconite (overflow fix)'},
   {version:'9.8',date:'2026-03-19',notes:'NOU: Sidebar colapsabil stil Gmail — buton hamburger minimizeaza la iconite\nNOU: Tooltip pe hover in modul minimizat — numele paginii apare la hover\nNOU: Stare persistenta — sidebar ramane minimizat/expandat la reincarcarea paginii\nNOU: Tranzitie smooth la collapse/expand sidebar si content area\nNOU: Responsive — sidebar auto-minimizat pe tablet, slide-out pe mobil'},
   {version:'9.7',date:'2026-03-19',notes:'Fix: Instruire — Formator e acum dropdown multi-select din personalul configurat\nFix: Instruire — Participantii se introduc liber (eliminat Incarca din personal)\nFix: Instruire — Eliminat KPI Personal Instruit si warning persoane neinstruite\nFix: Instruire — Backward compat cu formator text din versiuni anterioare\nFix: Timeline hatch — fallback pe perioada infectiei cand antibioticele nu au date'},
   {version:'9.6',date:'2026-03-18',notes:'NOU: Auto-sync non-intruziv — toast discret + notificare la clopot in loc de modal blocant\nNOU: Istoric sincronizari persistent — ultimele 50 sync-uri salvate in Configurare\nNOU: Detalii per utilizator — cine a adaugat/modificat/sters, accesibil oricand din istoric\nNOU: Timp relativ in notificari — chiar acum, 5 min in urma, 2h in urma\nFix: Timeline hatch — culorile hasurilor acum vizibile (encodare %23 in SVG data URI)'},

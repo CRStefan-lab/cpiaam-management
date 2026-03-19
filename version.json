@@ -1,11 +1,7 @@
 {
-  "version": "9.8",
+  "version": "9.8.1",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Sidebar colapsabil stil Gmail — buton hamburger minimizeaza la iconite",
-    "NOU: Tooltip pe hover in modul minimizat — numele paginii apare la hover",
-    "NOU: Stare persistenta — sidebar ramane minimizat/expandat la reincarcarea paginii",
-    "NOU: Tranzitie smooth la collapse/expand sidebar si content area",
-    "NOU: Responsive — sidebar auto-minimizat pe tablet, slide-out pe mobil"
+    "Fix: Sidebar mini — tooltip-urile apar acum la hover pe iconite (overflow fix)"
   ]
 }

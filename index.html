@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v11.1</title>
+<title>CPIAAM — Sistem de Management v11.2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1016,7 +1016,7 @@ body{display:block!important;background:#fff!important}
 // CPIAAM — Core — IndexedDB & ID System
 // ═════════════════════════════════════════════════════════════
 
-const DB='CPIAAM4',VER=6,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum','objectives'];
+const DB='CPIAAM4',VER=7,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum','objectives','lab_isolates'];
 function odb(){return new Promise((ok,no)=>{const r=indexedDB.open(DB,VER);r.onupgradeneeded=e=>{const d=e.target.result;ST.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id',autoIncrement:true})})};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function ga(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result.filter(function(x){return!x._deleted}));r.onerror=()=>no(r.error)})}
 async function gaAll(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
@@ -1781,7 +1781,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='11.1';
+const APP_VERSION='11.2';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -2334,7 +2334,7 @@ ro:{
   sb_manual:'Manual de Utilizare',sb_backup:'Salveaza Backup',sb_termeni:'Termeni si Conditii',
   // Page titles
   pt_dashboard:'Dashboard',pt_iaam:'IAAM / Anchete Epidemiologice',pt_autocontrol:'Autocontrol Microbiologic',
-  pt_deseuri:'Deseuri Medicale',pt_biocide:'Gestiune Biocide',pt_pps:'PPS / Farmacovigilenta — Antibiotice',
+  pt_deseuri:'Deseuri Medicale',pt_biocide:'Gestiune Biocide',pt_pps:'PPS — Studiu de Prevalenta de Moment',
   pt_documente:'Documente / Autorizatii',pt_termene:'Raportari / Termene',pt_calendar:'Calendar',
   pt_audituri:'Audituri IPC',pt_instruire:'Instruire Personal',pt_rapoarte:'Generare Rapoarte',pt_multian:'Analiza Comparativa Multi-An',
   pt_config:'Configurare Sistem',pt_ajutor:'Ajutor / FAQ',pt_manual:'Manual de Utilizare',pt_changelog:'Istoric Versiuni',
@@ -2512,7 +2512,7 @@ en:{
   sb_gen_rapoarte:'Generate Reports',sb_config:'Settings',sb_despre:'About',sb_ajutor:'Help / FAQ',
   sb_manual:'User Manual',sb_backup:'Save Backup',sb_termeni:'Terms and Conditions',
   pt_dashboard:'Dashboard',pt_iaam:'HAI / Epidemiological Investigations',pt_autocontrol:'Microbiological Quality Control',
-  pt_deseuri:'Medical Waste Management',pt_biocide:'Biocide Management',pt_pps:'PPS / Pharmacovigilance — Antibiotics',
+  pt_deseuri:'Medical Waste Management',pt_biocide:'Biocide Management',pt_pps:'PPS — Point Prevalence Survey',
   pt_documente:'Documents / Authorizations',pt_termene:'Reports / Deadlines',pt_calendar:'Calendar',
   pt_audituri:'IPC Audits',pt_instruire:'Staff Training',pt_rapoarte:'Generate Reports',pt_multian:'Multi-Year Comparative Analysis',
   pt_config:'System Settings',pt_ajutor:'Help / FAQ',pt_manual:'User Manual',pt_changelog:'Version History',
@@ -2757,7 +2757,7 @@ function optsO(obj,sel){return Object.entries(obj).map(([k,v])=>'<option value="
 // NAVIGATION, MODAL, UTILITIES
 // ═══════════════════════════════════════════════════════════════
 const PT={dashboard:'Dashboard',iaam:'IAAM / Anchete Epidemiologice',autocontrol:'Autocontrol Microbiologic',
-  deseuri:'Deseuri Medicale',biocide:'Gestiune Biocide',pps:'PPS / Farmacovigilenta — Antibiotice',obiective:'Obiective SMART IPC',
+  deseuri:'Deseuri Medicale',biocide:'Gestiune Biocide',pps:'PPS — Studiu de Prevalenta',consum_atb:'Consum Antibiotice — DDD / AWaRe',obiective:'Obiective SMART IPC',
   documente:'Documente / Autorizatii',termene:'Raportari / Termene',multian:'Analiza Comparativa Multi-An',
   rapoarte:'Generare Rapoarte',config:'Configurare Sistem',ajutor:'Ajutor / FAQ',changelog:'Istoric Versiuni',about:'Despre',terms:'Termeni si Conditii'};
 
@@ -2811,7 +2811,7 @@ async function delRec(store,id){if(!confirm('Sigur stergi?'))return;await dl(sto
 // ═══════════════════════════════════════════════════════════════
 async function renderPage(p){const el=document.getElementById('pc');dch();switch(p){
   case'dashboard':return rDash(el);case'iaam':return rIAAM(el);case'autocontrol':return rAuto(el);
-  case'deseuri':return rDes(el);case'biocide':return rBio(el);case'pps':case'consum_atb':return rPpsAtbCombo(el,p);
+  case'deseuri':return rDes(el);case'biocide':return rBio(el);case'pps':return rPPS(el);case'consum_atb':return rConsumATB(el);
   case'antibiograma':return rAntibiograma(el);case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
   case'audituri':return rAudit(el);case'obiective':return rObiective(el);case'instruire':return rInstr(el);
   case'rapoarte':return rRap(el);case'multian':return rMultiAn(el);case'config':return rCfg(el);case'ajutor':return rAjutor(el);
@@ -3561,7 +3561,13 @@ function renderIaamSection(step){
       '<div id="f-bul-list">'+renderBulletinRows()+'</div>'+
       '<button class="btn bo bsm" onclick="addBulletinRow()" style="margin-top:6px">'+T('iaam_add_bulletin')+'</button></div>'+
       '<div class="fr"><div class="fg"><label>Mod depistare</label><select id="f-dep"><option value="activa" '+(d.detection==='activa'?'selected':'')+'>Activa (supraveghere activa)</option><option value="pasiva" '+(d.detection==='pasiva'?'selected':'')+'>Pasiva (simptomatologie clinica)</option><option value="pps" '+(d.detection==='pps'?'selected':'')+'>Studiu de prevalenta (PPS)</option><option value="screening" '+(d.detection==='screening'?'selected':'')+'>Screening</option></select></div>'+
-      '<div class="fg"><label>Colonizare / Infectie activa</label><select id="f-act"><option value="infectie" '+(d.active_type!=='colonizare'?'selected':'')+'>Infectie activa</option><option value="colonizare" '+(d.active_type==='colonizare'?'selected':'')+'>Colonizare</option></select></div></div>';
+      '<div class="fg"><label>Colonizare / Infectie activa</label><select id="f-act"><option value="infectie" '+(d.active_type!=='colonizare'?'selected':'')+'>Infectie activa</option><option value="colonizare" '+(d.active_type==='colonizare'?'selected':'')+'>Colonizare</option></select></div></div>'+
+      '<hr style="border:none;border-top:1px solid var(--brd);margin:18px 0 14px">'+
+      '<div class="fg"><label>Data negativare</label><input type="date" id="f-dneg" value="'+(d.date_negativare||'')+'"><small style="display:block;margin-top:4px;color:var(--txtL);font-size:11px">Optional — data buletinului negativ care confirma vindecarea microbiologica</small></div>'+
+      '<div class="fg"><label>Buletine analize negativare</label>'+
+      (()=>{if(!Array.isArray(_iaamDraft.bulletins_neg))_iaamDraft.bulletins_neg=[];return ''})()+
+      '<div id="f-bulneg-list">'+renderBulletinNegRows()+'</div>'+
+      '<button class="btn bo bsm" onclick="addBulletinNegRow()" style="margin-top:6px">+ Adauga buletin negativare</button></div>';
     break;
   case 3: // Etiology
     h='<div class="fg"><label>Adauga germen (Anexa 11 ECDC)</label>'+
@@ -3656,6 +3662,8 @@ function collectIaamSection(step){
     // bulletins already in sync via oninput handlers; generate backward-compat bulletin_nr
     d.bulletin_nr=(d.bulletins||[]).map(b=>b.nr).filter(Boolean).join(', ');
     d.detection=v('f-dep');d.active_type=v('f-act');
+    d.date_negativare=v('f-dneg');
+    // bulletins_neg already in sync via oninput handlers
     break;
   case 3:
     d.germeni=JSON.parse(JSON.stringify(_iaamGermeni));
@@ -3966,6 +3974,28 @@ function removeBulletin(i){
   const el=document.getElementById('f-bul-list');if(el)el.innerHTML=renderBulletinRows();
 }
 
+// ═══ Bulletin negativare rows ═══
+function renderBulletinNegRows(){
+  const arr=_iaamDraft.bulletins_neg;
+  if(!Array.isArray(arr)||arr.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun buletin negativare</div>';
+  return arr.map((b,i)=>
+    '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+
+    '<input placeholder="Nr. buletin" value="'+esc(b.nr||'')+'" oninput="_iaamDraft.bulletins_neg['+i+'].nr=this.value" style="flex:1">'+
+    '<input type="date" value="'+(b.date||'')+'" oninput="_iaamDraft.bulletins_neg['+i+'].date=this.value" style="flex:1">'+
+    '<button class="contact-del" onclick="removeBulletinNeg('+i+')">&times;</button></div>'
+  ).join('');
+}
+function addBulletinNegRow(){
+  if(!Array.isArray(_iaamDraft.bulletins_neg))_iaamDraft.bulletins_neg=[];
+  _iaamDraft.bulletins_neg.push({nr:'',date:''});markFormDirty();
+  const el=document.getElementById('f-bulneg-list');if(el)el.innerHTML=renderBulletinNegRows();
+}
+function removeBulletinNeg(i){
+  if(!Array.isArray(_iaamDraft.bulletins_neg))return;
+  _iaamDraft.bulletins_neg.splice(i,1);markFormDirty();
+  const el=document.getElementById('f-bulneg-list');if(el)el.innerHTML=renderBulletinNegRows();
+}
+
 async function calcRegNumber(year){
   const all=(await ga('iaam')).filter(r=>r.year===year);
   return String(all.length+1);
@@ -3985,7 +4015,7 @@ async function editIAAM(id){
     _iaamDraft={year:A.year,month:new Date().getMonth()+1,section:lastSec,mediu:'Urban',
       detection:'activa',active_type:'infectie',risk_factors:[],measures:[],
       germeni:[],antibiotics:[],contacts:'Fara contacti de salon',outbreak:'nu',
-      prev_admissions:[],bulletins:[],comorbidities:[]};
+      prev_admissions:[],bulletins:[],bulletins_neg:[],comorbidities:[]};
     _iaamEditId=null;
     _iaamDraft.reg_number=await calcRegNumber(A.year);
   }
@@ -5780,30 +5810,151 @@ async function processHelicsWin(){
 }
 
 // ═══════════════════════════════════════════════════════════════
+var _ppsChartOpen=false;
 async function rPPS(el){
-  const data=(await ga('pps')).filter(r=>r.year===A.year).sort((a,b)=>(a.section||'').localeCompare(b.section||''));
+  const allPps=await ga('pps');
+  const data=allPps.filter(r=>r.year===A.year&&r.type!=='study_meta').sort((a,b)=>(a.section||'').localeCompare(b.section||''));
+  const meta=allPps.find(r=>r.year===A.year&&r.type==='study_meta')||{};
   const totPat=data.reduce((s,r)=>s+(+r.patients||0),0);
   const totAU=data.reduce((s,r)=>s+(+r.patients_au||0),0);
-  const auPct=totPat>0?(totAU/totPat*100).toFixed(1):'0';
-  el.innerHTML='<div class="ib inf">Date pentru Studiul de Prevalenta de Moment (PPS ECDC) si analiza utilizarii antibioticelor.</div>'+
-  '<div class="kg">'+
-    '<div class="kc bl"><div class="kl">Pacienti Evaluati</div><div class="kv">'+totPat+'</div></div>'+
-    '<div class="kc am"><div class="kl">Cu Antibiotice</div><div class="kv">'+totAU+'</div><div class="ks">AU: '+auPct+'%</div></div>'+
-    '<div class="kc rd"><div class="kl">IAAM Identificate (PPS)</div><div class="kv">'+data.reduce((s,r)=>s+(+r.iaam_found||0),0)+'</div></div></div>'+
-  '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'+
-    '<div class="bg"><button class="btn bo bsm" onclick="importHelicsWin()">Import HelicsWin (CSV/Excel)</button></div>'+
-    '<button class="btn bp" onclick="editPPS()">+ Adauga Sectie PPS</button></div>'+
-  '<div class="pn"><div class="pb" style="overflow-x:auto">'+
-  (data.length===0?'<div class="es"><p>Nicio inregistrare PPS.</p></div>':
-    '<table class="dt"><thead><tr><th>Sectie</th><th>Data PPS</th><th>N pacienti</th><th>Cu AB</th><th>AU%</th><th>IAAM</th><th>Nr. prescriptii</th><th>Actiuni</th></tr></thead><tbody>'+
-    data.map(r=>'<tr><td>'+rSec(r.section)+'</td><td>'+(r.date_pps||'')+'</td><td>'+(r.patients||0)+'</td>'+
-      '<td>'+(r.patients_au||0)+'</td><td>'+(r.patients>0?((r.patients_au/r.patients)*100).toFixed(1)+'%':'—')+'</td>'+
-      '<td>'+(r.iaam_found||0)+'</td><td>'+(r.prescriptions||0)+'</td>'+
-      '<td class="act"><button onclick="editPPS('+r.id+')">&#9998;</button><button onclick="delRec(\'pps\','+r.id+')">&#128465;</button></td></tr>').join('')+
-    '<tr style="background:var(--navy);color:#fff;font-weight:700"><td>TOTAL</td><td></td><td>'+totPat+'</td><td>'+totAU+'</td><td>'+auPct+'%</td>'+
-      '<td>'+data.reduce((s,r)=>s+(+r.iaam_found||0),0)+'</td><td>'+data.reduce((s,r)=>s+(+r.prescriptions||0),0)+'</td><td></td></tr>'+
-    '</tbody></table>')+
-  '</div></div>';
+  const totIAAM=data.reduce((s,r)=>s+(+r.iaam_found||0),0);
+  const totRx=data.reduce((s,r)=>s+(+r.prescriptions||0),0);
+  const totDoc=data.reduce((s,r)=>s+(+r.documented||0),0);
+  const auPct=totPat>0?(totAU/totPat*100).toFixed(1):'0.0';
+  const iaamPct=totPat>0?(totIAAM/totPat*100).toFixed(1):'0.0';
+  const docPct=totRx>0?(totDoc/totRx*100).toFixed(1):'0.0';
+  const docOk=totRx===0||+docPct>=80;
+
+  // ── Info box ──
+  var h='<div class="ib inf">Studiul de Prevalenta de Moment (PPS) conform protocolului ECDC. Se realizeaza 1-2 ori pe an. '+
+    'Pentru introducere detaliata la nivel de pacient, folositi <strong>HelicsWin</strong> (helicswin.net) si importati rezultatele.</div>';
+
+  // ── KPI-uri ──
+  h+='<div class="kg">'+
+    '<div class="kc bl"><div class="kl">PACIENTI EVALUATI</div><div class="kv">'+totPat+'</div></div>'+
+    '<div class="kc am"><div class="kl">PREVALENTA AB (AU%)</div><div class="kv">'+auPct+'%</div><div class="ks">'+totAU+' pacienti cu AB</div></div>'+
+    '<div class="kc rd"><div class="kl">PREVALENTA IAAM</div><div class="kv">'+iaamPct+'%</div><div class="ks">'+totIAAM+' IAAM identificate</div></div>'+
+    '<div class="kc '+(docOk?'gn':'rd')+'"><div class="kl">INDICATIE DOCUMENTATA</div><div class="kv">'+docPct+'%</div><div class="ks">'+(docOk?'&#10003; Conform':'&#9888; Sub 80%')+'</div></div></div>';
+
+  // ── Metadata studiu ──
+  h+='<div class="pn" style="margin-bottom:16px"><div class="pb">'+
+    '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">'+
+    '<div class="fg" style="min-width:160px"><label>Data studiului PPS</label><input type="date" id="pps-meta-date" value="'+(meta.study_date||'')+'" onchange="savePPSMeta()"></div>'+
+    '<div class="fg" style="min-width:200px"><label>Coordonator studiu</label><select id="pps-meta-coord" onchange="savePPSMeta()"><option value="">— selecteaza —</option>'+
+    (CFG.people||[]).map(p=>'<option value="'+esc(p.name)+'"'+(meta.coordinator===p.name?' selected':'')+'>'+esc(p.name)+'</option>').join('')+'</select></div>'+
+    '<div class="fg" style="flex:1;min-width:200px"><label>Observatii studiu</label><textarea id="pps-meta-notes" rows="2" onchange="savePPSMeta()" style="font-size:12px">'+(meta.study_notes||'')+'</textarea></div>'+
+    '</div></div></div>';
+
+  // ── Butoane actiuni ──
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+    '<button class="btn bo bsm" onclick="importHelicsWin()">&#128194; Import HelicsWin</button>'+
+    '<button class="btn bo bsm" onclick="exportPPSWord()">&#128196; Export Word</button></div>'+
+    '<button class="btn bp" onclick="editPPS()">+ Adauga Sectie PPS</button></div>';
+
+  // ── Tabel date per sectie ──
+  h+='<div class="pn"><div class="pb" style="overflow-x:auto">';
+  if(data.length===0){
+    h+='<div class="es"><p>Nicio inregistrare PPS pentru '+A.year+'. Adauga manual sau importa din HelicsWin.</p></div>';
+  } else {
+    h+='<table class="dt"><thead><tr><th>Sectie</th><th>Data PPS</th><th>N pacienti</th><th>Cu AB</th><th>AU%</th><th>IAAM</th><th>Prescriptii</th><th>Ind. doc.</th><th>Actiuni</th></tr></thead><tbody>';
+    data.forEach(r=>{
+      const rAU=r.patients>0?((r.patients_au/r.patients)*100).toFixed(1)+'%':'—';
+      const rDoc=r.prescriptions>0?((r.documented/r.prescriptions)*100).toFixed(0)+'%':'—';
+      h+='<tr><td>'+rSec(r.section)+'</td><td>'+(r.date_pps||'')+'</td><td>'+(r.patients||0)+'</td>'+
+        '<td>'+(r.patients_au||0)+'</td><td>'+rAU+'</td><td>'+(r.iaam_found||0)+'</td>'+
+        '<td>'+(r.prescriptions||0)+'</td><td>'+rDoc+'</td>'+
+        '<td class="act"><button onclick="editPPS('+r.id+')">&#9998;</button><button onclick="delRec(\'pps\','+r.id+')">&#128465;</button></td></tr>';
+    });
+    h+='<tr style="background:var(--navy);color:#fff;font-weight:700"><td>TOTAL</td><td></td><td>'+totPat+'</td><td>'+totAU+'</td><td>'+auPct+'%</td>'+
+      '<td>'+totIAAM+'</td><td>'+totRx+'</td><td>'+docPct+'%</td><td></td></tr>';
+    h+='</tbody></table>';
+  }
+  h+='</div></div>';
+
+  // ── Grafic AU% per sectie (colapsabil) ──
+  if(data.length>0){
+    h+='<div class="ac-collapse-hdr ac-chart-hdr" onclick="_ppsChartOpen=!_ppsChartOpen;this.nextElementSibling.classList.toggle(\'open\');this.querySelector(\'.ac-arrow\').classList.toggle(\'open\');if(_ppsChartOpen)renderPPSChart()" style="margin-top:16px">'+
+      '<span>&#128202; Grafic AU% per sectie</span><span class="ac-arrow'+(_ppsChartOpen?' open':'')+'">&#9654;</span></div>'+
+      '<div class="ac-collapse-body'+(_ppsChartOpen?' open':'')+'"><div class="pn"><div class="pb">'+
+      '<canvas id="pps-chart-au" height="260"></canvas></div></div></div>';
+  }
+
+  // ── Comparatie multi-an ──
+  var years=[];
+  var allYears=[...new Set(allPps.filter(r=>r.type!=='study_meta').map(r=>r.year))].sort();
+  if(allYears.length>=2){
+    allYears.forEach(y=>{
+      var yd=allPps.filter(r=>r.year===y&&r.type!=='study_meta');
+      var yPat=yd.reduce((s,r)=>s+(+r.patients||0),0);
+      var yAU=yd.reduce((s,r)=>s+(+r.patients_au||0),0);
+      var yIAAM=yd.reduce((s,r)=>s+(+r.iaam_found||0),0);
+      var yRx=yd.reduce((s,r)=>s+(+r.prescriptions||0),0);
+      var yDoc=yd.reduce((s,r)=>s+(+r.documented||0),0);
+      years.push({year:y,pat:yPat,auPct:yPat>0?(yAU/yPat*100).toFixed(1):'0',iaamPct:yPat>0?(yIAAM/yPat*100).toFixed(1):'0',docPct:yRx>0?(yDoc/yRx*100).toFixed(1):'0'});
+    });
+    h+='<div class="pn" style="margin-top:16px"><div class="ph"><h3>Comparatie Multi-An PPS</h3></div><div class="pb" style="overflow-x:auto">'+
+      '<table class="dt"><thead><tr><th>An</th><th>Pacienti</th><th>AU%</th><th>Prevalenta IAAM%</th><th>Ind. Documentata%</th></tr></thead><tbody>';
+    years.forEach((y,i)=>{
+      var prev=i>0?years[i-1]:null;
+      var arrow=function(cur,prv){if(!prv)return '';var c=parseFloat(cur),p=parseFloat(prv);if(c>p)return ' <span style="color:var(--red)">&#9650;</span>';if(c<p)return ' <span style="color:var(--green)">&#9660;</span>';return ' <span style="color:var(--txtL)">&#9654;</span>'};
+      h+='<tr'+(y.year===A.year?' style="font-weight:700"':'')+'><td>'+y.year+'</td><td>'+y.pat+'</td>'+
+        '<td>'+y.auPct+'%'+arrow(y.auPct,prev?.auPct)+'</td>'+
+        '<td>'+y.iaamPct+'%'+arrow(y.iaamPct,prev?.iaamPct)+'</td>'+
+        '<td>'+y.docPct+'%'+arrow(y.docPct,prev?.docPct)+'</td></tr>';
+    });
+    h+='</tbody></table></div></div>';
+  }
+
+  el.innerHTML=h;
+  if(_ppsChartOpen&&data.length>0)setTimeout(()=>renderPPSChart(),100);
+}
+
+// ── Grafic AU% per sectie ──
+function renderPPSChart(){
+  var canvas=document.getElementById('pps-chart-au');if(!canvas)return;
+  if(A.charts.ppsAU){try{A.charts.ppsAU.destroy()}catch(e){}}
+  var el=document.getElementById('pc');
+  var rows=document.querySelectorAll('.dt tbody tr');
+  var labels=[],values=[];
+  rows.forEach(tr=>{
+    var tds=tr.querySelectorAll('td');
+    if(tds.length>=5&&tds[0].textContent!=='TOTAL'){
+      labels.push(tds[0].textContent);
+      var v=parseFloat(tds[4].textContent);
+      values.push(isNaN(v)?0:v);
+    }
+  });
+  if(labels.length===0)return;
+  var avg=values.reduce((a,b)=>a+b,0)/values.length;
+  var isDark=document.body.classList.contains('dark');
+  A.charts.ppsAU=new Chart(canvas,{type:'bar',data:{
+    labels:labels,
+    datasets:[{label:'AU%',data:values,backgroundColor:values.map(v=>v>avg?'rgba(239,68,68,0.7)':'rgba(45,212,191,0.7)'),borderRadius:4}]
+  },options:{responsive:true,maintainAspectRatio:false,scales:{
+    y:{beginAtZero:true,max:100,ticks:{color:isDark?'#94A3B8':'#64748B'},grid:{color:isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)'}},
+    x:{ticks:{color:isDark?'#94A3B8':'#64748B',maxRotation:45},grid:{display:false}}
+  },plugins:{
+    legend:{display:false},
+    annotation:{annotations:{avgLine:{type:'line',yMin:avg,yMax:avg,borderColor:'#F59E0B',borderWidth:2,borderDash:[6,4],
+      label:{display:true,content:'Media: '+avg.toFixed(1)+'%',position:'end',backgroundColor:'#F59E0B',color:'#fff',font:{size:11}}}}}
+  }}});
+}
+
+// ── Salvare metadata studiu PPS ──
+async function savePPSMeta(){
+  var allPps=await ga('pps');
+  var existing=allPps.find(r=>r.year===A.year&&r.type==='study_meta');
+  var rec=existing?{...existing}:{year:A.year,type:'study_meta'};
+  rec.study_date=document.getElementById('pps-meta-date')?.value||'';
+  rec.coordinator=document.getElementById('pps-meta-coord')?.value||'';
+  rec.study_notes=document.getElementById('pps-meta-notes')?.value||'';
+  await pt('pps',rec);
+}
+
+// ── Export Word PPS (placeholder) ──
+async function exportPPSWord(){
+  alert('Export Word PPS — va fi implementat in faza urmatoare.');
 }
 async function editPPS(id){
   let r=id?(await ga('pps')).find(x=>x.id===id):{year:A.year};
@@ -5828,22 +5979,7 @@ async function savePPS(id){
   if(id)rec.id=id;await pt('pps',rec);closeM();render();
 }
 
-// ── Combo PPS + Consum ATB ──
-var _ppsAtbTab='pps';
-async function rPpsAtbCombo(el,activePage){
-  if(activePage==='consum_atb')_ppsAtbTab='consum_atb';
-  var isEN=CFG.lang==='en';
-  var tabs='<div class="ac-tabs" style="margin-bottom:16px">'+
-    '<button class="ac-ttab'+(_ppsAtbTab==='pps'?' on':'')+'" onclick="_ppsAtbTab=\'pps\';render()">PPS '+(isEN?'(Point Prevalence)':'(Prevalenta de Moment)')+'</button>'+
-    '<button class="ac-ttab'+(_ppsAtbTab==='consum_atb'?' on':'')+'" onclick="_ppsAtbTab=\'consum_atb\';render()">'+(isEN?'Antibiotic Consumption (DDD)':'Consum Antibiotice (DDD)')+'</button>'+
-    '<button class="ac-ttab'+(_ppsAtbTab==='antibiograma'?' on':'')+'" onclick="nav(\'antibiograma\')">'+(isEN?'Antibiogram':'Antibiograma')+'</button>'+
-  '</div>';
-  var container=document.createElement('div');
-  el.innerHTML=tabs+'<div id="pps-atb-content"></div>';
-  var content=document.getElementById('pps-atb-content');
-  if(_ppsAtbTab==='pps')await rPPS(content);
-  else if(_ppsAtbTab==='consum_atb')await rConsumATB(content);
-}
+
 
 
 </script>
@@ -5854,29 +5990,37 @@ async function rPpsAtbCombo(el,activePage){
 
 // 5B.1 — ANTIBIOGRAMA LOCALA
 // ═══════════════════════════════════════════════════════════════
-function buildAntibiogramMatrix(cases,year,secFilter){
-  const filtered=cases.filter(r=>r.year===year&&(!secFilter||r.section===secFilter));
-  // Collect all germeni with susceptibility data
-  const gMap={};// code → {name, isolates:[{susceptibility}]}
-  filtered.forEach(r=>{
-    (r.germeni||[]).forEach(g=>{
-      if(!g.susceptibility||g.susceptibility.length===0)return;
-      const key=g.code||g.name;
-      if(!gMap[key])gMap[key]={code:g.code,name:g.name,isolates:[]};
-      gMap[key].isolates.push(g.susceptibility);
-    });
+// buildAntibiogramMatrix — citeste din lab_isolates (prioritar) sau iaam (fallback)
+// filters: {year, section, sampleType, source, period, firstIsolateOnly}
+function buildAntibiogramMatrixFromLab(isolates,filters){
+  let data=isolates.filter(r=>r.year===(filters.year||A.year));
+  if(filters.section)data=data.filter(r=>r.section===filters.section);
+  if(filters.sampleType)data=data.filter(r=>r.sample_type===filters.sampleType);
+  if(filters.source==='iaam')data=data.filter(r=>r.source==='iaam');
+  else if(filters.source==='lab')data=data.filter(r=>r.source==='lab');
+  if(filters.period){
+    var pm={T1:[1,2,3],T2:[4,5,6],T3:[7,8,9],T4:[10,11,12]};
+    if(pm[filters.period])data=data.filter(r=>{var m=r.date?parseInt(r.date.split('-')[1]):0;return pm[filters.period].includes(m)});
+  }
+  if(filters.firstIsolateOnly){
+    // Keep only first isolate per organism (approximated: first per nr_buletin per organism)
+    var seen={};data=data.filter(r=>{var k=r.organism+'|'+r.nr_buletin;if(seen[k])return false;seen[k]=true;return true});
+  }
+
+  const gMap={};
+  data.forEach(r=>{
+    if(!r.susceptibility||r.susceptibility.length===0)return;
+    const key=r.organism_code||r.organism;
+    if(!gMap[key])gMap[key]={code:r.organism_code||'',name:r.organism,isolates:[],iaamCount:0};
+    gMap[key].isolates.push(r.susceptibility);
+    if(r.source==='iaam')gMap[key].iaamCount++;
   });
-  // Build atb set (only those that appear in data)
+
   const atbSet=new Set();
-  Object.values(gMap).forEach(gd=>{gd.isolates.forEach(sus=>{sus.forEach(s=>{atbSet.add(s.atb_code)})})});
-  // Build ATB columns ordered by ATB_LIST
+  Object.values(gMap).forEach(gd=>{gd.isolates.forEach(sus=>{sus.forEach(s=>{if(s.atb_code)atbSet.add(s.atb_code)})})});
   const atbCols=[];
-  ATB_LIST.forEach(grp=>{
-    grp.items.forEach(atb=>{
-      if(atbSet.has(atb.a))atbCols.push({code:atb.a,name:atb.n,group:grp.g});
-    });
-  });
-  // Build germen rows
+  ATB_LIST.forEach(grp=>{grp.items.forEach(atb=>{if(atbSet.has(atb.a))atbCols.push({code:atb.a,name:atb.n,group:grp.g})})});
+
   const germeni=Object.values(gMap).map(gd=>{
     const count=gd.isolates.length;
     const atbs=atbCols.map(ac=>{
@@ -5887,53 +6031,142 @@ function buildAntibiogramMatrix(cases,year,secFilter){
       });
       return{code:ac.code,name:ac.name,tested,susceptible,pctS:tested>0?Math.round(susceptible/tested*100):null};
     });
+    return{code:gd.code,name:gd.name,count,iaamCount:gd.iaamCount,atbs};
+  }).sort((a,b)=>b.count-a.count);
+  return{germeni,atbCols,totalIsolates:data.length,totalIAAM:data.filter(r=>r.source==='iaam').length};
+}
+
+// Legacy wrapper — fallback pe IAAM daca lab_isolates gol
+function buildAntibiogramMatrix(cases,year,secFilter){
+  const filtered=cases.filter(r=>r.year===year&&(!secFilter||r.section===secFilter));
+  const gMap={};
+  filtered.forEach(r=>{
+    (r.germeni||[]).forEach(g=>{
+      if(!g.susceptibility||g.susceptibility.length===0)return;
+      const key=g.code||g.name;
+      if(!gMap[key])gMap[key]={code:g.code,name:g.name,isolates:[]};
+      gMap[key].isolates.push(g.susceptibility);
+    });
+  });
+  const atbSet=new Set();
+  Object.values(gMap).forEach(gd=>{gd.isolates.forEach(sus=>{sus.forEach(s=>{atbSet.add(s.atb_code)})})});
+  const atbCols=[];
+  ATB_LIST.forEach(grp=>{grp.items.forEach(atb=>{if(atbSet.has(atb.a))atbCols.push({code:atb.a,name:atb.n,group:grp.g})})});
+  const germeni=Object.values(gMap).map(gd=>{
+    const count=gd.isolates.length;
+    const atbs=atbCols.map(ac=>{
+      let tested=0,susceptible=0;
+      gd.isolates.forEach(sus=>{const entry=sus.find(s=>s.atb_code===ac.code);if(entry){tested++;if(entry.result==='S')susceptible++}});
+      return{code:ac.code,name:ac.name,tested,susceptible,pctS:tested>0?Math.round(susceptible/tested*100):null};
+    });
     return{code:gd.code,name:gd.name,count,atbs};
-  }).sort((a,b)=>b.count-a.count);// Sort by isolate count desc
+  }).sort((a,b)=>b.count-a.count);
   return{germeni,atbCols};
 }
 
+var _abgSource='lab'; // 'lab' = from lab_isolates, 'iaam' = fallback
 async function rAntibiograma(el){
-  const cases=await ga('iaam');const E=CFG.lang==='en';
-  // KPI calc
-  const yc=cases.filter(r=>r.year===A.year);
-  let totalAbg=0,totalMDR=0,germCounts={};
-  yc.forEach(r=>{(r.germeni||[]).forEach(g=>{
-    if(g.susceptibility&&g.susceptibility.length>0){totalAbg++;const k=g.code||g.name;germCounts[k]=(germCounts[k]||0)+1;if(g.mdr&&g.mdr!=='Nu')totalMDR++}
-  })});
-  const top3=Object.entries(germCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>{const n=germenName(k);return(n||k)+' ('+v+')'}).join(', ')||'—';
-  // Mean susceptibility
-  let sumS=0,sumT=0;
-  yc.forEach(r=>{(r.germeni||[]).forEach(g=>{(g.susceptibility||[]).forEach(s=>{sumT++;if(s.result==='S')sumS++})})});
-  const meanS=sumT>0?Math.round(sumS/sumT*100):0;
+  const labData=await ga('lab_isolates');
+  const useLab=labData.length>0;
+  _abgSource=useLab?'lab':'iaam';
 
-  // Sections dropdown
-  const secOpts='<option value="">'+T('abg_filtru_sec')+'</option>'+
-    (CFG.sections||[]).map(s=>'<option value="'+s.id+'">'+sn(s)+'</option>').join('');
+  let totalIsolates=0,totalIAAM=0,germCounts={},sumS=0,sumT=0,meanS=0,top3='—';
 
-  let h='<div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px">'+
-    '<div class="kc" style="flex:1;min-width:180px"><div class="kl">'+T('abg_total')+'</div><div class="kv">'+totalAbg+'</div></div>'+
-    '<div class="kc" style="flex:1;min-width:180px;border-left-color:var(--red)"><div class="kl">'+T('abg_mdr')+'</div><div class="kv">'+(totalAbg>0?Math.round(totalMDR/totalAbg*100):0)+'%<span style="font-size:12px;color:var(--txtL)"> ('+totalMDR+')</span></div></div>'+
-    '<div class="kc" style="flex:1;min-width:180px;border-left-color:var(--teal)"><div class="kl">'+T('abg_top3')+'</div><div class="kv" style="font-size:14px">'+esc(top3)+'</div></div>'+
-    '<div class="kc" style="flex:1;min-width:180px;border-left-color:var(--green)"><div class="kl">'+T('abg_sens')+'</div><div class="kv">'+meanS+'%</div></div>'+
+  if(useLab){
+    const yData=labData.filter(r=>r.year===A.year);
+    totalIsolates=yData.length;
+    totalIAAM=yData.filter(r=>r.source==='iaam').length;
+    yData.forEach(r=>{
+      const k=r.organism_code||r.organism;germCounts[k]=(germCounts[k]||0)+1;
+      (r.susceptibility||[]).forEach(s=>{sumT++;if(s.result==='S')sumS++});
+    });
+  } else {
+    const cases=(await ga('iaam')).filter(r=>r.year===A.year);
+    cases.forEach(r=>{(r.germeni||[]).forEach(g=>{
+      if(g.susceptibility&&g.susceptibility.length>0){totalIsolates++;const k=g.code||g.name;germCounts[k]=(germCounts[k]||0)+1;
+      g.susceptibility.forEach(s=>{sumT++;if(s.result==='S')sumS++})}
+    })});
+  }
+  meanS=sumT>0?Math.round(sumS/sumT*100):0;
+  const germeniDist=new Set(Object.keys(germCounts)).size;
+  top3=Object.entries(germCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>{const n=germenName(k);return(n||k)+' ('+v+')'}).join(', ')||'—';
+
+  // Collect unique sample types from lab data
+  const sampleTypes=[...new Set(labData.filter(r=>r.year===A.year).map(r=>r.sample_type).filter(Boolean))].sort();
+
+  // Info box / fallback warning
+  let h='';
+  if(!useLab){
+    h+='<div class="ib wrn">Nu exista date importate din laborator. Se afiseaza datele din cazurile IAAM.<br>'+
+      '<strong>Importa datele din laborator</strong> pentru antibiograma completa.</div>';
+  } else {
+    h+='<div class="ib inf">Profil de rezistenta antimicrobiana — date importate din laborator. '+totalIsolates+' izolate, '+germeniDist+' germeni diferiti.</div>';
+  }
+
+  // KPI-uri
+  h+='<div class="kg">'+
+    '<div class="kc bl"><div class="kl">TOTAL IZOLATE</div><div class="kv">'+totalIsolates+'</div><div class="ks">'+A.year+'</div></div>'+
+    '<div class="kc tl"><div class="kl">GERMENI DIFERITI</div><div class="kv">'+germeniDist+'</div></div>'+
+    '<div class="kc '+(meanS>=70?'gn':'am')+'"><div class="kl">SENSIBILITATE MEDIE</div><div class="kv">'+meanS+'%</div></div>'+
+    (useLab?'<div class="kc rd"><div class="kl">IZOLATE IAAM</div><div class="kv">'+totalIAAM+'</div><div class="ks">'+(totalIsolates>0?Math.round(totalIAAM/totalIsolates*100):0)+'% din total</div></div>':'')+
+    '<div class="kc" style="flex:1;min-width:200px;border-left-color:var(--teal)"><div class="kl">TOP 3 GERMENI</div><div class="kv" style="font-size:13px">'+esc(top3)+'</div></div>'+
   '</div>';
 
-  // Filters + export
-  h+='<div class="pn"><div class="ph" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h3>'+T('pt_antibiograma')+'</h3>'+
-    '<div style="display:flex;gap:8px;align-items:center">'+
-    '<select id="abg-sec-filter" onchange="abgRefreshMatrix()" style="padding:5px 8px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:var(--f)">'+secOpts+'</select>'+
+  // Filtre + butoane
+  var secOpts='<option value="">Toate sectiile</option>'+(CFG.sections||[]).map(s=>'<option value="'+s.id+'">'+sn(s)+'</option>').join('');
+  var sampleOpts='<option value="">Toate tipurile</option>'+sampleTypes.map(t=>'<option value="'+esc(t)+'">'+esc(t)+'</option>').join('');
+
+  h+='<div class="pn"><div class="ph" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h3>Antibiograma Locala</h3>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
+    '<button class="btn bs bsm" onclick="importLabCSV()">&#128194; Import CSV Laborator</button>'+
     '<button class="btn bp bsm" onclick="genAntibiogramaWord()">'+T('abg_export_word')+'</button>'+
     '<button class="btn bo bsm" onclick="genAntibiogramaWHONET()">'+T('abg_export_whonet')+'</button>'+
-    '</div></div>'+
-    '<div class="pb">'+
-    '<div class="abg-legend">'+
-      '<span><i style="background:#DCFCE7"></i> '+T('abg_verde')+'</span>'+
-      '<span><i style="background:#FEF9C3"></i> '+T('abg_galben')+'</span>'+
-      '<span><i style="background:#FEE2E2"></i> '+T('abg_rosu')+'</span>'+
-      '<span><i style="background:var(--bg)"></i> '+T('abg_gri')+'</span>'+
-      '<span style="font-style:italic;color:var(--txtL)">'+T('abg_low_n')+'</span>'+
-    '</div>'+
-    '<div id="abg-matrix-wrap"></div>'+
-  '</div></div>';
+    '</div></div><div class="pb">';
+
+  // Filter row
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">';
+  h+='<select id="abg-sec-filter" onchange="abgRefreshMatrix()" style="padding:5px 8px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:var(--f)">'+secOpts+'</select>';
+  if(useLab){
+    h+='<select id="abg-sample-filter" onchange="abgRefreshMatrix()" style="padding:5px 8px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:var(--f)">'+sampleOpts+'</select>';
+    h+='<select id="abg-source-filter" onchange="abgRefreshMatrix()" style="padding:5px 8px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:var(--f)">'+
+      '<option value="">Sursa: Toate</option><option value="iaam">Doar IAAM</option><option value="lab">Doar non-IAAM</option></select>';
+    h+='<select id="abg-period-filter" onchange="abgRefreshMatrix()" style="padding:5px 8px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:var(--f)">'+
+      '<option value="">Anul complet</option><option value="T1">T1 (Ian-Mar)</option><option value="T2">T2 (Apr-Iun)</option><option value="T3">T3 (Iul-Sep)</option><option value="T4">T4 (Oct-Dec)</option></select>';
+    h+='<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--txtL);cursor:pointer"><input type="checkbox" id="abg-first-isolate" onchange="abgRefreshMatrix()"> Primul izolat/pacient</label>';
+  }
+  h+='</div>';
+
+  // Legenda
+  h+='<div class="abg-legend">'+
+    '<span><i style="background:#DCFCE7"></i> '+T('abg_verde')+'</span>'+
+    '<span><i style="background:#FEF9C3"></i> '+T('abg_galben')+'</span>'+
+    '<span><i style="background:#FEE2E2"></i> '+T('abg_rosu')+'</span>'+
+    '<span><i style="background:var(--bg)"></i> '+T('abg_gri')+'</span>'+
+    '<span style="font-style:italic;color:var(--txtL)">'+T('abg_low_n')+'</span>'+
+  '</div>';
+  h+='<div id="abg-matrix-wrap"></div>';
+  h+='</div></div>';
+
+  // Istoric importuri (doar daca useLab)
+  if(useLab){
+    var batches={};
+    labData.filter(r=>r.year===A.year).forEach(r=>{
+      var b=r._import_batch||'—';
+      if(!batches[b])batches[b]={count:0,date:r._createdAt||''};
+      batches[b].count++;
+      if(r._createdAt&&r._createdAt>batches[b].date)batches[b].date=r._createdAt;
+    });
+    var batchList=Object.entries(batches);
+    if(batchList.length>0){
+      h+='<div class="pn" style="margin-top:16px"><div class="ph"><h3>Istoric Importuri Laborator</h3></div><div class="pb" style="overflow-x:auto">'+
+        '<table class="dt"><thead><tr><th>Batch / Label</th><th>Nr. izolate</th><th>Data import</th></tr></thead><tbody>';
+      batchList.forEach(([b,info])=>{
+        h+='<tr><td>'+esc(b)+'</td><td>'+info.count+'</td><td>'+(info.date?info.date.substring(0,10):'—')+'</td></tr>';
+      });
+      h+='</tbody></table></div></div>';
+    }
+  }
+
   el.innerHTML=h;
   abgRefreshMatrix();
 }
@@ -5941,8 +6174,23 @@ async function rAntibiograma(el){
 async function abgRefreshMatrix(){
   const wrap=document.getElementById('abg-matrix-wrap');if(!wrap)return;
   const secFilter=document.getElementById('abg-sec-filter')?.value||'';
-  const cases=await ga('iaam');
-  const{germeni,atbCols}=buildAntibiogramMatrix(cases,A.year,secFilter);
+  let germeni,atbCols;
+
+  if(_abgSource==='lab'){
+    const labData=await ga('lab_isolates');
+    const filters={year:A.year,section:secFilter,
+      sampleType:document.getElementById('abg-sample-filter')?.value||'',
+      source:document.getElementById('abg-source-filter')?.value||'',
+      period:document.getElementById('abg-period-filter')?.value||'',
+      firstIsolateOnly:document.getElementById('abg-first-isolate')?.checked||false};
+    var result=buildAntibiogramMatrixFromLab(labData,filters);
+    germeni=result.germeni;atbCols=result.atbCols;
+  } else {
+    const cases=await ga('iaam');
+    var result2=buildAntibiogramMatrix(cases,A.year,secFilter);
+    germeni=result2.germeni;atbCols=result2.atbCols;
+  }
+
   if(germeni.length===0||atbCols.length===0){wrap.innerHTML='<p style="color:var(--txtL);font-size:13px;padding:20px 0">'+T('abg_no_data')+'</p>';return}
 
   // Group atbCols by group
@@ -5980,8 +6228,23 @@ async function abgRefreshMatrix(){
 // ── Word Export Antibiograma ──
 async function genAntibiogramaWord(){
   const secFilter=document.getElementById('abg-sec-filter')?.value||'';
-  const cases=await ga('iaam');
-  const{germeni,atbCols}=buildAntibiogramMatrix(cases,A.year,secFilter);
+  let germeni,atbCols,sourceLabel;
+  const labData=await ga('lab_isolates');
+  if(labData.length>0){
+    const filters={year:A.year,section:secFilter,
+      sampleType:document.getElementById('abg-sample-filter')?.value||'',
+      source:document.getElementById('abg-source-filter')?.value||'',
+      period:document.getElementById('abg-period-filter')?.value||'',
+      firstIsolateOnly:document.getElementById('abg-first-isolate')?.checked||false};
+    var r=buildAntibiogramMatrixFromLab(labData,filters);
+    germeni=r.germeni;atbCols=r.atbCols;
+    sourceLabel='Date laborator importate, '+r.totalIsolates+' izolate';
+  } else {
+    const cases=await ga('iaam');
+    var r2=buildAntibiogramMatrix(cases,A.year,secFilter);
+    germeni=r2.germeni;atbCols=r2.atbCols;
+    sourceLabel='Date din cazuri IAAM';
+  }
   if(germeni.length===0){alert('Nu exista date de antibiograma.');return}
   const E=CFG.lang==='en';
   const title=E?'LOCAL ANTIBIOGRAM':'ANTIBIOGRAMA LOCALA';
@@ -5989,7 +6252,7 @@ async function genAntibiogramaWord(){
   const children=[...wCover(title,subtitle,WC.navy),wH1(title),wSp(40)];
   // Summary
   children.push(wP(E?'Summary of antimicrobial susceptibility data extracted from HAI cases registered in '+A.year+'.':
-    'Sumar al datelor de sensibilitate antimicrobiana extrase din cazurile IAAM inregistrate in '+A.year+'.',{size:20,before:40}));
+    sourceLabel+'. Anul '+A.year+'.',{size:20,before:40}));
   if(secFilter){const sName=rSec(secFilter);children.push(wP((E?'Filtered by ward: ':'Filtrat pe sectia: ')+sName,{size:20,italic:true}))}
   children.push(wSp(60));
   // Legend
@@ -6025,35 +6288,208 @@ async function genAntibiogramaWord(){
   await saveDocx(doc,'Antibiograma_Locala_'+A.year+'.docx');
 }
 
+// ═══════════════════════════════════════════════════════════════
+// IMPORT CSV LABORATOR → lab_isolates
+// ═══════════════════════════════════════════════════════════════
+function importLabCSV(){
+  openM('Import CSV Laborator',
+    '<div class="ib inf">Importa datele de antibiograma din laboratorul de microbiologie.<br><br>'+
+    '<strong>Format CSV acceptat:</strong> nr_buletin; data; sectie; tip_proba; germen; antibiotic; rezultat (S/I/R)<br>'+
+    'Mai multe linii cu acelasi nr_buletin = mai multe antibiotice testate pe acelasi izolat.</div>'+
+    '<div class="fg"><label>Fisier CSV din laborator</label><input type="file" id="f-lab" accept=".csv,.txt"></div>'+
+    '<div class="fg"><label>Label import (ex: T1-2026)</label><input id="f-lab-batch" value="'+A.year+'" style="width:160px"></div>'+
+    '<div id="lab-preview"></div>',
+  '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" id="lab-import-btn" onclick="processLabCSV()" disabled>Importa</button>');
+  document.getElementById('f-lab').onchange=previewLabCSV;
+}
+
+async function previewLabCSV(){
+  const f=document.getElementById('f-lab').files[0];if(!f)return;
+  const txt=await f.text();
+  const lines=txt.split('\n').filter(l=>l.trim());
+  if(lines.length<2){document.getElementById('lab-preview').innerHTML='<div class="ib wrn">Fisier gol sau prea putin date.</div>';return}
+  // Detect separator
+  const sep=lines[0].includes('\t')?'\t':(lines[0].includes(';')?';':',');
+  const header=lines[0].split(sep).map(c=>c.replace(/^["']|["']$/g,'').trim());
+  const rows=lines.slice(1).map(l=>l.split(sep).map(c=>c.replace(/^["']|["']$/g,'').trim())).filter(r=>r.length>=5);
+
+  window._labRows=rows;window._labHeader=header;window._labSep=sep;
+
+  // Auto-detect columns
+  function findCol(hints){return header.findIndex(h=>hints.some(x=>h.toLowerCase().includes(x)))}
+  const defaults={buletin:findCol(['buletin','bulletin','nr_bul','nr.']),date:findCol(['data','date']),
+    section:findCol(['sect','ward']),sample:findCol(['proba','sample','tip','specimen']),
+    germen:findCol(['germen','organism','germ','pathogen']),atb:findCol(['antibiotic','atb','drug']),
+    result:findCol(['rezultat','result','sir','s/i/r'])};
+
+  const opts=header.map((h,i)=>'<option value="'+i+'">'+esc(h)+'</option>').join('');
+  function selFor(id,def){return '<select id="lab-col-'+id+'">'+header.map((h,i)=>'<option value="'+i+'"'+(i===def?' selected':'')+'>'+esc(h)+'</option>').join('')+'</select>'}
+
+  // Count unique bulletins and germeni
+  const bi=defaults.buletin>=0?defaults.buletin:0;
+  const gi=defaults.germen>=0?defaults.germen:4;
+  const uniqBul=new Set(rows.map(r=>r[bi])).size;
+  const uniqGerm=new Set(rows.map(r=>r[gi])).size;
+
+  let h='<div class="ib suc">'+rows.length+' linii detectate. ~'+uniqBul+' buletine unice, ~'+uniqGerm+' germeni.</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0">'+
+    '<div class="fg"><label>Nr. Buletin *</label>'+selFor('buletin',defaults.buletin)+'</div>'+
+    '<div class="fg"><label>Data *</label>'+selFor('date',defaults.date)+'</div>'+
+    '<div class="fg"><label>Sectie *</label>'+selFor('section',defaults.section)+'</div>'+
+    '<div class="fg"><label>Tip proba</label>'+selFor('sample',defaults.sample)+'</div>'+
+    '<div class="fg"><label>Germen *</label>'+selFor('germen',defaults.germen)+'</div>'+
+    '<div class="fg"><label>Antibiotic *</label>'+selFor('atb',defaults.atb)+'</div>'+
+    '<div class="fg"><label>Rezultat S/I/R *</label>'+selFor('result',defaults.result)+'</div>'+
+    '</div>';
+  document.getElementById('lab-preview').innerHTML=h;
+  document.getElementById('lab-import-btn').disabled=false;
+}
+
+async function processLabCSV(){
+  const rows=window._labRows;if(!rows||rows.length===0){alert('Niciun fisier incarcat.');return}
+  const ci={buletin:+document.getElementById('lab-col-buletin').value,
+    date:+document.getElementById('lab-col-date').value,
+    section:+document.getElementById('lab-col-section').value,
+    sample:+document.getElementById('lab-col-sample').value,
+    germen:+document.getElementById('lab-col-germen').value,
+    atb:+document.getElementById('lab-col-atb').value,
+    result:+document.getElementById('lab-col-result').value};
+  const batch=document.getElementById('f-lab-batch')?.value||A.year;
+
+  // Group rows by nr_buletin + germen → one record per isolate
+  const isoMap={};// key: "buletin|germen" → {fields, susceptibility:[]}
+  rows.forEach(r=>{
+    const bul=(r[ci.buletin]||'').trim();
+    const germ=(r[ci.germen]||'').trim();
+    if(!bul||!germ)return;
+    const key=bul+'|'+germ;
+    if(!isoMap[key]){
+      // Match section to configured sections
+      const secName=(r[ci.section]||'').trim();
+      const secMatch=(CFG.sections||[]).find(s=>s.name.toLowerCase()===secName.toLowerCase())||
+        (CFG.sections||[]).find(s=>secName.toLowerCase().includes(s.name.toLowerCase().substring(0,4)));
+      // Match germen to GERMENI_LIST
+      const germMatch=typeof GERMENI_LIST!=='undefined'?GERMENI_LIST.find(g=>g.n.toLowerCase()===germ.toLowerCase()||g.c?.toLowerCase()===germ.toLowerCase()):null;
+
+      isoMap[key]={
+        year:A.year,
+        nr_buletin:bul,
+        date:parseLabDate(r[ci.date]),
+        section:secMatch?secMatch.id:secName,
+        sample_type:(r[ci.sample]||'').trim().toLowerCase()||'necunoscut',
+        organism:germMatch?germMatch.n:germ,
+        organism_code:germMatch?germMatch.c:'',
+        susceptibility:[],
+        source:'lab',
+        iaam_case_id:null,
+        _import_batch:batch
+      };
+    }
+    // Add susceptibility entry
+    const atbName=(r[ci.atb]||'').trim();
+    const result=(r[ci.result]||'').trim().toUpperCase();
+    if(atbName&&(result==='S'||result==='I'||result==='R')){
+      // Try matching ATB to ATB_LIST
+      let atbCode='';
+      if(typeof ATB_LIST!=='undefined'){
+        ATB_LIST.forEach(grp=>{grp.items.forEach(a=>{
+          if(a.n.toLowerCase()===atbName.toLowerCase()||a.a===atbName)atbCode=a.a;
+        })});
+      }
+      // Avoid duplicate ATB entries per isolate
+      const existing=isoMap[key].susceptibility.find(s=>s.atb_name.toLowerCase()===atbName.toLowerCase());
+      if(!existing){
+        isoMap[key].susceptibility.push({atb_code:atbCode,atb_name:atbName,result:result});
+      }
+    }
+  });
+
+  const isolates=Object.values(isoMap);
+  if(isolates.length===0){alert('Nu s-au putut grupa izolate din CSV.');return}
+
+  // Deduplication: check existing lab_isolates
+  const existing=await ga('lab_isolates');
+  const existingBulSet=new Set(existing.map(r=>r.nr_buletin+'|'+r.organism));
+
+  // Match with IAAM bulletins
+  const iaamCases=await ga('iaam');
+  const iaamBulMap={};// nr_buletin → iaam case id
+  iaamCases.forEach(c=>{
+    (c.bulletins||[]).forEach(b=>{if(b.nr)iaamBulMap[b.nr.trim()]=c.id});
+    // Also check bulletin_nr (legacy field)
+    if(c.bulletin_nr){c.bulletin_nr.split(',').forEach(n=>{const t=n.trim();if(t)iaamBulMap[t]=c.id})}
+  });
+
+  let imported=0,skipped=0,matchedIAAM=0;
+  for(const iso of isolates){
+    const dedupKey=iso.nr_buletin+'|'+iso.organism;
+    if(existingBulSet.has(dedupKey)){skipped++;continue}
+    // Check IAAM match
+    if(iaamBulMap[iso.nr_buletin]){
+      iso.source='iaam';
+      iso.iaam_case_id=iaamBulMap[iso.nr_buletin];
+      matchedIAAM++;
+    }
+    await pt('lab_isolates',iso);
+    imported++;
+  }
+
+  alert('Import finalizat:\n• '+imported+' izolate importate\n• '+matchedIAAM+' legate de cazuri IAAM\n• '+skipped+' duplicate (skip)');
+  closeM();render();
+}
+
+function parseLabDate(val){
+  if(!val)return '';
+  val=val.trim();
+  // Try ISO format first
+  if(/^\d{4}-\d{2}-\d{2}/.test(val))return val.substring(0,10);
+  // Try dd.mm.yyyy or dd/mm/yyyy or dd-mm-yyyy
+  const m=val.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
+  if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+  return val;
+}
+
 // ── WHONET CSV Export ──
 async function genAntibiogramaWHONET(){
   const secFilter=document.getElementById('abg-sec-filter')?.value||'';
-  const cases=await ga('iaam');
-  const filtered=cases.filter(r=>r.year===A.year&&(!secFilter||r.section===secFilter));
-  // Collect all ATB codes used
+  const labData=await ga('lab_isolates');
+  const useLab=labData.length>0;
+
+  // Collect ATB codes and build rows
   const atbSet=new Set();
-  filtered.forEach(r=>{(r.germeni||[]).forEach(g=>{(g.susceptibility||[]).forEach(s=>{atbSet.add(s.atb_code)})})});
+  const records=[];
+
+  if(useLab){
+    let data=labData.filter(r=>r.year===A.year);
+    if(secFilter)data=data.filter(r=>r.section===secFilter);
+    data.forEach(r=>{
+      if(!r.susceptibility||r.susceptibility.length===0)return;
+      r.susceptibility.forEach(s=>{if(s.atb_code)atbSet.add(s.atb_code)});
+      records.push({id:r.nr_buletin||'',date:r.date||'',organism:r.organism_code||r.organism,specType:r.sample_type||'',ward:rSec(r.section),susceptibility:r.susceptibility});
+    });
+  } else {
+    const cases=await ga('iaam');
+    const filtered=cases.filter(r=>r.year===A.year&&(!secFilter||r.section===secFilter));
+    filtered.forEach(r=>{
+      (r.germeni||[]).forEach(g=>{
+        if(!g.susceptibility||g.susceptibility.length===0)return;
+        g.susceptibility.forEach(s=>{if(s.atb_code)atbSet.add(s.atb_code)});
+        records.push({id:'P'+r.id,date:r.date_confirmed||r.date_admission||'',organism:g.code||g.name,specType:r.localization||'',ward:rSec(r.section),susceptibility:g.susceptibility});
+      });
+    });
+  }
+
   const atbCodes=[];
   ATB_LIST.forEach(grp=>{grp.items.forEach(atb=>{if(atbSet.has(atb.a))atbCodes.push(atb.a)})});
   if(atbCodes.length===0){alert('Nu exista date de antibiograma.');return}
-  // CSV header
+
   const header=['PATIENT_ID','SPEC_DATE','ORGANISM','SPEC_TYPE','WARD',...atbCodes];
   const rows=[header.join(',')];
-  let pid=1;
-  filtered.forEach(r=>{
-    (r.germeni||[]).forEach(g=>{
-      if(!g.susceptibility||g.susceptibility.length===0)return;
-      const susMap={};g.susceptibility.forEach(s=>{susMap[s.atb_code]=s.result});
-      const row=[
-        'P'+String(pid++).padStart(4,'0'),
-        r.date_confirmed||r.date_admission||'',
-        g.code||g.name,
-        r.localization||'',
-        rSec(r.section)
-      ];
-      atbCodes.forEach(ac=>{row.push(susMap[ac]||'')});
-      rows.push(row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
-    });
+  records.forEach(rec=>{
+    const susMap={};rec.susceptibility.forEach(s=>{if(s.atb_code)susMap[s.atb_code]=s.result});
+    const row=[rec.id,rec.date,rec.organism,rec.specType,rec.ward];
+    atbCodes.forEach(ac=>{row.push(susMap[ac]||'')});
+    rows.push(row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
   });
   const csv=rows.join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
@@ -6155,7 +6591,7 @@ async function rConsumATB(el){
   const nSub=new Set(data.map(r=>r.atc)).size;
   const accessCls=t.pctAccess>=60?'ok':(t.pctAccess>=40?'warn':'bad');
 
-  let h='<div class="ib inf">'+T('pt_consum_atb')+' — '+y+'</div>';
+  let h='<div class="ib inf">Monitorizare continua a consumului de antibiotice pe baza datelor din farmacie. Metodologie OMS: DDD/100 zile-pat, clasificare AWaRe (Access / Watch / Reserve).</div>';
   // KPI cards
   h+='<div class="kg">';
   h+='<div class="kc bl"><div class="kl">'+T('ddd_total')+'</div><div class="kv">'+t.dddPer100.toFixed(1)+'</div></div>';
@@ -6172,6 +6608,11 @@ async function rConsumATB(el){
   h+='<select id="ddd-mo" onchange="dddRefresh()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-family:var(--f)"><option value="">'+T('ddd_month')+': '+T('ddd_all_months')+'</option>';
   const mo=getMO();for(let i=0;i<12;i++)h+='<option value="'+(i+1)+'">'+mo[i]+'</option>';
   h+='</select>';
+  h+='<select id="ddd-period" onchange="dddRefresh()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-family:var(--f)">'+
+    '<option value="">Perioada: Anul complet</option>'+
+    '<option value="T1">T1 (Ian-Mar)</option><option value="T2">T2 (Apr-Iun)</option>'+
+    '<option value="T3">T3 (Iul-Sep)</option><option value="T4">T4 (Oct-Dec)</option>'+
+    '<option value="S1">S1 (Ian-Iun)</option><option value="S2">S2 (Iul-Dec)</option></select>';
   h+='<div style="flex:1"></div>';
   h+='<button class="btn bs" onclick="dddBulkImport()">'+T('ddd_bulk')+'</button>';
   h+='<button class="btn bp" onclick="editConsumATB()">'+T('ddd_add')+'</button>';
@@ -6268,17 +6709,20 @@ function _dddRenderCharts(t){
 async function dddRefresh(){
   const sec=document.getElementById('ddd-sec')?.value||'';
   const mo=document.getElementById('ddd-mo')?.value||'';
+  const period=document.getElementById('ddd-period')?.value||'';
   const y=A.year;
   let data=(await ga('atb_consum')).filter(r=>r.year===y);
   if(sec)data=data.filter(r=>r.section===sec);
-  if(mo)data=data.filter(r=>r.month===+mo);
-  const mx=buildConsumMatrix(await ga('atb_consum'),y,sec||null,mo||null);
+  if(mo){data=data.filter(r=>r.month===+mo)}
+  else if(period){
+    var pm={T1:[1,2,3],T2:[4,5,6],T3:[7,8,9],T4:[10,11,12],S1:[1,2,3,4,5,6],S2:[7,8,9,10,11,12]};
+    if(pm[period])data=data.filter(r=>pm[period].includes(r.month));
+  }
+  const moFilter=mo||null;
+  const mx=buildConsumMatrix(data,y,sec||null,null);
   const wrap=document.getElementById('ddd-table-wrap');
   if(wrap)wrap.innerHTML=_dddBuildTable(data,mx);
   _dddRenderCharts(mx.totals);
-  // Update KPI cards
-  const kv=document.querySelectorAll('.kv');
-  // KPIs are re-rendered on full page anyway via render() if needed
 }
 
 async function editConsumATB(id){
@@ -9461,6 +9905,12 @@ async function rCfg(el){
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-probe" placeholder="Tip proba nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-probe\').value.trim();if(v){CFG.probe_types.push({id:genId(\'probe\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
+  '<div class="pn"><div class="ph"><h3>Tipuri Probe Laborator (Antibiograma)</h3></div><div class="pb">'+
+    '<p style="font-size:12px;color:var(--txtL);margin-bottom:10px">Tipuri de probe microbiologice folosite la importul CSV din laborator.</p>'+
+    '<div class="tag-list">'+(CFG.lab_sample_types||['hemocultura','urocultura','coprocultura','exudat faringian','secretie plaga','aspirat traheal','lichid pleural','LCR','altele']).map((t,i)=>{const nm=typeof t==='string'?t:t.name;return '<span class="tag">'+esc(nm)+'<span class="tag-x" onclick="if(!CFG.lab_sample_types)CFG.lab_sample_types=[\'hemocultura\',\'urocultura\',\'coprocultura\',\'exudat faringian\',\'secretie plaga\',\'aspirat traheal\',\'lichid pleural\',\'LCR\',\'altele\'];CFG.lab_sample_types.splice('+i+',1);saveCfg();render()">&#215;</span></span>'}).join('')+'</div>'+
+    '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-lab-sample" placeholder="Tip proba laborator nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-lab-sample\').value.trim();if(v){if(!CFG.lab_sample_types)CFG.lab_sample_types=[\'hemocultura\',\'urocultura\',\'coprocultura\',\'exudat faringian\',\'secretie plaga\',\'aspirat traheal\',\'lichid pleural\',\'LCR\',\'altele\'];CFG.lab_sample_types.push(v);saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
+  '</div></div>'+
+
   '<div class="pn"><div class="ph"><h3>Categorii IAAM (Anexa 9 ECDC)</h3></div><div class="pb">'+
     '<p style="font-size:12px;color:var(--txtL);margin-bottom:10px">Categoriile ECDC sunt predefinite si nu pot fi sterse. Poti adauga categorii personalizate.</p>'+
     '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">'+IAAM_CATS.map(g=>g.items.map(it=>'<span class="tag" style="background:#EEF2FF;border:1px solid #C7D2FE;color:var(--navy)">'+it.c+' — '+it.n+' <span style="font-size:9px;background:var(--navy);color:#fff;padding:1px 4px;border-radius:3px;margin-left:3px">ECDC</span></span>').join('')).join('')+'</div>'+
@@ -10958,6 +11408,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'11.2',date:'2026-03-19',notes:'NOU: Separare module PPS, Consum ATB si Antibiograma pe pagini proprii\nNOU: PPS — info box ECDC, 4 KPI-uri, metadata studiu, grafic AU% per sectie, comparatie multi-an\nNOU: Consum ATB — info box OMS, filtru perioada (T1-T4, S1-S2)\nNOU: Antibiograma — store lab_isolates, import CSV laborator cu deduplicare\nNOU: Antibiograma — KPI-uri noi, filtre avansate, fallback IAAM, istoric importuri\nNOU: Config — Tipuri Probe Laborator editabile\nNOU: IAAM — Data Negativare + Buletine negativare'},
   {version:'11.1',date:'2026-03-19',notes:'Fix: Dark mode — tab-uri Autocontrol (Probe Micro/ATP/UV) cu contrast imbunatatit (fond teal, text alb)\nFix: Dark mode — sub-tab-uri Autocontrol hover si activ cu teal vizibil\nFix: Dark mode — selecturi si inputuri fara dark override (filtre IAAM, Autocontrol) acum cu fond inchis\nFix: Dark mode — chart header si sortable hover cu override-uri corecte'},
   {version:'11.0',date:'2026-03-19',notes:'NOU: Tema Teal — accent medical teal pe intreaga aplicatie (sidebar, butoane, badges, calendar)\nNOU: Sidebar gradient verde-inchis + hover cu translateX + item activ cu border teal\nNOU: Toolbar glass effect — backdrop-blur transparent\nNOU: KPI cards hover animation — ridicare + shadow la hover\nNOU: Butoane gradient teal cu shadow, border-radius rotunjit\nNOU: Panouri cu radius 16px si hover shadow subtil\nNOU: Dark mode complet cu accent teal'},
   {version:'10.5',date:'2026-03-19',notes:'NOU: Calendar — grupare Astazi/Maine/Saptamana aceasta in widget Dashboard\nNOU: Calendar — badge count pe zile cu evenimente multiple\nNOU: Calendar — legenda culori sub grid (Termene, Documente, Evenimente, Instruiri, Audituri)\nNOU: Dashboard — tooltip tip eveniment pe dots colorate\nFix: Dashboard — evenimentele de azi apareau lipsa (comparare cu start-of-day)\nFix: Calendar — evidentiare subtila fara borduri groase'},

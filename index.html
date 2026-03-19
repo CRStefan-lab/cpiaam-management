@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v10.0</title>
+<title>CPIAAM — Sistem de Management v11.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
-:root{--navy:#4338CA;--teal:#0EA5E9;--amber:#F59E0B;--red:#EF4444;--blue:#6366F1;--green:#10B981;
+:root{--navy:#115E59;--teal:#0EA5E9;--amber:#F59E0B;--red:#EF4444;--blue:#0D9488;--green:#10B981;
 --bg:#F8FAFC;--card:#ffffff;--sb:#1E293B;--txt:#0F172A;--txtL:#64748B;--brd:#E2E8F0;
 --sh:0 1px 3px rgba(0,0,0,.08);--shL:0 4px 6px rgba(0,0,0,.07);--r:8px;--rL:12px;--f:'Segoe UI',system-ui,sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -21,20 +21,21 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .app-loading p{color:var(--txtL);font-size:14px;margin-top:12px}
 
 /* ── Sidebar ── */
-.sb{width:250px;background:var(--sb);color:#E2E8F0;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sb{width:250px;background:linear-gradient(180deg,#0F2A2A 0%,#1E293B 50%,#0F2A2A 100%);color:#E2E8F0;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
 .sb-h{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
 .sb-h h1{font-size:15px;font-weight:700;color:#fff}
 .sb-h small{font-size:11px;color:var(--txtL);display:block;margin-top:3px}
 .sb-nav{flex:1;padding:10px 8px;overflow-y:auto}
 .ns{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.3);padding:14px 12px 6px;font-weight:600}
 .ni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.65);text-decoration:none;transition:.15s}
-.ni:hover{background:rgba(255,255,255,.08);color:#fff}
-.ni.a{background:#6366F1;color:#fff;font-weight:600}
+.ni:hover{background:rgba(20,184,166,.15);color:#fff;transform:translateX(3px)}
+.ni.a{background:linear-gradient(90deg,rgba(20,184,166,.25),rgba(20,184,166,.05));border-left:3px solid #2DD4BF;color:#fff;font-weight:600}
 .ni svg{width:18px;height:18px;flex-shrink:0}
 .sb-bk{padding:8px 16px}
 .sb-bk button{width:100%;padding:8px;border:none;border-radius:6px;background:var(--amber);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--f);transition:.15s}
 .sb-bk button:hover{background:#B8890F}
-.sb-f{padding:10px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:9px;color:rgba(255,255,255,.35);line-height:1.5}
+.sb-f{padding:10px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:9px;color:rgba(255,255,255,.35);line-height:1.5;opacity:.6;transition:opacity .2s}
+.sb-f:hover{opacity:1}
 
 /* ── Sidebar Collapse (hamburger) ── */
 .sb-collapse-btn{background:none;border:none;color:#94A3B8;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .15s;flex-shrink:0}
@@ -49,23 +50,24 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .sb-mini .ni{position:relative}
 .sb-mini .ni:hover::after{content:attr(data-tooltip);position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:8px;background:var(--sb);color:#E2E8F0;padding:5px 12px;border-radius:6px;font-size:12px;white-space:nowrap;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.3);pointer-events:none}
 /* ── Main Area ── */
-.mn{margin-left:250px;flex:1;min-height:100vh}
+.mn{margin-left:250px;flex:1;min-height:100vh;transition:margin-left .25s ease}
 .mn.mn-expanded{margin-left:52px}
-.tb{background:var(--card);border-bottom:1px solid var(--brd);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
-.tb h2{font-size:17px;font-weight:700;color:var(--navy)}
+.tb{background:rgba(255,255,255,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,.06);box-shadow:0 1px 8px rgba(0,0,0,.04);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.tb h2{font-size:17px;font-weight:800;color:#0F766E;letter-spacing:-.3px}
 .yr-nav{display:flex;align-items:center;gap:2px}
 .yr-nav button{width:26px;height:26px;border-radius:6px;border:1px solid var(--brd);background:var(--card);display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:var(--txtL);cursor:pointer;transition:all .15s ease;padding:0}
-.yr-nav button:hover{border-color:#6366F1;color:#6366F1;background:var(--bg)}
+.yr-nav button:hover{border-color:#0D9488;color:#0D9488;background:var(--bg)}
 .yr-nav input{width:56px;text-align:center;font-size:14px;font-weight:600;border:none;background:transparent;color:var(--txt);font-family:var(--f);-moz-appearance:textfield}
 .yr-nav input::-webkit-inner-spin-button,.yr-nav input::-webkit-outer-spin-button{-webkit-appearance:none}
 .dark .yr-nav button{background:#1E293B;border-color:#475569;color:#94A3B8}
-.dark .yr-nav button:hover{border-color:#818CF8;color:#818CF8}
+.dark .yr-nav button:hover{border-color:#2DD4BF;color:#2DD4BF}
 .dark .yr-nav input{color:#E2E8F0}
 .ct{padding:22px 28px}
 
 /* ── KPI Cards ── */
 .kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:24px}
-.kc{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:5px solid var(--navy);transition:all .2s ease;position:relative;overflow:hidden;cursor:pointer}
+.kc{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04);border-left:5px solid var(--navy);transition:all .25s ease;position:relative;overflow:hidden;cursor:pointer}
+.kc:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
 .kc::after{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;opacity:.04;transform:translate(20px,-20px);pointer-events:none}
 .kc:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
 .kc .kl{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--txtL);font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}.kc .kl span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -79,7 +81,8 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .kc.gn{border-color:var(--green)}.kc.gn .kv{color:var(--green)}.kc.gn::after{background:var(--green)}
 
 /* ── Panels ── */
-.pn{background:var(--card);border-radius:var(--rL);box-shadow:var(--sh);margin-bottom:18px;overflow:hidden}
+.pn{background:var(--card);border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:18px;overflow:hidden;transition:all .2s ease}
+.pn:hover{box-shadow:0 4px 20px rgba(0,0,0,.08)}
 .ph{padding:14px 18px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between}
 .ph h3{font-size:14px;font-weight:700;color:var(--navy)}
 .pb{padding:18px}
@@ -92,17 +95,17 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 
 /* ── Buttons ── */
 .btn{display:inline-flex;align-items:center;gap:5px;padding:8px 18px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s ease;font-family:var(--f);line-height:1.3}
-.bp{background:#6366F1;color:#fff}.bp:hover{background:#4F46E5;transform:translateY(-1px)}
+.bp{background:linear-gradient(135deg,#0D9488,#0F766E);color:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(13,148,136,.25)}.bp:hover{background:linear-gradient(135deg,#14B8A6,#0D9488);box-shadow:0 4px 16px rgba(13,148,136,.35);transform:translateY(-1px)}
 .bs{background:#10B981;color:#fff}.bs:hover{background:#059669;transform:translateY(-1px)}
 .bd{background:#EF4444;color:#fff}.bd:hover{background:#DC2626;transform:translateY(-1px)}
 .bw{background:#F59E0B;color:#fff}.bw:hover{background:#D97706;transform:translateY(-1px)}
-.bo{background:transparent;border:1px solid var(--brd);color:var(--txt)}.bo:hover{background:var(--bg);border-color:#6366F1}
+.bo{background:transparent;border:1px solid var(--brd);color:var(--txt);border-radius:10px;transition:all .2s ease}.bo:hover{background:rgba(13,148,136,.06);border-color:#0D9488;color:#0D9488}
 .bsm{padding:4px 10px;font-size:11.5px}
 .bg{display:flex;gap:7px;flex-wrap:wrap}
 .btn-x{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;width:28px;height:28px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s ease;padding:0}.btn-x:hover{background:var(--bg)}
-.btn-dl{background:#6366F1;color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;font-family:var(--f);transition:all .15s ease}.btn-dl:hover{background:#4F46E5;transform:translateY(-1px)}
+.btn-dl{background:#0D9488;color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;font-family:var(--f);transition:all .15s ease}.btn-dl:hover{background:#0F766E;transform:translateY(-1px)}
 .dark .btn-x:hover{background:#334155}
-.dark .btn-dl{background:#818CF8}.dark .btn-dl:hover{background:#6366F1}
+.dark .btn-dl{background:#2DD4BF}.dark .btn-dl:hover{background:#0D9488}
 
 /* ── Tables ── */
 .dt{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -227,9 +230,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .iw-nav{width:200px;border-right:1px solid var(--brd);padding:10px 0;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column}
 .iw-nav-item{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;font-size:12px;transition:.15s;border-left:3px solid transparent}
 .iw-nav-item:hover{background:var(--bg)}
-.iw-nav-item.active{background:var(--bg);border-left-color:#6366F1;font-weight:600}
+.iw-nav-item.active{background:var(--bg);border-left-color:#0D9488;font-weight:600}
 .iw-nav-num{width:22px;height:22px;border-radius:50%;background:var(--brd);color:var(--txtL);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.iw-nav-item.active .iw-nav-num{background:#6366F1;color:#fff}
+.iw-nav-item.active .iw-nav-num{background:#0D9488;color:#fff}
 .iw-nav-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .iw-dot-green{background:#10B981}.iw-dot-yellow{background:#F59E0B}.iw-dot-grey{background:#D1D5DB}
 .iw-nav-pct{font-size:10px;color:var(--txtL);text-align:center;padding:10px 14px;border-top:1px solid var(--brd);margin-top:auto}
@@ -243,7 +246,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .iw-footer .iw-ft-left{display:flex;gap:8px}.iw-footer .iw-ft-right{display:flex;gap:8px}
 .rf-checks{columns:2;column-gap:14px;margin-bottom:10px}
 .rf-checks label{font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0;break-inside:avoid}
-.rf-checks input[type="checkbox"]{accent-color:#6366F1;width:15px;height:15px;flex-shrink:0}
+.rf-checks input[type="checkbox"]{accent-color:#0D9488;width:15px;height:15px;flex-shrink:0}
 .rf-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .rf-chip{background:var(--bg);border:1px solid var(--brd);border-radius:14px;padding:3px 10px;font-size:11px;display:inline-flex;align-items:center;gap:4px}
 .rf-chip button{background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:0;line-height:1}
@@ -315,7 +318,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dark .bdg-a{background:#422006;color:#FCD34D}.dark .bdg-b{background:#1E3A5F;color:#93C5FD}
 .dark .fg input,.dark .fg select,.dark .fg textarea{background:#0F172A;border-color:#334155;color:#E2E8F0}
 .dark .iw-nav{border-color:#334155}.dark .iw-nav-item:hover,.dark .iw-nav-item.active{background:#0F172A}
-.dark .iw-nav-num{background:#334155;color:#94A3B8}.dark .iw-nav-item.active .iw-nav-num{background:#818CF8;color:#fff}
+.dark .iw-nav-num{background:#334155;color:#94A3B8}.dark .iw-nav-item.active .iw-nav-num{background:#2DD4BF;color:#fff}
 .dark .iw-dot-grey{background:#475569}.dark .iw-hdr{border-color:#334155}.dark .iw-footer{border-color:#334155}
 .dark .iw-hdr h4{color:#E2E8F0}.dark .iw-nav-pct{border-color:#334155}
 .dark .rf-chip{background:#0F172A;border-color:#475569}.dark .rf-add-row select{background:#0F172A;border-color:#334155;color:#E2E8F0}
@@ -324,8 +327,10 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dark .compl-60{background:rgba(245,158,11,.15);color:#FCD34D}
 .dark .compl-30{background:rgba(239,68,68,.15);color:#FCA5A5}
 .dark .iaam-match-banner{background:#422006;border-color:#92400E;color:#FCD34D}
-.dark .bo{border-color:#475569;color:#CBD5E1}.dark .bo:hover{background:#334155;border-color:#818CF8}
-.dark .bp{background:#818CF8;color:#fff}.dark .bp:hover{background:#6366F1}
+.dark .tb{background:rgba(15,23,42,.88);backdrop-filter:blur(12px);border-bottom-color:rgba(255,255,255,.06)}
+.dark .tb h2{color:#2DD4BF}
+.dark .bo{border-color:#475569;color:#CBD5E1}.dark .bo:hover{background:#334155;border-color:#2DD4BF;color:#2DD4BF}
+.dark .bp{background:linear-gradient(135deg,#14B8A6,#0D9488);color:#fff}.dark .bp:hover{background:linear-gradient(135deg,#2DD4BF,#14B8A6)}
 .dark .bs{background:#34D399;color:#064E3B}.dark .bs:hover{background:#10B981}
 .dark .bd{background:#FCA5A5;color:#450A0A}.dark .bd:hover{background:#EF4444;color:#fff}
 .dark .bw{background:#FBBF24;color:#422006}.dark .bw:hover{background:#F59E0B}
@@ -337,17 +342,24 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dark .notif-item:hover{background:#0F172A}
 .dark .sb-bk button{background:#FBBF24;color:#422006}.dark .sb-bk button:hover{background:#F59E0B}
 .dark .dash-quick button{background:#1E293B;border-color:#475569;color:#CBD5E1}
-.dark .dash-quick button:hover{background:#6366F1;border-color:#6366F1;color:#fff}
+.dark .dash-quick button:hover{background:#0D9488;border-color:#0D9488;color:#fff}
 .dark .tb-icon:hover{background:#334155;border-color:#475569}
 .dark .dt .act button:hover{background:#334155}
 .dark .dash-cfg-bar{border-color:#334155}.dark .dash-cfg-bar button{color:#94A3B8}.dark .dash-cfg-bar button:hover{color:#E2E8F0}
 .dark .dash-cfg-panel{border-color:#334155}.dark .dash-cfg-panel label{color:#94A3B8}
-.dark .cal-nav button{border-color:#475569;color:#CBD5E1}.dark .cal-nav button:hover{background:#334155;border-color:#818CF8}
+.dark .cal-nav button{border-color:#475569;color:#CBD5E1}.dark .cal-nav button:hover{background:#334155;border-color:#2DD4BF}
 .dark .ac-cell-gn{background:#1A3D1A;color:#86EFAC}.dark .ac-cell-yl{background:#3D2E0A;color:#FCD34D}
 .dark .ac-cell-rd{background:#450A0A;color:#FCA5A5}.dark .ac-cell-gr{background:#1E293B;color:#64748B}
 .dark .ac-matrix td:first-child{background:#0F172A;color:#CBD5E1}
 .dark .ac-matrix th{background:#0F172A}
 .dark .ac-collapse-hdr{color:var(--txt)}.dark .ac-summary-hdr{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:#FCD34D}.dark .ac-summary-hdr strong{color:#FBBF24}
+.dark .ac-ttab{color:#94A3B8}.dark .ac-ttab:hover{background:rgba(45,212,191,.15);color:#2DD4BF}
+.dark .ac-ttab.act{background:#0D9488;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.dark .ac-mtab:hover{color:#2DD4BF}.dark .ac-mtab.act{color:#2DD4BF;border-bottom-color:#2DD4BF}
+.dark .ac-chart-hdr{background:var(--card);border-color:var(--brd);color:#93C5FD}
+.dark .ac-sortable:hover{background:rgba(45,212,191,.1)}
+.dark select,.dark input[type="text"],.dark input[type="date"],.dark input[type="number"],.dark input[type="search"],.dark textarea{background:#0F172A;border-color:#334155;color:#E2E8F0}
+.dark select option{background:#0F172A;color:#E2E8F0}
 
 /* ── Toolbar extras ── */
 .tb-actions{display:flex;align-items:center;gap:10px}
@@ -400,7 +412,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 /* ── Calendar ── */
 .cal-nav{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
 .cal-nav button{background:none;border:1px solid var(--brd);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:14px;color:var(--txt);font-family:var(--f);transition:all .15s ease;font-weight:500}
-.cal-nav button:hover{background:var(--bg);border-color:#6366F1}
+.cal-nav button:hover{background:var(--bg);border-color:#0D9488}
 .cal-nav .cal-title{font-size:18px;font-weight:700;color:var(--navy);min-width:180px;text-align:center}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--brd);border:1px solid var(--brd);border-radius:var(--r);overflow:hidden}
 .cal-hdr{background:var(--navy);color:#fff;padding:8px 4px;text-align:center;font-size:12px;font-weight:700}
@@ -416,6 +428,13 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .cal-dot.red{background:#C0392B}.cal-dot.yellow{background:#D4A017}.cal-dot.blue{background:#2563B0}.cal-dot.green{background:#27AE60}.cal-dot.teal{background:#0F7B6C}
 .cal-evt-label{font-size:9px;line-height:1.2;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .cal-evt-label.red{color:#C0392B}.cal-evt-label.yellow{color:#D4A017}.cal-evt-label.blue{color:#2563B0}
+/* Count badge + highlight */
+.cal-count{display:inline-flex;align-items:center;justify-content:center;background:#0D9488;color:#fff;font-size:8px;font-weight:700;min-width:14px;height:14px;border-radius:7px;padding:0 3px;margin-left:3px;vertical-align:middle;line-height:1}
+.cal-has-evt{background:rgba(99,102,241,.06)}
+.cal-has-evt-past{background:transparent}
+.dark .cal-has-evt{background:rgba(129,140,248,.08)}
+.cal-has-evt.today{background:#EBF5FF}
+.dark .cal-has-evt.today{background:#1E3A5F}
 /* Mini calendar */
 .mini-cal{background:var(--card);border:none;border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .mini-cal .cal-grid{gap:0}
@@ -474,7 +493,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 /* Quick actions */
 .dash-quick{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap}
 .dash-quick button{display:flex;align-items:center;gap:7px;padding:10px 18px;border:1px solid var(--brd);border-radius:24px;background:var(--card);color:var(--txt);font-size:12.5px;font-weight:500;font-family:var(--f);cursor:pointer;transition:all .15s ease}
-.dash-quick button:hover{background:#6366F1;border-color:#6366F1;color:#fff;transform:translateY(-1px)}
+.dash-quick button:hover{background:#0D9488;border-color:#0D9488;color:#fff;transform:translateY(-1px)}
 .dash-quick button .qicon{font-size:15px}
 .dash-cfg-bar{border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:center;min-height:22px;margin:0 -20px;padding:0}
 .dash-cfg-bar button{background:none;border:none;cursor:pointer;color:var(--txtL);font-size:11px;padding:3px 16px;transition:.2s;display:inline-flex;align-items:center;justify-content:center;gap:4px;font-family:var(--f)}
@@ -482,7 +501,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dash-cfg-panel{overflow:hidden;max-height:0;transition:max-height .3s ease;display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:center;padding:0 12px;margin:0 -20px;border-bottom:0px solid var(--brd)}
 .dash-cfg-panel.open{max-height:120px;padding:8px 12px;border-bottom-width:1px}
 .dash-cfg-panel label{font-size:11.5px;color:var(--txtL);cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;user-select:none}
-.dash-cfg-panel input[type="checkbox"]{accent-color:#6366F1;margin:0;cursor:pointer}
+.dash-cfg-panel input[type="checkbox"]{accent-color:#0D9488;margin:0;cursor:pointer}
 .dash-section{transition:opacity .3s ease,max-height .3s ease;overflow:hidden}
 .dash-section.hidden{max-height:0!important;opacity:0;padding:0!important;margin:0!important}
 /* Activity feed */
@@ -573,7 +592,7 @@ body{display:block!important;background:#fff!important}
   .iw{flex-direction:column;height:auto;max-height:calc(95vh - 100px)}
   .iw-nav{width:100%;border-right:none;border-bottom:1px solid var(--brd);flex-direction:row;overflow-x:auto;display:flex;padding:6px;flex-shrink:0}
   .iw-nav-item{padding:6px 10px;white-space:nowrap;border-left:none;border-bottom:2px solid transparent;flex-shrink:0}
-  .iw-nav-item.active{border-bottom-color:#6366F1;border-left:none;background:transparent}
+  .iw-nav-item.active{border-bottom-color:#0D9488;border-left:none;background:transparent}
   .iw-nav-pct{display:none}
   .wiz-card{padding:24px;width:95vw}
   .cal-year-grid{grid-template-columns:repeat(2,1fr)}
@@ -657,16 +676,16 @@ body{display:block!important;background:#fff!important}
 .man-cap{font-size:11px;color:var(--txtL);text-align:center;margin:-6px 0 14px;font-style:italic}
 .man-keys{display:inline-block;padding:2px 7px;background:var(--bg);border:1px solid var(--brd);border-radius:4px;font-family:monospace;font-size:11px}
 .man-print{margin-bottom:16px}
-.dark .man-toc a{color:#818CF8}
-.dark .man-toc .toc-num,.dark .man-sec h3 .sec-num{background:#818CF8}
-.dark .man-sec h3{color:#E2E8F0;border-color:#818CF8}
-.dark .man-tip{background:#1E293B;border-color:#818CF8}
+.dark .man-toc a{color:#2DD4BF}
+.dark .man-toc .toc-num,.dark .man-sec h3 .sec-num{background:#2DD4BF}
+.dark .man-sec h3{color:#E2E8F0;border-color:#2DD4BF}
+.dark .man-tip{background:#1E293B;border-color:#2DD4BF}
 .dark .man-warn{background:#1E293B;border-color:#F59E0B}
-.dark .man-step .step-n{background:#818CF8}
-.dark .man-top{border-color:#475569;color:#94A3B8}.dark .man-top:hover{color:#818CF8;border-color:#818CF8;background:#1E293B}
+.dark .man-step .step-n{background:#2DD4BF}
+.dark .man-top{border-color:#475569;color:#94A3B8}.dark .man-top:hover{color:#2DD4BF;border-color:#2DD4BF;background:#1E293B}
 .man-go{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;font-family:var(--f);margin:10px 0}
 .man-go:hover{background:var(--blue);transform:translateY(-1px)}
-.dark .man-go{background:#818CF8}.dark .man-go:hover{background:#6366F1}
+.dark .man-go{background:#2DD4BF}.dark .man-go:hover{background:#0D9488}
 .man-vis{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .man-vis-item{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid var(--brd)}
 .man-vis-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
@@ -699,10 +718,10 @@ body{display:block!important;background:#fff!important}
 .abg-quick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .abg-quick button{font-size:11px;padding:4px 10px;border:1px solid var(--brd);border-radius:6px;background:var(--card);cursor:pointer;font-family:var(--f);transition:.15s}
 .abg-quick button:hover{border-color:var(--navy);color:var(--navy)}
-.dark .abg-matrix thead th{background:#4338CA}.dark .abg-matrix thead th.abg-grp{background:#334155}
+.dark .abg-matrix thead th{background:#115E59}.dark .abg-matrix thead th.abg-grp{background:#334155}
 .dark .abg-matrix tbody th{background:#1E293B}
 .dark .abg-s{background:#14532D;color:#86EFAC}.dark .abg-i{background:#713F12;color:#FDE68A}.dark .abg-r{background:#7F1D1D;color:#FCA5A5}.dark .abg-na{background:#1E293B;color:#64748B}
-.dark .abg-grp-hdr{color:#818CF8}
+.dark .abg-grp-hdr{color:#2DD4BF}
 /* DDD/AWaRe Consum ATB */
 .ddd-wrap{overflow-x:auto;margin-top:10px}
 .ddd-aw-a{color:#166534;background:#DCFCE7;padding:2px 8px;border-radius:4px;font-weight:600;font-size:11px}
@@ -721,7 +740,7 @@ body{display:block!important;background:#fff!important}
 .dark .ddd-aw-a{background:#14532D;color:#86EFAC}.dark .ddd-aw-w{background:#713F12;color:#FDE68A}
 .dark .ddd-aw-r{background:#7F1D1D;color:#FCA5A5}.dark .ddd-aw-x{background:#1E293B;color:#94A3B8}
 .dark .ddd-chart-box{background:var(--card);border-color:var(--brd)}
-.dark .ddd-chart-box h4{color:#818CF8}
+.dark .ddd-chart-box h4{color:#2DD4BF}
 /* ═══ AUDITURI IPC — Calup CSS ═══ */
 .aud-scard{background:var(--card);border:1px solid var(--brd);border-radius:10px;margin-bottom:16px;overflow:hidden}
 .aud-shdr{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--brd);background:var(--color-background-secondary,#f8fafc)}
@@ -804,7 +823,7 @@ body{display:block!important;background:#fff!important}
 .tl-hdr-status{width:66px;flex-shrink:0;font-size:11px;color:var(--txtL);text-align:center}
 .tl-body{max-height:540px;overflow-y:auto}
 .tl-sec-sep{font-size:11px;font-weight:600;color:var(--txtL);padding:10px 14px 4px}
-.tl-row{display:flex;align-items:center;height:30px;padding:0 14px}
+.tl-row{display:flex;align-items:center;height:24px;padding:0 14px}
 .tl-row:hover{background:var(--bg)}
 .tl-row-cb{width:26px;flex-shrink:0;display:flex;align-items:center}
 .tl-row-cb input{width:14px;height:14px;cursor:pointer;accent-color:var(--blue)}
@@ -813,8 +832,8 @@ body{display:block!important;background:#fff!important}
 .tl-r-type{font-size:10px;color:var(--txtL);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tl-mdr{font-size:8px;padding:1px 4px;border-radius:4px;font-weight:600;flex-shrink:0;background:#FEE2E2;color:#991B1B}
 .tl-cluster-dot{width:7px;height:7px;border-radius:50%;background:#DC2626;flex-shrink:0}
-.tl-track{flex:1;display:flex;height:20px;gap:1px}
-.tl-day{flex:1;position:relative;height:100%}
+.tl-track{flex:1;display:flex;height:16px;gap:1px;max-width:800px}
+.tl-day{flex:1;position:relative;height:100%;max-width:22px}
 .tl-day-hosp{position:absolute;top:1px;bottom:1px;left:0;right:0;border-radius:2px}
 .tl-day-inf{position:absolute;top:3px;bottom:3px;left:0;right:0;border-radius:3px}
 .tl-row-st{width:66px;flex-shrink:0;text-align:right}
@@ -955,8 +974,10 @@ body{display:block!important;background:#fff!important}
         </span>
         <div id="sync-menu" class="sync-menu">
           <button onclick="syncReadFile();closeSyncMenu()"><span class="menu-icon">&#128194;</span><span class="menu-text">Reconecteaza la fisierul existent<span class="menu-desc">Re-selecteaza CPIAAM_data.json</span></span></button>
-          <button onclick="syncPickFile();closeSyncMenu()"><span class="menu-icon">&#128190;</span><span class="menu-text">Conecteaza fisier nou<span class="menu-desc">Creaza sau alege alt fisier JSON</span></span></button>
+          <button onclick="syncPickFile();closeSyncMenu()"><span class="menu-icon">&#128190;</span><span class="menu-text">Creeaza fisier nou de sincronizare<span class="menu-desc">Exporta datele locale intr-un fisier JSON nou</span></span></button>
           <button onclick="disconnectSync();closeSyncMenu()" style="color:var(--red)"><span class="menu-icon">&#128683;</span><span class="menu-text">Deconecteaza fisierul<span class="menu-desc">Revino la salvare doar in browser</span></span></button>
+          <div style="border-top:1px solid var(--brd);margin:4px 0"></div>
+          <button onclick="showSyncLog();closeSyncMenu()"><span class="menu-icon">&#128203;</span><span class="menu-text">Istoric sincronizari<span class="menu-desc" id="sync-log-count"></span></span></button>
         </div>
       </div>
       <div class="tb-sep"></div>
@@ -1182,7 +1203,10 @@ function updateSyncIndicator(){
     el.classList.add('sync-green');
     txt.textContent=(CFG.lang==='en'?'Synced: ':'Sincronizat: ')+_fileHandle.name;
   }
-  el.style.cssText='';}
+  el.style.cssText='';
+  var slc=document.getElementById('sync-log-count');
+  if(slc){var cnt=(CFG.sync_log||[]).length;slc.textContent=cnt?cnt+' sincronizari inregistrate':'Nicio sincronizare inca'}
+}
 function syncIndicatorClick(){
   if(!_fileHandle&&CFG.sync_file_name){syncReconnect();return}
   syncPickFile();
@@ -1233,6 +1257,21 @@ async function syncPickFile(){
     _fileHandle=await window.showSaveFilePicker(_spOpts);
     CFG.sync_file_name=_fileHandle.name;await saveCfg();
     await saveFileHandle(_fileHandle);
+    // Check if file already has data — warn before overwrite
+    try{
+      var existingFile=await _fileHandle.getFile();
+      if(existingFile.size>50){
+        var existingText=await existingFile.text();
+        var existingData=JSON.parse(existingText);
+        var hasData=existingData&&(existingData.iaam||existingData.autocontrol||existingData.documents);
+        if(hasData){
+          var isEN=CFG.lang==='en';
+          if(!confirm(isEN?'This file already contains data! Overwrite with your local data?\n\nCancel = abort, OK = overwrite':'Fisierul contine deja date! Suprascrii cu datele tale locale?\n\nAnuleaza = renunta, OK = suprascrie')){
+            _fileHandle=null;CFG.sync_file_name='';await saveCfg();updateSyncIndicator();return;
+          }
+        }
+      }
+    }catch(e){/* file empty or not JSON — proceed with write */}
     await syncWrite();updateSyncIndicator();startSyncPoll();
     setTimeout(()=>showFileLocationModal(),300);
   }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}}
@@ -1271,9 +1310,163 @@ async function syncReadFile(){
   try{const _rfOpts={types:[{description:'JSON',accept:{'application/json':['.json']}}]};
     const _rfSh=await loadFileHandle().catch(()=>null);if(_rfSh)_rfOpts.startIn=_rfSh;
     const[fh]=await window.showOpenFilePicker(_rfOpts);
+    // If there's local data OR a previously connected file, show smart dialog
+    var hasLocalData=false;
+    for(var si=0;si<ST.length;si++){if(ST[si]==='config')continue;var lr=await gaAll(ST[si]);if(lr.length>0){hasLocalData=true;break}}
+    if(hasLocalData||_fileHandle){
+      _pendingFileHandle=fh;
+      _showFileActionDialog(fh.name,_fileHandle?_fileHandle.name:(CFG.sync_file_name||'date locale'));
+      return;
+    }
+    // No local data, not connected — direct import
     _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();await saveFileHandle(fh);
     await _importFromHandle(fh,true);
   }catch(e){if(e.name!=='AbortError')alert('Eroare import: '+e.message)}}
+var _pendingFileHandle=null;
+function _showFileActionDialog(newName,currentName){
+  var isEN=CFG.lang==='en';
+  var h='<div style="font-size:13px;line-height:1.8">';
+  h+='<div class="ib inf" style="margin-bottom:14px">';
+  h+=(isEN?'You are currently connected to':'Esti conectat la')+' <strong>'+esc(currentName)+'</strong>. ';
+  h+=(isEN?'What do you want to do with':'Ce vrei sa faci cu')+' <strong>'+esc(newName)+'</strong>?</div>';
+  // Option 1: Preview
+  h+='<div onclick="_fileActionPreview()" style="cursor:pointer;padding:14px;border:2px solid var(--brd);border-radius:10px;margin-bottom:10px;transition:.15s" onmouseover="this.style.borderColor=\'#3B82F6\'" onmouseout="this.style.borderColor=\'var(--brd)\'">';
+  h+='<div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">&#128065;</span><div>';
+  h+='<strong style="color:#3B82F6">'+(isEN?'View only':'Doar vizualizare')+'</strong><br>';
+  h+='<span style="font-size:11px;color:var(--txtL)">'+(isEN?'See what the file contains without changing anything. Your connection stays on':'Vezi ce contine fisierul fara sa modifici nimic. Conexiunea ramane la')+' '+esc(currentName)+'.</span>';
+  h+='</div></div></div>';
+  // Option 2: Merge
+  h+='<div onclick="_fileActionMerge()" style="cursor:pointer;padding:14px;border:2px solid var(--brd);border-radius:10px;margin-bottom:10px;transition:.15s" onmouseover="this.style.borderColor=\'#16A34A\'" onmouseout="this.style.borderColor=\'var(--brd)\'">';
+  h+='<div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">&#128260;</span><div>';
+  h+='<strong style="color:#16A34A">'+(isEN?'Merge data':'Combina datele')+'</strong><br>';
+  h+='<span style="font-size:11px;color:var(--txtL)">'+(isEN?'Import new records from this file into your database. Your connection stays on':'Importa inregistrarile noi din acest fisier in baza ta. Conexiunea ramane la')+' '+esc(currentName)+'.</span>';
+  h+='</div></div></div>';
+  // Option 3: Switch
+  h+='<div onclick="_fileActionSwitch()" style="cursor:pointer;padding:14px;border:2px solid var(--brd);border-radius:10px;margin-bottom:10px;transition:.15s" onmouseover="this.style.borderColor=\'#D97706\'" onmouseout="this.style.borderColor=\'var(--brd)\'">';
+  h+='<div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">&#128256;</span><div>';
+  h+='<strong style="color:#D97706">'+(isEN?'Switch file':'Schimba fisierul')+'</strong><br>';
+  h+='<span style="font-size:11px;color:var(--txtL)">'+(isEN?'Save current data, create backup, disconnect from current file and connect to this one.':'Salveaza datele curente, creeaza backup, deconecteaza de la fisierul actual si conecteaza la acesta.')+' '+esc(currentName)+' '+(isEN?'stays intact on disk.':'ramane intact pe disc.')+'</span>';
+  h+='</div></div></div>';
+  h+='</div>';
+  openM(isEN?'Open file':'Deschide fisier',h,'<button class="btn bo" onclick="_pendingFileHandle=null;closeM();">'+(isEN?'Cancel':'Anuleaza')+'</button>');
+}
+// ── Option 1: Preview (read-only) ──
+async function _fileActionPreview(){
+  if(!_pendingFileHandle){closeM();return}
+  try{
+    var isEN=CFG.lang==='en';
+    var file=await _pendingFileHandle.getFile();
+    var text=await file.text();
+    var d=JSON.parse(text);
+    var h='<div style="font-size:13px">';
+    h+='<div class="ib inf" style="margin-bottom:14px">';
+    h+='<strong>'+esc(_pendingFileHandle.name)+'</strong><br>';
+    if(d.exportedBy)h+=(isEN?'Exported by: ':'Exportat de: ')+'<strong>'+esc(d.exportedBy)+'</strong>';
+    if(d.exported)h+=' — '+d.exported.slice(0,10)+' '+d.exported.slice(11,16);
+    if(d.version)h+='<br>'+('Versiune: ')+d.version;
+    h+='</div>';
+    h+='<table class="dt" style="font-size:12px"><thead><tr><th>'+(isEN?'Store':'Modul')+'</th><th style="text-align:right">'+(isEN?'Records':'Inregistrari')+'</th></tr></thead><tbody>';
+    var storeNames={iaam:'IAAM / Anchete',autocontrol:'Autocontrol',deseuri:'Deseuri',biocide:'Biocide',pps:'PPS',documents:'Documente',deadlines:'Termene/Raportari',events:'Evenimente',audits:'Audituri',trainings:'Instruiri',atp:'Probe ATP',uvcheck:'Testare UV',atb_consum:'Consum Antibiotice',objectives:'Obiective'};
+    var totalRecs=0;
+    ST.forEach(function(s){
+      if(s==='config')return;
+      var arr=d[s];var cnt=Array.isArray(arr)?arr.length:0;
+      if(cnt>0){totalRecs+=cnt;h+='<tr><td>'+(storeNames[s]||s)+'</td><td style="text-align:right"><strong>'+cnt+'</strong></td></tr>'}
+    });
+    h+='<tr style="background:var(--navy);color:#fff;font-weight:700"><td>'+(isEN?'Total':'Total')+'</td><td style="text-align:right">'+totalRecs+'</td></tr>';
+    h+='</tbody></table>';
+    if(d.config&&d.config.hospital_name){h+='<div style="margin-top:10px;font-size:11px;color:var(--txtL)">'+(isEN?'Hospital: ':'Spital: ')+esc(d.config.hospital_name)+'</div>'}
+    h+='</div>';
+    closeM();
+    openM(isEN?'File Preview (read-only)':'Previzualizare fisier (doar citire)',h,
+      '<button class="btn bo" onclick="_pendingFileHandle=null;closeM()">'+(isEN?'Close':'Inchide')+'</button>'+
+      '<button class="btn bp" onclick="closeM();_fileActionMerge()">'+(isEN?'Import & Merge':'Importa si combina')+'</button>');
+  }catch(e){alert('Eroare citire: '+e.message);_pendingFileHandle=null;closeM()}
+}
+// ── Option 2: Merge (import without changing connection) ──
+async function _fileActionMerge(){
+  if(!_pendingFileHandle){closeM();return}
+  try{
+    var isEN=CFG.lang==='en';
+    // Keep current file handle — only merge data from the other file
+    var tempHandle=_pendingFileHandle;
+    _pendingFileHandle=null;
+    closeM();
+    // Read file data and merge into local DB
+    var file=await tempHandle.getFile();
+    var text=await file.text();
+    var d=JSON.parse(text);
+    // Support old format keys
+    var oldMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
+    for(var key in oldMap){if(d[key]&&!d[oldMap[key]])d[oldMap[key]]=d[key]}
+    var report={added:0,updated:0,deleted:0,kept:0,conflicts:0,byUser:{}};
+    for(var si=0;si<ST.length;si++){
+      var s=ST[si];if(s==='config')continue;
+      var fileRecs=d[s];if(!fileRecs||!Array.isArray(fileRecs))continue;
+      var localRecs=await gaAll(s);
+      var localMap={};for(var i=0;i<localRecs.length;i++)localMap[localRecs[i].id]=localRecs[i];
+      var fileMap={};for(var i=0;i<fileRecs.length;i++)fileMap[fileRecs[i].id]=fileRecs[i];
+      var allIds={};
+      for(var i=0;i<localRecs.length;i++)allIds[localRecs[i].id]=true;
+      for(var i=0;i<fileRecs.length;i++)allIds[fileRecs[i].id]=true;
+      var merged=[];var ids=Object.keys(allIds);
+      for(var k=0;k<ids.length;k++){
+        var id=ids[k];var loc=localMap[id]||null;var fil=fileMap[id]||null;
+        if(fil&&!loc){merged.push(fil);report.added++;_mergeTrack(report,fil._modifiedBy||fil._createdBy||d.exportedBy||'?','added',s)}
+        else if(loc&&!fil){merged.push(loc);report.kept++}
+        else{
+          var locT=loc._modifiedAt||loc._createdAt||'';var filT=fil._modifiedAt||fil._createdAt||'';
+          if(fil._deleted&&!loc._deleted){if(filT>=locT){merged.push(fil);report.deleted++;_mergeTrack(report,fil._deletedBy||d.exportedBy||'?','deleted',s)}else{merged.push(loc);report.kept++}}
+          else if(loc._deleted&&!fil._deleted){if(filT>=locT){merged.push(fil);report.updated++;_mergeTrack(report,fil._modifiedBy||d.exportedBy||'?','updated',s)}else{merged.push(loc);report.kept++}}
+          else{if(filT>locT){merged.push(fil);report.updated++;_mergeTrack(report,fil._modifiedBy||d.exportedBy||'?','updated',s)}else{merged.push(loc);report.kept++}}
+        }
+      }
+      await cl(s);for(var i=0;i<merged.length;i++)await pt(s,merged[i],true);
+    }
+    if(report.added||report.updated||report.deleted){showMergePopup(report)}
+    else{showToast(isEN?'Merge OK — no new changes':'Combinare OK — fara modificari noi')}
+    updateSyncIndicator();render();
+  }catch(e){alert('Eroare merge: '+e.message)}
+}
+// ── Option 3: Switch file (backup + clean + import) ──
+async function _fileActionSwitch(){
+  if(!_pendingFileHandle){closeM();return}
+  var isEN=CFG.lang==='en';
+  closeM();
+  try{
+    // Step 1: Save current data to current file
+    if(_fileHandle){
+      showToast(isEN?'Saving current data...':'Salvez datele curente...');
+      await syncWrite();
+    }
+    // Step 2: Create backup on disk
+    showToast(isEN?'Creating backup...':'Creez backup...');
+    var backupData={};for(var si=0;si<ST.length;si++){var s=ST[si];if(s==='config')continue;backupData[s]=await gaAll(s)}
+    var backupJson=JSON.stringify({version:APP_VERSION,exported:new Date().toISOString(),exportedBy:getCurrentUser(),config:CFG,...backupData},null,2);
+    var ts=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+    var backupName='CPIAAM_backup_'+ts+'.json';
+    try{
+      var bkOpts={suggestedName:backupName,types:[{description:'JSON Backup',accept:{'application/json':['.json']}}]};
+      var bkHandle=await window.showSaveFilePicker(bkOpts);
+      var bkWr=await bkHandle.createWritable();await bkWr.write(backupJson);await bkWr.close();
+      showToast(isEN?'Backup saved: ':'Backup salvat: '+backupName);
+    }catch(bkErr){
+      if(bkErr.name==='AbortError'){
+        // User cancelled backup — ask if they want to continue anyway
+        if(!confirm(isEN?'No backup created. Continue switching file anyway? (Current data is still saved in the connected file)':'Nu s-a creat backup. Continui schimbarea fisierului? (Datele curente sunt salvate in fisierul conectat)'))return;
+      }else{throw bkErr}
+    }
+    // Step 3: Stop sync, clear IndexedDB
+    stopSyncPoll();
+    for(var si=0;si<ST.length;si++){var s=ST[si];if(s==='config')continue;await cl(s)}
+    // Step 4: Connect to new file and do pure import
+    _fileHandle=_pendingFileHandle;_pendingFileHandle=null;
+    CFG.sync_file_name=_fileHandle.name;await saveCfg();await saveFileHandle(_fileHandle);
+    await _importFromHandle(_fileHandle,true);
+    showToast(isEN?'Connected to: ':'Conectat la: '+_fileHandle.name);
+    startSyncPoll();
+  }catch(e){alert((isEN?'Error switching file: ':'Eroare la schimbarea fisierului: ')+e.message)}
+}
 async function _importFromHandle(fh,skipReload){
   const file=await fh.getFile();const text=await file.text();const d=JSON.parse(text);
   if(d.config){const cfg=_extractCfg(d.config);if(cfg)Object.assign(CFG,cfg);CFG.sync_file_name=fh.name;await saveCfg()}
@@ -1301,7 +1494,7 @@ async function _importFromHandle(fh,skipReload){
       if(fil&&!loc){
         // New from file
         merged.push(fil);report.added++;
-        _mergeTrack(report,fil._modifiedBy||fil._createdBy||d.exportedBy||'?','added');
+        _mergeTrack(report,fil._modifiedBy||fil._createdBy||d.exportedBy||'?','added',s);
       } else if(loc&&!fil){
         // Local only — keep
         merged.push(loc);report.kept++;
@@ -1311,15 +1504,15 @@ async function _importFromHandle(fh,skipReload){
         var filT=fil._modifiedAt||fil._createdAt||'';
         if(fil._deleted&&!loc._deleted){
           // File says deleted, local alive — newer wins
-          if(filT>=locT){merged.push(fil);report.deleted++;_mergeTrack(report,fil._deletedBy||d.exportedBy||'?','deleted')}
+          if(filT>=locT){merged.push(fil);report.deleted++;_mergeTrack(report,fil._deletedBy||d.exportedBy||'?','deleted',s)}
           else{merged.push(loc);report.kept++}
         } else if(loc._deleted&&!fil._deleted){
           // Local deleted, file alive — file wins if newer (undelete)
-          if(filT>=locT){merged.push(fil);report.updated++;_mergeTrack(report,fil._modifiedBy||d.exportedBy||'?','updated')}
+          if(filT>=locT){merged.push(fil);report.updated++;_mergeTrack(report,fil._modifiedBy||d.exportedBy||'?','updated',s)}
           else{merged.push(loc);report.kept++}
         } else {
           // Both alive or both deleted — newer wins
-          if(filT>locT){merged.push(fil);report.updated++;_mergeTrack(report,fil._modifiedBy||d.exportedBy||'?','updated')}
+          if(filT>locT){merged.push(fil);report.updated++;_mergeTrack(report,fil._modifiedBy||d.exportedBy||'?','updated',s)}
           else{merged.push(loc);report.kept++}
         }
       }
@@ -1336,10 +1529,14 @@ async function _importFromHandle(fh,skipReload){
     location.reload();
   }
 }
-function _mergeTrack(report,user,action){
+function _mergeTrack(report,user,action,store){
   if(!user)user='?';
-  if(!report.byUser[user])report.byUser[user]={added:0,updated:0,deleted:0};
+  if(!report.byUser[user])report.byUser[user]={added:0,updated:0,deleted:0,stores:{}};
   report.byUser[user][action]++;
+  if(store){
+    if(!report.byUser[user].stores[store])report.byUser[user].stores[store]={added:0,updated:0,deleted:0};
+    report.byUser[user].stores[store][action]++;
+  }
 }
 function _mergeLabel(n,singRO,plurRO,singEN,plurEN){
   var isEN=CFG.lang==='en';
@@ -1395,12 +1592,18 @@ function showSyncDetails(idx){
     h+='<th style="padding:6px 8px;color:#059669">+'+(isEN?' New':' Noi')+'</th>';
     h+='<th style="padding:6px 8px;color:#2563EB">&#9998;'+(isEN?' Updated':' Modif.')+'</th>';
     h+='<th style="padding:6px 8px;color:#DC2626">&#128465;'+(isEN?' Deleted':' Sterse')+'</th></tr></thead><tbody>';
+    var sNames={iaam:'IAAM',autocontrol:'Autocontrol',deseuri:'Deseuri',biocide:'Biocide',pps:'PPS',documents:'Documente',deadlines:'Termene',events:'Evenimente',audits:'Audituri',trainings:'Instruiri',atp:'ATP',uvcheck:'UV',atb_consum:'Consum ATB',objectives:'Obiective'};
     for(var u=0;u<users.length;u++){
-      var name=users[u];var s=report.byUser[name];
+      var name=users[u];var us=report.byUser[name];
+      var storeDetail='';
+      if(us.stores){var parts=[];Object.keys(us.stores).forEach(function(st){var ss=us.stores[st];var acts=[];
+        if(ss.added)acts.push('+'+ss.added);if(ss.updated)acts.push('~'+ss.updated);if(ss.deleted)acts.push('-'+ss.deleted);
+        if(acts.length)parts.push((sNames[st]||st)+': '+acts.join(', '))});storeDetail=parts.join(' | ')}
       h+='<tr style="border-bottom:1px solid var(--brd)"><td style="padding:6px 8px;font-weight:500">'+esc(name)+'</td>';
-      h+='<td style="text-align:center;padding:6px 8px">'+(s.added||'—')+'</td>';
-      h+='<td style="text-align:center;padding:6px 8px">'+(s.updated||'—')+'</td>';
-      h+='<td style="text-align:center;padding:6px 8px">'+(s.deleted||'—')+'</td></tr>';
+      h+='<td style="text-align:center;padding:6px 8px">'+(us.added||'—')+'</td>';
+      h+='<td style="text-align:center;padding:6px 8px">'+(us.updated||'—')+'</td>';
+      h+='<td style="text-align:center;padding:6px 8px">'+(us.deleted||'—')+'</td></tr>';
+      if(storeDetail)h+='<tr><td colspan="4" style="padding:2px 8px 8px 24px;font-size:10px;color:var(--txtL)">'+esc(storeDetail)+'</td></tr>';
     }
     h+='</tbody></table>';
   }
@@ -1466,12 +1669,25 @@ function showSyncLogDetail(idx){
     h+='<th style="padding:6px 8px;color:#059669">+'+(isEN?' New':' Noi')+'</th>';
     h+='<th style="padding:6px 8px;color:#2563EB">&#9998;'+(isEN?' Updated':' Modif.')+'</th>';
     h+='<th style="padding:6px 8px;color:#DC2626">&#128465;'+(isEN?' Deleted':' Sterse')+'</th></tr></thead><tbody>';
+    var sNames={iaam:'IAAM',autocontrol:'Autocontrol',deseuri:'Deseuri',biocide:'Biocide',pps:'PPS',documents:'Documente',deadlines:'Termene',events:'Evenimente',audits:'Audituri',trainings:'Instruiri',atp:'ATP',uvcheck:'UV',atb_consum:'Consum ATB',objectives:'Obiective'};
     for(var u=0;u<users.length;u++){
-      var name=users[u];var s=r.byUser[name];
+      var name=users[u];var us=r.byUser[name];
+      // Build store detail string
+      var storeDetail='';
+      if(us.stores){
+        var parts=[];
+        Object.keys(us.stores).forEach(function(st){
+          var ss=us.stores[st];var acts=[];
+          if(ss.added)acts.push('+'+ss.added);if(ss.updated)acts.push('~'+ss.updated);if(ss.deleted)acts.push('-'+ss.deleted);
+          if(acts.length)parts.push((sNames[st]||st)+': '+acts.join(', '));
+        });
+        storeDetail=parts.join(' | ');
+      }
       h+='<tr style="border-bottom:1px solid var(--brd)"><td style="padding:6px 8px;font-weight:500">'+esc(name)+'</td>';
-      h+='<td style="text-align:center;padding:6px 8px">'+(s.added||'—')+'</td>';
-      h+='<td style="text-align:center;padding:6px 8px">'+(s.updated||'—')+'</td>';
-      h+='<td style="text-align:center;padding:6px 8px">'+(s.deleted||'—')+'</td></tr>';
+      h+='<td style="text-align:center;padding:6px 8px">'+(us.added||'—')+'</td>';
+      h+='<td style="text-align:center;padding:6px 8px">'+(us.updated||'—')+'</td>';
+      h+='<td style="text-align:center;padding:6px 8px">'+(us.deleted||'—')+'</td></tr>';
+      if(storeDetail)h+='<tr><td colspan="4" style="padding:2px 8px 8px 24px;font-size:10px;color:var(--txtL)">'+esc(storeDetail)+'</td></tr>';
     }
     h+='</tbody></table>';
   }
@@ -1565,7 +1781,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='10.0';
+const APP_VERSION='11.1';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1707,7 +1923,7 @@ async function loadCfg(){
       {id:genId('ipc'),name_ro:'Infectii chirurgicale',name_en:'Surgical site infections',color:'#4E342E',source_module:'iaam',audit_type:null,standard:true,active:true},
       {id:genId('ipc'),name_ro:'Antibiotic Stewardship',name_en:'Antibiotic Stewardship',color:'#1B5E20',source_module:'atb_consum',audit_type:null,standard:true,active:true},
       {id:genId('ipc'),name_ro:'Educatie si formare',name_en:'Education & training',color:'#FF6F00',source_module:'trainings',audit_type:null,standard:true,active:true},
-      {id:genId('ipc'),name_ro:'Audit si conformitate',name_en:'Audit & compliance',color:'#6366F1',source_module:'audit',audit_type:'agregat',standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Audit si conformitate',name_en:'Audit & compliance',color:'#0D9488',source_module:'audit',audit_type:'agregat',standard:true,active:true},
       {id:genId('ipc'),name_ro:'Focare epidemice',name_en:'Outbreak management',color:'#D32F2F',source_module:null,audit_type:null,standard:true,active:true}
     ];
   }
@@ -1753,6 +1969,11 @@ async function loadCfg(){
   // Migrate: add deseuri audit category if missing
   if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>c.audit_type==='deseuri')){
     CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Gestionare deseuri',name_en:'Waste management',color:'#795548',source_module:'audit',audit_type:'deseuri',standard:true,active:true});
+    _comorbAdded=true;
+  }
+  // Add Focare epidemice category if missing (needed for Obiective SMART template)
+  if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>(c.name_ro||'').indexOf('Focare')>=0)){
+    CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Focare epidemice',name_en:'Outbreaks',color:'#D32F2F',source_module:'iaam',audit_type:null,standard:true,active:true});
     _comorbAdded=true;
   }
   // Ensure all config items have unique IDs
@@ -2622,8 +2843,8 @@ function applySbCollapse(){
   if(!sb)return;
   if(_sbCollapsed){sb.classList.add('sb-mini');if(mn)mn.classList.add('mn-expanded')}
   else{sb.classList.remove('sb-mini');if(mn)mn.classList.remove('mn-expanded')}
-  // Resize charts after layout change
-  setTimeout(function(){Object.values(A.charts||{}).forEach(function(c){if(c&&c.resize)try{c.resize()}catch(e){}})},300);
+  // Re-render page after CSS transition completes to fix chart dimensions
+  setTimeout(function(){render()},350);
 }
 function toggleDark(){
   A.darkMode=!A.darkMode;CFG.dark_mode=A.darkMode;saveCfg();applyDark()}
@@ -2681,6 +2902,10 @@ async function buildNotifications(){
       if(b.status==='expired')n.push({icon:'⚠️',text:(isEN?'Expired biocide permit: ':'Aviz biocid expirat: ')+b.product+' ('+b.aviz+')',link:'biocide',urgent:true});
       else n.push({icon:'🟡',text:(isEN?'Biocide permit expiring: ':'Aviz biocid expira: ')+b.product+' ('+b.aviz+') — '+b.date,link:'biocide'});
     });
+  }
+  // Attachment folder disconnected
+  if(!_attDirHandle&&CFG.att_dir_name){
+    n.push({icon:'📎',text:(isEN?'Attachment folder disconnected: ':'Folder atasamente deconectat: ')+CFG.att_dir_name+(isEN?'. Go to Config to reconnect.':'. Mergi la Configurare pentru reconectare.'),link:'config',cfgTab:'date'});
   }
   // Backup
   if(CFG.last_backup){const lb=new Date(CFG.last_backup);const diff=now-lb;
@@ -3349,7 +3574,7 @@ function renderIaamSection(step){
     h=renderRiskSection();
     break;
   case 5: // ATB Treatment
-    h='<div class="fg" style="margin-bottom:14px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="f-no-atb" '+(d.no_antibiotic?'checked':'')+' onchange="toggleNoAtb(this.checked)" style="accent-color:#6366F1;width:16px;height:16px"> <span style="font-size:13px;font-weight:600">'+(isEN?'No antibiotic treatment':'Fara tratament antibiotic')+'</span></label></div>'+
+    h='<div class="fg" style="margin-bottom:14px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="f-no-atb" '+(d.no_antibiotic?'checked':'')+' onchange="toggleNoAtb(this.checked)" style="accent-color:#0D9488;width:16px;height:16px"> <span style="font-size:13px;font-weight:600">'+(isEN?'No antibiotic treatment':'Fara tratament antibiotic')+'</span></label></div>'+
       '<div id="f-atb-block" style="'+(d.no_antibiotic?'opacity:0.4;pointer-events:none':'')+'">'+
       '<div class="fg"><div style="display:flex;gap:6px;margin-bottom:8px"><select id="f-atb-sel" style="flex:1">'+atbOpts()+'</select><select id="f-atb-route" style="width:130px">'+ATB_ROUTES.map(r=>'<option value="'+r.v+'">'+r.n+'</option>').join('')+'</select><button class="btn bo bsm" onclick="addIaamAtb()">+ Adauga</button></div>'+
       '<div id="f-atb-rows">'+renderAtbRows()+'</div></div></div>';
@@ -5417,7 +5642,7 @@ const BIO_ATT_TYPES=[
   {key:'aviz',icon:'&#128203;',label:'Aviz',title:'Aviz biocid (autorizatie punere pe piata)',color:'#27AE60',bg:'#ECFDF5',brd:'#A7F3D0'},
   {key:'fisa_tehnica',icon:'&#128196;',label:'Fi\u0219\u0103 tehn.',title:'Fisa tehnica produs',color:'#2563B0',bg:'#EFF6FF',brd:'#BFDBFE'},
   {key:'sds',icon:'&#9888;',label:'SDS',title:'Fisa date de securitate (SDS/FDS)',color:'#D97706',bg:'#FFFBEB',brd:'#FDE68A'},
-  {key:'alte_doc',icon:'&#128206;',label:'Alte',title:'Alte documente',color:'#6366F1',bg:'#EEF2FF',brd:'#C7D2FE'}
+  {key:'alte_doc',icon:'&#128206;',label:'Alte',title:'Alte documente',color:'#0D9488',bg:'#EEF2FF',brd:'#C7D2FE'}
 ];
 function bioAttIcons(r){
   return '<div style="display:flex;gap:3px;flex-wrap:wrap">'+BIO_ATT_TYPES.map(t=>{
@@ -6515,10 +6740,20 @@ function buildMonthGrid(y,m,events,compact){
     const dayNum=i-startOff+1;let cls='cal-day',num='',dayEvts=[];
     if(dayNum<1){cls+=' other';num=prevDays+dayNum}
     else if(dayNum>daysInMonth){cls+=' other';num=dayNum-daysInMonth}
-    else{num=dayNum;if(isCurrentMonth&&dayNum===todayDate)cls+=' today';dayEvts=evMap[dayNum]||[]}
+    else{
+      num=dayNum;if(isCurrentMonth&&dayNum===todayDate)cls+=' today';dayEvts=evMap[dayNum]||[];
+      // Highlight future days with events
+      if(dayEvts.length){
+        var cellDate=new Date(y,m,dayNum);
+        if(cellDate>=new Date(today.getFullYear(),today.getMonth(),today.getDate()))cls+=' cal-has-evt';
+        else cls+=' cal-has-evt-past';
+      }
+    }
     const dateStr=dayNum>=1&&dayNum<=daysInMonth?y+'-'+String(m+1).padStart(2,'0')+'-'+String(dayNum).padStart(2,'0'):'';
+    // Count badge
+    var countBadge=dayEvts.length>1&&!compact?'<span class="cal-count">'+dayEvts.length+'</span>':'';
     grid+='<div class="'+cls+'"'+(dateStr&&!compact?' onclick="calDayClick(\''+dateStr+'\')"':'')+'>'+
-      '<div class="day-num">'+num+'</div>'+
+      '<div class="day-num">'+num+countBadge+'</div>'+
       (dayEvts.length?'<div class="cal-dots">'+dayEvts.map(e=>'<div class="cal-dot '+e.color+'" title="'+e.label+'"></div>').join('')+'</div>'+
         (!compact?dayEvts.slice(0,2).map(e=>'<div class="cal-evt-label '+e.color+'">'+e.label+'</div>').join('')+
         (dayEvts.length>2?'<div class="cal-evt-label" style="color:var(--txtL)">+'+(dayEvts.length-2)+'</div>':''):'')
@@ -6531,8 +6766,8 @@ async function rCalendar(el){
   const isEN=CFG.lang==='en';
   // Tab bar: Calendar | Raportari
   let tabs_h='<div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--brd)">'+
-    '<button onclick="_calTab=\'calendar\';render()" style="padding:8px 20px;border:none;cursor:pointer;font-weight:500;font-size:14px;background:none;border-bottom:3px solid '+(_calTab==='calendar'?'#6366F1':'transparent')+';color:'+(_calTab==='calendar'?'#6366F1':'var(--txtL)')+';transition:all .15s ease;font-family:var(--f)">&#128197; '+(isEN?'Calendar':'Calendar')+'</button>'+
-    '<button onclick="_calTab=\'termene\';render()" style="padding:8px 20px;border:none;cursor:pointer;font-weight:500;font-size:14px;background:none;border-bottom:3px solid '+(_calTab==='termene'?'#6366F1':'transparent')+';color:'+(_calTab==='termene'?'#6366F1':'var(--txtL)')+';transition:all .15s ease;font-family:var(--f)">&#128203; '+(isEN?'Reporting Deadlines':'Raportari / Termene')+'</button>'+
+    '<button onclick="_calTab=\'calendar\';render()" style="padding:8px 20px;border:none;cursor:pointer;font-weight:500;font-size:14px;background:none;border-bottom:3px solid '+(_calTab==='calendar'?'#0D9488':'transparent')+';color:'+(_calTab==='calendar'?'#0D9488':'var(--txtL)')+';transition:all .15s ease;font-family:var(--f)">&#128197; '+(isEN?'Calendar':'Calendar')+'</button>'+
+    '<button onclick="_calTab=\'termene\';render()" style="padding:8px 20px;border:none;cursor:pointer;font-weight:500;font-size:14px;background:none;border-bottom:3px solid '+(_calTab==='termene'?'#0D9488':'transparent')+';color:'+(_calTab==='termene'?'#0D9488':'var(--txtL)')+';transition:all .15s ease;font-family:var(--f)">&#128203; '+(isEN?'Reporting Deadlines':'Raportari / Termene')+'</button>'+
   '</div>';
   if(_calTab==='termene'){el.innerHTML=tabs_h;const termDiv=document.createElement('div');el.appendChild(termDiv);return rTerm(termDiv)}
   const y=_calYear,m=_calMonth;
@@ -6566,7 +6801,14 @@ async function rCalendar(el){
       '<div class="cal-popup" id="cal-pop" style="display:none"></div>';
   } else {
     const events=await getCalendarEvents(y,m);
-    el.innerHTML=tabs_h+nav_h+'<div class="cal-grid">'+buildMonthGrid(y,m,events,false)+'</div>'+
+    var calLegend='<div class="cal-legend" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;padding:8px 4px;font-size:11px;color:var(--txtL)">'+
+      '<span><span class="cal-dot red" style="display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:4px"></span>'+(isEN?'Deadlines':'Termene/Raportari')+'</span>'+
+      '<span><span class="cal-dot yellow" style="display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:4px"></span>'+(isEN?'Document expiry':'Expirare documente')+'</span>'+
+      '<span><span class="cal-dot blue" style="display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:4px"></span>'+(isEN?'Events / Meetings':'Evenimente/Sedinte')+'</span>'+
+      '<span><span class="cal-dot green" style="display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:4px"></span>'+(isEN?'Training':'Instruiri')+'</span>'+
+      '<span><span class="cal-dot teal" style="display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:4px"></span>'+(isEN?'Audits':'Audituri')+'</span>'+
+    '</div>';
+    el.innerHTML=tabs_h+nav_h+'<div class="cal-grid">'+buildMonthGrid(y,m,events,false)+'</div>'+calLegend+
       '<div class="cal-popup-ov" id="cal-pop-ov" onclick="closeCalPopup()"></div>'+
       '<div class="cal-popup" id="cal-pop" style="display:none"></div>';
   }
@@ -6641,32 +6883,62 @@ async function renderDashCalendar(){
   const grid=buildMonthGrid(y,m,events,true);
   // Upcoming 7 days: gather from current and possibly next month
   const upcoming=[];
-  const ms7=7*864e5;
+  const todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const ms7end=new Date(todayStart.getTime()+8*864e5);// end of 7th day
   const allDls=await ga('deadlines'),allDocs=await ga('documents'),allEvts=await ga('events'),allTr=await ga('trainings'),allAud=await ga('audits');
-  allDls.forEach(d=>{if(!d.due_date||d.status==='trimis')return;const dt=new Date(d.due_date+'T00:00:00');const diff=dt-now;
-    if(diff>=0&&diff<=ms7)upcoming.push({date:d.due_date,color:'red',label:d.name,link:'calendar'})});
-  allDocs.forEach(d=>{if(!d.date_expiry)return;const dt=new Date(d.date_expiry+'T00:00:00');const diff=dt-now;
-    if(diff>=0&&diff<=ms7)upcoming.push({date:d.date_expiry,color:'yellow',label:d.name,link:'documente'})});
-  allEvts.forEach(e=>{if(!e.date)return;const dt=new Date(e.date+'T00:00:00');const diff=dt-now;
-    if(diff>=0&&diff<=ms7)upcoming.push({date:e.date,color:'blue',label:e.title,link:'calendar'})});
-  allTr.forEach(t=>{if(!t.date)return;const dt=new Date(t.date+'T00:00:00');const diff=dt-now;
-    if(diff>=0&&diff<=ms7)upcoming.push({date:t.date,color:'green',label:t.topic||'Instruire',link:'instruire'})});
-  allAud.forEach(a=>{if(!a.date)return;const dt=new Date(a.date+'T00:00:00');const diff=dt-now;
-    if(diff>=0&&diff<=ms7)upcoming.push({date:a.date,color:'teal',label:a.type||'Audit',link:'audituri'})});
+  allDls.forEach(d=>{if(!d.due_date||d.status==='trimis')return;const dt=new Date(d.due_date+'T00:00:00');
+    if(dt>=todayStart&&dt<ms7end)upcoming.push({date:d.due_date,color:'red',label:d.name,link:'calendar'})});
+  allDocs.forEach(d=>{if(!d.date_expiry)return;const dt=new Date(d.date_expiry+'T00:00:00');
+    if(dt>=todayStart&&dt<ms7end)upcoming.push({date:d.date_expiry,color:'yellow',label:d.name,link:'documente'})});
+  allEvts.forEach(e=>{if(!e.date)return;const dt=new Date(e.date+'T00:00:00');
+    if(dt>=todayStart&&dt<ms7end)upcoming.push({date:e.date,color:'blue',label:e.title,link:'calendar'})});
+  allTr.forEach(t=>{if(!t.date)return;const dt=new Date(t.date+'T00:00:00');
+    if(dt>=todayStart&&dt<ms7end)upcoming.push({date:t.date,color:'green',label:t.topic||'Instruire',link:'instruire'})});
+  allAud.forEach(a=>{if(!a.date)return;const dt=new Date(a.date+'T00:00:00');
+    if(dt>=todayStart&&dt<ms7end)upcoming.push({date:a.date,color:'teal',label:a.type||'Audit',link:'audituri'})});
   upcoming.sort((a,b)=>a.date.localeCompare(b.date));
-  const upHtml=upcoming.length?upcoming.map(ev=>{
-    const d=new Date(ev.date);const dayStr=d.getDate()+' '+mNames[d.getMonth()];
-    return '<div class="dash-up-item" onclick="nav(\''+ev.link+'\')">'+
-      '<div class="cal-dot '+ev.color+'" style="width:8px;height:8px;border-radius:50%;flex-shrink:0"></div>'+
-      '<span style="color:var(--txtL);min-width:50px">'+dayStr+'</span>'+
-      '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ev.label+'</span></div>'
-  }).join(''):'<div style="padding:12px;text-align:center;color:var(--txtL);font-size:12px">'+T('cal_no_upcoming')+'</div>';
+  // If nothing in 7 days, show next upcoming events regardless of date
+  var upTitle=T('cal_next_7');
+  if(!upcoming.length){
+    var future=[];
+    allDls.forEach(d=>{if(!d.due_date||d.status==='trimis')return;var dt=new Date(d.due_date+'T00:00:00');if(dt>=todayStart)future.push({date:d.due_date,color:'red',label:d.name,link:'calendar'})});
+    allDocs.forEach(d=>{if(!d.date_expiry)return;var dt=new Date(d.date_expiry+'T00:00:00');if(dt>=todayStart)future.push({date:d.date_expiry,color:'yellow',label:d.name,link:'documente'})});
+    allEvts.forEach(e=>{if(!e.date)return;var dt=new Date(e.date+'T00:00:00');if(dt>=todayStart)future.push({date:e.date,color:'blue',label:e.title,link:'calendar'})});
+    allTr.forEach(t=>{if(!t.date)return;var dt=new Date(t.date+'T00:00:00');if(dt>=todayStart)future.push({date:t.date,color:'green',label:t.topic||'Instruire',link:'instruire'})});
+    allAud.forEach(a=>{if(!a.date)return;var dt=new Date(a.date+'T00:00:00');if(dt>=todayStart)future.push({date:a.date,color:'teal',label:a.type||'Audit',link:'audituri'})});
+    future.sort((a,b)=>a.date.localeCompare(b.date));
+    if(future.length){upcoming.push(...future.slice(0,5));upTitle=isEN?'Upcoming events':'Evenimente viitoare'}
+  }
+  // Group upcoming by Astazi / Maine / Saptamana
+  var todayStr=now.toISOString().slice(0,10);
+  var tomorrowD=new Date(now);tomorrowD.setDate(tomorrowD.getDate()+1);var tomorrowStr=tomorrowD.toISOString().slice(0,10);
+  var dotTitles={red:isEN?'Deadline':'Termen',yellow:isEN?'Document expiry':'Expirare document',blue:isEN?'Event':'Eveniment',green:isEN?'Training':'Instruire',teal:isEN?'Audit':'Audit'};
+  var upHtml='';
+  if(upcoming.length){
+    var lastGroup='';
+    upcoming.forEach(function(ev){
+      var grp=ev.date===todayStr?(isEN?'Today':'Astazi'):ev.date===tomorrowStr?(isEN?'Tomorrow':'Maine'):(isEN?'This week':'Saptamana aceasta');
+      if(grp!==lastGroup){
+        var grpStyle=grp===(isEN?'Today':'Astazi')?'background:rgba(99,102,241,.08);border-radius:8px;padding:4px 8px;margin:2px -8px':'padding:4px 8px;margin:2px -8px';
+        upHtml+='<div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-top:'+(lastGroup?'8':'0')+'px;'+grpStyle+'">'+grp+'</div>';
+        lastGroup=grp;
+      }
+      var d=new Date(ev.date);var dayStr=d.getDate()+' '+mNames[d.getMonth()];
+      var isToday=ev.date===todayStr;
+      upHtml+='<div class="dash-up-item" onclick="nav(\''+ev.link+'\')" style="'+(isToday?'font-weight:600':'')+'">'+
+        '<div class="cal-dot '+ev.color+'" style="width:8px;height:8px;border-radius:50%;flex-shrink:0" title="'+(dotTitles[ev.color]||'')+'"></div>'+
+        '<span style="color:var(--txtL);min-width:50px">'+dayStr+'</span>'+
+        '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ev.label+'</span></div>';
+    });
+  } else {
+    upHtml='<div style="padding:12px;text-align:center;color:var(--txtL);font-size:12px">'+T('cal_no_upcoming')+'</div>';
+  }
   return '<div class="dash-cal-row">'+
     '<div class="mini-cal" onclick="nav(\'calendar\')" style="cursor:pointer"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
       '<strong style="font-size:13px;color:var(--navy)">'+mNames[m]+' '+y+'</strong>'+
       '</div>'+
       '<div class="cal-grid">'+grid+'</div></div>'+
-    '<div class="dash-cal-upcoming"><h4>'+T('cal_next_7')+'</h4>'+upHtml+'</div></div>';
+    '<div class="dash-cal-upcoming"><h4>'+upTitle+'</h4>'+upHtml+'</div></div>';
 }
 
 
@@ -7820,7 +8092,20 @@ var _objCodeCounter=0;
 
 // ═══ HELPERS ═══
 function _resolveIpcCatId(name_ro){
-  var c=(CFG.ipc_categories||[]).find(function(x){return x.name_ro===name_ro});
+  if(!name_ro)return null;
+  var cats=CFG.ipc_categories||[];
+  // Exact match
+  var c=cats.find(function(x){return x.name_ro===name_ro});
+  if(c)return c.id;
+  // Case-insensitive match
+  var lower=name_ro.toLowerCase();
+  c=cats.find(function(x){return (x.name_ro||'').toLowerCase()===lower});
+  if(c)return c.id;
+  // Partial match (name contains search or search contains name)
+  c=cats.find(function(x){var n=(x.name_ro||'').toLowerCase();return n.indexOf(lower)>=0||lower.indexOf(n)>=0});
+  if(c)return c.id;
+  // Match on name_en
+  c=cats.find(function(x){return (x.name_en||'').toLowerCase()===lower});
   return c?c.id:null;
 }
 function _getObjStatus(value,target,operator){
@@ -8179,13 +8464,13 @@ async function rObiective(el){
           '<div style="flex:1;min-width:200px"><strong>'+esc(title)+'</strong>'+
             '<div style="font-size:10px;color:var(--txtL)">'+esc(isEN?(o.indicator_en||o.indicator_ro):o.indicator_ro)+'</div></div>'+
           '<div style="width:120px;text-align:center">'+
-            '<label style="font-size:10px;color:var(--txtL)">'+T('obj_tinta')+' ('+(o.operator==='gte'?'\u2265':'\u2264')+') '+o.unit+'</label>'+
-            '<input type="number" value="'+o.target+'" onchange="_updateObj(\''+o.id+'\',\'target\',+this.value)" style="width:80px;text-align:center;border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:13px;font-weight:600">'+
-            (diffTarget?'<div style="font-size:9px;color:var(--txtL)">Standard: '+o.target_default+' '+o.unit+'</div>':'')+
+            '<label style="font-size:10px;color:var(--txtL)">'+T('obj_tinta')+' ('+(o.operator==='gte'?'\u2265':o.operator==='lte'?'\u2264':'=')+') '+(o.unit||'')+'</label>'+
+            '<input type="number" value="'+(o.target||0)+'" onchange="_updateObj(\''+o.id+'\',\'target\',+this.value)" style="width:80px;text-align:center;border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:13px;font-weight:600">'+
+            (diffTarget?'<div style="font-size:9px;color:var(--txtL)">Standard: '+(o.target_default||'—')+' '+(o.unit||'')+'</div>':'')+
           '</div>'+
           '<div style="display:flex;gap:6px;align-items:center">'+
             '<span class="bdg '+(o.standard?'bdg-b':'bdg-g')+'" style="font-size:9px">'+(o.standard?T('obj_standard'):T('obj_personalizat'))+'</span>'+
-            '<label style="font-size:11px;cursor:pointer"><input type="checkbox" '+(o.active?'checked':'')+' onchange="_updateObj(\''+o.id+'\',\'active\',this.checked)" style="accent-color:#6366F1"> '+T('obj_activ')+'</label>'+
+            '<label style="font-size:11px;cursor:pointer"><input type="checkbox" '+(o.active?'checked':'')+' onchange="_updateObj(\''+o.id+'\',\'active\',this.checked)" style="accent-color:#0D9488"> '+T('obj_activ')+'</label>'+
             (diffTarget?'<button class="btn bo bsm" onclick="_updateObj(\''+o.id+'\',\'target\','+o.target_default+')" style="font-size:10px" title="'+T('obj_reseteaza_obj')+'">\u21BA</button>':'')+
             (!o.standard?'<button class="btn bo bsm" onclick="_deleteObj(\''+o.id+'\')" style="font-size:10px;color:var(--red)">&#128465;</button>':'')+
           '</div>'+
@@ -9149,13 +9434,13 @@ async function rCfg(el){
       '<td>'+esc(c.name_en||'')+'</td>'+
       '<td>'+(c.source_module||'Manual')+(c.audit_type?' <span style="font-size:10px;color:var(--txtL)">('+c.audit_type+')</span>':'')+'</td>'+
       '<td><span class="bdg '+(c.standard?'bdg-b':'bdg-g')+'" style="font-size:9px">'+(c.standard?T('obj_standard'):T('obj_personalizat'))+'</span></td>'+
-      '<td style="text-align:center"><input type="checkbox" '+(c.active!==false?'checked':'')+' onchange="CFG.ipc_categories['+i+'].active=this.checked;saveCfg();render()" style="accent-color:'+(c.color||'#6366F1')+'"></td>'+
+      '<td style="text-align:center"><input type="checkbox" '+(c.active!==false?'checked':'')+' onchange="CFG.ipc_categories['+i+'].active=this.checked;saveCfg();render()" style="accent-color:'+(c.color||'#0D9488')+'"></td>'+
       '<td class="act">'+(c.standard?'':'<button onclick="CFG.ipc_categories.splice('+i+',1);saveCfg();render()">&#128465;</button>')+'</td></tr>'}).join('')+
     '</tbody></table>'+
     '<div id="ipc-cat-add-form" style="display:none;margin-top:12px;padding:12px;background:var(--color-background-secondary,#f8fafc);border-radius:8px;border:1px solid var(--brd)">'+
       '<div class="fr"><div class="fg"><label>Denumire RO</label><input id="ipc-new-ro" placeholder="Denumire romaneasca"></div>'+
       '<div class="fg"><label>Denumire EN</label><input id="ipc-new-en" placeholder="English name"></div>'+
-      '<div class="fg" style="width:80px"><label>Culoare</label><input type="color" id="ipc-new-color" value="#6366F1" style="width:100%;height:34px;border:1px solid var(--brd);border-radius:4px"></div></div>'+
+      '<div class="fg" style="width:80px"><label>Culoare</label><input type="color" id="ipc-new-color" value="#0D9488" style="width:100%;height:34px;border:1px solid var(--brd);border-radius:4px"></div></div>'+
       '<div class="fr" style="margin-top:8px"><div class="fg"><label>'+T('obj_ipc_sursa')+'</label><select id="ipc-new-src">'+_ipcSrcOpts+'</select></div>'+
       '<div class="fg"><label>'+T('obj_ipc_audit_type')+'</label><input id="ipc-new-atype" placeholder="ex: igm, curatenie"></div></div>'+
       '<div style="margin-top:10px;display:flex;gap:8px">'+
@@ -9189,7 +9474,7 @@ async function rCfg(el){
     '<table class="dt" style="font-size:12px"><thead><tr><th>Nume factor de risc</th><th style="width:130px">Afisat permanent</th><th style="width:50px">Actiuni</th></tr></thead>'+
     '<tbody>'+(CFG.risk_factors_config||[]).map((rf,i)=>
       '<tr><td>'+esc(rf.name)+'</td>'+
-      '<td style="text-align:center"><input type="checkbox" '+(rf.pinned?'checked':'')+' onchange="CFG.risk_factors_config['+i+'].pinned=this.checked;saveCfg()" style="accent-color:#6366F1"></td>'+
+      '<td style="text-align:center"><input type="checkbox" '+(rf.pinned?'checked':'')+' onchange="CFG.risk_factors_config['+i+'].pinned=this.checked;saveCfg()" style="accent-color:#0D9488"></td>'+
       '<td class="act"><button onclick="CFG.risk_factors_config.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>').join('')+
     '</tbody></table>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-rf" placeholder="Factor de risc nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-rf\').value.trim();if(v){if(!CFG.risk_factors_config)CFG.risk_factors_config=[];CFG.risk_factors_config.push({name:v,pinned:false});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
@@ -9200,7 +9485,7 @@ async function rCfg(el){
     '<table class="dt" style="font-size:12px"><thead><tr><th>Nume comorbiditate</th><th style="width:130px">Afisat permanent</th><th style="width:50px">Actiuni</th></tr></thead>'+
     '<tbody>'+(CFG.comorbidities_config||[]).map((cm,i)=>
       '<tr><td>'+esc(cm.name)+'</td>'+
-      '<td style="text-align:center"><input type="checkbox" '+(cm.pinned?'checked':'')+' onchange="CFG.comorbidities_config['+i+'].pinned=this.checked;saveCfg()" style="accent-color:#6366F1"></td>'+
+      '<td style="text-align:center"><input type="checkbox" '+(cm.pinned?'checked':'')+' onchange="CFG.comorbidities_config['+i+'].pinned=this.checked;saveCfg()" style="accent-color:#0D9488"></td>'+
       '<td class="act"><button onclick="CFG.comorbidities_config.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>').join('')+
     '</tbody></table>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-comorb" placeholder="Comorbiditate noua"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-comorb\').value.trim();if(v){if(!CFG.comorbidities_config)CFG.comorbidities_config=[];CFG.comorbidities_config.push({name:v,pinned:false});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
@@ -9211,7 +9496,7 @@ async function rCfg(el){
     '<table class="dt" style="font-size:12px"><thead><tr><th>Nume dispozitiv</th><th style="width:130px">Afisat permanent</th><th style="width:50px">Actiuni</th></tr></thead>'+
     '<tbody>'+(CFG.devices_config||[]).map((dv,i)=>
       '<tr><td>'+esc(dv.name)+'</td>'+
-      '<td style="text-align:center"><input type="checkbox" '+(dv.pinned?'checked':'')+' onchange="CFG.devices_config['+i+'].pinned=this.checked;saveCfg()" style="accent-color:#6366F1"></td>'+
+      '<td style="text-align:center"><input type="checkbox" '+(dv.pinned?'checked':'')+' onchange="CFG.devices_config['+i+'].pinned=this.checked;saveCfg()" style="accent-color:#0D9488"></td>'+
       '<td class="act"><button onclick="CFG.devices_config.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>').join('')+
     '</tbody></table>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-dev" placeholder="Dispozitiv invaziv nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-dev\').value.trim();if(v){if(!CFG.devices_config)CFG.devices_config=[];CFG.devices_config.push({name:v,pinned:false});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
@@ -10673,6 +10958,13 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'11.1',date:'2026-03-19',notes:'Fix: Dark mode — tab-uri Autocontrol (Probe Micro/ATP/UV) cu contrast imbunatatit (fond teal, text alb)\nFix: Dark mode — sub-tab-uri Autocontrol hover si activ cu teal vizibil\nFix: Dark mode — selecturi si inputuri fara dark override (filtre IAAM, Autocontrol) acum cu fond inchis\nFix: Dark mode — chart header si sortable hover cu override-uri corecte'},
+  {version:'11.0',date:'2026-03-19',notes:'NOU: Tema Teal — accent medical teal pe intreaga aplicatie (sidebar, butoane, badges, calendar)\nNOU: Sidebar gradient verde-inchis + hover cu translateX + item activ cu border teal\nNOU: Toolbar glass effect — backdrop-blur transparent\nNOU: KPI cards hover animation — ridicare + shadow la hover\nNOU: Butoane gradient teal cu shadow, border-radius rotunjit\nNOU: Panouri cu radius 16px si hover shadow subtil\nNOU: Dark mode complet cu accent teal'},
+  {version:'10.5',date:'2026-03-19',notes:'NOU: Calendar — grupare Astazi/Maine/Saptamana aceasta in widget Dashboard\nNOU: Calendar — badge count pe zile cu evenimente multiple\nNOU: Calendar — legenda culori sub grid (Termene, Documente, Evenimente, Instruiri, Audituri)\nNOU: Dashboard — tooltip tip eveniment pe dots colorate\nFix: Dashboard — evenimentele de azi apareau lipsa (comparare cu start-of-day)\nFix: Calendar — evidentiare subtila fara borduri groase'},
+  {version:'10.4',date:'2026-03-19',notes:'Fix: Sidebar collapse/expand — re-render complet dupa tranzitie (grafice se redimensioneaza corect)\nFix: Timeline cronologie — patratele compacte pe ecrane mari (max 22px, row 24px, track max 800px)'},
+  {version:'10.3',date:'2026-03-19',notes:'NOU: Dialog intuitiv la deschidere fisier — Vizualizare / Combina / Schimba fisierul\nNOU: Previzualizare fisier read-only — vezi continutul fara sa modifici nimic\nNOU: Istoric sincronizari accesibil direct din meniul sync (toolbar)\nNOU: Detalii per store in raportul sync — IAAM: +2, Documente: +1 etc.\nFix: Dialog apare si dupa restart browser daca exista date locale\nFix: Text buton sync — Creeaza fisier nou in loc de alege alt fisier\nFix: Obiective SMART — fallback defensiv pt campuri undefined + fuzzy match categorii\nFix: Categorie Focare epidemice adaugata automat la migrare\nFix: Sidebar expand — CSS transition + triple chart resize'},
+  {version:'10.2',date:'2026-03-19',notes:'NOU: Dialog intuitiv la deschidere fisier — Vizualizare / Combina / Schimba fisierul\nNOU: Previzualizare fisier (read-only) — vezi continutul fara sa modifici nimic\nNOU: Combinare date — importa din alt fisier pastrand conexiunea curenta\nNOU: Schimbare fisier sigura — backup automat pe disc inainte de switch\nFix: Conectare fisier nou — avertizare clara daca fisierul contine deja date'},
+  {version:'10.1',date:'2026-03-19',notes:'Fix: Banner reconectare atasamente — eliminat complet, inlocuit cu notificare discreta la clopot\nFix: Dashboard 7 zile — daca nu exista evenimente in 7 zile, arata urmatoarele programate'},
   {version:'10.0',date:'2026-03-19',notes:'Fix: Timeline legenda — adaugat element Doar antibiotice (verde) pentru claritate\nFix: Audit igiena mainilor — tooltip FR (Frecare SHA) si SP (Spalare) pe butoane\nFix: Dashboard — scos link Calendar complet redundant din mini-calendar\nFix: Duplicat IAAM — tooltip explicativ (ce copiaza, ce sterge)\nNOU: Analiza Multi-An — selectare libera ani cu chipuri toggle\nNOU: Biocide — avize per produs cu date expirare + notificari clopot\nNOU: Biocide — camp In stoc pe produse + dropdown tip produs EU (TP1-TP22)\nNOU: PPS + Consum ATB — tab-uri combinate in aceeasi pagina + link Antibiograma\nNOU: Audit Gestionare Deseuri — 15 intrebari OMS 1226/2012\nNOU: Audituri generic — adauga/sterge intrebari custom pe orice checklist'},
   {version:'9.9',date:'2026-03-19',notes:'Fix: Banner reconectare atasamente — apare o singura data per sesiune, dismiss persistent\nFix: Dashboard 7 zile — parsare date corecta + inclus instruiri si audituri\nFix: Calendar tab — navigarea din sidebar reseteaza la tab Calendar (nu Raportari)\nFix: Obiective SMART — categoriile IPC se gasesc si pe name_ro/name_en (nu doar ID)\nFix: Antibiograma MDR% — procentul se calculeaza doar din germeni cu antibiograma completata\nFix: Sidebar collapse — Chart.js resize dupa schimbare layout'},
   {version:'9.8.1',date:'2026-03-19',notes:'Fix: Sidebar mini — tooltip-urile apar acum la hover pe iconite (overflow fix)'},
@@ -10708,7 +11000,7 @@ const CHANGELOG=[
   {version:'6.8',date:'2026-03-15',notes:'IAAM Module restructurat complet:\nFormular wizard cu 10 sectiuni si navigare laterala (Date pacient, Spitalizare, Infectie, Etiologie, Factori de risc, Tratament ATB, Istoric clinic, Contacti/focar, Masuri/cauzalitate, Externare/clasificare)\nFactori de risc ca checkbox-uri (pinned) + dropdown + chips (inlocuieste textarea)\nCalcul completare % per caz — indicator vizual in lista si in wizard nav\nLista cazuri redesignata: coloane noi (indicator, sectie+categorie 2 linii, germen+MDR tag, completare %, actiuni cu duplicare)\nFiltre noi: luna, completare (complete/incomplete), cautare extinsa\nFunctie duplicare caz — copiaza sectia/medicul/luna, goleste datele pacient\nSmart defaults la caz nou (ultima sectie, luna curenta)\nAlerta rapoarte: dialog pentru cazuri incomplete inainte de generare Word\nConfig factori de risc in Configurare > Introducere date\nKPI completare medie pe pagina IAAM'},
   {version:'6.7.2',date:'2026-03-15',notes:'Toolbar redesign complet: sync pill stilizat cu dot+text+clase CSS, separatoare mai vizibile (.tb-sep), toolbar icons cu border transparent+hover, badge notificari cu border 2px, butoane an compacte (.yr-nav 26x26px), meniu sync modern cu descrieri sub fiecare optiune, eliminat toate inline styles din toolbar'},
   {version:'6.7.1',date:'2026-03-15',notes:'Dashboard: sectiuni configurabile individual — sageata dropdown sub toolbar cu checkboxuri per sectiune\nCalendar si Evenimente vizibile implicit (nu mai sunt ascunse)\nFiecare sectiune se poate ascunde/arata independent, selectia salvata persistent\nEliminat toggle global "Arata detalii" — inlocuit cu configurare granulara'},
-  {version:'6.7',date:'2026-03-15',notes:'Visual refresh complet butoane — aspect modern consistent in toata aplicatia\nButoane primare (#6366F1 indigo), secundare (outline), succes, danger, amber — toate cu border-radius 8px\nDark mode: culori adaptate pentru toate tipurile de butoane\nToolbar icons: dimensiune fixa 34px, border-radius 8px, badge notificari redesignat\nTable action buttons: 28x28px cu hover vizibil\nQuick actions dashboard: hover indigo, fara box-shadow\nSync pill: culori dark mode (semi-transparente)\nPopup sync: border-radius 12px, optiuni cu hover\nCalendar: butoane navigare cu hover indigo\nClasa .btn-x pentru butoanele de stergere (×) — hover vizibil\nClasa .btn-dl pentru butoanele de download mari\nEliminat inline styles hardcodate de pe ~20 butoane'},
+  {version:'6.7',date:'2026-03-15',notes:'Visual refresh complet butoane — aspect modern consistent in toata aplicatia\nButoane primare (#0D9488 indigo), secundare (outline), succes, danger, amber — toate cu border-radius 8px\nDark mode: culori adaptate pentru toate tipurile de butoane\nToolbar icons: dimensiune fixa 34px, border-radius 8px, badge notificari redesignat\nTable action buttons: 28x28px cu hover vizibil\nQuick actions dashboard: hover indigo, fara box-shadow\nSync pill: culori dark mode (semi-transparente)\nPopup sync: border-radius 12px, optiuni cu hover\nCalendar: butoane navigare cu hover indigo\nClasa .btn-x pentru butoanele de stergere (×) — hover vizibil\nClasa .btn-dl pentru butoanele de download mari\nEliminat inline styles hardcodate de pe ~20 butoane'},
   {version:'6.6.3',date:'2026-03-15',notes:'FIX: Zile internare — autoCalcDays tratat 0 zile ca falsy + adaugat oninput pe langa onchange\nModificat: Nr. inregistrare label generic "registru" (nu mai mentioneaza CPIAAM — structurile difera intre spitale)'},
   {version:'6.6.2',date:'2026-03-15',notes:'Dashboard restructurat: Quick Actions mutate sus (primul element vizibil)\nKPI-uri sub quick actions\nButon global "Arata detalii" ascunde/arata widgeturile secundare (grafice, calendar, activitate)\nGrafice initializate lazy — doar cand detaliile sunt deschise'},
   {version:'6.6.1',date:'2026-03-15',notes:'FIX: Sync reconectare ramanea pe galben dupa import — location.reload() pierdea _fileHandle din memorie\nFIX: syncReadFile si syncReconnect nu mai fac reload, ci render() pastrand _fileHandle activ'},
@@ -11408,7 +11700,7 @@ function checkEmptyDB(){
     render();
     // Restore file handles from IndexedDB (persists across refresh/close)
     restoreFileHandle().then(()=>{updateSyncIndicator();if(_fileHandle)startSyncPoll()});
-    restoreAttDirHandle().then(()=>{if(!_attDirHandle&&CFG.att_dir_name)showAttReconnectBanner()});
+    restoreAttDirHandle();
     setTimeout(checkBackupReminder,2000);
     setTimeout(buildNotifications,3000);
     setTimeout(checkForUpdate,4000);

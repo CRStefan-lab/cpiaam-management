@@ -1,11 +1,11 @@
 {
-  "version": "9.6",
+  "version": "9.8",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Auto-sync non-intruziv — toast discret + notificare la clopot in loc de modal blocant",
-    "NOU: Istoric sincronizari persistent — ultimele 50 sync-uri salvate in Configurare",
-    "NOU: Detalii per utilizator — cine a adaugat/modificat/sters, accesibil oricand",
-    "NOU: Timp relativ in notificari — 'chiar acum', '5 min in urma', '2h in urma'",
-    "Fix: Timeline hatch — culorile hasurilor acum vizibile (encodare %23 in SVG data URI)"
+    "NOU: Sidebar colapsabil stil Gmail — buton hamburger minimizeaza la iconite",
+    "NOU: Tooltip pe hover in modul minimizat — numele paginii apare la hover",
+    "NOU: Stare persistenta — sidebar ramane minimizat/expandat la reincarcarea paginii",
+    "NOU: Tranzitie smooth la collapse/expand sidebar si content area",
+    "NOU: Responsive — sidebar auto-minimizat pe tablet, slide-out pe mobil"
   ]
 }

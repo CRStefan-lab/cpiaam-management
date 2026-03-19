@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v9.6</title>
+<title>CPIAAM — Sistem de Management v9.8</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -36,8 +36,21 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .sb-bk button:hover{background:#B8890F}
 .sb-f{padding:10px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:9px;color:rgba(255,255,255,.35);line-height:1.5}
 
+/* ── Sidebar Collapse (hamburger) ── */
+.sb-collapse-btn{background:none;border:none;color:#94A3B8;font-size:20px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .15s;flex-shrink:0}
+.sb-collapse-btn:hover{background:rgba(255,255,255,.08);color:#E2E8F0}
+.sb,.mn{transition:width .2s ease,margin-left .2s ease,min-width .2s ease}
+.sb.sb-mini{width:52px;min-width:52px;overflow:visible}
+.sb-mini .sb-h h1,.sb-mini .sb-h small,.sb-mini .ns,.sb-mini .ni span,.sb-mini .sb-f{display:none}
+.sb-mini .sb-h{padding:10px 8px}
+.sb-mini .sb-nav{padding:6px 4px}
+.sb-mini .ni{justify-content:center;padding:10px 0;gap:0}
+.sb-mini .ni svg{margin:0}
+.sb-mini .ni{position:relative}
+.sb-mini .ni:hover::after{content:attr(data-tooltip);position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:8px;background:var(--sb);color:#E2E8F0;padding:5px 12px;border-radius:6px;font-size:12px;white-space:nowrap;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.3);pointer-events:none}
 /* ── Main Area ── */
 .mn{margin-left:250px;flex:1;min-height:100vh}
+.mn.mn-expanded{margin-left:52px}
 .tb{background:var(--card);border-bottom:1px solid var(--brd);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .tb h2{font-size:17px;font-weight:700;color:var(--navy)}
 .yr-nav{display:flex;align-items:center;gap:2px}
@@ -529,6 +542,7 @@ body{display:block!important;background:#fff!important}
 /* ── Responsive: Small Desktop ≤1024px ── */
 @media(max-width:1024px){
   .sb{width:200px}.mn{margin-left:200px}
+  .sb.sb-mini{width:52px;min-width:52px}.mn-expanded{margin-left:52px}
   .sb-h{padding:14px 12px}.sb-h h1{font-size:13px}
   .ni{font-size:12px;padding:8px 10px}
   .cr{grid-template-columns:1fr 1fr}
@@ -541,9 +555,9 @@ body{display:block!important;background:#fff!important}
 
 /* ── Responsive: Tablet ≤768px ── */
 @media(max-width:768px){
-  .sb{width:60px}.sb-h h1,.sb-h small,.ns,.ni span,.sb-f div:not(:first-child),.sb-bk{display:none}
-  .sb-f{font-size:8px;text-align:center;padding:6px 4px}
-  .ni{justify-content:center;padding:12px}.mn{margin-left:60px}
+  .sb{width:52px;min-width:52px}.sb-h h1,.sb-h small,.ns,.ni span,.sb-f,.sb-bk{display:none}
+  .sb-collapse-btn{display:none}
+  .ni{justify-content:center;padding:12px;gap:0}.mn,.mn-expanded{margin-left:52px}
   .cr{grid-template-columns:1fr}
   .fr,.fr3,.fr4{grid-template-columns:1fr}
   .tb{padding:10px 14px;gap:8px;flex-wrap:wrap}
@@ -574,13 +588,15 @@ body{display:block!important;background:#fff!important}
 /* ── Responsive: Mobile ≤480px ── */
 @media(max-width:480px){
   .sb-ham{display:block}
-  .sb{width:260px!important;transform:translateX(-100%);transition:transform .25s ease;z-index:200}
-  .sb .sb-h h1,.sb .sb-h small,.sb .ns,.sb .ni span,.sb .sb-f div:not(:first-child),.sb .sb-bk{display:block}
-  .sb .ns{display:block}.sb .ni{justify-content:flex-start;padding:9px 12px}
+  .sb-collapse-btn{display:none}
+  .sb,.sb.sb-mini{width:260px!important;min-width:260px!important;transform:translateX(-100%);transition:transform .25s ease;z-index:200}
+  .sb .sb-h h1,.sb .sb-h small,.sb .ns,.sb .ni span,.sb .sb-f,.sb .sb-bk{display:block}
+  .sb .sb-f{display:block}
+  .sb .ns{display:block}.sb .ni{justify-content:flex-start;padding:9px 12px;gap:10px}
   .sb .ni span{display:inline}
   .sb.sb-open{transform:translateX(0)}
   .sb-overlay.sb-show{display:block;z-index:199}
-  .mn{margin-left:0!important}
+  .mn,.mn-expanded{margin-left:0!important}
   .tb{padding:8px 10px}
   .tb h2{font-size:13px}
   .tb-actions{gap:2px}
@@ -886,34 +902,36 @@ body{display:block!important;background:#fff!important}
 
 <!-- ═══ Sidebar ═══ -->
 <nav class="sb" id="app-sb" style="display:none">
-  <div class="sb-h"><h1 id="sb-title">C.P.I.A.A.M.</h1><small id="sb-sub">—</small></div>
+  <div class="sb-h">
+    <div style="display:flex;align-items:center;gap:8px"><button class="sb-collapse-btn" onclick="toggleSbCollapse()" title="Minimizeaza/Extinde">&#9776;</button><div><h1 id="sb-title">C.P.I.A.A.M.</h1><small id="sb-sub">—</small></div></div>
+  </div>
   <div class="sb-nav">
     <div class="ns" data-t="sb_principal">Principal</div>
-    <a class="ni a" data-p="dashboard" onclick="nav('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span data-t="sb_dashboard">Dashboard</span></a>
+    <a class="ni a" data-p="dashboard" data-tooltip="Dashboard" onclick="nav('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span data-t="sb_dashboard">Dashboard</span></a>
     <div class="ns" data-t="sb_module">Module Date</div>
-    <a class="ni" data-p="iaam" onclick="nav('iaam')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span data-t="sb_iaam">IAAM / Anchete</span></a>
-    <a class="ni" data-p="autocontrol" onclick="nav('autocontrol')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg><span data-t="sb_autocontrol">Autocontrol</span></a>
-    <a class="ni" data-p="deseuri" onclick="nav('deseuri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg><span data-t="sb_deseuri">Deseuri</span></a>
-    <a class="ni" data-p="biocide" onclick="nav('biocide')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.5a2 2 0 01-.2.9L4.7 20.6a1 1 0 00.9 1.4h12.8a1 1 0 00.9-1.4l-5.1-10.2A2 2 0 0114 9.5V2"/><path d="M8.5 2h7"/></svg><span data-t="sb_biocide">Biocide</span></a>
-    <a class="ni" data-p="pps" onclick="nav('pps')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span data-t="sb_pps">PPS / Antibiotice</span></a>
-    <a class="ni" data-p="consum_atb" onclick="nav('consum_atb')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.5 1.5v5.7a2 2 0 01-.4 1.2L6 13.5V15h12v-1.5l-4.1-5.1a2 2 0 01-.4-1.2V1.5"/><path d="M8.5 1.5h7"/><path d="M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg><span data-t="sb_consum_atb">Consum Antibiotice</span></a>
-    <a class="ni" data-p="antibiograma" onclick="nav('antibiograma')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="8" r="1" fill="currentColor"/><circle cx="16" cy="12" r="1" fill="currentColor"/><circle cx="8" cy="12" r="1" fill="currentColor"/></svg><span data-t="sb_antibiograma">Antibiograma Locala</span></a>
-    <a class="ni" data-p="documente" onclick="nav('documente')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg><span data-t="sb_documente">Documente</span></a>
+    <a class="ni" data-p="iaam" data-tooltip="IAAM / Anchete" onclick="nav('iaam')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span data-t="sb_iaam">IAAM / Anchete</span></a>
+    <a class="ni" data-p="autocontrol" data-tooltip="Autocontrol" onclick="nav('autocontrol')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg><span data-t="sb_autocontrol">Autocontrol</span></a>
+    <a class="ni" data-p="deseuri" data-tooltip="Deseuri" onclick="nav('deseuri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg><span data-t="sb_deseuri">Deseuri</span></a>
+    <a class="ni" data-p="biocide" data-tooltip="Biocide" onclick="nav('biocide')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.5a2 2 0 01-.2.9L4.7 20.6a1 1 0 00.9 1.4h12.8a1 1 0 00.9-1.4l-5.1-10.2A2 2 0 0114 9.5V2"/><path d="M8.5 2h7"/></svg><span data-t="sb_biocide">Biocide</span></a>
+    <a class="ni" data-p="pps" data-tooltip="PPS / Antibiotice" onclick="nav('pps')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span data-t="sb_pps">PPS / Antibiotice</span></a>
+    <a class="ni" data-p="consum_atb" data-tooltip="Consum Antibiotice" onclick="nav('consum_atb')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.5 1.5v5.7a2 2 0 01-.4 1.2L6 13.5V15h12v-1.5l-4.1-5.1a2 2 0 01-.4-1.2V1.5"/><path d="M8.5 1.5h7"/><path d="M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg><span data-t="sb_consum_atb">Consum Antibiotice</span></a>
+    <a class="ni" data-p="antibiograma" data-tooltip="Antibiograma Locala" onclick="nav('antibiograma')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="8" r="1" fill="currentColor"/><circle cx="16" cy="12" r="1" fill="currentColor"/><circle cx="8" cy="12" r="1" fill="currentColor"/></svg><span data-t="sb_antibiograma">Antibiograma Locala</span></a>
+    <a class="ni" data-p="documente" data-tooltip="Documente" onclick="nav('documente')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg><span data-t="sb_documente">Documente</span></a>
     <!-- Raportari/Termene moved to Calendar module -->
-    <a class="ni" data-p="calendar" onclick="nav('calendar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="1"/><circle cx="12" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg><span data-t="sb_calendar">Calendar</span></a>
+    <a class="ni" data-p="calendar" data-tooltip="Calendar" onclick="nav('calendar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="1"/><circle cx="12" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg><span data-t="sb_calendar">Calendar</span></a>
     <div class="ns">Calitate</div>
-    <a class="ni" data-p="audituri" onclick="nav('audituri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg><span data-t="sb_audituri">Audituri IPC</span></a>
-    <a class="ni" data-p="obiective" onclick="nav('obiective')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span data-t="sb_obiective">Obiective SMART</span></a>
-    <a class="ni" data-p="instruire" onclick="nav('instruire')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span data-t="sb_instruire">Instruire Personal</span></a>
+    <a class="ni" data-p="audituri" data-tooltip="Audituri IPC" onclick="nav('audituri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg><span data-t="sb_audituri">Audituri IPC</span></a>
+    <a class="ni" data-p="obiective" data-tooltip="Obiective SMART" onclick="nav('obiective')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span data-t="sb_obiective">Obiective SMART</span></a>
+    <a class="ni" data-p="instruire" data-tooltip="Instruire Personal" onclick="nav('instruire')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span data-t="sb_instruire">Instruire Personal</span></a>
     <div class="ns" data-t="sb_rapoarte">Rapoarte</div>
-    <a class="ni" data-p="multian" onclick="nav('multian')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-8"/><circle cx="7" cy="16" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="19" cy="4" r="1.5"/></svg><span data-t="sb_multian">Analiza Multi-An</span></a>
-    <a class="ni" data-p="rapoarte" onclick="nav('rapoarte')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg><span data-t="sb_gen_rapoarte">Generare Rapoarte</span></a>
+    <a class="ni" data-p="multian" data-tooltip="Analiza Multi-An" onclick="nav('multian')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-8"/><circle cx="7" cy="16" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="19" cy="4" r="1.5"/></svg><span data-t="sb_multian">Analiza Multi-An</span></a>
+    <a class="ni" data-p="rapoarte" data-tooltip="Generare Rapoarte" onclick="nav('rapoarte')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg><span data-t="sb_gen_rapoarte">Generare Rapoarte</span></a>
     <div class="ns" data-t="sb_sistem">Sistem</div>
-    <a class="ni" data-p="config" onclick="nav('config')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span data-t="sb_config">Configurare</span></a>
-    <a class="ni" data-p="ajutor" onclick="nav('ajutor')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span data-t="sb_ajutor">Ajutor / FAQ</span></a>
-    <a class="ni" data-p="manual" onclick="nav('manual')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg><span data-t="sb_manual">Manual de Utilizare</span></a>
-    <a class="ni" data-p="changelog" onclick="nav('changelog')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg><span>Versiuni</span></a>
-    <a class="ni" data-p="about" onclick="nav('about')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span data-t="sb_despre">Despre</span></a>
+    <a class="ni" data-p="config" data-tooltip="Configurare" onclick="nav('config')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span data-t="sb_config">Configurare</span></a>
+    <a class="ni" data-p="ajutor" data-tooltip="Ajutor / FAQ" onclick="nav('ajutor')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span data-t="sb_ajutor">Ajutor / FAQ</span></a>
+    <a class="ni" data-p="manual" data-tooltip="Manual" onclick="nav('manual')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg><span data-t="sb_manual">Manual de Utilizare</span></a>
+    <a class="ni" data-p="changelog" data-tooltip="Versiuni" onclick="nav('changelog')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg><span>Versiuni</span></a>
+    <a class="ni" data-p="about" data-tooltip="Despre" onclick="nav('about')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span data-t="sb_despre">Despre</span></a>
   </div>
   <!-- backup button removed from sidebar per v6.6 -->
   <div class="sb-f" id="sb-footer"></div>
@@ -1546,7 +1564,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='9.6';
+const APP_VERSION='9.8';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -2582,6 +2600,20 @@ function toggleSidebar(){
 function closeSidebar(){
   const sb=document.getElementById('app-sb'),ov=document.getElementById('sb-overlay');
   sb.classList.remove('sb-open');ov.classList.remove('sb-show');
+}
+// ── Sidebar collapse (hamburger) ──
+var _sbCollapsed=localStorage.getItem('cpiaam_sb_collapsed')==='true';
+function toggleSbCollapse(){
+  _sbCollapsed=!_sbCollapsed;
+  localStorage.setItem('cpiaam_sb_collapsed',_sbCollapsed);
+  applySbCollapse();
+}
+function applySbCollapse(){
+  var sb=document.getElementById('app-sb');
+  var mn=document.getElementById('app-mn');
+  if(!sb)return;
+  if(_sbCollapsed){sb.classList.add('sb-mini');if(mn)mn.classList.add('mn-expanded')}
+  else{sb.classList.remove('sb-mini');if(mn)mn.classList.remove('mn-expanded')}
 }
 function toggleDark(){
   A.darkMode=!A.darkMode;CFG.dark_mode=A.darkMode;saveCfg();applyDark()}
@@ -3963,10 +3995,14 @@ function _renderTimeline(allData,isEN){
       // Antibiotic month range
       var aS=null,aE=null;
       if(!r.no_antibiotic&&r.antibiotics&&r.antibiotics.length){
+        var hasAnyDate=false;
         r.antibiotics.forEach(function(atb){
-          if(atb.date_start){var sd=new Date(atb.date_start+'T00:00:00');if(sd.getFullYear()===yr){var sm=sd.getMonth()+1;if(aS==null||sm<aS)aS=sm}}
-          if(atb.date_stop){var ed=new Date(atb.date_stop+'T00:00:00');if(ed.getFullYear()===yr){var em=ed.getMonth()+1;if(aE==null||em>aE)aE=em}}
+          if(atb.date_start){hasAnyDate=true;var sd=new Date(atb.date_start+'T00:00:00');if(sd.getFullYear()===yr){var sm=sd.getMonth()+1;if(aS==null||sm<aS)aS=sm}}
+          if(atb.date_stop){hasAnyDate=true;var ed=new Date(atb.date_stop+'T00:00:00');if(ed.getFullYear()===yr){var em=ed.getMonth()+1;if(aE==null||em>aE)aE=em}}
         });
+        // Fallback: antibiotics exist but no dates filled — use infection range
+        if(!hasAnyDate){aS=iS;aE=hE}
+        else{if(aS!=null&&aE==null)aE=hE;if(aE!=null&&aS==null)aS=iS}
       }
       var st=_tlStatus(r);
       var germs=(r.germeni&&r.germeni.length)?r.germeni.map(function(g){return g.name}).join(', '):(r.organism||'');
@@ -4118,12 +4154,16 @@ function _renderTimeline(allData,isEN){
     // Antibiotic date range
     var aS=null,aE=null;
     if(!r.no_antibiotic&&r.antibiotics&&r.antibiotics.length){
+      var hasAnyDate=false;
       r.antibiotics.forEach(function(atb){
         var s=_tlParseDay(atb.date_start,mo,yr);
         var e=_tlParseDay(atb.date_stop,mo,yr);
-        if(s!=null){if(aS==null||s<aS)aS=s}
-        if(e!=null){if(aE==null||e>aE)aE=e}
+        if(s!=null){hasAnyDate=true;if(aS==null||s<aS)aS=s}
+        if(e!=null){hasAnyDate=true;if(aE==null||e>aE)aE=e}
       });
+      // Fallback: antibiotics exist but no dates filled — use infection range
+      if(!hasAnyDate){aS=iS;aE=hE}
+      else{if(aS!=null&&aE==null)aE=hE;if(aE!=null&&aS==null)aS=iS}
     }
     var st=_tlStatus(r);
     var germs=(r.germeni&&r.germeni.length)?r.germeni.map(function(g){return g.name}).join(', '):(r.organism||'');
@@ -8199,6 +8239,12 @@ async function genObiectiveWord(){
 var _instrFilters={sec:'',dateFrom:'',dateTo:'',search:''};
 var _instrParticipants=[];
 
+function _getTrainers(r){
+  // Returns display string for trainers — supports new array format + old string fallback
+  if(Array.isArray(r.trainers)&&r.trainers.length)return r.trainers.map(function(t){return t.name}).join(', ');
+  return r.trainer||'—';
+}
+
 async function rInstr(el){
   const allData=(await ga('trainings')).filter(r=>r.year===A.year);
   const f=_instrFilters;
@@ -8207,34 +8253,18 @@ async function rInstr(el){
     if(f.dateFrom&&r.date<f.dateFrom)return false;
     if(f.dateTo&&r.date>f.dateTo)return false;
     if(f.search){const q=f.search.toLowerCase();
-      const fields=[r.topic||'',rSec(r.section),r.trainer||'',r.date||''];
+      const fields=[r.topic||'',rSec(r.section),_getTrainers(r),r.date||''];
       if(!fields.some(x=>x.toLowerCase().includes(q)))return false}
     return true;
   }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 
   const total=allData.length;
   const totalPart=allData.reduce((s,r)=>s+(Array.isArray(r.participants)?r.participants.length:(+r.participants||0)),0);
-  // Unique trained personnel names
-  const trainedNames=new Set();allData.forEach(r=>{var pp=Array.isArray(r.participants)?r.participants:[];pp.filter(p=>p.signed).forEach(p=>trainedNames.add(p.name))});
-  const allPersonnel=CFG.personnel||[];
-  const trainedPct=allPersonnel.length>0?Math.round(trainedNames.size/allPersonnel.length*100):0;
 
   let h='<div class="kg">'+
     '<div class="kc bl"><div class="kl">Total Instruiri</div><div class="kv">'+total+'</div></div>'+
     '<div class="kc tl"><div class="kl">Total Participanti</div><div class="kv">'+totalPart+'</div></div>'+
-    '<div class="kc '+(trainedPct>=80?'gn':trainedPct>=50?'am':'rd')+'"><div class="kl">Personal Instruit</div><div class="kv">'+trainedPct+'%</div><div class="ks">'+trainedNames.size+'/'+allPersonnel.length+'</div></div>'+
   '</div>';
-
-  // Alert: untrained >12 months
-  const oneYearAgo=new Date();oneYearAgo.setFullYear(oneYearAgo.getFullYear()-1);
-  const lastTrainDate={};allData.forEach(r=>{var pp=Array.isArray(r.participants)?r.participants:[];pp.filter(p=>p.signed).forEach(p=>{
-    if(!lastTrainDate[p.name]||r.date>lastTrainDate[p.name])lastTrainDate[p.name]=r.date;
-  })});
-  const untrained=allPersonnel.filter(p=>!lastTrainDate[p.name]||lastTrainDate[p.name]<oneYearAgo.toISOString().slice(0,10));
-  if(untrained.length>0){
-    h+='<div class="ib warn" style="margin-bottom:14px">&#128308; <strong>'+untrained.length+' persoane</strong> neinstruite in ultimele 12 luni: '+
-      untrained.slice(0,5).map(p=>p.name).join(', ')+(untrained.length>5?' ...':'')+'</div>';
-  }
 
   // Filter bar
   h+='<div class="ac-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">'+
@@ -8254,10 +8284,10 @@ async function rInstr(el){
     h+='<div class="es"><p>Nicio instruire '+(f.sec||f.search?'gasita cu filtrele selectate':'pentru '+A.year)+'.</p>'+
       '<button class="btn bp" onclick="editTraining()">Adauga prima instruire</button></div>';
   } else {
-    h+='<table class="dt"><thead><tr><th>#</th><th>Data</th><th>Tema</th><th>Sectie</th><th>Formator</th><th>Participanti</th><th>Durata</th><th>Actiuni</th></tr></thead><tbody>'+
+    h+='<table class="dt"><thead><tr><th>#</th><th>Data</th><th>Tema</th><th>Sectie</th><th>Formator(i)</th><th>Participanti</th><th>Durata</th><th>Actiuni</th></tr></thead><tbody>'+
     data.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+fmtDate(r.date)+'</td>'+
       '<td>'+(r.topic||'—')+'</td><td>'+rSec(r.section)+'</td>'+
-      '<td>'+(r.trainer||'—')+'</td><td>'+(Array.isArray(r.participants)?r.participants.length:(+r.participants||0))+'</td>'+
+      '<td>'+esc(_getTrainers(r))+'</td><td>'+(Array.isArray(r.participants)?r.participants.length:(+r.participants||0))+'</td>'+
       '<td>'+(r.duration_hours||'—')+' h</td>'+
       '<td class="act"><button onclick="editTraining('+r.id+')" title="Editeaza">&#9998;</button>'+
         '<button onclick="genTrainingWord('+r.id+')" title="PV Word">&#128196;</button>'+
@@ -8271,17 +8301,34 @@ async function rInstr(el){
 async function editTraining(id){
   let r=id?(await ga('trainings')).find(x=>x.id===id):null;
   if(!r)r={year:A.year,date:new Date().toISOString().slice(0,10),topic:'',section:'',
-    trainer:getCoord()?getCoord().name:'',participants:[],duration_hours:1,observations:''};
+    trainers:[],trainer:'',participants:[],duration_hours:1,observations:''};
   _instrParticipants=Array.isArray(r.participants)&&r.participants.length?JSON.parse(JSON.stringify(r.participants)):[];
+
+  // Build trainers multi-select options from CFG.personnel
+  var existingTrainers=Array.isArray(r.trainers)?r.trainers:[];
+  var existingNames=existingTrainers.map(function(t){return t.name});
+  var trainerOpts='';
+  (CFG.personnel||[]).forEach(function(p,i){
+    if(!p.name)return;
+    var sel=existingNames.indexOf(p.name)>=0?' selected':'';
+    trainerOpts+='<option value="'+i+'"'+sel+'>'+esc(p.name)+(p.title?' — '+esc(p.title):'')+'</option>';
+  });
+  // Fallback: if old record has trainer string but no trainers array, show it
+  var fallbackNote='';
+  if(!existingTrainers.length&&r.trainer){
+    fallbackNote='<div style="font-size:11px;color:var(--txtL);margin-top:4px">Formator anterior: '+esc(r.trainer)+'</div>';
+  }
 
   openM(id?'Editare Instruire':'Instruire Noua',
     '<div class="fr"><div class="fg"><label>Data</label><input type="date" id="f-tdate" value="'+(r.date||'')+'"></div>'+
     '<div class="fg"><label>Durata (ore)</label><input type="number" id="f-tdur" value="'+(r.duration_hours||1)+'" min="0.5" step="0.5"></div></div>'+
     '<div class="fg"><label>Tema / Subiect</label><input id="f-ttopic" value="'+esc(r.topic||'')+'"></div>'+
     '<div class="fr"><div class="fg"><label>Sectia</label><select id="f-tsec"><option value="">— Toate / General —</option>'+secOpts(r.section)+'</select></div>'+
-    '<div class="fg"><label>Formator</label><input id="f-ttrainer" value="'+esc(r.trainer||'')+'"></div></div>'+
+    '<div class="fg"><label>Formator(i)</label>'+
+    '<select id="f-trainers" multiple size="3" style="min-height:60px;width:100%;padding:4px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+trainerOpts+'</select>'+
+    '<span style="font-size:10px;color:var(--txtL)">Ctrl+click pentru selectie multipla</span>'+fallbackNote+
+    '</div></div>'+
     '<div style="margin:12px 0"><h4 style="color:var(--navy);font-size:13px;margin-bottom:8px">Participanti</h4>'+
-    '<button class="btn bo bsm" onclick="loadPersonnelToTraining()" style="margin-bottom:8px">Incarca din personal</button>'+
     '<div id="train-part-container">'+renderTrainParticipants()+'</div>'+
     '<button class="btn bo bsm" onclick="addTrainParticipant()" style="margin-top:6px">+ Adauga participant</button></div>'+
     '<div class="fg"><label>Observatii</label><textarea id="f-tobs" rows="2">'+(r.observations||'')+'</textarea></div>',
@@ -8302,19 +8349,20 @@ function renderTrainParticipants(){
 }
 function addTrainParticipant(){_instrParticipants.push({name:'',title:'',signed:false});document.getElementById('train-part-container').innerHTML=renderTrainParticipants()}
 function removeTrainParticipant(i){_instrParticipants.splice(i,1);document.getElementById('train-part-container').innerHTML=renderTrainParticipants()}
-function loadPersonnelToTraining(){
-  const existing=new Set(_instrParticipants.map(p=>p.name));
-  (CFG.personnel||[]).forEach(p=>{if(!existing.has(p.name))_instrParticipants.push({name:p.name,title:p.title||p.role||'',signed:false})});
-  document.getElementById('train-part-container').innerHTML=renderTrainParticipants();
-}
 
 async function saveTraining(id){
   const v=s=>document.getElementById(s)?document.getElementById(s).value:'';
   const topic=v('f-ttopic').trim();if(!topic){alert('Completeaza tema instruirii.');return}
   const participants=_instrParticipants.filter(p=>p.name);
+  // Collect trainers from multi-select
+  var sel=document.getElementById('f-trainers');
+  var trainers=[];
+  if(sel){for(var i=0;i<sel.options.length;i++){
+    if(sel.options[i].selected){var p=CFG.personnel[+sel.options[i].value];if(p)trainers.push({name:p.name,title:p.title||''})}
+  }}
   const rec={year:A.year,date:v('f-tdate'),topic,section:v('f-tsec'),
-    trainer:v('f-ttrainer').trim(),participants,
-    duration_hours:parseFloat(v('f-tdur'))||1,observations:v('f-tobs').trim()};
+    trainers:trainers,trainer:trainers.map(function(t){return t.name}).join(', '),
+    participants,duration_hours:parseFloat(v('f-tdur'))||1,observations:v('f-tobs').trim()};
   if(id)rec.id=id;await pt('trainings',rec);
   logActivity((id?'Editata':'Adaugata')+' instruire — '+topic);
   closeM();render();
@@ -8332,13 +8380,16 @@ async function genTrainingWord(id){
       rows.push(wTblRow([String(i+1),p.name||'',p.title||'',p.signed?'Da':'',''/*obs*/],pW,i%2===1));
     });
 
+    // Trainers display for Word
+    var trainerStr=_getTrainers(r);
+
     const children=[
       ...wCover('PROCES-VERBAL\nINSTRUIRE PERSONAL',CFG.hospital_name+' — '+r.date,WC.navy),
       wH1('DETALII INSTRUIRE'),
       wP('Data: '+fmtDate(r.date)),
       wP('Tema: '+(r.topic||'—'),{bold:true}),
       wP(secLabel(r.section)),
-      wP('Formator: '+(r.trainer||'—')),
+      wP('Formator(i): '+trainerStr),
       wP('Durata: '+(r.duration_hours||'—')+' ore'),
       wH1('LISTA PARTICIPANTI'),
       new Table({rows,width:{size:11000,type:WidthType.DXA}}),
@@ -8353,7 +8404,6 @@ async function genTrainingWord(id){
   }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
   finally{hideGen()}
 }
-
 
 </script>
 <script>
@@ -10487,6 +10537,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'9.8',date:'2026-03-19',notes:'NOU: Sidebar colapsabil stil Gmail — buton hamburger minimizeaza la iconite\nNOU: Tooltip pe hover in modul minimizat — numele paginii apare la hover\nNOU: Stare persistenta — sidebar ramane minimizat/expandat la reincarcarea paginii\nNOU: Tranzitie smooth la collapse/expand sidebar si content area\nNOU: Responsive — sidebar auto-minimizat pe tablet, slide-out pe mobil'},
+  {version:'9.7',date:'2026-03-19',notes:'Fix: Instruire — Formator e acum dropdown multi-select din personalul configurat\nFix: Instruire — Participantii se introduc liber (eliminat Incarca din personal)\nFix: Instruire — Eliminat KPI Personal Instruit si warning persoane neinstruite\nFix: Instruire — Backward compat cu formator text din versiuni anterioare\nFix: Timeline hatch — fallback pe perioada infectiei cand antibioticele nu au date'},
   {version:'9.6',date:'2026-03-18',notes:'NOU: Auto-sync non-intruziv — toast discret + notificare la clopot in loc de modal blocant\nNOU: Istoric sincronizari persistent — ultimele 50 sync-uri salvate in Configurare\nNOU: Detalii per utilizator — cine a adaugat/modificat/sters, accesibil oricand din istoric\nNOU: Timp relativ in notificari — chiar acum, 5 min in urma, 2h in urma\nFix: Timeline hatch — culorile hasurilor acum vizibile (encodare %23 in SVG data URI)'},
   {version:'9.5',date:'2026-03-18',notes:'Fix: Timeline — navigarea cu ◀/▶ trece automat la luna anterioara/urmatoare la limita\nFix: Dark mode — hover pe randuri tabel (text invizibil pe fundal inchis)\nNOU: Timeline — antibioterapia vizibila cu hasuri rosii+verzi diagonale pe barele de infectie\nNOU: Timeline — legenda cu 4 elemente (Spitalizare, Infectie, Infectie+Antibiotice, Cluster)\nNOU: Timeline — bare verzi separate pentru antibioterapie post-infectie'},
   {version:'9.4',date:'2026-03-18',notes:'NOU: Auto-Poll sincronizare — verificare periodica daca colega a modificat fisierul JSON\nNOU: Merge automat la detectarea modificarilor — fara F5/refresh manual\nNOU: Flash vizual pe indicatorul sync cand se detecteaza modificari externe\nNOU: Interval configurabil (15s/30s/1min/2min/dezactivat) in Configurare > Date & Backup\nNOU: Protectie anti-loop — propria scriere nu triggereaza poll'},
@@ -11194,7 +11246,7 @@ function checkEmptyDB(){
     localStorage.setItem('cpiaam_had_data','true');
     document.getElementById('app-sb').style.display='flex';
     document.getElementById('app-mn').style.display='block';
-    updateSidebar();updateSyncIndicator();updateUserPill();
+    updateSidebar();updateSyncIndicator();updateUserPill();applySbCollapse();
     document.getElementById('ys').value=A.year;
     render();
     // Restore file handles from IndexedDB (persists across refresh/close)

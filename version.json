@@ -1,7 +1,12 @@
 {
-  "version": "9.8.1",
+  "version": "9.9",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Fix: Sidebar mini — tooltip-urile apar acum la hover pe iconite (overflow fix)"
+    "Fix: Banner reconectare atasamente — apare o singura data per sesiune, dismiss persistent",
+    "Fix: Dashboard 7 zile — parsare date corecta + inclus instruiri si audituri",
+    "Fix: Calendar tab — navigarea din sidebar reseteaza la tab Calendar (nu Raportari)",
+    "Fix: Obiective SMART — categoriile IPC se gasesc si pe name_ro/name_en (nu doar ID)",
+    "Fix: Antibiograma MDR% — procentul se calculeaza doar din germeni cu antibiograma completata",
+    "Fix: Sidebar collapse — Chart.js resize dupa schimbare layout"
   ]
 }

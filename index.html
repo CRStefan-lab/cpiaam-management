@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v9.8.1</title>
+<title>CPIAAM — Sistem de Management v9.9</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1055,10 +1055,11 @@ async function restoreAttDirHandle(){
   }catch(e){console.warn('restoreAttDirHandle:',e)}
 }
 function showAttReconnectBanner(){
+  if(sessionStorage.getItem('cpiaam_att_banner_dismissed'))return;
   const existing=document.getElementById('att-reconnect-banner');if(existing)return;
   const banner=document.createElement('div');banner.id='att-reconnect-banner';
   banner.style.cssText='background:#FFFBEB;border:1px solid #FDE68A;padding:8px 16px;display:flex;align-items:center;gap:10px;font-size:12px;position:fixed;top:0;left:0;right:0;z-index:1000';
-  banner.innerHTML='&#128206; Reconecteaza folderul de atasamente: <strong>'+(CFG.att_dir_name||'')+'</strong> <button onclick="pickAttDir().then(()=>{var b=document.getElementById(\'att-reconnect-banner\');if(b)b.remove()})" style="padding:4px 12px;border:1px solid #D97706;background:#fff;border-radius:4px;cursor:pointer;font-size:11px">Reconecteaza</button><button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px">&times;</button>';
+  banner.innerHTML='&#128206; Reconecteaza folderul de atasamente: <strong>'+(CFG.att_dir_name||'')+'</strong> <button onclick="pickAttDir().then(()=>{sessionStorage.setItem(\'cpiaam_att_banner_dismissed\',\'1\');var b=document.getElementById(\'att-reconnect-banner\');if(b)b.remove()})" style="padding:4px 12px;border:1px solid #D97706;background:#fff;border-radius:4px;cursor:pointer;font-size:11px">Reconecteaza</button><button onclick="sessionStorage.setItem(\'cpiaam_att_banner_dismissed\',\'1\');this.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px">&times;</button>';
   document.body.prepend(banner);
 }
 async function pickAttDir(){
@@ -1564,7 +1565,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='9.8.1';
+const APP_VERSION='9.9';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -2534,6 +2535,7 @@ const PT={dashboard:'Dashboard',iaam:'IAAM / Anchete Epidemiologice',autocontrol
   rapoarte:'Generare Rapoarte',config:'Configurare Sistem',ajutor:'Ajutor / FAQ',changelog:'Istoric Versiuni',about:'Despre',terms:'Termeni si Conditii'};
 
 function nav(p){A.page=p;document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('a',n.dataset.p===p));
+  if(p==='calendar')_calTab='calendar';
   document.getElementById('pt').textContent=getPageTitle(p);closeSidebar();dch();render()}
 function dch(){Object.values(A.charts).forEach(c=>{try{c.destroy()}catch(e){}});A.charts={}}
 function render(){renderPage(A.page)}
@@ -2614,6 +2616,8 @@ function applySbCollapse(){
   if(!sb)return;
   if(_sbCollapsed){sb.classList.add('sb-mini');if(mn)mn.classList.add('mn-expanded')}
   else{sb.classList.remove('sb-mini');if(mn)mn.classList.remove('mn-expanded')}
+  // Resize charts after layout change
+  setTimeout(function(){Object.values(A.charts||{}).forEach(function(c){if(c&&c.resize)try{c.resize()}catch(e){}})},300);
 }
 function toggleDark(){
   A.darkMode=!A.darkMode;CFG.dark_mode=A.darkMode;saveCfg();applyDark()}
@@ -5581,8 +5585,7 @@ async function rAntibiograma(el){
   const yc=cases.filter(r=>r.year===A.year);
   let totalAbg=0,totalMDR=0,germCounts={};
   yc.forEach(r=>{(r.germeni||[]).forEach(g=>{
-    if(g.susceptibility&&g.susceptibility.length>0){totalAbg++;const k=g.code||g.name;germCounts[k]=(germCounts[k]||0)+1}
-    if(g.mdr&&g.mdr!=='Nu')totalMDR++;
+    if(g.susceptibility&&g.susceptibility.length>0){totalAbg++;const k=g.code||g.name;germCounts[k]=(germCounts[k]||0)+1;if(g.mdr&&g.mdr!=='Nu')totalMDR++}
   })});
   const top3=Object.entries(germCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>{const n=germenName(k);return(n||k)+' ('+v+')'}).join(', ')||'—';
   // Mean susceptibility
@@ -6551,13 +6554,17 @@ async function renderDashCalendar(){
   // Upcoming 7 days: gather from current and possibly next month
   const upcoming=[];
   const ms7=7*864e5;
-  const allDls=await ga('deadlines'),allDocs=await ga('documents'),allEvts=await ga('events');
-  allDls.forEach(d=>{if(!d.due_date||d.status==='trimis')return;const dt=new Date(d.due_date);const diff=dt-now;
-    if(diff>=0&&diff<=ms7)upcoming.push({date:d.due_date,color:'red',label:d.name,link:'termene'})});
-  allDocs.forEach(d=>{if(!d.date_expiry)return;const dt=new Date(d.date_expiry);const diff=dt-now;
+  const allDls=await ga('deadlines'),allDocs=await ga('documents'),allEvts=await ga('events'),allTr=await ga('trainings'),allAud=await ga('audits');
+  allDls.forEach(d=>{if(!d.due_date||d.status==='trimis')return;const dt=new Date(d.due_date+'T00:00:00');const diff=dt-now;
+    if(diff>=0&&diff<=ms7)upcoming.push({date:d.due_date,color:'red',label:d.name,link:'calendar'})});
+  allDocs.forEach(d=>{if(!d.date_expiry)return;const dt=new Date(d.date_expiry+'T00:00:00');const diff=dt-now;
     if(diff>=0&&diff<=ms7)upcoming.push({date:d.date_expiry,color:'yellow',label:d.name,link:'documente'})});
-  allEvts.forEach(e=>{if(!e.date)return;const dt=new Date(e.date);const diff=dt-now;
+  allEvts.forEach(e=>{if(!e.date)return;const dt=new Date(e.date+'T00:00:00');const diff=dt-now;
     if(diff>=0&&diff<=ms7)upcoming.push({date:e.date,color:'blue',label:e.title,link:'calendar'})});
+  allTr.forEach(t=>{if(!t.date)return;const dt=new Date(t.date+'T00:00:00');const diff=dt-now;
+    if(diff>=0&&diff<=ms7)upcoming.push({date:t.date,color:'green',label:t.topic||'Instruire',link:'instruire'})});
+  allAud.forEach(a=>{if(!a.date)return;const dt=new Date(a.date+'T00:00:00');const diff=dt-now;
+    if(diff>=0&&diff<=ms7)upcoming.push({date:a.date,color:'teal',label:a.type||'Audit',link:'audituri'})});
   upcoming.sort((a,b)=>a.date.localeCompare(b.date));
   const upHtml=upcoming.length?upcoming.map(ev=>{
     const d=new Date(ev.date);const dayStr=d.getDate()+' '+mNames[d.getMonth()];
@@ -9375,7 +9382,7 @@ function ipcCatName(id){
   if(!c)return '—';
   return (CFG.lang==='en'&&c.name_en)?c.name_en:c.name_ro;
 }
-function ipcCatById(id){return (CFG.ipc_categories||[]).find(function(x){return x.id===id})}
+function ipcCatById(id){if(!id)return null;return (CFG.ipc_categories||[]).find(function(x){return x.id===id})||(CFG.ipc_categories||[]).find(function(x){return x.name_ro===id||x.name_en===id||x.audit_type===id})}
 function activeIpcCats(){return (CFG.ipc_categories||[]).filter(function(c){return c.active!==false})}
 
 </script>
@@ -10537,6 +10544,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'9.9',date:'2026-03-19',notes:'Fix: Banner reconectare atasamente — apare o singura data per sesiune, dismiss persistent\nFix: Dashboard 7 zile — parsare date corecta + inclus instruiri si audituri\nFix: Calendar tab — navigarea din sidebar reseteaza la tab Calendar (nu Raportari)\nFix: Obiective SMART — categoriile IPC se gasesc si pe name_ro/name_en (nu doar ID)\nFix: Antibiograma MDR% — procentul se calculeaza doar din germeni cu antibiograma completata\nFix: Sidebar collapse — Chart.js resize dupa schimbare layout'},
   {version:'9.8.1',date:'2026-03-19',notes:'Fix: Sidebar mini — tooltip-urile apar acum la hover pe iconite (overflow fix)'},
   {version:'9.8',date:'2026-03-19',notes:'NOU: Sidebar colapsabil stil Gmail — buton hamburger minimizeaza la iconite\nNOU: Tooltip pe hover in modul minimizat — numele paginii apare la hover\nNOU: Stare persistenta — sidebar ramane minimizat/expandat la reincarcarea paginii\nNOU: Tranzitie smooth la collapse/expand sidebar si content area\nNOU: Responsive — sidebar auto-minimizat pe tablet, slide-out pe mobil'},
   {version:'9.7',date:'2026-03-19',notes:'Fix: Instruire — Formator e acum dropdown multi-select din personalul configurat\nFix: Instruire — Participantii se introduc liber (eliminat Incarca din personal)\nFix: Instruire — Eliminat KPI Personal Instruit si warning persoane neinstruite\nFix: Instruire — Backward compat cu formator text din versiuni anterioare\nFix: Timeline hatch — fallback pe perioada infectiei cand antibioticele nu au date'},

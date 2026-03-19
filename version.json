@@ -1,12 +1,16 @@
 {
-  "version": "9.9",
+  "version": "10.0",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Fix: Banner reconectare atasamente — apare o singura data per sesiune, dismiss persistent",
-    "Fix: Dashboard 7 zile — parsare date corecta + inclus instruiri si audituri",
-    "Fix: Calendar tab — navigarea din sidebar reseteaza la tab Calendar (nu Raportari)",
-    "Fix: Obiective SMART — categoriile IPC se gasesc si pe name_ro/name_en (nu doar ID)",
-    "Fix: Antibiograma MDR% — procentul se calculeaza doar din germeni cu antibiograma completata",
-    "Fix: Sidebar collapse — Chart.js resize dupa schimbare layout"
+    "Fix: Timeline legenda — adaugat element 'Doar antibiotice' (verde) pentru claritate",
+    "Fix: Audit igiena mainilor — tooltip FR (Frecare SHA) si SP (Spalare) pe butoane",
+    "Fix: Dashboard — scos link 'Calendar complet' redundant din mini-calendar",
+    "Fix: Duplicat IAAM — tooltip explicativ (ce copiaza, ce sterge)",
+    "NOU: Analiza Multi-An — selectare libera ani cu chipuri toggle",
+    "NOU: Biocide — avize per produs cu date expirare + notificari clopot",
+    "NOU: Biocide — camp 'In stoc' pe produse + dropdown tip produs EU (TP1-TP22)",
+    "NOU: PPS + Consum ATB — tab-uri combinate in aceeasi pagina + link Antibiograma",
+    "NOU: Audit Gestionare Deseuri — 15 intrebari OMS 1226/2012",
+    "NOU: Audituri generic — adauga/sterge intrebari custom pe orice checklist"
   ]
 }

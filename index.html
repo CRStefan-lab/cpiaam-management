@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v9.9</title>
+<title>CPIAAM — Sistem de Management v10.0</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1565,7 +1565,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='9.9';
+const APP_VERSION='10.0';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1701,6 +1701,7 @@ async function loadCfg(){
       {id:genId('ipc'),name_ro:'Rotatie biocide',name_en:'Biocide rotation',color:'#6A1B9A',source_module:'audit',audit_type:'rotatie_biocide',standard:true,active:true},
       {id:genId('ipc'),name_ro:'Sterilizare si reprocesare',name_en:'Sterilization & reprocessing',color:'#00695C',source_module:'audit',audit_type:'sterilizare',standard:true,active:true},
       {id:genId('ipc'),name_ro:'Pregatire preoperatorie',name_en:'Preoperative preparation',color:'#AD1457',source_module:'audit',audit_type:'preoperator',standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Gestionare deseuri',name_en:'Waste management',color:'#795548',source_module:'audit',audit_type:'deseuri',standard:true,active:true},
       {id:genId('ipc'),name_ro:'Supraveghere epidemiologica',name_en:'Epidemiological surveillance',color:'#0D47A1',source_module:'iaam',audit_type:null,standard:true,active:true},
       {id:genId('ipc'),name_ro:'Dispozitive invazive',name_en:'Invasive devices',color:'#B71C1C',source_module:'iaam',audit_type:null,standard:true,active:true},
       {id:genId('ipc'),name_ro:'Infectii chirurgicale',name_en:'Surgical site infections',color:'#4E342E',source_module:'iaam',audit_type:null,standard:true,active:true},
@@ -1748,6 +1749,11 @@ async function loadCfg(){
       {name:'Cateter arterial',pinned:false},{name:'Cateter epidural',pinned:false},
       {name:'Pacemaker temporar',pinned:false},{name:'ECMO',pinned:false}
     ];_comorbAdded=true;
+  }
+  // Migrate: add deseuri audit category if missing
+  if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>c.audit_type==='deseuri')){
+    CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Gestionare deseuri',name_en:'Waste management',color:'#795548',source_module:'audit',audit_type:'deseuri',standard:true,active:true});
+    _comorbAdded=true;
   }
   // Ensure all config items have unique IDs
   if(ensureConfigIds()||_comorbAdded){await saveCfg();await migrateDataToIds()}
@@ -2584,8 +2590,8 @@ async function delRec(store,id){if(!confirm('Sigur stergi?'))return;await dl(sto
 // ═══════════════════════════════════════════════════════════════
 async function renderPage(p){const el=document.getElementById('pc');dch();switch(p){
   case'dashboard':return rDash(el);case'iaam':return rIAAM(el);case'autocontrol':return rAuto(el);
-  case'deseuri':return rDes(el);case'biocide':return rBio(el);case'pps':return rPPS(el);
-  case'consum_atb':return rConsumATB(el);case'antibiograma':return rAntibiograma(el);case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
+  case'deseuri':return rDes(el);case'biocide':return rBio(el);case'pps':case'consum_atb':return rPpsAtbCombo(el,p);
+  case'antibiograma':return rAntibiograma(el);case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
   case'audituri':return rAudit(el);case'obiective':return rObiective(el);case'instruire':return rInstr(el);
   case'rapoarte':return rRap(el);case'multian':return rMultiAn(el);case'config':return rCfg(el);case'ajutor':return rAjutor(el);
   case'manual':return rManual(el);case'changelog':return rChangelog(el);case'about':return rAbout(el);case'terms':return rTerms(el);
@@ -2668,6 +2674,14 @@ async function buildNotifications(){
   if(A._spcData&&A._dashChartData){const spc=A._spcData,ibm=A._dashChartData.ibm;
     ibm.forEach((v,i)=>{if(v>spc.ucl){const msg=T('spc_focar_alert').replace('{m}',MO[i]).replace('{v}',v).replace('{u}',spc.ucl);
       n.push({icon:'🔴',text:msg,link:'dashboard',urgent:true})}});}
+  // Biocide avize expirate
+  if(typeof getBioExpiredAvize==='function'){
+    var bioExp=getBioExpiredAvize();
+    bioExp.forEach(function(b){
+      if(b.status==='expired')n.push({icon:'⚠️',text:(isEN?'Expired biocide permit: ':'Aviz biocid expirat: ')+b.product+' ('+b.aviz+')',link:'biocide',urgent:true});
+      else n.push({icon:'🟡',text:(isEN?'Biocide permit expiring: ':'Aviz biocid expira: ')+b.product+' ('+b.aviz+') — '+b.date,link:'biocide'});
+    });
+  }
   // Backup
   if(CFG.last_backup){const lb=new Date(CFG.last_backup);const diff=now-lb;
     if(diff>=(CFG.backup_interval_days||7)*86400000)n.push({icon:'💾',text:(isEN?'No backup for '+Math.ceil(diff/86400000)+' days. Go to Config → Date & Backup':'Nu ai facut backup de '+Math.ceil(diff/86400000)+' zile. Mergi la Configurare \u2192 Date \u0219i backup'),link:'config',cfgTab:'date'})}
@@ -3229,7 +3243,7 @@ async function rIAAM(el){
         '<td class="act"><button onclick="editIAAM('+r.id+')" title="'+(isEN?'Edit':'Editeaza')+'">&#9998;</button>'+
         '<button onclick="genFisaIAAM('+r.id+')" title="'+(isEN?'IAAM Sheet':'Fisa IAAM')+'">&#128203;</button>'+
         '<button onclick="genAnchetaWord('+r.id+')" title="'+(isEN?'Epidemiological Investigation':'Ancheta Epidemiologica')+'">&#128196;</button>'+
-        '<button onclick="duplicateIAAM('+r.id+')" title="'+(isEN?'Duplicate':'Duplica')+'">&#128464;</button>'+
+        '<button onclick="duplicateIAAM('+r.id+')" title="'+(isEN?'Duplicate — copies section, doctor, origin; clears patient data':'Duplica — copiaza sectia, doctorul, originea; sterge datele pacient')+'">&#128464;</button>'+
         '<button onclick="delRec(\'iaam\','+r.id+')" title="'+(isEN?'Delete':'Sterge')+'">&#128465;</button></td></tr>';
     }).join('')+
     '</tbody></table>')+
@@ -3911,6 +3925,7 @@ function _tlBuildLegend(DK){
   h+='<div class="tl-lg"><canvas id="tlLgH" width="20" height="8" style="border-radius:2px"></canvas>'+T('tl_spitalizare')+'</div>';
   h+='<div class="tl-lg"><canvas id="tlLgI" width="20" height="8" style="border-radius:2px"></canvas>'+T('tl_infectie')+'</div>';
   h+='<div class="tl-lg"><canvas id="tlLgA" width="20" height="8" style="border-radius:2px"></canvas>'+(CFG.lang==='en'?'Infection + antibiotics':'Infectie + antibiotice')+'</div>';
+  h+='<div class="tl-lg"><canvas id="tlLgAbx" width="20" height="8" style="border-radius:2px"></canvas>'+(CFG.lang==='en'?'Antibiotics only':'Doar antibiotice')+'</div>';
   h+='<div class="tl-lg"><div style="width:7px;height:7px;border-radius:50%;background:'+(DK?'#FF4444':'#DC2626')+'"></div>'+T('tl_cluster')+'</div>';
   h+='</div>';
   return h;
@@ -3924,6 +3939,9 @@ function _tlPaintLegend(DK){
     ctx.fillStyle=DK?'#FF4444':'#DC2626';ctx.fillRect(0,0,20,8);
     ctx.strokeStyle=DK?'#00FF88':'#16A34A';ctx.lineWidth=4;
     for(var x=-10;x<30;x+=8){ctx.beginPath();ctx.moveTo(x,8);ctx.lineTo(x+8,0);ctx.stroke()}
+  }
+  var c4=document.getElementById('tlLgAbx');if(c4){
+    ctx=c4.getContext('2d');ctx.globalAlpha=DK?0.5:0.45;ctx.fillStyle=DK?'#00FF88':'#16A34A';ctx.fillRect(0,0,20,8);
   }
 }
 
@@ -5252,6 +5270,14 @@ async function sDes(month,field,value){
 
 // ═══════════════════════════════════════════════════════════════
 var _bioFilters={search:'',type:'',month:''};
+var BIO_PRODUCT_TYPES=[
+  {id:'TP1',name:'Igiena umana',desc:'Sapunuri, geluri de dus, produse de igiena'},
+  {id:'TP2',name:'Dezinfectante suprafete',desc:'Dezinfectante suprafete, pavimente, mobilier'},
+  {id:'TP4',name:'Dezinfectante alimentare',desc:'Dezinfectante suprafete contact cu alimente'},
+  {id:'TP14',name:'Rodenticide',desc:'Produse pentru controlul rozatoarelor'},
+  {id:'TP18',name:'Insecticide',desc:'Produse pentru controlul insectelor'},
+  {id:'TP22',name:'Fluide imbalsam.',desc:'Fluide de imbalsamare si taxidermie'}
+];
 async function rBio(el){
   const allData=(await ga('biocide')).filter(r=>r.year===A.year).sort((a,b)=>{const an=a.product_id?rBioProd(a.product_id):a.product_name||'';const bn=b.product_id?rBioProd(b.product_id):b.product_name||'';return an.localeCompare(bn)});
   const bf=_bioFilters;
@@ -5283,8 +5309,8 @@ async function rBio(el){
   h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn bp" onclick="editBio()">+ Inregistrare</button></div>'+
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
   (data.length===0?'<div class="es"><p>Nicio inregistrare biocide'+(bf.search||bf.type||bf.month?' cu filtrele selectate':'')+'.</p></div>':
-    '<table class="dt"><thead><tr><th>#</th><th>Produs</th><th>UM</th><th>Tip</th><th>Luna</th><th style="text-align:right">Cant.</th><th style="text-align:right">Valoare</th><th>Docs</th><th>Actiuni</th></tr></thead><tbody>'+
-    data.map((r,i)=>'<tr><td>'+(i+1)+'</td><td><strong>'+(r.product_id?rBioProd(r.product_id):r.product_name||'—')+'</strong></td><td>'+(r.unit||'')+'</td>'+
+    '<table class="dt"><thead><tr><th>#</th><th>Produs</th><th>TP</th><th>UM</th><th>Tip</th><th>Luna</th><th style="text-align:right">Cant.</th><th style="text-align:right">Valoare</th><th>Docs</th><th>Actiuni</th></tr></thead><tbody>'+
+    data.map((r,i)=>'<tr><td>'+(i+1)+'</td><td><strong>'+(r.product_id?rBioProd(r.product_id):r.product_name||'—')+'</strong></td><td style="font-size:11px">'+(r.product_type||'')+'</td><td>'+(r.unit||'')+'</td>'+
       '<td><span class="bdg '+(r.type==='intrare'?'bdg-g':r.type==='iesire'?'bdg-a':'bdg-b')+'">'+(r.type==='stoc_initial'?'Stoc initial':r.type==='intrare'?'Intrare':'Iesire')+'</span></td>'+
       '<td>'+(r.month?MO[r.month-1]:'')+'</td><td style="text-align:right">'+fn(r.quantity)+'</td><td style="text-align:right">'+fn(Math.round((r.value_lei||0)*100)/100)+'</td>'+
       '<td style="white-space:nowrap;font-size:14px">'+bioAttIcons(r)+'</td>'+
@@ -5340,8 +5366,9 @@ async function editBio(id){
     '<div class="fg"><label>Lot</label><input id="f-lot" value="'+(r.lot||'')+'"></div></div>'+
     '<div class="fr"><div class="fg"><label>Cantitate</label><input type="number" step="0.01" id="f-qty" value="'+(r.quantity||'')+'"></div>'+
     '<div class="fg"><label>Valoare (lei)</label><input type="number" step="0.01" id="f-val" value="'+(r.value_lei||'')+'"></div></div>'+
-    '<div class="fr"><div class="fg"><label>Producator</label><input id="f-bio-mfr" value="'+esc(r.manufacturer||'')+'" list="dl-bio-mfr" placeholder="Producator"></div>'+
-    '<div class="fg"><label>Distribuitor</label><input id="f-bio-dist" value="'+esc(r.distributor||'')+'" list="dl-bio-dist" placeholder="Distribuitor"></div></div>'+
+    '<div class="fr3"><div class="fg"><label>Producator</label><input id="f-bio-mfr" value="'+esc(r.manufacturer||'')+'" list="dl-bio-mfr" placeholder="Producator"></div>'+
+    '<div class="fg"><label>Distribuitor</label><input id="f-bio-dist" value="'+esc(r.distributor||'')+'" list="dl-bio-dist" placeholder="Distribuitor"></div>'+
+    '<div class="fg"><label>Tip produs (EU)</label><select id="f-bio-ptype"><option value="">— Neselectat —</option>'+BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(r.product_type===t.id?' selected':'')+' title="'+esc(t.desc)+'">'+t.id+' — '+esc(t.name)+'</option>'}).join('')+'</select></div></div>'+
     '<datalist id="dl-bio-mfr">'+[...new Set(CFG.biocide_products.map(p=>p.manufacturer).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('')+'</datalist>'+
     '<datalist id="dl-bio-dist">'+[...new Set(CFG.biocide_products.map(p=>p.distributor).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('')+'</datalist>'+attHtml,
   '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveBio('+(id||'null')+')">Salveaza</button>');
@@ -5380,7 +5407,7 @@ async function saveBio(id){
   const prodVal=selVal||customVal;
   if(!prodVal){alert('Completeaza produsul.');return}
   const prodObj=CFG.biocide_products.find(p=>p.id===prodVal)||CFG.biocide_products.find(p=>p.name===prodVal);
-  const rec={year:A.year,product_id:prodObj?prodObj.id:prodVal,product_name:prodObj?prodObj.name:(customVal||prodVal),unit:v('f-um').trim(),type:v('f-tp'),month:+v('f-mo')||null,lot:v('f-lot').trim(),quantity:+v('f-qty')||0,value_lei:+v('f-val')||0,manufacturer:(document.getElementById('f-bio-mfr')?.value||'').trim(),distributor:(document.getElementById('f-bio-dist')?.value||'').trim()};
+  const rec={year:A.year,product_id:prodObj?prodObj.id:prodVal,product_name:prodObj?prodObj.name:(customVal||prodVal),unit:v('f-um').trim(),type:v('f-tp'),month:+v('f-mo')||null,lot:v('f-lot').trim(),quantity:+v('f-qty')||0,value_lei:+v('f-val')||0,manufacturer:(document.getElementById('f-bio-mfr')?.value||'').trim(),distributor:(document.getElementById('f-bio-dist')?.value||'').trim(),product_type:(document.getElementById('f-bio-ptype')?.value||'')};
   if(id){const old=(await ga('biocide')).find(x=>x.id===id);if(old?.attachments)rec.attachments=old.attachments;rec.id=id}
   await pt('biocide',rec);logActivity((id?'Editat':'Adaugat')+' biocid — '+rec.product_name);closeM();render();
 }
@@ -5426,6 +5453,50 @@ async function downloadBioAtt(id,key){
     return;
   }
   if(att.data){const a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
+}
+
+// ── Avize Biocide (C3+C4) ──
+function editBioAvize(prodIdx){
+  var p=CFG.biocide_products[prodIdx];if(!p)return;
+  if(!p.avize)p.avize=[];
+  var h='<div id="bio-avize-list">';
+  h+=_renderBioAvizeRows(prodIdx);
+  h+='</div>';
+  h+='<button class="btn bo" onclick="addBioAviz('+prodIdx+')" style="margin-top:8px">+ Adauga aviz</button>';
+  openM('Avize — '+esc(p.name||'?'),h,
+    '<button class="btn bo" onclick="closeM();render()">Inchide</button>');
+}
+function _renderBioAvizeRows(prodIdx){
+  var p=CFG.biocide_products[prodIdx];if(!p||!p.avize)return '';
+  var h='<table class="dt" style="font-size:12px"><thead><tr><th>Nr. Aviz</th><th>Data emitere</th><th>Data expirare</th><th>&#215;</th></tr></thead><tbody>';
+  p.avize.forEach(function(a,ai){
+    h+='<tr>'+
+      '<td><input value="'+esc(a.nr||'')+'" onchange="CFG.biocide_products['+prodIdx+'].avize['+ai+'].nr=this.value;saveCfg()" placeholder="Nr. aviz" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;width:100%;font-size:11px"></td>'+
+      '<td><input type="date" value="'+(a.date_issued||'')+'" onchange="CFG.biocide_products['+prodIdx+'].avize['+ai+'].date_issued=this.value;saveCfg()" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px"></td>'+
+      '<td><input type="date" value="'+(a.date_expiry||'')+'" onchange="CFG.biocide_products['+prodIdx+'].avize['+ai+'].date_expiry=this.value;saveCfg()" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px"></td>'+
+      '<td class="act"><button onclick="CFG.biocide_products['+prodIdx+'].avize.splice('+ai+',1);saveCfg();editBioAvize('+prodIdx+')">&#128465;</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  return h;
+}
+function addBioAviz(prodIdx){
+  var p=CFG.biocide_products[prodIdx];if(!p)return;
+  if(!p.avize)p.avize=[];
+  p.avize.push({nr:'',date_issued:'',date_expiry:''});
+  saveCfg();editBioAvize(prodIdx);
+}
+function getBioExpiredAvize(){
+  var now=new Date();var soon=new Date(Date.now()+30*86400000);var results=[];
+  (CFG.biocide_products||[]).forEach(function(p){
+    if(!p.in_stock)return;
+    (p.avize||[]).forEach(function(a){
+      if(!a.date_expiry)return;
+      var exp=new Date(a.date_expiry);
+      if(exp<now)results.push({product:p.name,aviz:a.nr,date:a.date_expiry,status:'expired'});
+      else if(exp<soon)results.push({product:p.name,aviz:a.nr,date:a.date_expiry,status:'expiring'});
+    });
+  });
+  return results;
 }
 
 
@@ -5530,6 +5601,23 @@ async function savePPS(id){
     iaam_found:+v('f-iaam')||0,prescriptions:+v('f-rx')||0,documented:+v('f-ddoc')||0,notes:v('f-n').trim()};
   if(!rec.section){alert('Selecteaza sectia.');return}
   if(id)rec.id=id;await pt('pps',rec);closeM();render();
+}
+
+// ── Combo PPS + Consum ATB ──
+var _ppsAtbTab='pps';
+async function rPpsAtbCombo(el,activePage){
+  if(activePage==='consum_atb')_ppsAtbTab='consum_atb';
+  var isEN=CFG.lang==='en';
+  var tabs='<div class="ac-tabs" style="margin-bottom:16px">'+
+    '<button class="ac-ttab'+(_ppsAtbTab==='pps'?' on':'')+'" onclick="_ppsAtbTab=\'pps\';render()">PPS '+(isEN?'(Point Prevalence)':'(Prevalenta de Moment)')+'</button>'+
+    '<button class="ac-ttab'+(_ppsAtbTab==='consum_atb'?' on':'')+'" onclick="_ppsAtbTab=\'consum_atb\';render()">'+(isEN?'Antibiotic Consumption (DDD)':'Consum Antibiotice (DDD)')+'</button>'+
+    '<button class="ac-ttab'+(_ppsAtbTab==='antibiograma'?' on':'')+'" onclick="nav(\'antibiograma\')">'+(isEN?'Antibiogram':'Antibiograma')+'</button>'+
+  '</div>';
+  var container=document.createElement('div');
+  el.innerHTML=tabs+'<div id="pps-atb-content"></div>';
+  var content=document.getElementById('pps-atb-content');
+  if(_ppsAtbTab==='pps')await rPPS(content);
+  else if(_ppsAtbTab==='consum_atb')await rConsumATB(content);
 }
 
 
@@ -6576,7 +6664,7 @@ async function renderDashCalendar(){
   return '<div class="dash-cal-row">'+
     '<div class="mini-cal" onclick="nav(\'calendar\')" style="cursor:pointer"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
       '<strong style="font-size:13px;color:var(--navy)">'+mNames[m]+' '+y+'</strong>'+
-      '<a href="#" onclick="event.preventDefault();event.stopPropagation();nav(\'calendar\')" style="font-size:11px;color:var(--blue)">'+(isEN?'Full calendar':'Calendar complet')+' →</a></div>'+
+      '</div>'+
       '<div class="cal-grid">'+grid+'</div></div>'+
     '<div class="dash-cal-upcoming"><h4>'+T('cal_next_7')+'</h4>'+upHtml+'</div></div>';
 }
@@ -6668,6 +6756,23 @@ const AUDIT_ITEMS={
     {text_ro:'Prosoape hartie / uscator maini',text_en:'Paper towels / hand dryer',ref:''},
     {text_ro:'Cos deseuri cu capac si pedala',text_en:'Waste bin with lid and pedal',ref:''},
     {text_ro:'Afis igiena mainilor (WHO)',text_en:'Hand hygiene poster (WHO)',ref:''}
+  ],
+  deseuri:[
+    {text_ro:'Separarea deseurilor la sursa — containere distincte pe categorii',text_en:'Waste segregation at source — distinct containers per category',ref:'OMS 1226/2012'},
+    {text_ro:'Containere etichetate corect (cod culoare + cod deseu)',text_en:'Containers correctly labeled (color code + waste code)',ref:'OMS 1226/2012'},
+    {text_ro:'Saci galbeni pentru deseuri periculoase — integri si inchisi corect',text_en:'Yellow bags for hazardous waste — intact and properly sealed',ref:'OMS 1226/2012'},
+    {text_ro:'Cutii de carton rigide pentru obiecte ascutite/taietoare — max 3/4 pline',text_en:'Rigid cardboard boxes for sharps — max 3/4 full',ref:'OMS 1226/2012'},
+    {text_ro:'Depozitare temporara — spatiu dedicat, acces restrictionat, curat',text_en:'Temporary storage — dedicated area, restricted access, clean',ref:'OMS 1226/2012'},
+    {text_ro:'Temperatura depozitare temporara < 20°C (sau < 4°C daca > 48h)',text_en:'Temporary storage temp < 20°C (or < 4°C if > 48h)',ref:'OMS 1226/2012'},
+    {text_ro:'Transport intern pe circuite separate (curat/murdar)',text_en:'Internal transport on separate circuits (clean/dirty)',ref:'OMS 1226/2012'},
+    {text_ro:'Carucioare transport curatate si dezinfectate dupa fiecare utilizare',text_en:'Transport carts cleaned and disinfected after each use',ref:'OMS 1226/2012'},
+    {text_ro:'Evidenta cantarire pe categorii de deseuri — registru completat',text_en:'Weighing records per waste category — registry completed',ref:'OMS 1226/2012'},
+    {text_ro:'Contract valid cu firma de eliminare deseuri periculoase',text_en:'Valid contract with hazardous waste disposal company',ref:'OMS 1226/2012'},
+    {text_ro:'Borderouri de predare-primire completate si arhivate',text_en:'Handover forms completed and archived',ref:'OMS 1226/2012'},
+    {text_ro:'Personal instruit — evidenta instruirii privind gestionarea deseurilor',text_en:'Staff trained — waste management training records',ref:'OMS 1226/2012'},
+    {text_ro:'Echipament de protectie (manusi groase, sort) disponibil pentru personalul de curatenie',text_en:'Protective equipment (thick gloves, apron) available for cleaning staff',ref:'OMS 1226/2012'},
+    {text_ro:'Nu se recicleaza sau refolosesc obiecte din deseuri periculoase',text_en:'Hazardous waste items are not recycled or reused',ref:'OMS 1226/2012'},
+    {text_ro:'Deseuri lichide (chimice, farmaceutice) — colectare si eliminare conform',text_en:'Liquid waste (chemical, pharmaceutical) — compliant collection and disposal',ref:'OMS 1226/2012'}
   ]
 };
 
@@ -6800,7 +6905,7 @@ function _startNewAudit(ipcCatId){
   if(at==='igm'){_igmEditId=null;_igmSecs=[];_auditView='igm';render();return}
   if(at==='dotare_igiena'){_dotareEditId=null;_dotareData={catId:ipcCatId,sections:{}};_auditView='dotare';render();return}
   if(at==='agregat'){_agregatEditId=null;_agregatData={catId:ipcCatId};_auditView='agregat';render();return}
-  if(at==='curatenie'||at==='rotatie_biocide'||at==='sterilizare'||at==='preoperator'){
+  if(at==='curatenie'||at==='rotatie_biocide'||at==='sterilizare'||at==='preoperator'||at==='deseuri'){
     _genEditId=null;
     _genItems=(AUDIT_ITEMS[at]||[]).map((it,i)=>({id:genId('gi'),text_ro:it.text_ro,text_en:it.text_en,ref:it.ref||'',section:it.section||'',result:'',note:''}));
     _auditView='generic';_genEditCatId=ipcCatId;render();return;
@@ -6816,7 +6921,7 @@ async function _editExistingAudit(id){
   if(at==='igm'){_igmEditId=id;_igmSecs=JSON.parse(JSON.stringify(r.sections||[]));_auditView='igm';render();return}
   if(at==='dotare_igiena'){_dotareEditId=id;_dotareData=JSON.parse(JSON.stringify(r));_auditView='dotare';render();return}
   if(at==='agregat'){_agregatEditId=id;_agregatData=JSON.parse(JSON.stringify(r));_auditView='agregat';render();return}
-  if(at==='curatenie'||at==='rotatie_biocide'||at==='sterilizare'||at==='preoperator'){
+  if(at==='curatenie'||at==='rotatie_biocide'||at==='sterilizare'||at==='preoperator'||at==='deseuri'){
     _genEditId=id;_genItems=JSON.parse(JSON.stringify(r.items||[]));_genEditCatId=r.audit_type;_auditView='generic';render();return;
   }
   // Custom
@@ -6912,8 +7017,8 @@ function _igmRowHTML(sec,c){
     var subHtml='';
     if(v==='DA'){
       subHtml='<div class="aud-sub-sel">'+
-        '<span class="aud-fr'+(obs.met==='FR'?' on':'')+'" onclick="_igmSetMet(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\',\'FR\')">FR</span>'+
-        '<span class="aud-sp'+(obs.met==='SP'?' on':'')+'" onclick="_igmSetMet(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\',\'SP\')">SP</span></div>';
+        '<span class="aud-fr'+(obs.met==='FR'?' on':'')+'" onclick="_igmSetMet(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\',\'FR\')" title="Frecare cu solutie hidroalcoolica (SHA)">FR</span>'+
+        '<span class="aud-sp'+(obs.met==='SP'?' on':'')+'" onclick="_igmSetMet(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\',\'SP\')" title="Spalare cu apa si sapun">SP</span></div>';
     } else if(v==='NU'){
       subHtml='<div class="aud-sub-sel">'+
         '<span class="aud-man'+(obs.man?' on':'')+'" onclick="_igmSetMan(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\')" title="Manusi">&#129380;</span></div>';
@@ -6971,8 +7076,8 @@ function _igmUpdCellUI(sid,cid,mid,obs){
   nu.className='aud-nu'+(v==='NU'?' on':'');
   if(v==='DA'){
     sub.innerHTML='<div class="aud-sub-sel">'+
-      '<span class="aud-fr'+(obs.met==='FR'?' on':'')+'" onclick="_igmSetMet(\''+sid+'\',\''+cid+'\',\''+mid+'\',\'FR\')">FR</span>'+
-      '<span class="aud-sp'+(obs.met==='SP'?' on':'')+'" onclick="_igmSetMet(\''+sid+'\',\''+cid+'\',\''+mid+'\',\'SP\')">SP</span></div>';
+      '<span class="aud-fr'+(obs.met==='FR'?' on':'')+'" onclick="_igmSetMet(\''+sid+'\',\''+cid+'\',\''+mid+'\',\'FR\')" title="Frecare cu solutie hidroalcoolica (SHA)">FR</span>'+
+      '<span class="aud-sp'+(obs.met==='SP'?' on':'')+'" onclick="_igmSetMet(\''+sid+'\',\''+cid+'\',\''+mid+'\',\'SP\')" title="Spalare cu apa si sapun">SP</span></div>';
   } else if(v==='NU'){
     sub.innerHTML='<div class="aud-sub-sel">'+
       '<span class="aud-man'+(obs.man?' on':'')+'" onclick="_igmSetMan(\''+sid+'\',\''+cid+'\',\''+mid+'\')" title="Manusi">&#129380;</span></div>';
@@ -7056,10 +7161,10 @@ async function _renderGenericAudit(el,id){
   if(hasSections){
     var secA=_genItems.filter(it=>it.section==='A');
     var secB=_genItems.filter(it=>it.section==='B');
-    h+=_genSectionHTML(T('aud_sect_a')+': Procesul de sterilizare',secA);
-    h+=_genSectionHTML(T('aud_sect_b')+': Reprocesare instrumente',secB);
+    h+=_genSectionHTML(T('aud_sect_a')+': Procesul de sterilizare',secA,'A');
+    h+=_genSectionHTML(T('aud_sect_b')+': Reprocesare instrumente',secB,'B');
   } else {
-    h+=_genSectionHTML(esc(catName),_genItems);
+    h+=_genSectionHTML(esc(catName),_genItems,'');
   }
 
   // Observations and measures
@@ -7081,7 +7186,7 @@ async function _renderGenericAudit(el,id){
   el.innerHTML=h;
 }
 
-function _genSectionHTML(title,items){
+function _genSectionHTML(title,items,sectionId){
   var h='<div class="pn" style="margin-top:12px"><div class="ph"><h3>'+title+'</h3></div><div class="pb">';
   items.forEach((it,idx)=>{
     var globalIdx=_genItems.indexOf(it);
@@ -7096,8 +7201,10 @@ function _genSectionHTML(title,items){
         '<span class="aud-gen-btn'+(it.result==='NA'?' na-on':'')+'" onclick="_genSetResult('+globalIdx+',\'NA\')">N/A</span>'+
       '</div>'+
       '<div style="width:120px"><input value="'+esc(it.note||'')+'" onchange="_genItems['+globalIdx+'].note=this.value" placeholder="'+T('aud_nota')+'" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></div>'+
+      '<div style="width:24px"><button onclick="_genRemoveItem('+globalIdx+')" title="Sterge intrebare" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;padding:2px">&#128465;</button></div>'+
     '</div>';
   });
+  h+='<div style="margin-top:8px"><button class="btn bo bsm" onclick="_genAddItem('+(sectionId?"\'"+sectionId+"\'":"''")+')">+ Adauga intrebare</button></div>';
   h+='</div></div>';
   return h;
 }
@@ -7105,6 +7212,18 @@ function _genSectionHTML(title,items){
 function _genSetResult(idx,val){
   if(_genItems[idx].result===val)_genItems[idx].result='';
   else _genItems[idx].result=val;
+  render();
+}
+function _genRemoveItem(idx){
+  if(!confirm(CFG.lang==='en'?'Remove this question?':'Stergi aceasta intrebare?'))return;
+  _genItems.splice(idx,1);render();
+}
+function _genAddItem(sectionId){
+  var isEN=CFG.lang==='en';
+  var txt=prompt(isEN?'Question text:':'Textul intrebarii:');
+  if(!txt||!txt.trim())return;
+  var ref=prompt(isEN?'Reference (optional):':'Referinta (optional):','');
+  _genItems.push({id:genId('gi'),text_ro:txt.trim(),text_en:txt.trim(),ref:ref||'',section:sectionId||'',result:'',note:''});
   render();
 }
 
@@ -9099,13 +9218,23 @@ async function rCfg(el){
   '</div></div>'+
 
   '<div class="pn"><div class="ph"><h3>Produse Biocide</h3></div><div class="pb">'+
-    '<table class="dt" style="font-size:12px"><thead><tr><th>Produs</th><th>Producator</th><th>Distribuitor</th><th style="width:40px">&#215;</th></tr></thead><tbody>'+
-    CFG.biocide_products.map((p,i)=>{const nm=typeof p==='string'?p:(p.name||'?');return '<tr><td>'+esc(nm)+'</td>'+
+    '<table class="dt" style="font-size:12px"><thead><tr><th>Produs</th><th>Producator</th><th>Distribuitor</th><th>In stoc</th><th>Avize</th><th style="width:40px">&#215;</th></tr></thead><tbody>'+
+    CFG.biocide_products.map((p,i)=>{const nm=typeof p==='string'?p:(p.name||'?');
+      var avize=p.avize||[];
+      var avizInfo=avize.length?avize.map(function(a){
+        var exp=a.date_expiry?new Date(a.date_expiry):null;
+        var expSoon=exp&&exp<new Date(Date.now()+30*86400000);
+        var expired=exp&&exp<new Date();
+        return '<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:'+(expired?'#FEE2E2':expSoon?'#FEF3C7':'#D1FAE5')+';color:'+(expired?'#991B1B':expSoon?'#92400E':'#065F46')+'">'+esc(a.nr||'—')+' &rarr; '+(a.date_expiry||'?')+'</span>';
+      }).join(' '):'<span style="font-size:10px;color:var(--txtL)">—</span>';
+      return '<tr><td>'+esc(nm)+'</td>'+
       '<td><input value="'+esc(p.manufacturer||'')+'" onchange="CFG.biocide_products['+i+'].manufacturer=this.value;saveCfg()" placeholder="Producator" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;width:100%;font-size:11px"></td>'+
       '<td><input value="'+esc(p.distributor||'')+'" onchange="CFG.biocide_products['+i+'].distributor=this.value;saveCfg()" placeholder="Distribuitor" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;width:100%;font-size:11px"></td>'+
+      '<td style="text-align:center"><input type="checkbox" '+(p.in_stock?'checked':'')+' onchange="CFG.biocide_products['+i+'].in_stock=this.checked;saveCfg()" title="Produs in stoc"></td>'+
+      '<td>'+avizInfo+' <button class="btn bo bsm" style="padding:1px 6px;font-size:10px" onclick="editBioAvize('+i+')">&#9998;</button></td>'+
       '<td class="act"><button onclick="CFG.biocide_products.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>'}).join('')+
     '</tbody></table>'+
-    '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-bio" placeholder="Produs biocid nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-bio\').value.trim();if(v){CFG.biocide_products.push({id:genId(\'bio\'),name:v,manufacturer:\'\',distributor:\'\'});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
+    '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-bio" placeholder="Produs biocid nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-bio\').value.trim();if(v){CFG.biocide_products.push({id:genId(\'bio\'),name:v,manufacturer:\'\',distributor:\'\',in_stock:true,avize:[]});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
   '<div class="pn"><div class="ph"><h3>Coduri Deseuri</h3></div><div class="pb">'+
@@ -10544,6 +10673,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'10.0',date:'2026-03-19',notes:'Fix: Timeline legenda — adaugat element Doar antibiotice (verde) pentru claritate\nFix: Audit igiena mainilor — tooltip FR (Frecare SHA) si SP (Spalare) pe butoane\nFix: Dashboard — scos link Calendar complet redundant din mini-calendar\nFix: Duplicat IAAM — tooltip explicativ (ce copiaza, ce sterge)\nNOU: Analiza Multi-An — selectare libera ani cu chipuri toggle\nNOU: Biocide — avize per produs cu date expirare + notificari clopot\nNOU: Biocide — camp In stoc pe produse + dropdown tip produs EU (TP1-TP22)\nNOU: PPS + Consum ATB — tab-uri combinate in aceeasi pagina + link Antibiograma\nNOU: Audit Gestionare Deseuri — 15 intrebari OMS 1226/2012\nNOU: Audituri generic — adauga/sterge intrebari custom pe orice checklist'},
   {version:'9.9',date:'2026-03-19',notes:'Fix: Banner reconectare atasamente — apare o singura data per sesiune, dismiss persistent\nFix: Dashboard 7 zile — parsare date corecta + inclus instruiri si audituri\nFix: Calendar tab — navigarea din sidebar reseteaza la tab Calendar (nu Raportari)\nFix: Obiective SMART — categoriile IPC se gasesc si pe name_ro/name_en (nu doar ID)\nFix: Antibiograma MDR% — procentul se calculeaza doar din germeni cu antibiograma completata\nFix: Sidebar collapse — Chart.js resize dupa schimbare layout'},
   {version:'9.8.1',date:'2026-03-19',notes:'Fix: Sidebar mini — tooltip-urile apar acum la hover pe iconite (overflow fix)'},
   {version:'9.8',date:'2026-03-19',notes:'NOU: Sidebar colapsabil stil Gmail — buton hamburger minimizeaza la iconite\nNOU: Tooltip pe hover in modul minimizat — numele paginii apare la hover\nNOU: Stare persistenta — sidebar ramane minimizat/expandat la reincarcarea paginii\nNOU: Tranzitie smooth la collapse/expand sidebar si content area\nNOU: Responsive — sidebar auto-minimizat pe tablet, slide-out pe mobil'},
@@ -10819,7 +10949,7 @@ async function genConsumATBWordAI(){
 // ═════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════
-var _multiAnCharts={};
+var _multiAnCharts={};var _maSelectedYears=null;
 async function getAvailableYears(){
   const all=await ga('iaam');const au=await ga('autocontrol');const de=await ga('deseuri');const atb=await ga('atb_consum');
   const years=new Set();
@@ -10827,15 +10957,33 @@ async function getAvailableYears(){
   de.forEach(r=>{if(r.year)years.add(r.year)});atb.forEach(r=>{if(r.year)years.add(r.year)});
   return [...years].sort();
 }
+function _maToggleYear(y){
+  if(!_maSelectedYears)return;
+  if(_maSelectedYears.has(y))_maSelectedYears.delete(y);else _maSelectedYears.add(y);
+  render();
+}
 const YEAR_COLORS=['#C0392B','#2563B0','#27AE60','#D4A017','#8E44AD','#E67E22','#1ABC9C','#E74C3C'];
 async function rMultiAn(el){
-  const isEN=CFG.lang==='en';const years=await getAvailableYears();
+  const isEN=CFG.lang==='en';const allAvail=await getAvailableYears();
   Object.values(_multiAnCharts).forEach(c=>{try{c.destroy()}catch(e){}});_multiAnCharts={};
-  if(years.length<2){
+  if(allAvail.length<2){
     el.innerHTML='<div class="ib wrn">'+T('multian_need_2y')+'</div>';return;
   }
+  // Init selected years on first load — all selected
+  if(!_maSelectedYears){_maSelectedYears=new Set(allAvail)}
+  const years=[...allAvail].filter(y=>_maSelectedYears.has(y)).sort();
+  // Year selector chips
+  var ySel='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center"><span style="font-size:12px;color:var(--txtL);margin-right:4px">'+(isEN?'Years:':'Ani:')+'</span>';
+  allAvail.forEach(function(y){
+    var on=_maSelectedYears.has(y);
+    ySel+='<button onclick="_maToggleYear('+y+')" style="padding:4px 14px;border-radius:20px;border:1px solid '+(on?'var(--blue)':'var(--brd)')+';background:'+(on?'var(--blue)':'transparent')+';color:'+(on?'#fff':'var(--txt)')+';cursor:pointer;font-size:13px;font-weight:'+(on?'600':'400')+';transition:all .15s">'+y+'</button>';
+  });
+  ySel+='</div>';
+  if(years.length<2){
+    el.innerHTML=ySel+'<div class="ib wrn">'+(isEN?'Select at least 2 years for comparison':'Selecteaza cel putin 2 ani pentru comparatie')+'</div>';return;
+  }
   const allIAAM=await ga('iaam'),allAuto=await ga('autocontrol'),allDes=await ga('deseuri'),allATB=await ga('atb_consum');
-  el.innerHTML='<div class="ib inf">'+(isEN?'Comparative analysis across '+years.length+' years ('+years.join(', ')+')':'Analiza comparativa pe '+years.length+' ani ('+years.join(', ')+')')+'</div>'+
+  el.innerHTML=ySel+'<div class="ib inf">'+(isEN?'Comparative analysis across '+years.length+' years ('+years.join(', ')+')':'Analiza comparativa pe '+years.length+' ani ('+years.join(', ')+')')+'</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">'+
       '<div class="pn"><div class="ph"><h3>'+T('multian_iaam')+'</h3></div><div class="pb" style="height:280px"><canvas id="ma-c1"></canvas></div></div>'+
       '<div class="pn"><div class="ph"><h3>'+T('multian_auto')+'</h3></div><div class="pb" style="height:280px"><canvas id="ma-c2"></canvas></div></div>'+

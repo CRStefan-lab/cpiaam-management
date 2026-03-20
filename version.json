@@ -2,9 +2,10 @@
   "version": "11.6",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Import Consum ATB — upload fisier CSV/Excel cu auto-detect coloane si potrivire sectii dupa nume",
-    "NOU: Import Consum ATB — preview tabel cu sectie, luna, antibiotic, ATC, cantitate, AWaRe inainte de import",
-    "NOU: Import Consum ATB — matching ATC dupa cod sau nume antibiotic, dropdown fallback sectie necunoscuta",
-    "FIX: Titlu aplicatie — CPIAAM Management (consistent peste tot)"
+    "NOU: Auto-backup la upgrade — datele sunt salvate automat inainte de trecerea la versiune noua",
+    "NOU: Migrare automata — backup-uri din versiuni vechi sunt convertite automat la formatul curent",
+    "NOU: Detectie DB gol — avertisment clar cu optiuni de recuperare",
+    "FIX: Notificare versiune — apare doar cand versiunea GitHub e mai noua",
+    "FIX: IAAM filtru luna — tabelul afiseaza cazurile dupa data internarii, nu luna raportarii"
   ]
 }

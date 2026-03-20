@@ -1025,6 +1025,7 @@ async function pt(s,i,preserveMeta){
     var user=getCurrentUser();
     if(!i._createdBy){i._createdBy=user;i._createdAt=new Date().toISOString()}
     i._modifiedBy=user;i._modifiedAt=new Date().toISOString();
+    i._appVersion=APP_VERSION;
   }
   const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).put(i);r.onsuccess=()=>{ok(r.result);_syncDebounce()};r.onerror=()=>no(r.error)})
 }
@@ -3405,7 +3406,16 @@ async function rIAAM(el){
     if(f.sec&&r.section!==f.sec)return false;
     if(f.mdr==='da'&&!r.mdr)return false;
     if(f.mdr==='nu'&&r.mdr)return false;
-    if(f.month&&r.month!==+f.month)return false;
+    if(f.month){
+      const sm=+f.month;
+      if(r.month===sm){/* match reporting month */}
+      else if(r.date_admission){
+        const moS=new Date(A.year,sm-1,1),moE=new Date(A.year,sm,0);
+        const adm=new Date(r.date_admission+'T00:00:00');
+        const dis=r.date_discharge?new Date(r.date_discharge+'T00:00:00'):moE;
+        if(!(adm<=moE&&dis>=moS))return false;
+      } else return false;
+    }
     if(f.compl==='complete'&&r.completion<100)return false;
     if(f.compl==='incomplete'&&r.completion>=100)return false;
     if(f.search){const q=f.search.toLowerCase();
@@ -11871,7 +11881,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
-  {version:'11.6',date:'2026-03-20',notes:'NOU: Import Consum ATB — upload fisier CSV/Excel cu auto-detect coloane si potrivire sectii dupa nume\nNOU: Import Consum ATB — preview tabel cu antibiotic, ATC, cantitate, AWaRe inainte de import\nNOU: Matching ATC dupa cod sau nume antibiotic, dropdown fallback sectie necunoscuta\nFIX: Titlu aplicatie — CPIAAM Management (consistent)'},
+  {version:'11.6',date:'2026-03-20',notes:'NOU: Auto-backup la upgrade — datele sunt salvate automat inainte de trecerea la versiune noua\nNOU: Migrare automata — backup-uri din versiuni vechi sunt convertite automat la formatul curent\nNOU: Detectie DB gol — avertisment clar cu optiuni de recuperare daca datele lipsesc\nFIX: Notificare versiune — apare doar cand versiunea GitHub e mai noua, fara dismiss accidental\nFIX: IAAM filtru luna — tabelul de cazuri afiseaza corect cazurile dupa data internarii\nNOU: _appVersion pe fiecare record — trasabilitate versiune'},
   {version:'11.5',date:'2026-03-20',notes:'FIX: Formular IAAM — tratamentul cu antibiotice si istoricul clinic se salveaza corect din orice pas\nFIX: Formular IAAM — sectia nu mai ramane blocata pe valoarea anterioara la caz nou\nFIX: Completare fisa IAAM — procentul nu mai include false-positive din array-uri goale\nFIX: Salvare IAAM robusta — colecteaza date din toti pasii vizitati, cu error handling'},
   {version:'11.4',date:'2026-03-20',notes:'NOU: Import direct XLS/HTML din LIS laborator — auto-detect format registru, fara Save As CSV\nNOU: Parsare automata organism + S/I/R din format registru laborator (suport multi-organism)\nNOU: Protectia datelor — numele pacientilor, CNP si date personale NU se importa/stocheaza\nFIX: Build script — cod sursa cu pattern special nu mai corupeaza dist\nFIX: Cache-Control headere pe serve.js — upgrade corect intre versiuni'},
   {version:'11.2',date:'2026-03-19',notes:'NOU: Separare module PPS, Consum ATB si Antibiograma pe pagini proprii\nNOU: PPS — info box ECDC, 4 KPI-uri, metadata studiu, grafic AU% per sectie, comparatie multi-an\nNOU: Consum ATB — info box OMS, filtru perioada (T1-T4, S1-S2)\nNOU: Antibiograma — store lab_isolates, import CSV laborator cu deduplicare\nNOU: Antibiograma — KPI-uri noi, filtre avansate, fallback IAAM, istoric importuri\nNOU: Config — Tipuri Probe Laborator editabile\nNOU: IAAM — Data Negativare + Buletine negativare'},
@@ -12429,16 +12439,59 @@ async function expAll(){const d={};for(const s of ST){if(s==='config')continue;d
     }catch(e){if(e.name==='AbortError')return;saveAs(blob,fname)}
   }else{saveAs(blob,fname)}
   logActivity('Backup exportat');showToast('Backup salvat cu succes!')}
+// ═══ MIGRARE DATE INTRE VERSIUNI ═══
+function migrateBackupData(d){
+  const fromVer=d.version||'1.0';
+  let migrated=0;
+  // Migrare campuri IAAM: infection_type → iaam_category (v9 → v10)
+  if(d.iaam&&Array.isArray(d.iaam)){
+    d.iaam.forEach(r=>{
+      if(r.infection_type&&!r.iaam_category){r.iaam_category=r.infection_type;delete r.infection_type;migrated++}
+      // Asigura campuri obligatorii
+      if(!r.year)r.year=new Date().getFullYear();
+      if(!r.month)r.month=new Date().getMonth()+1;
+      if(!r.completion)r.completion=0;
+    });
+  }
+  // Migrare autocontrol: puncte_control → check_points (v8 → v10)
+  if(d.autocontrol&&Array.isArray(d.autocontrol)){
+    d.autocontrol.forEach(r=>{
+      if(r.puncte_control&&!r.check_points){r.check_points=r.puncte_control;delete r.puncte_control;migrated++}
+    });
+  }
+  // Migrare audits: tip → audit_type (v9 → v10)
+  if(d.audits&&Array.isArray(d.audits)){
+    d.audits.forEach(r=>{
+      if(r.tip&&!r.audit_type){r.audit_type=r.tip;delete r.tip;migrated++}
+    });
+  }
+  // Asigura ca fiecare record are _appVersion
+  ST.forEach(s=>{
+    if(d[s]&&Array.isArray(d[s])){
+      d[s].forEach(r=>{if(!r._appVersion)r._appVersion=fromVer});
+    }
+  });
+  if(migrated>0)console.log('Migrare backup: '+migrated+' campuri actualizate din v'+fromVer);
+  return d;
+}
+
 function impAll(){if(!confirm('Importul inlocuieste datele existente. Continua?'))return;
   const inp=document.createElement('input');inp.type='file';inp.accept='.json';
   inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;
-    try{const d=JSON.parse(await f.text());
+    try{let d=JSON.parse(await f.text());
+    // Afiseaza info versiune
+    const fromVer=d.version||'necunoscuta';
+    if(fromVer!==APP_VERSION){
+      if(!confirm('Backup-ul este din versiunea '+fromVer+' (actuala: v'+APP_VERSION+').\nDatele vor fi migrate automat.\n\nContinua?'))return;
+    }
+    // Aplica migrarile de campuri
+    d=migrateBackupData(d);
+    // Support old format keys (ia→iaam, etc.)
+    const oldMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
+    for(const[key,store] of Object.entries(oldMap)){if(d[key]&&!d[store]){d[store]=d[key];delete d[key]}}
     if(d.config){const cfg=_extractCfg(d.config);if(cfg)Object.assign(CFG,cfg);await saveCfg()}
     // Import all stores by name
     for(const s of ST)if(d[s]&&Array.isArray(d[s])){await cl(s);for(const i of d[s])await pt(s,i)}
-    // Support old format keys
-    const oldMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
-    for(const[key,store] of Object.entries(oldMap)){if(d[key]&&!d[store]){for(const r of d[key])await pt(store,r)}}
     // Write imported attachments to disk if directory available
     if(_attDirHandle){
       for(const rec of (d.biocide||[])){
@@ -12468,7 +12521,9 @@ function impAll(){if(!confirm('Importul inlocuieste datele existente. Continua?'
         }
       }
     }
-    alert('Import finalizat!');await loadCfg();render()}catch(e){alert('Eroare import: '+e.message)}};inp.click()}
+    localStorage.setItem('cpiaam_last_version',APP_VERSION);
+    alert('Import finalizat din v'+fromVer+'! ('+ST.filter(s=>d[s]&&d[s].length).length+' module importate)');
+    await loadCfg();render()}catch(e){alert('Eroare import: '+e.message)}};inp.click()}
 
 
 </script>
@@ -12496,7 +12551,6 @@ function showBackupReminder(msg){
 const UPDATE_URL='https://crstefan-lab.github.io/cpiaam-management/version.json';
 function vCmp(a,b){const pa=(a+'').split('.').map(Number),pb=(b+'').split('.').map(Number);for(let i=0;i<Math.max(pa.length,pb.length);i++){const x=pa[i]||0,y=pb[i]||0;if(x!==y)return x-y}return 0}
 function checkForUpdate(){
-  if(sessionStorage.getItem('cpiaam_update_dismissed'))return;
   fetch(UPDATE_URL,{cache:'no-store'}).then(r=>r.json()).then(d=>{
     if(vCmp(d.version,APP_VERSION)>0) showUpdateBanner(d);
   }).catch(()=>{/* offline or error — silent */});
@@ -12569,7 +12623,6 @@ function showUpdateSuccess(version,savedInPlace){
   else document.body.insertBefore(b,document.body.firstChild);
 }
 function dismissUpdate(){
-  sessionStorage.setItem('cpiaam_update_dismissed','1');
   const b=document.getElementById('update-banner');if(b)b.remove();
 }
 function showToast(msg){
@@ -12594,10 +12647,58 @@ function checkEmptyDB(){
   const hadData=localStorage.getItem('cpiaam_had_data');
   if(hadData==='true'){
     setTimeout(()=>{
-      const ch=prompt('Baza de date pare goala.\n\n1 = Configurare noua (setup wizard)\n2 = Am deja date — importa din fisier JSON\n\nScrie 1 sau 2:','2');
-      if(ch==='2'){if(window.showOpenFilePicker)syncReadFile();else impAll()}
+      showEmptyDBWarning();
     },500);
   }
+}
+function showEmptyDBWarning(){
+  const d=document.createElement('div');d.id='empty-db-warning';
+  d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:flex;align-items:center;justify-content:center;font-family:var(--f)';
+  d.innerHTML='<div style="background:#fff;border-radius:16px;padding:32px;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.25)">'+
+    '<div style="text-align:center;margin-bottom:16px"><span style="font-size:48px">&#9888;&#65039;</span></div>'+
+    '<h2 style="color:#B91C1C;text-align:center;margin:0 0 12px">Baza de date este goala</h2>'+
+    '<p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 8px">Aplicatia a detectat ca ai avut date anterior, dar acum baza de date este goala. Acest lucru se poate intampla daca:</p>'+
+    '<ul style="color:#374151;font-size:13px;line-height:1.8;margin:0 0 16px;padding-left:20px">'+
+    '<li>Ai mutat fisierul in alt folder</li>'+
+    '<li>Browser-ul a sters datele (Clear Cache)</li>'+
+    '<li>Ai reinstalat browser-ul</li></ul>'+
+    '<p style="color:#047857;font-size:13px;font-weight:600;margin:0 0 16px">&#128190; Daca ai un backup JSON salvat, il poti importa acum fara sa pierzi nimic.</p>'+
+    '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'+
+    '<button onclick="document.getElementById(\'empty-db-warning\').remove();impAll()" class="btn bp" style="padding:10px 20px">&#128193; Importa Backup</button>'+
+    '<button onclick="document.getElementById(\'empty-db-warning\').remove();if(window.showOpenFilePicker)syncReadFile();else impAll()" class="btn bw" style="padding:10px 20px">&#128196; Incarca Fisier Sincronizare</button>'+
+    '<button onclick="document.getElementById(\'empty-db-warning\').remove()" class="btn bo" style="padding:10px 20px">Configurare Noua</button>'+
+    '</div></div>';
+  document.body.appendChild(d);
+}
+
+// ═══ AUTO-BACKUP LA UPGRADE ═══
+async function checkUpgradeBackup(){
+  const lastVer=localStorage.getItem('cpiaam_last_version');
+  localStorage.setItem('cpiaam_last_version',APP_VERSION);
+  if(!lastVer)return; // prima rulare, nu exista date vechi
+  if(lastVer===APP_VERSION)return; // aceeasi versiune
+  // Versiune diferita — facem backup automat
+  console.log('Upgrade detectat: v'+lastVer+' → v'+APP_VERSION+'. Auto-backup...');
+  try{
+    const d={};for(const s of ST){if(s==='config')continue;d[s]=await ga(s)}
+    const out={version:lastVer,upgraded_to:APP_VERSION,auto_backup:true,exported:new Date().toISOString(),config:CFG,...d};
+    const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+    const fname='CPIAAM_AutoBackup_v'+lastVer+'_'+new Date().toISOString().slice(0,10)+'.json';
+    // Salvam in IndexedDB un backup intern (nu cerem file picker)
+    await pt('config',{id:'_auto_backup_'+lastVer,type:'auto_backup',version:lastVer,date:new Date().toISOString(),data:JSON.stringify(out)},true);
+    console.log('Auto-backup salvat intern ('+fname+')');
+    showUpgradeNotice(lastVer);
+  }catch(e){console.error('Auto-backup failed:',e)}
+}
+function showUpgradeNotice(fromVer){
+  const d=document.createElement('div');d.id='upgrade-notice';
+  d.style.cssText='background:#D1FAE5;color:#065F46;padding:12px 18px;font-size:13px;border-bottom:2px solid #6EE7B7;font-family:var(--f);display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap';
+  d.innerHTML='<div style="flex:1"><strong>&#10004; Upgrade reusit: v'+esc(fromVer)+' &#8594; v'+esc(APP_VERSION)+'</strong>'+
+    ' — Un backup automat al datelor tale a fost creat. '+
+    '<span style="font-size:12px;opacity:.8">Recomandam sa salvezi si un backup manual (Configurare &#8594; Backup).</span></div>'+
+    '<button class="btn bo bsm" onclick="document.getElementById(\'upgrade-notice\').remove()" style="line-height:1">&times;</button>';
+  const mn=document.getElementById('app-mn');
+  if(mn)mn.insertBefore(d,mn.firstChild);
 }
 
 (async()=>{
@@ -12615,6 +12716,7 @@ function checkEmptyDB(){
     document.getElementById('app-mn').style.display='block';
     updateSidebar();updateSyncIndicator();updateUserPill();applySbCollapse();
     document.getElementById('ys').value=A.year;
+    await checkUpgradeBackup();
     render();
     // Restore file handles from IndexedDB (persists across refresh/close)
     restoreFileHandle().then(()=>{updateSyncIndicator();if(_fileHandle)startSyncPoll()});

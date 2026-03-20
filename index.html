@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v11.4</title>
+<title>CPIAAM — Sistem de Management v11.5</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1781,7 +1781,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='11.4';
+const APP_VERSION='11.5';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -3477,6 +3477,7 @@ async function rIAAM(el){
 }
 
 // ═══ IAAM WIZARD FUNCTIONS ═══
+function _arrLen(v){return Array.isArray(v)&&v.length>0}
 function calcIaamCompletion(d){
   const checks=[
     [!!(d.patient_initials&&d.date_of_birth&&d.sex&&d.month), !!(d.patient_initials||d.date_of_birth||d.sex)],
@@ -3485,8 +3486,8 @@ function calcIaamCompletion(d){
     [!!((d.germeni&&d.germeni.length>0)||(d.organism)), !!((d.germeni&&d.germeni.length>0)||d.organism)],
     [!!(d.risk_factors&&d.risk_factors.length>0), !!(d.risk_factors&&d.risk_factors.length>0)],
     [!!(d.no_antibiotic||(d.antibiotics&&d.antibiotics.length>0)), !!(d.no_antibiotic||(d.antibiotics&&d.antibiotics.length>0))],
-    [!!(d.clinical_history), !!(d.clinical_history||d.comorbidities||d.procedures)],
-    [!!(d.contacts), !!(d.contacts||d.outbreak)],
+    [!!(d.clinical_history), !!(d.clinical_history||(d.comorbidities&&d.comorbidities.length>0)||d.procedures)],
+    [!!(_arrLen(d.contacts)||(typeof d.contacts==='string'&&d.contacts&&d.contacts!=='Fara contacti de salon')), !!(_arrLen(d.contacts)||(typeof d.contacts==='string'&&d.contacts)||d.outbreak==='da')],
     [!!(d.measures&&d.measures.length>0), !!(d.measures&&d.measures.length>0||d.suspected_source)],
     [!!(d.status_externare&&d.origin), !!(d.status_externare||d.origin||d.classification||d.conclusions)]
   ];
@@ -3641,9 +3642,14 @@ function renderIaamSection(step){
 
 function collectIaamSection(step){
   const d=_iaamDraft;
-  const v=id=>{const el=document.getElementById(id);return el?el.value:''};
+  // v() reads from DOM only if element exists; returns null if not in DOM (step not visible)
+  const _el=id=>document.getElementById(id);
+  const v=id=>{const el=_el(id);return el?el.value:null};
+  // vd() reads value or keeps existing draft value (safe for non-visible steps)
+  const vd=(id,existing)=>{const val=v(id);return val!==null?val:existing};
   switch(step){
   case 0:
+    if(!_el('f-pinit'))break;// step not visible, skip
     d.patient_initials=v('f-pinit').trim();d.patient=d.patient_initials;
     d.date_of_birth=v('f-dob');d.age=+v('f-age')||null;d.sex=v('f-sex');
     d.mediu=v('f-mediu')||'Urban';
@@ -3651,49 +3657,52 @@ function collectIaamSection(step){
     d.domiciliu=v('f-dom').trim();
     break;
   case 1:
+    if(!_el('f-sec'))break;
     d.section=v('f-sec');d.reg_number=v('f-regn').trim();d.fo_number=v('f-fon').trim();
     d.doctor=v('f-doc').trim();d.date_admission=v('f-dint');d.date_discharge=v('f-dext');
     d.days=+v('f-nzi')||null;d.diag_admission=v('f-dgi').trim();d.diag_discharge=v('f-dge').trim();
-    // prev_admissions already in sync via oninput handlers
     break;
   case 2:
+    if(!_el('f-iaam-cat'))break;
     d.iaam_category=v('f-iaam-cat');d.infection_type=v('f-iaam-cat');
     d.date_confirmed=v('f-dconf');d.localization=v('f-loc').trim();
-    // bulletins already in sync via oninput handlers; generate backward-compat bulletin_nr
     d.bulletin_nr=(d.bulletins||[]).map(b=>b.nr).filter(Boolean).join(', ');
     d.detection=v('f-dep');d.active_type=v('f-act');
     d.date_negativare=v('f-dneg');
-    // bulletins_neg already in sync via oninput handlers
     break;
   case 3:
+    // germeni/atb arrays are always synced from live arrays in saveIAAM
     d.germeni=JSON.parse(JSON.stringify(_iaamGermeni));
     d.organism=_iaamGermeni.length>0?_iaamGermeni.map(g=>g.name).join(', '):'';
     d.mdr=_iaamGermeni.some(g=>g.mdr&&g.mdr!=='Nu');
     break;
   case 4:
-    // risk_factors collected via toggleRiskFactor/addRiskFromDropdown/removeRiskChip — already in _iaamDraft
+    // risk_factors collected via toggle/add/remove handlers — already in _iaamDraft
     break;
   case 5:
-    d.no_antibiotic=!!document.getElementById('f-no-atb')?.checked;
+    if(_el('f-no-atb'))d.no_antibiotic=!!_el('f-no-atb').checked;
     d.antibiotics=JSON.parse(JSON.stringify(_iaamAtb));
     d.prev_antibiotics=_iaamAtb.map(a=>a.name).join(', ');
     break;
   case 6:
+    if(!_el('f-hist'))break;
     d.clinical_history=v('f-hist').trim();
-    // comorbidities collected via toggleComorb/addComorbFromDropdown/removeComorbChip — already in _iaamDraft
+    // comorbidities collected via toggle/add/remove handlers — already in _iaamDraft
     d.procedures=v('f-proc').trim();
-    // invasive_devices collected via toggleDevice/addDeviceFromDD/addDeviceCustom — already in _iaamDraft
     break;
   case 7:
+    if(!_el('f-foc'))break;
     collectContactRows();d.outbreak=v('f-foc');d.outbreak_details=v('f-foc-det').trim();
     break;
   case 8:
+    if(!_el('f-ms'))break;
     d.measures=v('f-ms').split('\n').map(s=>s.trim()).filter(Boolean);d.suspected_source=v('f-src').trim();
     break;
   case 9:
+    if(!_el('f-status-ext'))break;
     d.status_externare=v('f-status-ext');
     d.date_deces=v('f-status-ext')==='Decedat'?v('f-deces-date'):'';
-    const cd=document.querySelector('input[name="f-cauza-deces"]:checked');
+    var cd=document.querySelector('input[name="f-cauza-deces"]:checked');
     d.cauza_deces=v('f-status-ext')==='Decedat'&&cd?cd.value:'';
     d.origin=v('f-orig');d.classification=v('f-class').trim();d.conclusions=v('f-concl').trim();
     break;
@@ -4010,9 +4019,8 @@ async function editIAAM(id){
     _iaamDraft=JSON.parse(JSON.stringify(r));
     _iaamEditId=r.id;
   } else {
-    // Smart defaults
-    const lastSec=localStorage.getItem('iaam_last_section')||'';
-    _iaamDraft={year:A.year,month:new Date().getMonth()+1,section:lastSec,mediu:'Urban',
+    // Smart defaults — section blank for new cases (user must pick explicitly)
+    _iaamDraft={year:A.year,month:new Date().getMonth()+1,section:'',mediu:'Urban',
       detection:'activa',active_type:'infectie',risk_factors:[],measures:[],
       germeni:[],antibiotics:[],contacts:'Fara contacti de salon',outbreak:'nu',
       prev_admissions:[],bulletins:[],bulletins_neg:[],comorbidities:[]};
@@ -4103,9 +4111,10 @@ async function _doIaamMatch(editId){
 }
 
 async function saveIAAM(){
-  // Collect current visible section
-  collectIaamSection(_iaamStep);
-  // Sync germeni/atb arrays
+  try{
+  // Collect ALL sections — current step from DOM, rest already in _iaamDraft
+  for(var si=0;si<=9;si++)collectIaamSection(si);
+  // Sync germeni/atb arrays (always from live arrays, overrides collectIaamSection)
   _iaamDraft.germeni=JSON.parse(JSON.stringify(_iaamGermeni));
   _iaamDraft.organism=_iaamGermeni.length>0?_iaamGermeni.map(g=>g.name).join(', '):'';
   _iaamDraft.mdr=_iaamGermeni.some(g=>g.mdr&&g.mdr!=='Nu');
@@ -4122,6 +4131,7 @@ async function saveIAAM(){
   await pt('iaam',rec);
   logActivity((_iaamEditId?'Editat':'Adaugat')+' caz IAAM — '+rSec(rec.section)+' ('+comp.total+'%)');
   closeM();render();
+  }catch(e){console.error('saveIAAM error:',e);alert('Eroare la salvare: '+e.message)}
 }
 function exportIAAM(){ga('iaam').then(d=>{const blob=new Blob([JSON.stringify(d.filter(r=>r.year===A.year),null,2)],{type:'application/json'});saveAs(blob,'IAAM_'+A.year+'.json')})}
 
@@ -11645,6 +11655,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'11.5',date:'2026-03-20',notes:'FIX: Formular IAAM — tratamentul cu antibiotice si istoricul clinic se salveaza corect din orice pas\nFIX: Formular IAAM — sectia nu mai ramane blocata pe valoarea anterioara la caz nou\nFIX: Completare fisa IAAM — procentul nu mai include false-positive din array-uri goale\nFIX: Salvare IAAM robusta — colecteaza date din toti pasii vizitati, cu error handling'},
   {version:'11.4',date:'2026-03-20',notes:'NOU: Import direct XLS/HTML din LIS laborator — auto-detect format registru, fara Save As CSV\nNOU: Parsare automata organism + S/I/R din format registru laborator (suport multi-organism)\nNOU: Protectia datelor — numele pacientilor, CNP si date personale NU se importa/stocheaza\nFIX: Build script — cod sursa cu pattern special nu mai corupeaza dist\nFIX: Cache-Control headere pe serve.js — upgrade corect intre versiuni'},
   {version:'11.2',date:'2026-03-19',notes:'NOU: Separare module PPS, Consum ATB si Antibiograma pe pagini proprii\nNOU: PPS — info box ECDC, 4 KPI-uri, metadata studiu, grafic AU% per sectie, comparatie multi-an\nNOU: Consum ATB — info box OMS, filtru perioada (T1-T4, S1-S2)\nNOU: Antibiograma — store lab_isolates, import CSV laborator cu deduplicare\nNOU: Antibiograma — KPI-uri noi, filtre avansate, fallback IAAM, istoric importuri\nNOU: Config — Tipuri Probe Laborator editabile\nNOU: IAAM — Data Negativare + Buletine negativare'},
   {version:'11.1',date:'2026-03-19',notes:'Fix: Dark mode — tab-uri Autocontrol (Probe Micro/ATP/UV) cu contrast imbunatatit (fond teal, text alb)\nFix: Dark mode — sub-tab-uri Autocontrol hover si activ cu teal vizibil\nFix: Dark mode — selecturi si inputuri fara dark override (filtre IAAM, Autocontrol) acum cu fond inchis\nFix: Dark mode — chart header si sortable hover cu override-uri corecte'},

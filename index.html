@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v11.2</title>
+<title>CPIAAM — Sistem de Management v11.4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1781,7 +1781,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='11.2';
+const APP_VERSION='11.4';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -6118,7 +6118,7 @@ async function rAntibiograma(el){
 
   h+='<div class="pn"><div class="ph" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h3>Antibiograma Locala</h3>'+
     '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
-    '<button class="btn bs bsm" onclick="importLabCSV()">&#128194; Import CSV Laborator</button>'+
+    '<button class="btn bs bsm" onclick="importLabCSV()">&#128194; Import Date Laborator</button>'+
     '<button class="btn bp bsm" onclick="genAntibiogramaWord()">'+T('abg_export_word')+'</button>'+
     '<button class="btn bo bsm" onclick="genAntibiogramaWHONET()">'+T('abg_export_whonet')+'</button>'+
     '</div></div><div class="pb">';
@@ -6292,46 +6292,224 @@ async function genAntibiogramaWord(){
 // IMPORT CSV LABORATOR → lab_isolates
 // ═══════════════════════════════════════════════════════════════
 function importLabCSV(){
-  openM('Import CSV Laborator',
+  openM('Import Date Laborator',
     '<div class="ib inf">Importa datele de antibiograma din laboratorul de microbiologie.<br><br>'+
-    '<strong>Format CSV acceptat:</strong> nr_buletin; data; sectie; tip_proba; germen; antibiotic; rezultat (S/I/R)<br>'+
-    'Mai multe linii cu acelasi nr_buletin = mai multe antibiotice testate pe acelasi izolat.</div>'+
-    '<div class="fg"><label>Fisier CSV din laborator</label><input type="file" id="f-lab" accept=".csv,.txt"></div>'+
+    '<strong>Formate acceptate:</strong><br>'+
+    '&#8226; <strong>XLS/HTML din LIS</strong> (format registru laborator — Cod cerere, Nume, Varsta, Analiza, Valoare)<br>'+
+    '&#8226; <strong>CSV tabelar</strong> — o linie per antibiotic: nr_buletin; data; sectie; tip_proba; germen; antibiotic; rezultat (S/I/R)</div>'+
+    '<div class="fg"><label>Fisier din laborator</label><input type="file" id="f-lab" accept=".csv,.txt,.xls,.xlsx,.html,.htm"></div>'+
     '<div class="fg"><label>Label import (ex: T1-2026)</label><input id="f-lab-batch" value="'+A.year+'" style="width:160px"></div>'+
     '<div id="lab-preview"></div>',
-  '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" id="lab-import-btn" onclick="processLabCSV()" disabled>Importa</button>');
-  document.getElementById('f-lab').onchange=previewLabCSV;
+  '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" id="lab-import-btn" onclick="processLabImport()" disabled>Importa</button>');
+  document.getElementById('f-lab').onchange=previewLabFile;
 }
 
-async function previewLabCSV(){
+// ── Auto-detect format ──
+async function previewLabFile(){
   const f=document.getElementById('f-lab').files[0];if(!f)return;
   const txt=await f.text();
+  // Detect HTML (XLS from LIS is actually HTML)
+  if(txt.trim().startsWith('<')||txt.includes('<table')||txt.includes('<!DOCTYPE')){
+    return previewLabHTML(txt);
+  }
+  return previewLabCSV(txt);
+}
+
+// ── FORMAT 1: HTML/XLS din LIS (registru laborator) ──
+function previewLabHTML(txt){
+  const parser=new DOMParser();
+  const doc=parser.parseFromString(txt,'text/html');
+  const tables=doc.querySelectorAll('table');
+  // Find the data table (largest one)
+  let dataTable=null,maxRows=0;
+  tables.forEach(t=>{const rc=t.querySelectorAll('tr').length;if(rc>maxRows){maxRows=rc;dataTable=t}});
+  if(!dataTable||maxRows<3){document.getElementById('lab-preview').innerHTML='<div class="ib wrn">Nu s-a gasit un tabel valid in fisier.</div>';return}
+
+  const trs=dataTable.querySelectorAll('tbody tr, tr');
+  const rows=[];
+  trs.forEach(tr=>{
+    const cells=tr.querySelectorAll('td');
+    if(cells.length>=5){
+      rows.push(Array.from(cells).map(td=>td.textContent.replace(/\s+/g,' ').trim()));
+    }
+  });
+  if(rows.length<2){document.getElementById('lab-preview').innerHTML='<div class="ib wrn">Tabelul nu contine suficiente date.</div>';return}
+
+  // Parse period from HTML title if available
+  const periodMatch=txt.match(/\((\d{2}\/\d{2}\/\d{4})\s.*?(\d{2}\/\d{2}\/\d{4})/);
+  const periodYear=periodMatch?periodMatch[2].split('/')[2]:String(A.year);
+
+  // Group by cod cerere → parse organisms + S/I/R
+  const parsed=parseLabRegistru(rows);
+
+  window._labParsed=parsed;
+  window._labFormat='registru';
+  window._labYear=+periodYear;
+
+  // Stats
+  const negCount=parsed.filter(p=>p.negative).length;
+  const posCount=parsed.filter(p=>!p.negative).length;
+  const orgSet=new Set();parsed.forEach(p=>{if(!p.negative)p.organisms.forEach(o=>orgSet.add(o.name))});
+  let totalAtb=0;parsed.forEach(p=>{if(!p.negative)p.organisms.forEach(o=>{totalAtb+=o.susceptibility.length})});
+
+  let h='<div class="ib suc">Format detectat: <strong>Registru laborator (LIS)</strong><br>'+
+    rows.length+' randuri → '+parsed.length+' buletine ('+posCount+' pozitive, '+negCount+' negative)<br>'+
+    orgSet.size+' germeni diferiti, '+totalAtb+' teste antibiotic</div>'+
+    '<div class="ib wrn" style="margin-top:8px"><strong>Protectia datelor:</strong> Numele pacientilor, CNP si alte date personale <strong>NU</strong> se importa si nu se stocheaza in aplicatie.</div>';
+
+  // Preview table — NO patient names (GDPR)
+  h+='<div style="max-height:250px;overflow-y:auto;margin:10px 0;border:1px solid var(--brd);border-radius:8px">'+
+    '<table class="tb" style="font-size:12px"><thead><tr><th>Cod</th><th>Germen</th><th>S</th><th>R</th></tr></thead><tbody>';
+  var shown=0;
+  parsed.forEach(p=>{
+    if(p.negative)return;
+    p.organisms.forEach(o=>{
+      if(shown>=20)return;
+      const sAtb=o.susceptibility.filter(s=>s.result==='S').map(s=>s.atb_name).join(', ');
+      const rAtb=o.susceptibility.filter(s=>s.result==='R').map(s=>s.atb_name).join(', ');
+      h+='<tr><td>'+esc(p.cod)+'</td><td>'+esc(o.name)+'</td>'+
+        '<td style="color:var(--green);font-size:11px">'+esc(sAtb)+'</td>'+
+        '<td style="color:var(--red);font-size:11px">'+esc(rAtb)+'</td></tr>';
+      shown++;
+    });
+  });
+  if(shown>=20)h+='<tr><td colspan="4" style="text-align:center;color:var(--txtL)">... si inca '+(posCount-20)+' izolate</td></tr>';
+  h+='</tbody></table></div>';
+
+  h+='<div class="fg"><label>Tip proba (din analiza)</label><input id="lab-sample-type" value="secretie purulenta" style="width:220px"></div>';
+
+  document.getElementById('lab-preview').innerHTML=h;
+  document.getElementById('lab-import-btn').disabled=false;
+}
+
+function parseLabRegistru(rows){
+  // Group rows by cod cerere (col 0)
+  const groups={};const order=[];
+  rows.forEach(r=>{
+    const cod=(r[0]||'').trim();if(!cod||!/^\d+$/.test(cod))return;
+    if(!groups[cod]){groups[cod]={cod,test:(r[3]||'').trim(),vals:[]};order.push(cod)}
+    groups[cod].vals.push((r[4]||'').trim());
+  });
+
+  return order.map(cod=>{
+    const g=groups[cod];
+    const vals=g.vals;
+    // Check if negative (all "absent")
+    if(vals.length===1&&/absent/i.test(vals[0])){
+      return{cod:g.cod,test:g.test,negative:true,organisms:[]};
+    }
+    // Parse organisms from first value line
+    const orgLine=vals[0]||'';
+    const organisms=parseOrganisms(orgLine);
+    if(organisms.length===0){
+      return{cod:g.cod,test:g.test,negative:true,organisms:[]};
+    }
+
+    // Parse S/I/R lines (remaining vals)
+    const atbLines=vals.slice(1);
+    if(organisms.length===1){
+      // Single organism: atbLines[0]=S, atbLines[1]=I or R, atbLines[2]=R (if 3 lines)
+      assignSIR(organisms[0],atbLines);
+    } else {
+      // Multiple organisms: lines prefixed with "1. ..., 2. ..."
+      atbLines.forEach((line,lineIdx)=>{
+        organisms.forEach((org,orgIdx)=>{
+          const prefix=(orgIdx+1)+'.';
+          const regex=new RegExp((orgIdx+1)+'\\.\\s*([^\\d]+?)(?='+(orgIdx<organisms.length-1?(orgIdx+2)+'\\.':'$')+')');
+          const m=line.match(regex);
+          if(m){
+            const atbs=m[1].trim().replace(/,\s*$/,'');
+            if(!org._atbLines)org._atbLines=[];
+            org._atbLines.push(atbs);
+          }
+        });
+      });
+      organisms.forEach(org=>{
+        if(org._atbLines)assignSIR(org,org._atbLines);
+        delete org._atbLines;
+      });
+    }
+    return{cod:g.cod,test:g.test,negative:false,organisms};
+  });
+}
+
+function parseOrganisms(line){
+  const orgs=[];
+  // Multiple organisms: "1. E.coli -prezent, 2. Proteus sp-prezent"
+  const multiMatch=line.match(/\d+\.\s*.+?-?\s*prezent/gi);
+  if(multiMatch&&multiMatch.length>1){
+    multiMatch.forEach(m=>{
+      const name=m.replace(/^\d+\.\s*/,'').replace(/\s*-?\s*prezent.*$/i,'').trim();
+      if(name)orgs.push({name,susceptibility:[]});
+    });
+    return orgs;
+  }
+  // Single organism: "Staphylococcus aureus-prezent" or "Stafilococ coagulazo-negativ - prezent (...)"
+  if(/prezent/i.test(line)){
+    const name=line.replace(/\s*-?\s*prezent.*$/i,'').replace(/\(.*?\)/g,'').trim();
+    if(name)orgs.push({name,susceptibility:[]});
+  }
+  return orgs;
+}
+
+function assignSIR(org,atbLines){
+  // atbLines[0] = S (sensibil), atbLines[1] = I or R, atbLines[2] = R
+  atbLines.forEach((line,idx)=>{
+    let result;
+    if(atbLines.length===1)result='S';
+    else if(atbLines.length===2)result=idx===0?'S':'R';
+    else result=idx===0?'S':(idx===1?'I':'R');// 3+ lines: S, I, R
+
+    splitAtbList(line).forEach(atbName=>{
+      if(atbName){
+        let atbCode='';
+        if(typeof ATB_LIST!=='undefined'){
+          ATB_LIST.forEach(grp=>{grp.items.forEach(a=>{
+            if(matchAtbName(a.n,atbName)||a.a.toLowerCase()===atbName.toLowerCase())atbCode=a.a;
+          })});
+        }
+        org.susceptibility.push({atb_code:atbCode,atb_name:atbName,result});
+      }
+    });
+  });
+}
+
+function splitAtbList(line){
+  // Split "Ciprofloxacin, Clindamicina, Eritromicina" → array, handle <br> artifacts
+  return line.split(/,/).map(s=>s.trim()).filter(s=>s&&s.length>2);
+}
+
+function matchAtbName(listName,labName){
+  const a=listName.toLowerCase().replace(/[^a-z]/g,'');
+  const b=labName.toLowerCase().replace(/[^a-z]/g,'');
+  return a===b||a.startsWith(b.substring(0,6))||b.startsWith(a.substring(0,6));
+}
+
+// ── FORMAT 2: CSV tabelar (o linie per antibiotic) ──
+function previewLabCSV(txt){
   const lines=txt.split('\n').filter(l=>l.trim());
   if(lines.length<2){document.getElementById('lab-preview').innerHTML='<div class="ib wrn">Fisier gol sau prea putin date.</div>';return}
-  // Detect separator
   const sep=lines[0].includes('\t')?'\t':(lines[0].includes(';')?';':',');
   const header=lines[0].split(sep).map(c=>c.replace(/^["']|["']$/g,'').trim());
   const rows=lines.slice(1).map(l=>l.split(sep).map(c=>c.replace(/^["']|["']$/g,'').trim())).filter(r=>r.length>=5);
 
   window._labRows=rows;window._labHeader=header;window._labSep=sep;
+  window._labFormat='csv';
 
-  // Auto-detect columns
   function findCol(hints){return header.findIndex(h=>hints.some(x=>h.toLowerCase().includes(x)))}
-  const defaults={buletin:findCol(['buletin','bulletin','nr_bul','nr.']),date:findCol(['data','date']),
+  const defaults={buletin:findCol(['buletin','bulletin','nr_bul','nr.','cod']),date:findCol(['data','date']),
     section:findCol(['sect','ward']),sample:findCol(['proba','sample','tip','specimen']),
     germen:findCol(['germen','organism','germ','pathogen']),atb:findCol(['antibiotic','atb','drug']),
     result:findCol(['rezultat','result','sir','s/i/r'])};
 
-  const opts=header.map((h,i)=>'<option value="'+i+'">'+esc(h)+'</option>').join('');
   function selFor(id,def){return '<select id="lab-col-'+id+'">'+header.map((h,i)=>'<option value="'+i+'"'+(i===def?' selected':'')+'>'+esc(h)+'</option>').join('')+'</select>'}
 
-  // Count unique bulletins and germeni
   const bi=defaults.buletin>=0?defaults.buletin:0;
   const gi=defaults.germen>=0?defaults.germen:4;
   const uniqBul=new Set(rows.map(r=>r[bi])).size;
   const uniqGerm=new Set(rows.map(r=>r[gi])).size;
 
-  let h='<div class="ib suc">'+rows.length+' linii detectate. ~'+uniqBul+' buletine unice, ~'+uniqGerm+' germeni.</div>'+
+  let h='<div class="ib suc">Format detectat: <strong>CSV tabelar</strong><br>'+rows.length+' linii. ~'+uniqBul+' buletine unice, ~'+uniqGerm+' germeni.</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0">'+
     '<div class="fg"><label>Nr. Buletin *</label>'+selFor('buletin',defaults.buletin)+'</div>'+
     '<div class="fg"><label>Data *</label>'+selFor('date',defaults.date)+'</div>'+
@@ -6343,6 +6521,12 @@ async function previewLabCSV(){
     '</div>';
   document.getElementById('lab-preview').innerHTML=h;
   document.getElementById('lab-import-btn').disabled=false;
+}
+
+// ── Unified import dispatcher ──
+async function processLabImport(){
+  if(window._labFormat==='registru')return processLabRegistru();
+  return processLabCSV();
 }
 
 async function processLabCSV(){
@@ -6430,6 +6614,59 @@ async function processLabCSV(){
       iso.iaam_case_id=iaamBulMap[iso.nr_buletin];
       matchedIAAM++;
     }
+    await pt('lab_isolates',iso);
+    imported++;
+  }
+
+  alert('Import finalizat:\n• '+imported+' izolate importate\n• '+matchedIAAM+' legate de cazuri IAAM\n• '+skipped+' duplicate (skip)');
+  closeM();render();
+}
+
+// ── Process registru lab format → lab_isolates ──
+async function processLabRegistru(){
+  const parsed=window._labParsed;if(!parsed||parsed.length===0){alert('Niciun fisier incarcat.');return}
+  const batch=document.getElementById('f-lab-batch')?.value||A.year;
+  const sampleType=(document.getElementById('lab-sample-type')?.value||'necunoscut').trim().toLowerCase();
+  const year=window._labYear||A.year;
+
+  // Build isolates from parsed data
+  const isolates=[];
+  parsed.forEach(p=>{
+    if(p.negative)return;
+    p.organisms.forEach(org=>{
+      // Match germen to GERMENI_LIST
+      const germMatch=typeof GERMENI_LIST!=='undefined'?GERMENI_LIST.find(g=>
+        matchAtbName(g.n,org.name)||(g.c&&matchAtbName(g.c,org.name))):null;
+      isolates.push({
+        year,nr_buletin:p.cod,date:'',
+        section:'',sample_type:sampleType,
+        organism:germMatch?germMatch.n:org.name,
+        organism_code:germMatch?germMatch.c:'',
+        susceptibility:org.susceptibility,
+        source:'lab',iaam_case_id:null,
+        _import_batch:batch
+      });
+    });
+  });
+  if(isolates.length===0){alert('Nu s-au gasit izolate pozitive.');return}
+
+  // Deduplication
+  const existing=await ga('lab_isolates');
+  const existingSet=new Set(existing.map(r=>r.nr_buletin+'|'+r.organism));
+
+  // Match IAAM
+  const iaamCases=await ga('iaam');
+  const iaamBulMap={};
+  iaamCases.forEach(c=>{
+    (c.bulletins||[]).forEach(b=>{if(b.nr)iaamBulMap[b.nr.trim()]=c.id});
+    if(c.bulletin_nr){c.bulletin_nr.split(',').forEach(n=>{const t=n.trim();if(t)iaamBulMap[t]=c.id})}
+  });
+
+  let imported=0,skipped=0,matchedIAAM=0;
+  for(const iso of isolates){
+    const dedupKey=iso.nr_buletin+'|'+iso.organism;
+    if(existingSet.has(dedupKey)){skipped++;continue}
+    if(iaamBulMap[iso.nr_buletin]){iso.source='iaam';iso.iaam_case_id=iaamBulMap[iso.nr_buletin];matchedIAAM++}
     await pt('lab_isolates',iso);
     imported++;
   }
@@ -11408,6 +11645,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'11.4',date:'2026-03-20',notes:'NOU: Import direct XLS/HTML din LIS laborator — auto-detect format registru, fara Save As CSV\nNOU: Parsare automata organism + S/I/R din format registru laborator (suport multi-organism)\nNOU: Protectia datelor — numele pacientilor, CNP si date personale NU se importa/stocheaza\nFIX: Build script — cod sursa cu pattern special nu mai corupeaza dist\nFIX: Cache-Control headere pe serve.js — upgrade corect intre versiuni'},
   {version:'11.2',date:'2026-03-19',notes:'NOU: Separare module PPS, Consum ATB si Antibiograma pe pagini proprii\nNOU: PPS — info box ECDC, 4 KPI-uri, metadata studiu, grafic AU% per sectie, comparatie multi-an\nNOU: Consum ATB — info box OMS, filtru perioada (T1-T4, S1-S2)\nNOU: Antibiograma — store lab_isolates, import CSV laborator cu deduplicare\nNOU: Antibiograma — KPI-uri noi, filtre avansate, fallback IAAM, istoric importuri\nNOU: Config — Tipuri Probe Laborator editabile\nNOU: IAAM — Data Negativare + Buletine negativare'},
   {version:'11.1',date:'2026-03-19',notes:'Fix: Dark mode — tab-uri Autocontrol (Probe Micro/ATP/UV) cu contrast imbunatatit (fond teal, text alb)\nFix: Dark mode — sub-tab-uri Autocontrol hover si activ cu teal vizibil\nFix: Dark mode — selecturi si inputuri fara dark override (filtre IAAM, Autocontrol) acum cu fond inchis\nFix: Dark mode — chart header si sortable hover cu override-uri corecte'},
   {version:'11.0',date:'2026-03-19',notes:'NOU: Tema Teal — accent medical teal pe intreaga aplicatie (sidebar, butoane, badges, calendar)\nNOU: Sidebar gradient verde-inchis + hover cu translateX + item activ cu border teal\nNOU: Toolbar glass effect — backdrop-blur transparent\nNOU: KPI cards hover animation — ridicare + shadow la hover\nNOU: Butoane gradient teal cu shadow, border-radius rotunjit\nNOU: Panouri cu radius 16px si hover shadow subtil\nNOU: Dark mode complet cu accent teal'},
@@ -12135,6 +12373,7 @@ function checkEmptyDB(){
 }
 
 (async()=>{
+  console.log('CPIAAM v'+APP_VERSION+' | DB='+DB+' VER='+VER);
   try{await odb()}catch(e){console.error('DB init error:',e)}
   const configs=await ga('config');
   document.getElementById('app-loading').style.display='none';

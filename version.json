@@ -1,16 +1,13 @@
 {
-  "version": "11.2",
+  "version": "11.4",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Separare module PPS, Consum ATB si Antibiograma — fiecare pe pagina proprie, fara tab-uri combo",
-    "NOU: PPS — info box ECDC, 4 KPI-uri (AU%, IAAM%, Indicatie Documentata), metadata studiu, grafic AU% per sectie, comparatie multi-an",
-    "NOU: Consum ATB — info box metodologie OMS, filtru perioada (T1-T4, S1-S2)",
-    "NOU: Antibiograma — store lab_isolates (DB v7), import CSV laborator cu mapping coloane si deduplicare pe nr_buletin",
-    "NOU: Antibiograma — KPI-uri noi (Total Izolate, Germeni Diferiti, Sensibilitate Medie, Izolate IAAM, Top 3)",
-    "NOU: Antibiograma — filtre avansate (sectie, tip proba, sursa, perioada, primul izolat/pacient)",
-    "NOU: Antibiograma — fallback pe date IAAM daca lab_isolates gol, istoric importuri laborator",
-    "NOU: Config — sectiune Tipuri Probe Laborator editabila",
-    "NOU: Export Word + WHONET adaptate sa citeasca din lab_isolates cu fallback",
-    "NOU: IAAM — camp Data Negativare + Buletine analize negativare in pasul 3 Infectie"
+    "NOU: Import direct XLS/HTML din LIS laborator — auto-detect format registru, fara Save As CSV",
+    "NOU: Parsare automata organism + S/I/R din format registru laborator (suport multi-organism pe buletin)",
+    "NOU: Protectia datelor — numele pacientilor, CNP si date personale NU se importa si nu se stocheaza",
+    "NOU: Preview tabel la import — afiseaza cod, germen, S, R inainte de import (fara date personale)",
+    "FIX: Build script — cod sursa cu pattern special nu mai corupeaza fisierul dist",
+    "FIX: Server local — headere Cache-Control no-cache pe serve.js (rezolva problema upgrade vechi→nou)",
+    "FIX: Versiune vizibila in console la start (CPIAAM vX.Y | DB | VER) pentru debugging rapid"
   ]
 }

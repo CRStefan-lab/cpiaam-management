@@ -1,10 +1,10 @@
 {
-  "version": "11.5",
+  "version": "11.6",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX: Formular IAAM — tratamentul cu antibiotice si istoricul clinic se salveaza corect din orice pas",
-    "FIX: Formular IAAM — sectia nu mai ramane blocata pe valoarea anterioara la caz nou",
-    "FIX: Completare fisa IAAM — procentul nu mai include false-positive din array-uri goale",
-    "FIX: Salvare IAAM robusta — colecteaza date din toti pasii vizitati, nu doar pasul curent"
+    "NOU: Import Consum ATB — upload fisier CSV/Excel cu auto-detect coloane si potrivire sectii dupa nume",
+    "NOU: Import Consum ATB — preview tabel cu sectie, luna, antibiotic, ATC, cantitate, AWaRe inainte de import",
+    "NOU: Import Consum ATB — matching ATC dupa cod sau nume antibiotic, dropdown fallback sectie necunoscuta",
+    "FIX: Titlu aplicatie — CPIAAM Management (consistent peste tot)"
   ]
 }

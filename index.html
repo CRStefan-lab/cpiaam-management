@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM — Sistem de Management v11.5</title>
+<title>CPIAAM Management v11.6</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1781,7 +1781,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='11.5';
+const APP_VERSION='11.6';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -2428,7 +2428,7 @@ ro:{
   ddd_target_ok:'Tinta OMS atinsa (>=60% Access)',ddd_target_warn:'Sub tinta OMS (<60% Access)',
   ddd_section:'Sectie',ddd_month:'Luna',ddd_substance:'Substanta activa',ddd_quantity:'Cantitate (g)',ddd_route:'Mod. administrare',ddd_ddds:'DDD-uri',
   ddd_no_data:'Niciun consum inregistrat pentru anul si filtrele selectate.',
-  ddd_add:'+ Adauga Consum',ddd_bulk:'Import CSV',ddd_export_word:'Raport Word',
+  ddd_add:'+ Adauga Consum',ddd_bulk:'Import Date',ddd_export_word:'Raport Word',
   ddd_aware_label:'AWaRe',ddd_per_100:'DDD/100 zile-pat',ddd_aware_dist:'Distributie AWaRe',
   ddd_esac_title:'Comparatie ESAC-Net',ddd_esac_note:'Comparatie orientativa — datele ESAC-Net sunt comunitare, nu spitalicesti.',
   ddd_top10:'Top 10 antibiotice dupa consum DDD',ddd_monthly_evol:'Evolutie lunara',
@@ -2594,7 +2594,7 @@ en:{
   ddd_target_ok:'WHO target met (>=60% Access)',ddd_target_warn:'Below WHO target (<60% Access)',
   ddd_section:'Section',ddd_month:'Month',ddd_substance:'Active substance',ddd_quantity:'Quantity (g)',ddd_route:'Admin. route',ddd_ddds:'DDDs',
   ddd_no_data:'No consumption records for the selected year and filters.',
-  ddd_add:'+ Add Consumption',ddd_bulk:'Import CSV',ddd_export_word:'Word Report',
+  ddd_add:'+ Add Consumption',ddd_bulk:'Import Data',ddd_export_word:'Word Report',
   ddd_aware_label:'AWaRe',ddd_per_100:'DDD/100 bed-days',ddd_aware_dist:'AWaRe Distribution',
   ddd_esac_title:'ESAC-Net Comparison',ddd_esac_note:'Indicative comparison — ESAC-Net data is community-based, not hospital-based.',
   ddd_top10:'Top 10 antibiotics by DDD consumption',ddd_monthly_evol:'Monthly evolution',
@@ -7030,29 +7030,245 @@ async function saveConsumATB(id){
   closeM();render();
 }
 
+var _dddImportRows=[];
 function dddBulkImport(){
-  openM('Import CSV — Consum Antibiotice',
-    '<div class="ib inf">'+T('ddd_bulk_help')+'</div>'+
-    '<textarea id="ddd-csv" class="ddd-bulk-area" placeholder="sec_001;3;J01CR02;1500\nsec_002;3;J01DD04;800"></textarea>',
-  '<button class="btn bo" onclick="safeCloseM()">'+T('btn_cancel')+'</button><button class="btn bp" onclick="dddDoBulkImport()">Import</button>');
+  _dddImportRows=[];
+  openM('Import Date — Consum Antibiotice',
+    '<div class="ib inf">Incarca un fisier CSV/Excel cu datele de consum antibiotice din farmacie. Aplicatia detecteaza automat coloanele si potriveste sectiile dupa nume.</div>'+
+    '<div style="display:flex;gap:10px;align-items:center;margin:12px 0">'+
+      '<label class="btn bp" style="cursor:pointer"><input type="file" accept=".csv,.txt,.xls,.xlsx,.html,.htm" onchange="dddParseFile(this.files[0])" style="display:none">&#128194; Selecteaza fisier (CSV / Excel)</label>'+
+      '<span id="ddd-imp-fname" style="font-size:12px;color:var(--txtL)">Niciun fisier selectat</span></div>'+
+    '<div id="ddd-imp-mapping" style="display:none;margin:12px 0;padding:12px;background:var(--bg);border-radius:8px"></div>'+
+    '<div id="ddd-imp-preview"></div>'+
+    '<div id="ddd-imp-stats" style="display:none;margin-top:10px"></div>','');
 }
 
-async function dddDoBulkImport(){
-  const csv=(document.getElementById('ddd-csv')?.value||'').trim();
-  if(!csv){alert('Introdu date CSV.');return}
-  const lines=csv.split('\n').filter(l=>l.trim());
-  let ok=0,err=0;
-  for(const line of lines){
-    const parts=line.split(/[;,\t]/);
-    if(parts.length<4){err++;continue}
-    const [sec,mo,atc,qty]=parts;
-    const qtyN=parseFloat(qty);
-    if(!sec||!mo||!atc||isNaN(qtyN)||qtyN<=0){err++;continue}
-    await pt('atb_consum',{year:A.year,month:+mo,section:sec.trim(),atc:atc.trim(),atb_name:atbName(atc.trim()),quantity_g:qtyN,route:'IV',notes:'Import CSV'});
+function _dddDetectSep(line){
+  var tab=line.split('\t').length,semi=line.split(';').length,comma=line.split(',').length;
+  if(tab>=semi&&tab>=comma&&tab>1)return '\t';
+  if(semi>=comma&&semi>1)return ';';
+  return ',';
+}
+
+function _dddMatchSection(name){
+  if(!name)return null;
+  var nl=name.trim().toLowerCase();
+  // Try exact ID match first
+  var byId=CFG.sections.find(function(s){return s.id===name.trim()});
+  if(byId)return byId.id;
+  // Try exact name match
+  var byName=CFG.sections.find(function(s){return(s.name||'').toLowerCase()===nl});
+  if(byName)return byName.id;
+  // Try code match
+  var byCode=CFG.sections.find(function(s){return(s.code||'').toLowerCase()===nl});
+  if(byCode)return byCode.id;
+  // Fuzzy: contains
+  var byContains=CFG.sections.find(function(s){return(s.name||'').toLowerCase().includes(nl)||nl.includes((s.name||'').toLowerCase())});
+  if(byContains)return byContains.id;
+  return null;
+}
+
+function _dddMatchATC(val){
+  if(!val)return null;
+  var v=val.trim().toUpperCase();
+  // Direct ATC code
+  var flat=_atbFlat();
+  if(flat[v])return v;
+  // Try by name
+  var vl=val.trim().toLowerCase();
+  var found=null;
+  ATB_LIST.forEach(function(g){g.items.forEach(function(it){
+    if(!found&&it.n.toLowerCase()===vl)found=it.a;
+  })});
+  if(found)return found;
+  // Fuzzy name match (first 6 chars)
+  ATB_LIST.forEach(function(g){g.items.forEach(function(it){
+    if(!found&&vl.length>=4&&it.n.toLowerCase().startsWith(vl.substring(0,6)))found=it.a;
+  })});
+  return found;
+}
+
+function _dddDetectColumns(headers){
+  var map={section:-1,month:-1,atc:-1,quantity:-1,route:-1};
+  headers.forEach(function(h,i){
+    var hl=h.toLowerCase().trim();
+    if(map.section<0&&(/sect|departm|ward|clinica|compartiment/.test(hl)))map.section=i;
+    if(map.month<0&&(/luna|month|perioada|period/.test(hl)))map.month=i;
+    if(map.atc<0&&(/atc|cod.*atc|antibiotic|substant|medicam/.test(hl)))map.atc=i;
+    if(map.quantity<0&&(/cantit|quantit|grame|gram|qty|consum|amount/.test(hl)))map.quantity=i;
+    if(map.route<0&&(/cale|route|admin/.test(hl)))map.route=i;
+  });
+  return map;
+}
+
+function _dddParseMonth(val){
+  if(!val)return 0;
+  var v=String(val).trim();
+  var n=parseInt(v);if(n>=1&&n<=12)return n;
+  var moNames=['ian','feb','mar','apr','mai','iun','iul','aug','sep','oct','nov','dec',
+               'jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  var vl=v.toLowerCase().substring(0,3);
+  var idx=moNames.indexOf(vl);
+  if(idx>=0)return(idx%12)+1;
+  return 0;
+}
+
+async function dddParseFile(file){
+  if(!file)return;
+  document.getElementById('ddd-imp-fname').textContent=file.name+' ('+Math.round(file.size/1024)+' KB)';
+  var txt=await file.text();
+  var rows=[];
+  // Auto-detect HTML (Excel saves as HTML)
+  if(txt.trim().startsWith('<')||file.name.match(/\.xls$/i)){
+    var parser=new DOMParser();
+    var doc=parser.parseFromString(txt,'text/html');
+    var tables=doc.querySelectorAll('table');
+    if(tables.length===0){alert('Nu s-au gasit tabele in fisier.');return}
+    var table=tables[0];
+    table.querySelectorAll('tr').forEach(function(tr){
+      var cells=[];tr.querySelectorAll('td,th').forEach(function(td){cells.push(td.textContent.trim())});
+      if(cells.length>0&&cells.some(function(c){return c!==''}))rows.push(cells);
+    });
+  }else{
+    // CSV/TSV
+    var lines=txt.split(/\r?\n/).filter(function(l){return l.trim()});
+    if(lines.length===0){alert('Fisierul e gol.');return}
+    var sep=_dddDetectSep(lines[0]);
+    rows=lines.map(function(l){return l.split(sep).map(function(c){return c.trim().replace(/^"|"$/g,'')})});
+  }
+  if(rows.length<2){alert('Fisierul trebuie sa aiba cel putin un header + un rand de date.');return}
+  _dddBuildMapping(rows);
+}
+
+function _dddBuildMapping(rows){
+  var headers=rows[0];
+  var auto=_dddDetectColumns(headers);
+  var colOpts='<option value="-1">— ignora —</option>';
+  headers.forEach(function(h,i){colOpts+='<option value="'+i+'">'+esc(h||'Coloana '+(i+1))+'</option>'});
+
+  var mapDiv=document.getElementById('ddd-imp-mapping');
+  mapDiv.style.display='';
+  mapDiv.innerHTML=
+    '<div style="font-weight:600;margin-bottom:8px;font-size:13px">Potrivire coloane</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:10px">'+
+    '<div class="fg" style="flex:1;min-width:140px"><label style="font-size:11px">Sectie</label><select id="ddd-map-sec" onchange="_dddRefreshPreview()" style="font-size:12px;padding:4px">'+colOpts.replace('value="'+auto.section+'"','value="'+auto.section+'" selected')+'</select></div>'+
+    '<div class="fg" style="flex:1;min-width:140px"><label style="font-size:11px">Luna</label><select id="ddd-map-mo" onchange="_dddRefreshPreview()" style="font-size:12px;padding:4px">'+colOpts.replace('value="'+auto.month+'"','value="'+auto.month+'" selected')+'</select></div>'+
+    '<div class="fg" style="flex:1;min-width:140px"><label style="font-size:11px">Antibiotic / ATC</label><select id="ddd-map-atc" onchange="_dddRefreshPreview()" style="font-size:12px;padding:4px">'+colOpts.replace('value="'+auto.atc+'"','value="'+auto.atc+'" selected')+'</select></div>'+
+    '<div class="fg" style="flex:1;min-width:140px"><label style="font-size:11px">Cantitate (g)</label><select id="ddd-map-qty" onchange="_dddRefreshPreview()" style="font-size:12px;padding:4px">'+colOpts.replace('value="'+auto.quantity+'"','value="'+auto.quantity+'" selected')+'</select></div>'+
+    '<div class="fg" style="flex:1;min-width:140px"><label style="font-size:11px">Cale administrare</label><select id="ddd-map-route" onchange="_dddRefreshPreview()" style="font-size:12px;padding:4px">'+colOpts.replace('value="'+auto.route+'"','value="'+auto.route+'" selected')+'</select></div>'+
+    '</div>';
+  // Store raw rows for preview
+  window._dddRawRows=rows;
+  _dddRefreshPreview();
+}
+
+function _dddRefreshPreview(){
+  var rows=window._dddRawRows;if(!rows||rows.length<2)return;
+  var iSec=+document.getElementById('ddd-map-sec').value;
+  var iMo=+document.getElementById('ddd-map-mo').value;
+  var iAtc=+document.getElementById('ddd-map-atc').value;
+  var iQty=+document.getElementById('ddd-map-qty').value;
+  var iRoute=+document.getElementById('ddd-map-route').value;
+
+  if(iAtc<0||iQty<0){
+    document.getElementById('ddd-imp-preview').innerHTML='<div class="ib wrn">Selecteaza cel putin coloanele Antibiotic/ATC si Cantitate.</div>';
+    return;
+  }
+
+  _dddImportRows=[];
+  var errors=0,warnings=0;
+  for(var i=1;i<rows.length;i++){
+    var r=rows[i];
+    var rawSec=iSec>=0?r[iSec]||'':'';
+    var rawMo=iMo>=0?r[iMo]||'':'';
+    var rawAtc=iAtc>=0?r[iAtc]||'':'';
+    var rawQty=iQty>=0?r[iQty]||'':'';
+    var rawRoute=iRoute>=0?r[iRoute]||'':'';
+    var qty=parseFloat(String(rawQty).replace(/[^\d.,\-]/g,'').replace(',','.'));
+    if(isNaN(qty)||qty<=0){errors++;continue}
+    var matchedSec=_dddMatchSection(rawSec);
+    var matchedAtc=_dddMatchATC(rawAtc);
+    var month=_dddParseMonth(rawMo);
+    if(!matchedAtc){errors++;continue}
+    if(!matchedSec&&rawSec)warnings++;
+    _dddImportRows.push({
+      rawSec:rawSec,section:matchedSec||'',month:month||new Date().getMonth()+1,
+      atc:matchedAtc,atb_name:atbName(matchedAtc),qty:qty,
+      route:rawRoute||'IV',secWarn:!matchedSec&&!!rawSec,moWarn:!month
+    });
+  }
+
+  // Build preview table
+  var mo=getMO();
+  var h='<div style="font-weight:600;margin:12px 0 8px;font-size:13px">Preview import ('+_dddImportRows.length+' randuri valide'+(errors>0?', '+errors+' ignorate':'')+'):</div>';
+  if(_dddImportRows.length===0){
+    h+='<div class="ib wrn">Nu s-au gasit randuri valide. Verifica mapping-ul coloanelor.</div>';
+  }else{
+    h+='<div style="max-height:300px;overflow-y:auto"><table class="dt" style="font-size:12px"><thead><tr><th>Sectie</th><th>Luna</th><th>Antibiotic</th><th>ATC</th><th>Cantitate (g)</th><th>AWaRe</th></tr></thead><tbody>';
+    _dddImportRows.slice(0,50).forEach(function(row){
+      var secDisplay=row.section?rSec(row.section):(row.rawSec?'<span style="color:var(--red)" title="Sectia nu a fost gasita">&#9888; '+esc(row.rawSec)+'</span>':'<em style="color:var(--txtL)">—</em>');
+      var aw=atbAWaRe(row.atc);var awCls='ddd-aw-'+(aw||'x').toLowerCase();
+      h+='<tr><td>'+secDisplay+'</td><td>'+mo[(row.month||1)-1]+(row.moWarn?' &#9888;':'')+'</td>';
+      h+='<td>'+esc(row.atb_name)+'</td><td style="font-size:10px;color:var(--txtL)">'+row.atc+'</td>';
+      h+='<td style="text-align:right">'+row.qty.toFixed(1)+'</td>';
+      h+='<td><span class="'+awCls+'">'+aw+'</span></td></tr>';
+    });
+    if(_dddImportRows.length>50)h+='<tr><td colspan="6" style="text-align:center;color:var(--txtL)">... si inca '+(_dddImportRows.length-50)+' randuri</td></tr>';
+    h+='</tbody></table></div>';
+  }
+  document.getElementById('ddd-imp-preview').innerHTML=h;
+
+  // Stats + unmatched sections dropdown
+  var unmatched=_dddImportRows.filter(function(r){return!r.section});
+  var statsDiv=document.getElementById('ddd-imp-stats');
+  if(_dddImportRows.length>0){
+    statsDiv.style.display='';
+    var sh='';
+    if(unmatched.length>0){
+      sh+='<div class="ib wrn" style="margin-bottom:10px"><strong>'+unmatched.length+' randuri fara sectie potrivita.</strong> Selecteaza o sectie implicita sau corecteaza numele in fisier:<br>'+
+        '<select id="ddd-imp-fallback-sec" style="margin-top:6px;padding:4px;font-size:12px"><option value="">— Lasa fara sectie —</option>'+secOpts('')+'</select>'+
+        ' <button class="btn bo bsm" onclick="_dddApplyFallbackSec()">Aplica</button></div>';
+    }
+    sh+='<div style="display:flex;gap:8px;justify-content:flex-end">'+
+      '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button>'+
+      '<button class="btn bp" onclick="dddDoImport()">&#10003; Importa '+_dddImportRows.length+' inregistrari</button></div>';
+    statsDiv.innerHTML=sh;
+  }else{
+    statsDiv.style.display='none';
+  }
+}
+
+function _dddApplyFallbackSec(){
+  var fb=document.getElementById('ddd-imp-fallback-sec')?.value||'';
+  _dddImportRows.forEach(function(r){if(!r.section){r.section=fb;r.secWarn=!fb&&!!r.rawSec}});
+  // Re-render preview
+  var mo=getMO();
+  var tbody=document.querySelector('#ddd-imp-preview tbody');
+  if(tbody){
+    var trs=tbody.querySelectorAll('tr');
+    _dddImportRows.slice(0,50).forEach(function(row,i){
+      if(trs[i]){
+        var td=trs[i].querySelector('td');
+        if(td)td.innerHTML=row.section?rSec(row.section):(row.rawSec?'<span style="color:var(--red)">&#9888; '+esc(row.rawSec)+'</span>':'<em style="color:var(--txtL)">—</em>');
+      }
+    });
+  }
+  showToast('Sectie implicita aplicata pentru '+_dddImportRows.filter(function(r){return r.section===fb}).length+' randuri');
+}
+
+async function dddDoImport(){
+  if(_dddImportRows.length===0){alert('Nu exista randuri de importat.');return}
+  var noSec=_dddImportRows.filter(function(r){return!r.section});
+  if(noSec.length>0&&!confirm(noSec.length+' randuri nu au sectie atribuita. Continui importul?'))return;
+  var ok=0;
+  for(var i=0;i<_dddImportRows.length;i++){
+    var r=_dddImportRows[i];
+    await pt('atb_consum',{year:A.year,month:r.month,section:r.section,atc:r.atc,atb_name:r.atb_name,quantity_g:r.qty,route:r.route,notes:'Import fisier'});
     ok++;
   }
-  alert('Importate: '+ok+' inregistrari'+(err>0?' | Erori: '+err:''));
+  logActivity('Import consum ATB: '+ok+' inregistrari din fisier');
   closeM();render();
+  showToast('Importate '+ok+' inregistrari consum antibiotice');
 }
 
 async function genConsumATBWord(aiText){
@@ -11655,6 +11871,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'11.6',date:'2026-03-20',notes:'NOU: Import Consum ATB — upload fisier CSV/Excel cu auto-detect coloane si potrivire sectii dupa nume\nNOU: Import Consum ATB — preview tabel cu antibiotic, ATC, cantitate, AWaRe inainte de import\nNOU: Matching ATC dupa cod sau nume antibiotic, dropdown fallback sectie necunoscuta\nFIX: Titlu aplicatie — CPIAAM Management (consistent)'},
   {version:'11.5',date:'2026-03-20',notes:'FIX: Formular IAAM — tratamentul cu antibiotice si istoricul clinic se salveaza corect din orice pas\nFIX: Formular IAAM — sectia nu mai ramane blocata pe valoarea anterioara la caz nou\nFIX: Completare fisa IAAM — procentul nu mai include false-positive din array-uri goale\nFIX: Salvare IAAM robusta — colecteaza date din toti pasii vizitati, cu error handling'},
   {version:'11.4',date:'2026-03-20',notes:'NOU: Import direct XLS/HTML din LIS laborator — auto-detect format registru, fara Save As CSV\nNOU: Parsare automata organism + S/I/R din format registru laborator (suport multi-organism)\nNOU: Protectia datelor — numele pacientilor, CNP si date personale NU se importa/stocheaza\nFIX: Build script — cod sursa cu pattern special nu mai corupeaza dist\nFIX: Cache-Control headere pe serve.js — upgrade corect intre versiuni'},
   {version:'11.2',date:'2026-03-19',notes:'NOU: Separare module PPS, Consum ATB si Antibiograma pe pagini proprii\nNOU: PPS — info box ECDC, 4 KPI-uri, metadata studiu, grafic AU% per sectie, comparatie multi-an\nNOU: Consum ATB — info box OMS, filtru perioada (T1-T4, S1-S2)\nNOU: Antibiograma — store lab_isolates, import CSV laborator cu deduplicare\nNOU: Antibiograma — KPI-uri noi, filtre avansate, fallback IAAM, istoric importuri\nNOU: Config — Tipuri Probe Laborator editabile\nNOU: IAAM — Data Negativare + Buletine negativare'},
@@ -11729,7 +11946,7 @@ function rChangelog(el){
 function rAbout(el){
   var isEN=CFG.lang==='en';
   el.innerHTML='<div class="pn"><div class="pb" style="text-align:center;padding:40px">'+
-    '<h2 style="color:var(--navy);margin-bottom:8px">CPIAAM — Sistem de Management</h2>'+
+    '<h2 style="color:var(--navy);margin-bottom:8px">CPIAAM Management</h2>'+
     '<p style="color:var(--txtL);margin-bottom:24px">Versiune '+APP_VERSION+' <button class="btn bo bsm" onclick="checkForUpdateManual(event)" style="margin-left:8px;font-size:11px">&#128260; Verifica update-uri</button></p>'+
     '<div style="background:var(--bg);border-radius:12px;padding:20px;text-align:left;max-width:500px;margin:0 auto 20px">'+
     '<p style="font-size:13px;line-height:1.6;color:var(--txt)">Dezvoltat de <strong>Dr. Chitu Robert Stefan</strong> cu asistenta <strong>Claude AI</strong> (Anthropic)</p>'+

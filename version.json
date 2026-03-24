@@ -1,11 +1,15 @@
 {
-  "version": "11.6",
+  "version": "11.8",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Auto-backup la upgrade — datele sunt salvate automat inainte de trecerea la versiune noua",
-    "NOU: Migrare automata — backup-uri din versiuni vechi sunt convertite automat la formatul curent",
-    "NOU: Detectie DB gol — avertisment clar cu optiuni de recuperare",
-    "FIX: Notificare versiune — apare doar cand versiunea GitHub e mai noua",
-    "FIX: IAAM filtru luna — tabelul afiseaza cazurile dupa data internarii, nu luna raportarii"
+    "FIX: Data tratament ATB — campul date nu mai pierde focusul la introducere",
+    "FIX: Obiective SMART — click pe inputuri nu mai colapeseaza obiectivul",
+    "FIX: Reconectare JSON — config page arata corect statusul verde dupa reconectare",
+    "FIX: Cronologie IAAM — luna raportarii se sincronizeaza automat cu data internarii",
+    "NOU: Pas 9 IAAM structurat — checkboxes izolare/echipamente/curatenie + dropdowns precautiuni/biocide/reinstruire",
+    "NOU: Checkbox Nu sunt contacti la pas 8 (IAAM nu mai ramane la 90%)",
+    "NOU: Roluri — Medic Boli Infectioase, Asistent Igiena; Manager/Director ascunsi din meniul utilizator",
+    "NOU: 12 tipuri structuri spital (laborator, bloc alimentar, spalatorie, cabinete, radiologie, etc)",
+    "NOU: Camp Data raportarii CPIAAM in formularul IAAM + obiectiv raportare 24h devine auto"
   ]
 }

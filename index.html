@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v11.8</title>
+<title>CPIAAM Management v11.9</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1057,11 +1057,17 @@ async function loadFileHandle(){try{const db=await _fhDB();return new Promise((o
 async function restoreFileHandle(){
   const fh=await loadFileHandle();if(!fh)return;
   try{
-    // Verify permission — may prompt user
     const perm=await fh.queryPermission({mode:'readwrite'});
     if(perm==='granted'){_fileHandle=fh;updateSyncIndicator();return}
-    const req=await fh.requestPermission({mode:'readwrite'});
-    if(req==='granted'){_fileHandle=fh;updateSyncIndicator()}
+    // requestPermission needs user gesture — try it, but if it fails
+    // the yellow pill + click handler (syncReconnect) will handle it
+    try{
+      const req=await fh.requestPermission({mode:'readwrite'});
+      if(req==='granted'){_fileHandle=fh;updateSyncIndicator();return}
+    }catch(e2){}
+    // Still not granted — save filename for yellow pill display
+    if(!CFG.sync_file_name&&fh.name){CFG.sync_file_name=fh.name;await saveCfg()}
+    updateSyncIndicator();
   }catch(e){console.warn('restoreFileHandle:',e)}
 }
 // ── Attachments directory handle (File System Access API) ──
@@ -1195,7 +1201,7 @@ function updateSyncIndicator(){
   if(!_fileHandle){
     if(CFG.sync_file_name){
       el.classList.add('sync-yellow');
-      txt.textContent=(CFG.lang==='en'?'Reconnect: ':'Reconecteaza: ')+CFG.sync_file_name;
+      txt.textContent=(CFG.lang==='en'?'Click to reconnect: ':'Click pentru reconectare: ')+CFG.sync_file_name;
     } else {
       el.classList.add('sync-red');
       txt.textContent=CFG.lang==='en'?'Not synced':'Nesincronizat';
@@ -1784,7 +1790,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='11.8';
+const APP_VERSION='11.9';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -4818,29 +4824,66 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
     h+='</div></div></div>';
   }
 
-  // B. MATRICE ACOPERIRE
-  if(sections.length>0&&probeTypes.length>0){
-    h+='<div class="ac-matrix" style="position:relative"><table><thead><tr><th>'+(isEN?'Sample Type':'Tip Proba')+'</th>';
-    sections.forEach(s=>{h+='<th>'+sn(s)+'</th>'});
-    h+='</tr></thead><tbody>';
-    probeTypes.forEach(pt=>{
-      h+='<tr><td>'+sn(pt)+'</td>';
-      sections.forEach(s=>{
-        const cell=matrix[pt.id]&&matrix[pt.id][s.id]?matrix[pt.id][s.id]:{total:0,conf:0,nc:0};
-        let cls,txt;
+  // B. MATRICE ACOPERIRE — Split Spital / Ambulatoriu
+  var AMBUL_TYPES=['cabinet'];
+  var secSpital=sections.filter(function(s){return AMBUL_TYPES.indexOf(s.type)<0});
+  var secAmbul=sections.filter(function(s){return AMBUL_TYPES.indexOf(s.type)>=0});
+
+  function renderMatrix(secList,title){
+    if(secList.length===0||probeTypes.length===0)return '';
+    var _autoFilterKey=title==='Ambulatoriu'?'_autoFiltAmbul':'_autoFiltSpital';
+    var filtVal=window[_autoFilterKey]||'all';
+    // Filter sections by conformity
+    var filteredSec=secList;
+    if(filtVal!=='all'){
+      filteredSec=secList.filter(function(s){
+        var hasData=false,hasNC=false,hasHighNC=false;
+        probeTypes.forEach(function(pt){
+          var cell=matrix[pt.id]&&matrix[pt.id][s.id];
+          if(cell&&cell.total>0){hasData=true;if(cell.nc>0)hasNC=true;if(cell.nc/cell.total>0.25)hasHighNC=true}
+        });
+        if(filtVal==='conforme')return hasData&&!hasNC;
+        if(filtVal==='nc')return hasNC;
+        if(filtVal==='nc25')return hasHighNC;
+        if(filtVal==='netestat')return !hasData;
+        return true;
+      });
+    }
+    var o='<h4 style="font-size:14px;color:var(--navy);margin:16px 0 8px;font-weight:700">'+title+'</h4>';
+    // Filter buttons
+    o+='<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">';
+    [['all',isEN?'All':'Toate'],['conforme',isEN?'Conformant':'Conforme'],['nc',isEN?'Non-conformities':'Cu neconformitati'],['nc25','NC >25%'],['netestat',isEN?'Not tested':'Netestat']].forEach(function(f){
+      o+='<span class="ac-ptab'+(filtVal===f[0]?' act':'')+'" onclick="window.'+_autoFilterKey+'=\''+f[0]+'\';render()">'+f[1]+'</span>';
+    });
+    o+='</div>';
+    if(filteredSec.length===0){o+='<div class="ib inf" style="margin-bottom:8px">'+(isEN?'No sections match this filter.':'Nicio structura nu corespunde filtrului.')+'</div>';return o}
+    o+='<div class="ac-matrix" style="position:relative"><table><thead><tr><th>'+(isEN?'Sample Type':'Tip Proba')+'</th>';
+    filteredSec.forEach(function(s){o+='<th>'+sn(s)+'</th>'});
+    o+='</tr></thead><tbody>';
+    probeTypes.forEach(function(pt){
+      o+='<tr><td>'+sn(pt)+'</td>';
+      filteredSec.forEach(function(s){
+        var cell=matrix[pt.id]&&matrix[pt.id][s.id]?matrix[pt.id][s.id]:{total:0,conf:0,nc:0};
+        var cls,txt;
         if(cell.total===0){cls='ac-cell-gr';txt='—'}
         else{
-          const ncPct=cell.nc/cell.total*100;
+          var ncPct=cell.nc/cell.total*100;
           if(ncPct===0){cls='ac-cell-gn';txt=cell.total}
           else if(ncPct<=25){cls='ac-cell-yl';txt=cell.total}
           else{cls='ac-cell-rd';txt=cell.total}
         }
-        const isClickable=cell.total>0;
-        h+='<td class="'+cls+(isClickable?' ac-cell-c':'')+'"'+(isClickable?' onclick="showAutoPopup(event,\''+pt.id+'\',\''+s.id+'\')"':'')+'>'+txt+'</td>';
+        var isClickable=cell.total>0;
+        o+='<td class="'+cls+(isClickable?' ac-cell-c':'')+'"'+(isClickable?' onclick="showAutoPopup(event,\''+pt.id+'\',\''+s.id+'\')"':'')+'>'+txt+'</td>';
       });
-      h+='</tr>';
+      o+='</tr>';
     });
-    h+='</tbody></table></div>';
+    o+='</tbody></table></div>';
+    return o;
+  }
+
+  if(sections.length>0&&probeTypes.length>0){
+    h+=renderMatrix(secSpital,isEN?'Hospital':'Spital');
+    if(secAmbul.length>0) h+=renderMatrix(secAmbul,isEN?'Outpatient':'Ambulatoriu');
 
     // C. LEGENDA
     h+='<div class="ac-legend">';
@@ -10369,26 +10412,44 @@ async function rCfg(el){
       '<td style="text-align:center"><input type="checkbox" '+(p.sign?'checked':'')+' onchange="CFG.personnel['+i+'].sign=this.checked"></td>'+
       '<td class="act"><button onclick="CFG.personnel.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>').join('')+'</tbody></table>'+
     '<button class="btn bp" onclick="saveCfg();alert(\'Personal salvat!\')" style="margin-top:8px">Salveaza Personal</button>'+
-  '</div></div>'+
+  '</div></div>';
 
-  '<div class="pn"><div class="ph"><h3>Sectii si Structuri</h3><button class="btn bp bsm" onclick="addSection()">+ Adauga sectie/structura</button></div><div class="pb">'+
-    '<div class="ib inf">Adauga toate sectiile, compartimentele si structurile spitalului (bloc alimentar, spalatorie, laboratoare, cabinete). Fiecare sectie poate avea perioade cu numar diferit de paturi.</div>'+
-    '<table class="dt"><thead><tr><th>Sectie</th><th style="width:70px">Cod</th><th style="width:120px">Tip</th><th style="width:160px">Paturi</th><th style="width:50px">&#215;</th></tr></thead>'+
-    '<tbody>'+CFG.sections.map((s,i)=>{
-      const nPer=(s.bed_periods||[]).length;
-      const wb=nPer>0?getWeightedBeds(s.name,A.year).toFixed(1):'';
+  (function(){
+    var AMBUL_TYPES=['cabinet'];
+    var spitalSec=[], ambulSec=[];
+    CFG.sections.forEach(function(s,i){s._idx=i;if(AMBUL_TYPES.indexOf(s.type)>=0)ambulSec.push(s);else spitalSec.push(s)});
+    function secRow(s){
+      var i=s._idx,nPer=(s.bed_periods||[]).length,wb=nPer>0?getWeightedBeds(s.name,A.year).toFixed(1):'';
+      var isAmbul=AMBUL_TYPES.indexOf(s.type)>=0;
       return '<tr>'+
       '<td><input value="'+s.name+'" onchange="CFG.sections['+i+'].name=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px"></td>'+
       '<td><input value="'+(s.code||'')+'" onchange="CFG.sections['+i+'].code=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px;text-align:center"></td>'+
-      '<td><select onchange="CFG.sections['+i+'].type=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px;width:100%">'+_secTypeOpts(s.type)+'</select></td>'+
+      (isAmbul?'':
+      '<td><select onchange="CFG.sections['+i+'].type=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px;width:100%">'+_secTypeOpts(s.type)+'</select></td>')+
       '<td><div style="display:flex;align-items:center;gap:4px">'+
         '<input type="number" value="'+(s.beds||0)+'" min="0" onchange="CFG.sections['+i+'].beds=+this.value" style="width:60px;border:1px solid var(--brd);border-radius:4px;padding:4px 6px;font-size:12px;text-align:right">'+
         '<button class="btn bo bsm" onclick="editBedPeriods('+i+')" title="Perioade paturi">&#128197;</button>'+
         (nPer>0?'<span class="bdg bdg-b" style="font-size:9px">'+nPer+' per.</span>':'')+
       '</div>'+(nPer>0?'<div style="font-size:10px;color:var(--teal);margin-top:2px">Ponderat: '+wb+' paturi</div>':'')+'</td>'+
-      '<td class="act"><button onclick="CFG.sections.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>'}).join('')+'</tbody></table>'+
-    '<button class="btn bp" onclick="saveCfg();alert(\'Salvat!\')" style="margin-top:8px">Salveaza Sectii</button>'+
-  '</div></div>';
+      '<td class="act"><button onclick="CFG.sections.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>'
+    }
+    // I. SPITAL
+    h+=
+    '<div class="pn"><div class="ph"><h3>I. Spital — Sectii si Structuri</h3><button class="btn bp bsm" onclick="addSection(\'spital\')">+ Adauga sectie/structura</button></div><div class="pb">'+
+      '<div class="ib inf">Sectiile, compartimentele si structurile spitalului (bloc alimentar, spalatorie, laboratoare, explorari, radiologie, servicii auxiliare).</div>'+
+      '<table class="dt"><thead><tr><th>Denumire</th><th style="width:70px">Cod</th><th style="width:120px">Tip</th><th style="width:160px">Paturi</th><th style="width:50px">&#215;</th></tr></thead>'+
+      '<tbody>'+spitalSec.map(secRow).join('')+'</tbody></table>'+
+      '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn bp" onclick="saveCfg();alert(\'Salvat!\')">Salveaza</button><button class="btn bp bsm" onclick="addSection(\'spital\')">+ Adauga sectie/structura</button></div>'+
+    '</div></div>';
+    // II. AMBULATORIU
+    h+=
+    '<div class="pn" style="margin-top:14px"><div class="ph"><h3>II. Ambulatoriu — Cabinete</h3><button class="btn bp bsm" onclick="addSection(\'ambulatoriu\')">+ Adauga cabinet</button></div><div class="pb">'+
+      '<div class="ib inf">Cabinetele din ambulatoriul spitalului. Fiecare cabinet apare separat in autocontrol pentru monitorizarea probelor microbiologice.</div>'+
+      '<table class="dt"><thead><tr><th>Denumire cabinet</th><th style="width:70px">Cod</th><th style="width:160px">Paturi</th><th style="width:50px">&#215;</th></tr></thead>'+
+      '<tbody>'+ambulSec.map(secRow).join('')+'</tbody></table>'+
+      '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn bp" onclick="saveCfg();alert(\'Salvat!\')">Salveaza</button><button class="btn bp bsm" onclick="addSection(\'ambulatoriu\')">+ Adauga cabinet</button></div>'+
+    '</div></div>';
+  })();
 
   } else if(_cfgTab==='dateintro'){
   // ── IPC Categories Registry ──
@@ -10556,7 +10617,9 @@ async function rCfg(el){
   // ── Sincronizare ──
   '<div class="pn"><div class="ph"><h3>Sincronizare Fisier JSON</h3></div><div class="pb">'+
     '<div class="ib '+(_fileHandle?'suc':'wrn')+'" style="margin-bottom:12px;font-size:13px">'+
-    (_fileHandle?'&#128994; <strong>Conectat:</strong> '+esc(_fileHandle.name)+' — salvare automata la fiecare modificare':'&#128308; <strong>Neconectat</strong> — datele se salveaza doar in browser (IndexedDB)')+'</div>'+
+    (_fileHandle?'&#128994; <strong>Conectat:</strong> '+esc(_fileHandle.name)+' — salvare automata la fiecare modificare':
+    CFG.sync_file_name?'&#128993; <strong>Deconectat temporar:</strong> '+esc(CFG.sync_file_name)+' — apasa "Reconecteaza" sau click pe pill-ul galben din toolbar':
+    '&#128308; <strong>Neconectat</strong> — datele se salveaza doar in browser (IndexedDB)')+'</div>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
       '<button class="btn bp" onclick="syncReadFile()">&#128194; Reconecteaza la fisier existent</button>'+
       '<button class="btn bo" onclick="syncPickFile()">&#128190; Conecteaza fisier nou</button>'+
@@ -10645,7 +10708,14 @@ async function rCfg(el){
   if(_cfgTab==='ai')setTimeout(showAiFields,50);
 }
 
-function addSection(){CFG.sections.push({id:genId('sec'),name:'Sectie noua',beds:0,code:'',bed_periods:[]});saveCfg();render()}
+function addSection(kind){
+  if(kind==='ambulatoriu'){
+    CFG.sections.push({id:genId('sec'),name:'Cabinet nou',beds:0,code:'',type:'cabinet',bed_periods:[]});
+  } else {
+    CFG.sections.push({id:genId('sec'),name:'Sectie noua',beds:0,code:'',bed_periods:[]});
+  }
+  saveCfg();render();
+}
 async function fullReset(){
   if(!confirm('Sigur vrei sa stergi TOATE datele? Actiunea este ireversibila!'))return;
   if(!confirm('Confirma din nou — TOATE datele vor fi pierdute definitiv!'))return;
@@ -12098,6 +12168,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'11.9',date:'2026-03-25',notes:'NOU: Configurare — structuri spital impartite in I. Spital si II. Ambulatoriu (cabinete separate)\nNOU: Autocontrol — doua matrice separate Spital si Ambulatoriu cu filtre (Conforme/NC/NC>25%/Netestat)\nNOU: Buton Adauga sectie/cabinet si jos langa Salveaza (nu doar in header)\nFIX: Reconectare JSON — pill galben mai clar (Click pentru reconectare) + stare galbena in config\nFIX: Restaurare file handle mai robusta la refresh'},
   {version:'11.8',date:'2026-03-24',notes:'FIX: Data tratament ATB — campul date nu mai pierde focusul\nFIX: Obiective SMART — click pe inputuri nu mai colapeseaza obiectivul\nFIX: Reconectare JSON — config arata verde dupa reconectare\nFIX: Cronologie IAAM — luna raportarii se sincronizeaza cu data internarii\nNOU: Pas 9 IAAM structurat — checkboxes izolare/echipamente + dropdowns precautiuni/biocide/reinstruire\nNOU: Checkbox fara contacti (IAAM nu mai ramane la 90%)\nNOU: Roluri Medic Boli Infectioase si Asistent Igiena\nNOU: 12 tipuri structuri spital (laborator, bloc alimentar, spalatorie, cabinete etc)\nNOU: Data raportarii CPIAAM + obiectiv raportare 24h auto'},
   {version:'11.7',date:'2026-03-20',notes:'NOU: Raporteaza Problema — diagnostic automat + trimitere raport via email, clipboard sau fisier\nNOU: Captura erori JS in timp real — incluse automat in raportul de problema\nNOU: Diagnostic verifica: versiune, browser, DB, config, sync, stocare'},
   {version:'11.6',date:'2026-03-20',notes:'NOU: Auto-backup la upgrade — datele sunt salvate automat inainte de trecerea la versiune noua\nNOU: Migrare automata — backup-uri din versiuni vechi sunt convertite automat la formatul curent\nNOU: Detectie DB gol — avertisment clar cu optiuni de recuperare daca datele lipsesc\nFIX: Notificare versiune — apare doar cand versiunea GitHub e mai noua, fara dismiss accidental\nFIX: IAAM filtru luna — tabelul de cazuri afiseaza corect cazurile dupa data internarii\nNOU: _appVersion pe fiecare record — trasabilitate versiune'},

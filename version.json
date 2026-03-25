@@ -1,15 +1,11 @@
 {
-  "version": "11.8",
+  "version": "11.9",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX: Data tratament ATB — campul date nu mai pierde focusul la introducere",
-    "FIX: Obiective SMART — click pe inputuri nu mai colapeseaza obiectivul",
-    "FIX: Reconectare JSON — config page arata corect statusul verde dupa reconectare",
-    "FIX: Cronologie IAAM — luna raportarii se sincronizeaza automat cu data internarii",
-    "NOU: Pas 9 IAAM structurat — checkboxes izolare/echipamente/curatenie + dropdowns precautiuni/biocide/reinstruire",
-    "NOU: Checkbox Nu sunt contacti la pas 8 (IAAM nu mai ramane la 90%)",
-    "NOU: Roluri — Medic Boli Infectioase, Asistent Igiena; Manager/Director ascunsi din meniul utilizator",
-    "NOU: 12 tipuri structuri spital (laborator, bloc alimentar, spalatorie, cabinete, radiologie, etc)",
-    "NOU: Camp Data raportarii CPIAAM in formularul IAAM + obiectiv raportare 24h devine auto"
+    "NOU: Configurare — structuri spital impartite in I. Spital si II. Ambulatoriu (cabinete separate)",
+    "NOU: Autocontrol — doua matrice separate Spital si Ambulatoriu cu filtre (Conforme/NC/NC>25%/Netestat)",
+    "NOU: Buton Adauga sectie/cabinet si jos langa Salveaza",
+    "FIX: Reconectare JSON — pill galben mai clar + stare galbena in config",
+    "FIX: Restaurare file handle mai robusta la refresh"
   ]
 }

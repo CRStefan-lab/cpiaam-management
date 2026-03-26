@@ -1,11 +1,17 @@
 {
-  "version": "11.9",
+  "version": "12.0",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Configurare — structuri spital impartite in I. Spital si II. Ambulatoriu (cabinete separate)",
-    "NOU: Autocontrol — doua matrice separate Spital si Ambulatoriu cu filtre (Conforme/NC/NC>25%/Netestat)",
-    "NOU: Buton Adauga sectie/cabinet si jos langa Salveaza",
-    "FIX: Reconectare JSON — pill galben mai clar + stare galbena in config",
-    "FIX: Restaurare file handle mai robusta la refresh"
+    "FIX: Dark mode — preferinta salvata per browser (localStorage), nu mai vine din sync",
+    "FIX: Hover capete tabel — textul nu mai devine invizibil pe fond deschis",
+    "FIX: Notificari — marcheaza citite persista 4 ore, nu mai revin la navigare",
+    "FIX: Reconectare JSON — Combina conecteaza si fisierul daca era deconectat",
+    "NOU: Dashboard — filtre Azi/Maine/7/30/90 zile pe widget evenimente cu contoare",
+    "NOU: Toolbar — butoane Salveaza (sync) si Backup (download) cu iconite",
+    "NOU: Config — navigare rapida (quick-jump) catre orice sectiune",
+    "NOU: Autocontrol probe — dropdown sectii grupat Spital / Ambulatoriu",
+    "NOU: Autocontrol liste netestate — prefix (A) pentru cabinete ambulatoriu",
+    "NOU: Dropdowns sectii si probe sortate alfabetic",
+    "NOU: Coduri deseuri predefinite din Ordinul 1226/2012 cu categorii colorate"
   ]
 }

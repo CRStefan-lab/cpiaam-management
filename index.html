@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.0</title>
+<title>CPIAAM Management v12.2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -111,7 +111,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dt{width:100%;border-collapse:collapse;font-size:12.5px}
 .dt th{background:#1E293B;color:#fff;padding:9px 10px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
 .dt td{padding:8px 10px;border-bottom:1px solid var(--brd)}
-.dt tr:nth-child(even){background:#F8FAFC}.dt tbody tr:hover{background:#EEF2FF}.dt thead th:hover{background:#15202F}
+.dt tr:nth-child(even){background:#F8FAFC}.dt tbody tr:hover{background:#EEF2FF}.dt thead th:hover{background:#15202F}.dt th.sorted{background:#0F766E;color:#fff}
 .dt .act{white-space:nowrap}.dt .act button{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:6px;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s ease}.dt .act button:hover{background:var(--bg)}
 
 /* ── Badges ── */
@@ -1802,7 +1802,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.0';
+const APP_VERSION='12.2';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1854,18 +1854,18 @@ var CFG={
     'ITU — Infectie Tract Urinar','Bacteriemie','ICD — Clostridioides difficile','COVID-19','Sepsis','Altele'],
   doc_categories:[],
   waste_codes:[
-    {id:'w01',code:'18 01 01',name:'Obiecte ascutite (ace, bisturie, lame)',category:'periculos',standard:true},
-    {id:'w02',code:'18 01 02',name:'Parti anatomice si organe, inclusiv pungi de sange',category:'periculos',standard:true},
-    {id:'w03',code:'18 01 03*',name:'Deseuri infectioase (a caror colectare si eliminare fac obiectul unor masuri speciale)',category:'periculos',standard:true},
-    {id:'w04',code:'18 01 04',name:'Deseuri neinfectioase (echipamente, pansamente, imbracaminte de unica folosinta)',category:'nepericulos',standard:true},
-    {id:'w05',code:'18 01 06*',name:'Substante chimice periculoase',category:'periculos',standard:true},
-    {id:'w06',code:'18 01 07',name:'Substante chimice, altele decat cele de la 18 01 06',category:'nepericulos',standard:true},
-    {id:'w07',code:'18 01 08*',name:'Medicamente citotoxice si citostatice',category:'periculos',standard:true},
-    {id:'w08',code:'18 01 09',name:'Medicamente, altele decat cele de la 18 01 08',category:'nepericulos',standard:true},
-    {id:'w09',code:'18 01 10*',name:'Deseuri de amalgam de la tratamentele stomatologice',category:'periculos',standard:true},
-    {id:'w10',code:'20 01 01',name:'Hartie si carton',category:'reciclabil',standard:true},
-    {id:'w11',code:'20 01 08',name:'Deseuri biodegradabile din bucatarii',category:'nepericulos',standard:true},
-    {id:'w12',code:'20 03 01',name:'Deseuri municipale amestecate (menajere)',category:'nepericulos',standard:true}],
+    {id:'w01',code:'18 01 01',name:'Obiecte ascutite (ace, bisturie, lame)',category:'periculos',standard:true,active:true},
+    {id:'w02',code:'18 01 02',name:'Parti anatomice si organe, inclusiv pungi de sange',category:'periculos',standard:true,active:true},
+    {id:'w03',code:'18 01 03*',name:'Deseuri infectioase (colectare si eliminare cu masuri speciale)',category:'periculos',standard:true,active:true},
+    {id:'w04',code:'18 01 04',name:'Deseuri neinfectioase (echipamente, pansamente, imbracaminte unica folosinta)',category:'nepericulos',standard:true,active:true},
+    {id:'w05',code:'18 01 06*',name:'Substante chimice periculoase',category:'periculos',standard:true,active:true},
+    {id:'w06',code:'18 01 07',name:'Substante chimice, altele decat cele de la 18 01 06',category:'nepericulos',standard:true,active:true},
+    {id:'w07',code:'18 01 08*',name:'Medicamente citotoxice si citostatice',category:'periculos',standard:true,active:true,note_populatie:'Cantitatile de la populatie se raporteaza separat catre DSP (Instructiunea 6.226/2024)'},
+    {id:'w08',code:'18 01 09',name:'Medicamente, altele decat cele de la 18 01 08',category:'nepericulos',standard:true,active:true,note_populatie:'Cantitatile de la populatie se raporteaza separat catre DSP (Instructiunea 6.226/2024)'},
+    {id:'w09',code:'18 01 10*',name:'Deseuri de amalgam de la tratamentele stomatologice',category:'periculos',standard:true,active:false},
+    {id:'w10',code:'20 01 01',name:'Hartie si carton',category:'reciclabil',standard:true,active:true},
+    {id:'w11',code:'20 01 08',name:'Deseuri biodegradabile din bucatarii',category:'nepericulos',standard:true,active:true},
+    {id:'w12',code:'20 03 01',name:'Deseuri municipale amestecate (menajere)',category:'nepericulos',standard:true,active:true}],
   origins:{internare_curenta:'Internarea curenta (din spital)',alt_spital:'Internare anterioara — alt spital',
     acelasi_spital:'Internare anterioara — acelasi spital',nespecificat:'Internare anterioara — nespecificat',
     comunitara:'Infectie comunitara'},
@@ -1979,6 +1979,8 @@ async function loadCfg(){
         w.category=w.dangerous?'periculos':'nepericulos';
       }
     });
+    // Ensure active field exists
+    CFG.waste_codes.forEach(function(w){if(w.active===undefined)w.active=true});
     // Ensure all standard codes are present
     var _existCodes={};CFG.waste_codes.forEach(function(w){_existCodes[w.code]=true});
     _stdWaste.forEach(function(sw){
@@ -2033,6 +2035,23 @@ async function loadCfg(){
   if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>(c.name_ro||'').indexOf('Focare')>=0)){
     CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Focare epidemice',name_en:'Outbreaks',color:'#D32F2F',source_module:'iaam',audit_type:null,standard:true,active:true});
     _comorbAdded=true;
+  }
+  // Migrate: add HII (High Impact Interventions) audit categories if missing
+  var _hiiCats=[
+    {id:'hii_iap',name_ro:'Interventii impact major — IAP/VAP',name_en:'High Impact Interventions — VAP',color:'#7C3AED',source_module:'audit',audit_type:'hii_iap',standard:true,active:true},
+    {id:'hii_cvp',name_ro:'Interventii impact major — CVP',name_en:'High Impact Interventions — PVC',color:'#2563EB',source_module:'audit',audit_type:'hii_cvp',standard:true,active:true},
+    {id:'hii_cvc',name_ro:'Interventii impact major — CVC',name_en:'High Impact Interventions — CVC',color:'#0891B2',source_module:'audit',audit_type:'hii_cvc',standard:true,active:true},
+    {id:'hii_ssi',name_ro:'Interventii impact major — SSI',name_en:'High Impact Interventions — SSI',color:'#059669',source_module:'audit',audit_type:'hii_ssi',standard:true,active:true},
+    {id:'hii_sst',name_ro:'Interventii impact major — SST',name_en:'High Impact Interventions — SST',color:'#D97706',source_module:'audit',audit_type:'hii_sst',standard:true,active:true},
+    {id:'hii_itu',name_ro:'Interventii impact major — ITU',name_en:'High Impact Interventions — CAUTI',color:'#DC2626',source_module:'audit',audit_type:'hii_itu',standard:true,active:true},
+    {id:'hii_atb',name_ro:'Utilizare judicioasa antibiotice',name_en:'Antimicrobial Stewardship',color:'#4F46E5',source_module:'audit',audit_type:'hii_atb',standard:true,active:true}
+  ];
+  if(CFG.ipc_categories&&CFG.ipc_categories.length){
+    _hiiCats.forEach(function(hc){
+      if(!CFG.ipc_categories.find(c=>c.id===hc.id||c.audit_type===hc.audit_type)){
+        CFG.ipc_categories.push(hc);_comorbAdded=true;
+      }
+    });
   }
   // Ensure all config items have unique IDs
   if(ensureConfigIds()||_comorbAdded){await saveCfg();await migrateDataToIds()}
@@ -3077,12 +3096,12 @@ async function rDash(el){
     pDe=(await ga('deseuri')).filter(r=>r.year===y-1),pBi=(await ga('biocide')).filter(r=>r.year===y-1);
   const docs=await ga('documents'),dls=await ga('deadlines');
   const conf=au.filter(p=>p.result==='conform').length,totP=au.length,
-    totD=de.reduce((s,r)=>s+CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0),0),
+    totD=de.reduce((s,r)=>s+CFG.waste_codes.filter(w=>w.active!==false).reduce((a,w)=>a+(+r[w.id]||0),0),0),
     consBio=bi.filter(b=>b.type==='iesire').reduce((s,b)=>s+(+b.value_lei||0),0);
   const wb=getTotalWeightedBeds(y);
   // Previous year KPI values
   const pIaC=pIa.length,pAuC=pAu.length,pConf=pAu.filter(p=>p.result==='conform').length,
-    pTotD=pDe.reduce((s,r)=>s+CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0),0),
+    pTotD=pDe.reduce((s,r)=>s+CFG.waste_codes.filter(w=>w.active!==false).reduce((a,w)=>a+(+r[w.id]||0),0),0),
     pConsBio=pBi.filter(b=>b.type==='iesire').reduce((s,b)=>s+(+b.value_lei||0),0);
   // Trend helper: returns HTML for trend arrow. lessIsBetter=true means decrease is good
   function kpiTrend(cur,prev,lessIsBetter,prevHasData){
@@ -3110,7 +3129,7 @@ async function rDash(el){
   // Sparkline data: autocontrol neconf per month
   const ncm=Array(12).fill(0);au.filter(p=>p.result==='neconform').forEach(r=>{if(r.month>=1&&r.month<=12)ncm[r.month-1]++});
   // Sparkline data: deseuri per month
-  const dbm=Array(12).fill(0);de.forEach(r=>{if(r.month>=1&&r.month<=12)dbm[r.month-1]+=CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0)});
+  const dbm=Array(12).fill(0);de.forEach(r=>{if(r.month>=1&&r.month<=12)dbm[r.month-1]+=CFG.waste_codes.filter(w=>w.active!==false).reduce((a,w)=>a+(+r[w.id]||0),0)});
   const bbm=Array(12).fill(0);bi.filter(b=>b.type==='iesire').forEach(r=>{if(r.month>=1&&r.month<=12)bbm[r.month-1]+=(+r.value_lei||0)});
 
   const isEN=CFG.lang==='en';
@@ -3245,7 +3264,7 @@ function initDashCharts(){
   }
   if(widgetVisible('desChart')&&document.getElementById('c3')&&!A.charts.c3){
     A.charts.c3=new Chart(document.getElementById('c3'),{type:'line',data:{labels:d.MO,datasets:[{label:'kg',data:d.dbm,borderColor:'#D4A017',backgroundColor:'#D4A01720',fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{color:tc}},x:{ticks:{color:tc}}},plugins:{legend:{display:false}}}});
-    const sc={};d.ia.forEach(r=>{const sn=rSec(r.section);sc[sn]=(sc[sn]||0)+1});
+    const sc={};d.ia.forEach(r=>{const sn=rSec(r.section_attribution||r.section);sc[sn]=(sc[sn]||0)+1});
     if(Object.keys(sc).length>0)
       A.charts.c4=new Chart(document.getElementById('c4'),{type:'bar',data:{labels:Object.keys(sc),datasets:[{label:'Cazuri',data:Object.values(sc),backgroundColor:'#2563B088',borderColor:'#2563B0',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{stepSize:1,color:tc}},y:{ticks:{color:tc}}},plugins:{legend:{display:false}}}});
   }
@@ -3462,6 +3481,8 @@ var _iaamStep=0,_iaamDraft={},_iaamEditId=null;
 // Timeline state
 var _tlOpen=false,_tlChecked=new Set(),_tlShowOnly=false,_tlActiveCluster=null,_tlViewStart=1,_tlMode='month';
 
+var _iaamSort={col:'month',dir:'asc'};
+function toggleIaamSort(col){if(_iaamSort.col===col){_iaamSort.dir=_iaamSort.dir==='asc'?'desc':'asc'}else{_iaamSort.col=col;_iaamSort.dir='asc'}render()}
 async function rIAAM(el){
   const isEN=CFG.lang==='en';
   const allData=(await ga('iaam')).filter(r=>r.year===A.year).sort((a,b)=>a.month-b.month);
@@ -3486,9 +3507,23 @@ async function rIAAM(el){
     if(f.compl==='incomplete'&&r.completion>=100)return false;
     if(f.search){const q=f.search.toLowerCase();
       const fields=[r.patient_initials||'',r.patient||'',rSec(r.section),rInf(r.iaam_category||r.infection_type),
-        r.germeni&&r.germeni.length?r.germeni.map(g=>g.name).join(' '):'',r.organism||'',r.fo_number||''];
+        r.germeni&&r.germeni.length?r.germeni.map(g=>g.name).join(' '):'',r.organism||'',r.fo_number||'',r.reg_number||''];
       if(!fields.some(x=>x.toLowerCase().includes(q)))return false}
     return true;
+  });
+  // Sort by selected column
+  var _sc=_iaamSort.col,_sd=_iaamSort.dir==='asc'?1:-1;
+  data.sort(function(a,b){
+    var va,vb;
+    if(_sc==='month'){va=a.month||0;vb=b.month||0}
+    else if(_sc==='section'){va=rSec(a.section).toLowerCase();vb=rSec(b.section).toLowerCase();return va<vb?-_sd:va>vb?_sd:0}
+    else if(_sc==='attribution'){va=rSec(a.section_attribution||a.section).toLowerCase();vb=rSec(b.section_attribution||b.section).toLowerCase();return va<vb?-_sd:va>vb?_sd:0}
+    else if(_sc==='germen'){va=(a.germeni&&a.germeni.length?a.germeni[0].name:a.organism||'').toLowerCase();vb=(b.germeni&&b.germeni.length?b.germeni[0].name:b.organism||'').toLowerCase();return va<vb?-_sd:va>vb?_sd:0}
+    else if(_sc==='patient'){va=(a.patient_initials||a.patient||'').toLowerCase();vb=(b.patient_initials||b.patient||'').toLowerCase();return va<vb?-_sd:va>vb?_sd:0}
+    else if(_sc==='reg'){va=+(a.reg_number)||0;vb=+(b.reg_number)||0}
+    else if(_sc==='completion'){va=a.completion||0;vb=b.completion||0}
+    else{va=a.month||0;vb=b.month||0}
+    return (va-vb)*_sd;
   });
   const mdr=allData.filter(r=>r.mdr).length;
   const complete=allData.filter(r=>r.completion>=100).length;
@@ -3529,7 +3564,8 @@ async function rIAAM(el){
     '<button class="btn bp" onclick="editIAAM()">+ '+(isEN?'New IAAM Case':'Caz IAAM Nou')+'</button></div>'+
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
   (data.length===0?'<div class="es"><p>'+(isEN?'No IAAM cases':'Niciun caz IAAM')+' '+(f.search||f.sec||f.mdr||f.compl||f.month?(isEN?'found with selected filters':'gasit cu filtrele selectate'):(isEN?'for ':'pentru ')+A.year)+'.</p><button class="btn bp" onclick="editIAAM()">'+(isEN?'Add first case':'Adauga primul caz')+'</button></div>':
-    '<table class="dt"><thead><tr><th style="width:30px"></th><th>'+(isEN?'Month':'Luna')+'</th><th>'+(isEN?'Section / Category':'Sectie / Categorie')+'</th><th>'+(isEN?'Pathogen':'Germen')+'</th><th>'+(isEN?'Patient':'Pacient')+'</th><th>'+(isEN?'Completion':'Completare')+'</th><th>'+(isEN?'Actions':'Actiuni')+'</th></tr></thead><tbody>'+
+    '<table class="dt"><thead><tr><th style="width:30px"></th>'+
+    (function(){var cols=[['month',isEN?'Month':'Luna'],['reg',isEN?'Reg. No.':'Nr. Inreg.'],['section',isEN?'Section / Category':'Sectie / Categorie'],['attribution',isEN?'Attribution':'Atribuire'],['germen',isEN?'Pathogen':'Germen'],['patient',isEN?'Patient':'Pacient'],['completion',isEN?'Completion':'Completare']];return cols.map(function(c){var arrow=_iaamSort.col===c[0]?(_iaamSort.dir==='asc'?' &#9650;':' &#9660;'):'';return '<th onclick="toggleIaamSort(\''+c[0]+'\')" style="cursor:pointer;user-select:none"'+(_iaamSort.col===c[0]?' class="sorted"':'')+'>'+c[1]+arrow+'</th>'}).join('')})()+'<th>'+(isEN?'Actions':'Actiuni')+'</th></tr></thead><tbody>'+
     data.map((r,i)=>{
       const comp=r.completion||0;
       const dotCls=comp>=100?'iw-dot-green':comp>=40?'iw-dot-yellow':'iw-dot-grey';
@@ -3537,7 +3573,9 @@ async function rIAAM(el){
       const germs=r.germeni&&r.germeni.length?r.germeni.map(g=>g.name).join(', '):(r.organism||'—');
       return '<tr><td><span class="iw-nav-dot '+dotCls+'" style="display:inline-block"></span></td>'+
         '<td>'+(MO[r.month-1]||'?')+'</td>'+
+        '<td style="text-align:center;font-weight:600;color:var(--navy)">'+(r.reg_number||'—')+'</td>'+
         '<td><strong>'+rSec(r.section)+'</strong><br><span style="font-size:11px;color:var(--txtL)">'+rInf(r.iaam_category||r.infection_type)+'</span></td>'+
+        '<td style="font-size:11px'+(r.section_attribution&&r.section_attribution!==r.section?';background:rgba(124,58,237,.06);font-weight:600':'')+'">'+(r.section_attribution&&r.section_attribution!==r.section?rSec(r.section_attribution):'—')+'</td>'+
         '<td><strong>'+esc(germs)+'</strong>'+(r.mdr?' <span class="bdg bdg-r" style="font-size:9px">MDR</span>':'')+'</td>'+
         '<td style="font-size:12px">'+(r.patient_initials||r.patient||'—')+(r.fo_number?'<br><span style="font-size:10px;color:var(--txtL)">'+(r.fo_number.toUpperCase().startsWith('FO')?'':'FO: ')+esc(r.fo_number)+'</span>':'')+'</td>'+
         '<td><span class="compl-badge '+complCls+'">'+comp+'%</span></td>'+
@@ -3615,7 +3653,8 @@ function renderIaamSection(step){
       '<div class="fg"><label>'+T('iaam_domiciliu')+'</label><input id="f-dom" value="'+esc(d.domiciliu||'')+'" placeholder="Oras, strada (optional)"></div>';
     break;
   case 1: // Hospitalization
-    h='<div class="fg"><label>Sectia</label><select id="f-sec"><option value="">—</option>'+secOpts(d.section)+'</select></div>'+
+    h='<div class="fg"><label>'+(isEN?'Reporting section':'Sectia raportoare')+'</label><select id="f-sec"><option value="">—</option>'+secOpts(d.section)+'</select></div>'+
+      '<div class="fg"><label>'+(isEN?'Attribution section (epidemiological)':'Sectia de dobandire (atribuire epidemiologica)')+'</label><select id="f-sec-attr"><option value="">'+(isEN?'— Same as reporting —':'— Identica cu raportoarea —')+'</option>'+secOpts(d.section_attribution||'')+'</select><small style="color:var(--txtL);font-size:10px;display:block;margin-top:2px">'+(isEN?'Section where infection was acquired. Leave empty if same as reporting section.':'Sectia unde s-a dobandit infectia. Lasati gol daca e aceeasi cu raportoarea.')+'</small></div>'+
       '<div class="fr"><div class="fg"><label>Nr. inregistrare (registru)</label><input id="f-regn" value="'+esc(d.reg_number||'')+'" placeholder="optional"></div>'+
       '<div class="fg"><label>Nr. foaie observatie (FO)</label><input id="f-fon" value="'+esc(d.fo_number||'')+'" placeholder="optional"></div></div>'+
       '<div class="fg"><label>Medic curant</label><input id="f-doc" value="'+esc(d.doctor||'')+'"></div>'+
@@ -3746,7 +3785,7 @@ function collectIaamSection(step){
     break;
   case 1:
     if(!_el('f-sec'))break;
-    d.section=v('f-sec');d.reg_number=v('f-regn').trim();d.fo_number=v('f-fon').trim();
+    d.section=v('f-sec');d.section_attribution=v('f-sec-attr')||'';d.reg_number=v('f-regn').trim();d.fo_number=v('f-fon').trim();
     d.doctor=v('f-doc').trim();d.date_admission=v('f-dint');d.date_discharge=v('f-dext');
     d.days=+v('f-nzi')||null;d.diag_admission=v('f-dgi').trim();d.diag_discharge=v('f-dge').trim();
     break;
@@ -4395,7 +4434,9 @@ function _renderTimeline(allData,isEN){
       var hasMDR=r.mdr||(r.germeni||[]).some(function(g){return g.mdr&&g.mdr!=='Nu'});
       return {r:r,hS:hS,hE:hE,iS:iS,iE:iE,aS:aS,aE:aE,st:st,germs:germs,hasMDR:hasMDR};
     });
-    rows.sort(function(a,b){return (rSec(a.r.section)||'').localeCompare(rSec(b.r.section)||'')||(a.hS||0)-(b.hS||0)});
+    var _tlSecField=window._tlSecField||'attribution';
+    function _tlGetSec(r){if(_tlSecField==='attribution')return r.section_attribution||r.section;return r.section}
+    rows.sort(function(a,b){return (rSec(_tlGetSec(a.r))||'').localeCompare(rSec(_tlGetSec(b.r))||'')||(a.hS||0)-(b.hS||0)});
 
     var clusters=_tlDetectClusters(rows);
     var cm={};clusters.forEach(function(cl){cl.ids.forEach(function(id){cm[id]=cl})});
@@ -4413,7 +4454,14 @@ function _renderTimeline(allData,isEN){
     h+='<div style="display:flex;gap:4px;margin-left:8px">';
     h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px" onclick="_tlMode=\'month\';_tlViewStart=1;render()">'+T('tl_luna_btn')+'</button>';
     h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px;background:var(--blue);color:#fff;border-color:var(--blue)" onclick="_tlMode=\'year\';render()">'+T('tl_an_btn')+'</button>';
-    h+='</div></div>';
+    h+='</div>';
+    // Toggle: Reporting section vs Attribution section
+    h+='<div style="display:flex;gap:4px;margin-left:auto;align-items:center;font-size:11px">';
+    h+='<span style="color:var(--txtL)">'+(isEN?'Group by:':'Grupeaza dupa:')+'</span>';
+    h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:10px'+(_tlSecField==='section'?';background:var(--teal);color:#fff;border-color:var(--teal)':'')+'" onclick="window._tlSecField=\'section\';render()">'+(isEN?'Reporting':'Raportoare')+'</button>';
+    h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:10px'+(_tlSecField!=='section'?';background:var(--teal);color:#fff;border-color:var(--teal)':'')+'" onclick="window._tlSecField=\'attribution\';render()">'+(isEN?'Attribution':'Dobandire')+'</button>';
+    h+='</div>';
+    h+='</div>';
     h+=_tlBuildLegend(DK);
 
     if(cases.length===0){
@@ -4464,7 +4512,7 @@ function _renderTimeline(allData,isEN){
     h+='<div class="tl-body" style="max-height:600px">';
     var lastS='',tA=0,tC=0,tD=0;
     visRows.forEach(function(c){
-      var secName=rSec(c.r.section);
+      var secName=rSec(_tlGetSec(c.r));
       if(secName!==lastS){h+='<div class="tl-sec-sep">'+esc(secName)+'</div>';lastS=secName}
       if(c.st==='c'||c.st==='n')tA++;
       if(c.st==='i')tC++;
@@ -4556,14 +4604,16 @@ function _renderTimeline(allData,isEN){
     var hasMDR=r.mdr||(r.germeni||[]).some(function(g){return g.mdr&&g.mdr!=='Nu'});
     return {r:r,hS:hS,hE:hE,iS:iS,iE:iE,aS:aS,aE:aE,st:st,germs:germs,hasMDR:hasMDR};
   });
-  rows.sort(function(a,b){return (rSec(a.r.section)||'').localeCompare(rSec(b.r.section)||'')||(a.iS||0)-(b.iS||0)});
+  var _tlSecField=window._tlSecField||'attribution';
+  function _tlGetSec(r){if(_tlSecField==='attribution')return r.section_attribution||r.section;return r.section}
+  rows.sort(function(a,b){return (rSec(_tlGetSec(a.r))||'').localeCompare(rSec(_tlGetSec(b.r))||'')||(a.iS||0)-(b.iS||0)});
 
   var clusters=_tlDetectClusters(rows);
   var cm={};clusters.forEach(function(cl){cl.ids.forEach(function(id){cm[id]=cl})});
 
   var secFilter=_iaamFilters.sec;
   var visRows=rows;
-  if(secFilter)visRows=visRows.filter(function(c){return c.r.section===secFilter});
+  if(secFilter)visRows=visRows.filter(function(c){var s=_tlGetSec(c.r);return s===secFilter||c.r.section===secFilter});
   if(_tlShowOnly)visRows=visRows.filter(function(c){return _tlChecked.has(c.r.id)});
 
   var h='<div class="tl-wrap">';
@@ -4579,7 +4629,14 @@ function _renderTimeline(allData,isEN){
   h+='<div style="display:flex;gap:4px;margin-left:8px">';
   h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px;background:var(--blue);color:#fff;border-color:var(--blue)" onclick="_tlMode=\'month\';render()">'+T('tl_luna_btn')+'</button>';
   h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px" onclick="_tlMode=\'year\';_tlViewStart=1;render()">'+T('tl_an_btn')+'</button>';
-  h+='</div></div>';
+  h+='</div>';
+  // Toggle: Reporting section vs Attribution section
+  h+='<div style="display:flex;gap:4px;margin-left:auto;align-items:center;font-size:11px">';
+  h+='<span style="color:var(--txtL)">'+(isEN?'Group by:':'Grupeaza dupa:')+'</span>';
+  h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:10px'+(_tlSecField==='section'?';background:var(--teal);color:#fff;border-color:var(--teal)':'')+'" onclick="window._tlSecField=\'section\';render()">'+(isEN?'Reporting':'Raportoare')+'</button>';
+  h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:10px'+(_tlSecField!=='section'?';background:var(--teal);color:#fff;border-color:var(--teal)':'')+'" onclick="window._tlSecField=\'attribution\';render()">'+(isEN?'Attribution':'Dobandire')+'</button>';
+  h+='</div>';
+  h+='</div>';
 
   h+=_tlBuildLegend(DK);
 
@@ -4638,7 +4695,7 @@ function _renderTimeline(allData,isEN){
   h+='<div class="tl-body">';
   var lastS='',tA=0,tC=0,tD=0;
   visRows.forEach(function(c){
-    var secName=rSec(c.r.section);
+    var secName=rSec(_tlGetSec(c.r));
     if(secName!==lastS){h+='<div class="tl-sec-sep">'+esc(secName)+'</div>';lastS=secName}
     if(c.st==='c'||c.st==='n')tA++;
     if(c.st==='i')tC++;
@@ -5607,20 +5664,21 @@ async function saveUv(id){
 // ═══════════════════════════════════════════════════════════════
 async function rDes(el){
   const data=(await ga('deseuri')).filter(r=>r.year===A.year),byM={};data.forEach(r=>{byM[r.month]=r});
-  let gt=0;const ct={};CFG.waste_codes.forEach(w=>{ct[w.id]=0});
-  data.forEach(r=>{CFG.waste_codes.forEach(w=>{const v=+r[w.id]||0;ct[w.id]+=v;gt+=v})});
+  var activeWC=CFG.waste_codes.filter(function(w){return w.active!==false});
+  let gt=0;const ct={};activeWC.forEach(w=>{ct[w.id]=0});
+  data.forEach(r=>{activeWC.forEach(w=>{const v=+r[w.id]||0;ct[w.id]+=v;gt+=v})});
   el.innerHTML='<div class="kg">'+
     '<div class="kc am"><div class="kl">Total Deseuri</div><div class="kv">'+fn(Math.round(gt*100)/100)+' kg</div></div>'+
-    CFG.waste_codes.filter(w=>w.category==='periculos'||w.dangerous).map(w=>'<div class="kc rd"><div class="kl">'+w.code+'</div><div class="kv">'+fn(Math.round(ct[w.id]*100)/100)+' kg</div><div class="ks">'+(w.name||w.code)+'</div></div>').join('')+
+    activeWC.filter(w=>w.category==='periculos'||w.dangerous).map(w=>'<div class="kc rd"><div class="kl">'+w.code+'</div><div class="kv">'+fn(Math.round(ct[w.id]*100)/100)+' kg</div><div class="ks">'+(w.name||w.code)+'</div></div>').join('')+
   '</div>'+
   '<div class="ib inf">Completeaza cantitatile lunare (kg). Datele se salveaza la modificarea fiecarui camp.</div>'+
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
     '<table class="dt"><thead><tr><th style="min-width:130px">Cod</th>'+MO.map(m=>'<th style="text-align:right;min-width:65px">'+m+'</th>').join('')+'<th style="text-align:right;min-width:80px">TOTAL</th></tr></thead><tbody>'+
-    CFG.waste_codes.map(w=>'<tr><td><strong>'+w.code+'</strong><br><span style="font-size:10px;color:var(--txtL)">'+(w.name||w.code)+'</span></td>'+
+    activeWC.map(w=>{var noteHtml=w.note_populatie?'<br><span style="font-size:9px;color:var(--amber);font-style:italic">&#9888; '+w.note_populatie+'</span>':'';return '<tr><td><strong>'+w.code+'</strong><br><span style="font-size:10px;color:var(--txtL)">'+(w.name||w.code)+'</span>'+noteHtml+'</td>'+
       MO.map((_,mi)=>{const v=byM[mi+1]?byM[mi+1][w.id]||'':'';return'<td style="padding:3px"><input type="number" step="0.01" min="0" value="'+v+'" style="width:100%;padding:4px 3px;border:1px solid var(--brd);border-radius:4px;font-size:11px;text-align:right;font-family:var(--f)" onchange="sDes('+(mi+1)+',\''+w.id+'\',this.value)"></td>'}).join('')+
-      '<td style="text-align:right"><strong>'+fn(Math.round(ct[w.id]*100)/100)+'</strong> <span style="font-size:10px;opacity:.7">kg</span></td></tr>').join('')+
+      '<td style="text-align:right"><strong>'+fn(Math.round(ct[w.id]*100)/100)+'</strong> <span style="font-size:10px;opacity:.7">kg</span></td></tr>'}).join('')+
     '<tr style="background:var(--navy);color:#fff;font-weight:700"><td>TOTAL (kg)</td>'+
-      MO.map((_,mi)=>{let mt=0;CFG.waste_codes.forEach(w=>{mt+=+(byM[mi+1]?.[w.id])||0});return'<td style="text-align:right">'+(mt>0?fn(Math.round(mt*100)/100)+' kg':'')+'</td>'}).join('')+
+      MO.map((_,mi)=>{let mt=0;activeWC.forEach(w=>{mt+=+(byM[mi+1]?.[w.id])||0});return'<td style="text-align:right">'+(mt>0?fn(Math.round(mt*100)/100)+' kg':'')+'</td>'}).join('')+
       '<td style="text-align:right">'+fn(Math.round(gt*100)/100)+' kg</td></tr>'+
   '</tbody></table></div></div>'+
   '<div class="pn"><div class="ph"><h3>Om-zile lunare</h3></div><div class="pb">'+
@@ -5656,7 +5714,7 @@ async function rDes(el){
 }
 async function sDes(month,field,value){
   const data=(await ga('deseuri')).filter(r=>r.year===A.year);let rec=data.find(r=>r.month===month);
-  if(!rec){rec={year:A.year,month};CFG.waste_codes.forEach(w=>{rec[w.id]=0});rec.om_zile=0}
+  if(!rec){rec={year:A.year,month};CFG.waste_codes.forEach(w=>{if(w.active!==false)rec[w.id]=0});rec.om_zile=0}
   rec[field]=parseFloat(value)||0;await pt('deseuri',rec);logActivity('Actualizat deseuri — luna '+month);
   // Auto-recalculate totals
   rDes(document.getElementById('pc'));
@@ -8101,6 +8159,83 @@ const AUDIT_ITEMS={
   ]
 };
 
+// ═══ HII — HIGH IMPACT INTERVENTIONS (APCI/Saving Lives) ═══
+const HII_ITEMS={
+  hii_iap:[
+    {id:'hii_iap_1',text_ro:'Cap patul ridicat 30-45° (daca nu exista contraindicatii), consemnat in fisa',text_en:'Head of bed elevated 30-45° (if no contraindications), documented in chart',ref:'APCI/Saving Lives',section:'Ingrijire continua'},
+    {id:'hii_iap_2',text_ro:'Evaluare zilnica posibilitate detubare precoce, consemnat',text_en:'Daily assessment for early extubation, documented',ref:'APCI/Saving Lives',section:'Ingrijire continua'},
+    {id:'hii_iap_3',text_ro:'Evaluare zilnica reducere/intrerupere sedare, consemnat',text_en:'Daily sedation reduction/interruption assessment, documented',ref:'APCI/Saving Lives',section:'Ingrijire continua'},
+    {id:'hii_iap_4',text_ro:'Igiena orala conform protocolului unitatii',text_en:'Oral hygiene per unit protocol',ref:'APCI/Saving Lives',section:'Ingrijire continua'},
+    {id:'hii_iap_5',text_ro:'Aspiratie subglotica (daca exista tub cu port subglotic)',text_en:'Subglottic aspiration (if tube with subglottic port available)',ref:'APCI/Saving Lives',section:'Ingrijire continua'}
+  ],
+  hii_cvp:[
+    {id:'hii_cvp_1',text_ro:'Tehnica aseptica inclusiv igiena mainilor',text_en:'Aseptic technique including hand hygiene',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_cvp_2',text_ro:'Evaluarea venelor pacientului inainte de insertie',text_en:'Patient vein assessment before insertion',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_cvp_3',text_ro:'Dezinfectie tegument cu clorhexidina 2% in alcool 70% (povidon-iodina la alergie)',text_en:'Skin disinfection with 2% chlorhexidine in 70% alcohol (povidone-iodine if allergic)',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_cvp_4',text_ro:'Pansament steril semipermeabil transparent cu data si ora insertiei',text_en:'Sterile transparent semi-permeable dressing with insertion date and time',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_cvp_5',text_ro:'Consemnare in documente: data, ora, motiv, tip, marime, loc insertie',text_en:'Documentation: date, time, reason, type, size, insertion site',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_cvp_6',text_ro:'Igiena mainilor inainte si dupa atingerea pacientului',text_en:'Hand hygiene before and after patient contact',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'},
+    {id:'hii_cvp_7',text_ro:'Echipament individual de protectie conform procedurilor',text_en:'Personal protective equipment per procedures',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'},
+    {id:'hii_cvp_8',text_ro:'Inspectie vizuala zilnica loc insertie + evaluare necesitate mentinere',text_en:'Daily visual inspection of insertion site + necessity assessment',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'},
+    {id:'hii_cvp_9',text_ro:'Inlocuirea pansamentului cand este umed, desprins sau murdar',text_en:'Dressing replacement when wet, loose or soiled',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'},
+    {id:'hii_cvp_10',text_ro:'Manipulare aseptica a conexiunilor si dispozitivelor',text_en:'Aseptic handling of connections and devices',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'}
+  ],
+  hii_cvc:[
+    {id:'hii_cvc_1',text_ro:'Tehnica aseptica la insertie',text_en:'Aseptic technique at insertion',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_cvc_2',text_ro:'Selectare loc insertie si evaluare integritate vasculara (ecografie de rutina, preferat subclavicular)',text_en:'Insertion site selection and vascular integrity assessment (routine ultrasound, subclavian preferred)',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_cvc_3',text_ro:'Dezinfectie tegument cu clorhexidina 2% in alcool 70%',text_en:'Skin disinfection with 2% chlorhexidine in 70% alcohol',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_cvc_4',text_ro:'Pansament semipermeabil steril cu data si ora insertiei',text_en:'Sterile semi-permeable dressing with insertion date and time',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_cvc_5',text_ro:'Consemnare in documente: data, ora, motiv, tip cateter, loc insertie',text_en:'Documentation: date, time, reason, catheter type, insertion site',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_cvc_6',text_ro:'Igiena mainilor inainte si dupa atingerea pacientului',text_en:'Hand hygiene before and after patient contact',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'},
+    {id:'hii_cvc_7',text_ro:'Echipament individual de protectie conform procedurilor',text_en:'Personal protective equipment per procedures',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'},
+    {id:'hii_cvc_8',text_ro:'Inspectie vizuala zilnica loc insertie + evaluare zilnica necesitate',text_en:'Daily visual inspection of insertion site + daily necessity assessment',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'},
+    {id:'hii_cvc_9',text_ro:'Dezinfectia hub-urilor si conectorilor (scrub the hub min 15 secunde)',text_en:'Hub and connector disinfection (scrub the hub min 15 seconds)',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'},
+    {id:'hii_cvc_10',text_ro:'Inlocuire pansament cand umed/desprins sau conform protocolului',text_en:'Dressing replacement when wet/loose or per protocol',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'}
+  ],
+  hii_ssi:[
+    {id:'hii_ssi_1',text_ro:'Dus preoperator cu sapun cu o zi inainte sau in ziua interventiei',text_en:'Preoperative shower with soap the day before or day of surgery',ref:'APCI/Saving Lives',section:'A. Preoperator'},
+    {id:'hii_ssi_2',text_ro:'Indepartare par cu aparat tuns electric (nu lame ras), cat mai aproape de interventie',text_en:'Hair removal with electric clippers (not razor blades), as close to surgery as possible',ref:'APCI/Saving Lives',section:'A. Preoperator'},
+    {id:'hii_ssi_3',text_ro:'Profilaxie antibiotica administrata max 120 min inainte de incizie',text_en:'Antibiotic prophylaxis administered max 120 min before incision',ref:'APCI/Saving Lives',section:'A. Preoperator'},
+    {id:'hii_ssi_4',text_ro:'Dezinfectia chirurgicala a mainilor conform prevederilor legale',text_en:'Surgical hand disinfection per legal requirements',ref:'APCI/Saving Lives',section:'A. Preoperator'},
+    {id:'hii_ssi_5',text_ro:'Dezinfectie tegument cu clorhexidina in solutie alcoolica',text_en:'Skin disinfection with chlorhexidine in alcoholic solution',ref:'APCI/Saving Lives',section:'B. Intraoperator'},
+    {id:'hii_ssi_6',text_ro:'Normotermia — masurare si mentinere temperatura centrala',text_en:'Normothermia — core temperature measurement and maintenance',ref:'APCI/Saving Lives',section:'B. Intraoperator'},
+    {id:'hii_ssi_7',text_ro:'Suplimentare oxigen (max 80% la adulti intubati, la indicatia anestezistului)',text_en:'Oxygen supplementation (max 80% in intubated adults, per anesthesiologist)',ref:'APCI/Saving Lives',section:'B. Intraoperator'},
+    {id:'hii_ssi_8',text_ro:'Controlul glicemiei si normoglicemia perioperatorie',text_en:'Blood glucose control and perioperative normoglycemia',ref:'APCI/Saving Lives',section:'B. Intraoperator'}
+  ],
+  hii_sst:[
+    {id:'hii_sst_1',text_ro:'Tehnica aseptica in managementul plagii',text_en:'Aseptic technique in wound management',ref:'APCI/Saving Lives',section:'Management'},
+    {id:'hii_sst_2',text_ro:'Evaluarea plagii: rezultate clinice, imagistice, laborator consemnate',text_en:'Wound assessment: clinical, imaging, laboratory results documented',ref:'APCI/Saving Lives',section:'Management'},
+    {id:'hii_sst_3',text_ro:'Recoltare probe microbiologice din plaga la suspiciune infectie',text_en:'Microbiological sampling from wound when infection suspected',ref:'APCI/Saving Lives',section:'Management'},
+    {id:'hii_sst_4',text_ro:'Mediu optim vindecare, consult multidisciplinar la evolutie stationara',text_en:'Optimal healing environment, multidisciplinary consult for static evolution',ref:'APCI/Saving Lives',section:'Management'},
+    {id:'hii_sst_5',text_ro:'Informare personal si educarea pacientului privind statusul infectios',text_en:'Staff notification and patient education regarding infectious status',ref:'APCI/Saving Lives',section:'Management'}
+  ],
+  hii_itu:[
+    {id:'hii_itu_1',text_ro:'Evaluare alternativa la cateterizare (cateter extern, cateterism intermitent)',text_en:'Assessment of catheterization alternatives (external catheter, intermittent catheterization)',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_itu_2',text_ro:'Tehnica aseptica la insertie, inclusiv igiena mainilor',text_en:'Aseptic technique at insertion, including hand hygiene',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_itu_3',text_ro:'Echipament individual de protectie la insertie',text_en:'Personal protective equipment at insertion',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_itu_4',text_ro:'Selectie cateter de dimensiune adecvata + sistem de drenaj cu circuit inchis',text_en:'Appropriate size catheter selection + closed drainage system',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_itu_5',text_ro:'Consemnare in documente: motiv, data insertie, tip si dimensiune cateter',text_en:'Documentation: reason, insertion date, catheter type and size',ref:'APCI/Saving Lives',section:'A. Insertie'},
+    {id:'hii_itu_6',text_ro:'Igiena mainilor inainte si dupa atingerea pacientului',text_en:'Hand hygiene before and after patient contact',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'},
+    {id:'hii_itu_7',text_ro:'Echipament individual de protectie conform procedurilor',text_en:'Personal protective equipment per procedures',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'},
+    {id:'hii_itu_8',text_ro:'Evaluare zilnica necesitate cateter (documentata), la termen lung la fiecare schimbare',text_en:'Daily catheter necessity assessment (documented), at long-term at each change',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'},
+    {id:'hii_itu_9',text_ro:'Toaleta zilnica a meatului uretral',text_en:'Daily urethral meatus hygiene',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'},
+    {id:'hii_itu_10',text_ro:'Intretinere circuit inchis, golire punga cu recipient curat, notare date schimbare',text_en:'Closed circuit maintenance, bag emptying with clean container, change dates noted',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'},
+    {id:'hii_itu_11',text_ro:'Informarea pacientului privind motivul insertiei si planul de reevaluare/indepartare',text_en:'Patient information regarding insertion reason and reassessment/removal plan',ref:'APCI/Saving Lives',section:'B. Ingrijire continua'}
+  ],
+  hii_atb:[
+    {id:'hii_atb_1',text_ro:'Documentare diagnostic clinic si indicatie tratament antimicrobian',text_en:'Clinical diagnosis documentation and antimicrobial treatment indication',ref:'APCI/Saving Lives',section:'A. Prescriere'},
+    {id:'hii_atb_2',text_ro:'Initierea tratamentului antimicrobian conform ghidurilor nationale/interne',text_en:'Antimicrobial treatment initiation per national/internal guidelines',ref:'APCI/Saving Lives',section:'A. Prescriere'},
+    {id:'hii_atb_3',text_ro:'Doza si calea de administrare corecte, documentate',text_en:'Correct dose and route of administration, documented',ref:'APCI/Saving Lives',section:'A. Prescriere'},
+    {id:'hii_atb_4',text_ro:'Indicatia antimicrobienelor documentata in dosarul pacientului',text_en:'Antimicrobial indication documented in patient file',ref:'APCI/Saving Lives',section:'A. Prescriere'},
+    {id:'hii_atb_5',text_ro:'Culturi microbiologice recoltate inainte de inceperea tratamentului',text_en:'Microbiological cultures collected before treatment initiation',ref:'APCI/Saving Lives',section:'A. Prescriere'},
+    {id:'hii_atb_6',text_ro:'Revizuire rezultate microbiologie si ajustare terapie daca necesar',text_en:'Microbiology results review and therapy adjustment if needed',ref:'APCI/Saving Lives',section:'A. Prescriere'},
+    {id:'hii_atb_7',text_ro:'Revizuire la 72 ore: toate antimicrobienele au evaluare documentata',text_en:'72-hour review: all antimicrobials have documented assessment',ref:'APCI/Saving Lives',section:'B. Recomandari'},
+    {id:'hii_atb_8',text_ro:'Terapia conform ghidurilor nationale sau interne bazate pe dovezi',text_en:'Therapy per national or evidence-based internal guidelines',ref:'APCI/Saving Lives',section:'B. Recomandari'},
+    {id:'hii_atb_9',text_ro:'Revizuire medicatie intravenoasa in vederea substitutiei orale',text_en:'IV medication review for oral switch',ref:'APCI/Saving Lives',section:'B. Recomandari'},
+    {id:'hii_atb_10',text_ro:'Durata terapiei clar stabilita sau termen reevaluare documentat',text_en:'Therapy duration clearly set or reassessment date documented',ref:'APCI/Saving Lives',section:'B. Recomandari'}
+  ]
+};
+
 // ═══ PAGE STATE ═══
 var _auditView='list';
 var _auditFilter='';
@@ -8184,7 +8319,9 @@ async function rAudit(el){
   '</div>';
 
   // Action bar
+  var hasIgm=allData.some(function(r){return r.audit_type&&_getAuditCats().some(function(c){return c.id===r.audit_type&&c.audit_type==='igm'})});
   h+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px">'+
+    (hasIgm?'<button class="btn bo" onclick="_showIgmReportDialog()" style="font-size:12px">&#128200; '+(isEN?'Hand Hygiene Compliance Report':'Raport Complianta Igiena Mainilor')+'</button>':'')+
     '<button class="btn bp" onclick="_showAuditTypeModal()">'+T('aud_nou')+'</button>'+
   '</div>';
 
@@ -8235,6 +8372,11 @@ function _startNewAudit(ipcCatId){
     _genItems=(AUDIT_ITEMS[at]||[]).map((it,i)=>({id:genId('gi'),text_ro:it.text_ro,text_en:it.text_en,ref:it.ref||'',section:it.section||'',result:'',note:''}));
     _auditView='generic';_genEditCatId=ipcCatId;render();return;
   }
+  if(at&&at.startsWith('hii_')&&HII_ITEMS[at]){
+    _genEditId=null;
+    _genItems=HII_ITEMS[at].map((it,i)=>({id:genId('gi'),text_ro:it.text_ro,text_en:it.text_en,ref:it.ref||'',section:it.section||'',result:'',note:''}));
+    _auditView='generic';_genEditCatId=ipcCatId;render();return;
+  }
   // Custom or unknown
   _customEditId=null;_customItems=[{id:genId('ci'),text_ro:'',text_en:'',ref:'',result:'',note:''}];
   _auditView='custom';_customCatId=ipcCatId;render();
@@ -8247,6 +8389,9 @@ async function _editExistingAudit(id){
   if(at==='dotare_igiena'){_dotareEditId=id;_dotareData=JSON.parse(JSON.stringify(r));_auditView='dotare';render();return}
   if(at==='agregat'){_agregatEditId=id;_agregatData=JSON.parse(JSON.stringify(r));_auditView='agregat';render();return}
   if(at==='curatenie'||at==='rotatie_biocide'||at==='sterilizare'||at==='preoperator'||at==='deseuri'){
+    _genEditId=id;_genItems=JSON.parse(JSON.stringify(r.items||[]));_genEditCatId=r.audit_type;_auditView='generic';render();return;
+  }
+  if(at&&at.startsWith('hii_')&&HII_ITEMS[at]){
     _genEditId=id;_genItems=JSON.parse(JSON.stringify(r.items||[]));_genEditCatId=r.audit_type;_auditView='generic';render();return;
   }
   // Custom
@@ -8937,6 +9082,143 @@ async function genAuditWordIgm(r){
   finally{hideGen()}
 }
 
+// ── IGM Filtered Report Dialog & Generator ──
+function _showIgmReportDialog(){
+  var isEN=CFG.lang==='en';
+  var secOps='<option value="">'+(isEN?'All sections':'Toate sectiile')+'</option>'+secOpts('');
+  var catOps='<option value="">'+(isEN?'All categories':'Toate categoriile')+'</option>'+(CFG.audit_prof_categories||[]).map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>'}).join('');
+  var momOps='<option value="">'+(isEN?'All moments':'Toate momentele')+'</option>'+WHO_MOM.map(function(m){return '<option value="'+m.id+'">'+m.id.toUpperCase()+' — '+(isEN?m.label_en:m.label_ro)+'</option>'}).join('');
+  var today=new Date().toISOString().slice(0,10);
+  var jan1=A.year+'-01-01';
+  openM(isEN?'Hand Hygiene Compliance Report':'Raport Complianta Igiena Mainilor',
+    '<div class="fr"><div class="fg"><label>'+(isEN?'From':'De la')+'</label><input type="date" id="igm-rpt-from" value="'+jan1+'"></div>'+
+    '<div class="fg"><label>'+(isEN?'To':'Pana la')+'</label><input type="date" id="igm-rpt-to" value="'+today+'"></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Section':'Sectia')+'</label><select id="igm-rpt-sec">'+secOps+'</select></div>'+
+    '<div class="fg"><label>'+(isEN?'Professional category':'Categorie profesionala')+'</label><select id="igm-rpt-cat">'+catOps+'</select></div></div>'+
+    '<div class="fg"><label>'+(isEN?'WHO Moment':'Moment OMS')+'</label><select id="igm-rpt-mom">'+momOps+'</select></div>',
+    '<button class="btn bo" onclick="closeM()">'+(isEN?'Cancel':'Anuleaza')+'</button>'+
+    '<button class="btn bp" onclick="genIgmFilteredReport()">'+(isEN?'Generate Report':'Genereaza Raport')+'</button>');
+}
+
+async function genIgmFilteredReport(){
+  closeM();showGen('Se genereaza raport complianta...');
+  try{
+    var isEN=CFG.lang==='en';
+    var mc=document;
+    var dateFrom=mc.getElementById('igm-rpt-from')?mc.getElementById('igm-rpt-from').value:'';
+    var dateTo=mc.getElementById('igm-rpt-to')?mc.getElementById('igm-rpt-to').value:'';
+    var secFilter=mc.getElementById('igm-rpt-sec')?mc.getElementById('igm-rpt-sec').value:'';
+    var catFilter=mc.getElementById('igm-rpt-cat')?mc.getElementById('igm-rpt-cat').value:'';
+    var momFilter=mc.getElementById('igm-rpt-mom')?mc.getElementById('igm-rpt-mom').value:'';
+
+    // Find IGM audit type IDs
+    var igmCats=_getAuditCats().filter(function(c){return c.audit_type==='igm'});
+    var igmIds=igmCats.map(function(c){return c.id});
+
+    // Get all IGM audits
+    var allAud=(await ga('audits')).filter(function(r){
+      if(!igmIds.includes(r.audit_type))return false;
+      if(dateFrom&&r.date<dateFrom)return false;
+      if(dateTo&&r.date>dateTo)return false;
+      return true;
+    });
+
+    // Aggregate data from all calups across all audits
+    var totals={da:0,nu:0,tot:0,fr:0,sp:0,man:0};
+    var perMoment={};WHO_MOM.forEach(function(m){perMoment[m.id]={da:0,nu:0,tot:0}});
+    var perCat={};
+    var perSec={};
+
+    allAud.forEach(function(aud){
+      var sections=aud.sections||[];
+      sections.forEach(function(sec){
+        if(secFilter&&sec.id!==secFilter)return;
+        var secName=sec.name||rSec(sec.id);
+        if(!perSec[secName])perSec[secName]={da:0,nu:0,tot:0};
+        (sec.calups||[]).forEach(function(cal){
+          if(catFilter&&cal.cat!==catFilter)return;
+          if(!perCat[cal.cat||'?'])perCat[cal.cat||'?']={da:0,nu:0,tot:0,fr:0,sp:0};
+          WHO_MOM.forEach(function(m){
+            if(momFilter&&m.id!==momFilter)return;
+            var obs=cal[m.id];if(!obs||!obs.val)return;
+            var isDA=obs.val==='DA';
+            totals.tot++;totals.da+=isDA?1:0;totals.nu+=isDA?0:1;
+            if(isDA&&obs.met==='FR')totals.fr++;
+            if(isDA&&obs.met==='SP')totals.sp++;
+            if(!isDA&&obs.man)totals.man++;
+            perMoment[m.id].tot++;perMoment[m.id].da+=isDA?1:0;perMoment[m.id].nu+=isDA?0:1;
+            perCat[cal.cat||'?'].tot++;perCat[cal.cat||'?'].da+=isDA?1:0;perCat[cal.cat||'?'].nu+=isDA?0:1;
+            if(isDA&&obs.met==='FR')perCat[cal.cat||'?'].fr++;
+            if(isDA&&obs.met==='SP')perCat[cal.cat||'?'].sp++;
+            perSec[secName].tot++;perSec[secName].da+=isDA?1:0;perSec[secName].nu+=isDA?0:1;
+          });
+        });
+      });
+    });
+
+    if(totals.tot===0){hideGen();alert(isEN?'No data found with selected filters.':'Nu s-au gasit date cu filtrele selectate.');return}
+
+    var pct=totals.tot>0?Math.round(totals.da/totals.tot*1000)/10:0;
+    var pctColor=pct>=80?'16A34A':pct>=60?'F59E0B':'DC2626';
+
+    // Build Word document
+    var {Document,Paragraph,Table,TableRow,TableCell,WidthType,TextRun,AlignmentType,HeadingLevel,BorderStyle}=docx;
+    var filterDesc=(dateFrom||dateTo?('Perioada: '+(dateFrom||'...')+' — '+(dateTo||'...')):'Anul '+A.year)+
+      (secFilter?' | Sectia: '+rSec(secFilter):'')+
+      (catFilter?' | Categorie: '+catFilter:'')+
+      (momFilter?' | Moment: '+momFilter.toUpperCase():'');
+
+    var children=[
+      ...wCover('Raport Complianta\nIgiena Mainilor — OMS 5 Momente',CFG.hospital_name+(CFG.hospital_short?' ('+CFG.hospital_short+')':''),'0D9488'),
+      new Paragraph({text:filterDesc,spacing:{before:200,after:200},style:'Normal'}),
+      // Summary table
+      new Paragraph({text:'Rezultate Generale',heading:HeadingLevel.HEADING_2,spacing:{before:300,after:100}}),
+      ...wTblHead(['Indicator','Valoare'],[5000,5000]),
+      ...wTblRow(['Total oportunitati observate',String(totals.tot)],[5000,5000]),
+      ...wTblRow(['Conforme (DA)',String(totals.da)],[5000,5000],true),
+      ...wTblRow(['Neconforme (NU)',String(totals.nu)],[5000,5000]),
+      ...wTblRow(['COMPLIANTA',pct+'%'],[5000,5000],true),
+      ...wTblRow(['Metoda FR (frecare SHA)',String(totals.fr)],[5000,5000]),
+      ...wTblRow(['Metoda SP (spalare)',String(totals.sp)],[5000,5000],true),
+      ...wTblRow(['Manusi utilizate (la NU)',String(totals.man)],[5000,5000]),
+      // Per moment
+      new Paragraph({text:'Complianta per Moment OMS',heading:HeadingLevel.HEADING_2,spacing:{before:400,after:100}}),
+      ...wTblHead(['Moment','Oportunitati','Conforme','%'],[3000,2500,2500,2000])
+    ];
+    WHO_MOM.forEach(function(m,i){
+      var d=perMoment[m.id];var p=d.tot>0?Math.round(d.da/d.tot*1000)/10:0;
+      children.push(...wTblRow([m.id.toUpperCase()+' — '+(isEN?m.label_en:m.label_ro),String(d.tot),String(d.da),p+'%'],[3000,2500,2500,2000],i%2===1));
+    });
+    // Per professional category
+    var catKeys=Object.keys(perCat).sort();
+    if(catKeys.length>0){
+      children.push(new Paragraph({text:'Complianta per Categorie Profesionala',heading:HeadingLevel.HEADING_2,spacing:{before:400,after:100}}));
+      children.push(...wTblHead(['Categorie','Oportunitati','Conforme','%','FR','SP'],[2500,1500,1500,1500,1500,1500]));
+      catKeys.forEach(function(k,i){
+        var d=perCat[k];var p=d.tot>0?Math.round(d.da/d.tot*1000)/10:0;
+        children.push(...wTblRow([k,String(d.tot),String(d.da),p+'%',String(d.fr||0),String(d.sp||0)],[2500,1500,1500,1500,1500,1500],i%2===1));
+      });
+    }
+    // Per section
+    var secKeys=Object.keys(perSec).sort();
+    if(secKeys.length>0){
+      children.push(new Paragraph({text:'Complianta per Sectie',heading:HeadingLevel.HEADING_2,spacing:{before:400,after:100}}));
+      children.push(...wTblHead(['Sectie','Oportunitati','Conforme','%'],[4000,2000,2000,2000]));
+      secKeys.forEach(function(k,i){
+        var d=perSec[k];var p=d.tot>0?Math.round(d.da/d.tot*1000)/10:0;
+        children.push(...wTblRow([k,String(d.tot),String(d.da),p+'%'],[4000,2000,2000,2000],i%2===1));
+      });
+    }
+    children.push(new Paragraph({text:'',spacing:{before:200}}));
+    children.push(new Paragraph({text:'Numar audituri incluse: '+allAud.length,spacing:{before:100}}));
+    children.push(...wSigBlock());
+
+    var doc=makeDoc(children,'Raport Complianta Igiena Mainilor','RaportIGM');
+    await saveDocx(doc,'Raport_Complianta_IGM_'+A.year+'.docx');
+  }catch(e){console.error(e);alert('Eroare: '+e.message)}
+  finally{hideGen()}
+}
+
 async function genAuditWordGeneric(r){
   showGen('Se genereaza raport Audit...');
   try{
@@ -9032,7 +9314,7 @@ async function genAuditBlankForm(ipcCatId){
     var {Table,WidthType}=docx;
     var catName=_audCatName(ipcCatId);
     var at=_audCatAuditType(ipcCatId);
-    var items=AUDIT_ITEMS[at]||[];
+    var items=AUDIT_ITEMS[at]||HII_ITEMS[at]||[];
     var tW=[500,4000,1200,800,800,800,2000];
     var headCells=[T('aud_nr_crt'),T('aud_element'),T('aud_referinta'),'C','NC','N/A',T('aud_nota')];
     var rows=[wTblHead(headCells,tW)];
@@ -10640,11 +10922,13 @@ async function rCfg(el){
   '</div></div>'+
 
   '<div class="pn" id="cfg-des"><div class="ph"><h3>Coduri Deseuri</h3><span style="font-size:11px;color:var(--txtL);margin-left:8px">Ordinul 1226/2012</span></div><div class="pb">'+
-    '<table class="dt"><thead><tr><th style="min-width:90px">Cod</th><th>Denumire</th><th style="min-width:100px">Categorie</th><th style="min-width:60px">Tip</th><th style="min-width:50px">Actiuni</th></tr></thead>'+
+    '<div class="ib inf" style="margin-bottom:10px">Activeaza/dezactiveaza codurile care apar in modulul Deseuri. Codurile 18 01 08* si 18 01 09 — cantitatile de medicamente de la populatie se raporteaza separat catre DSP conform Instructiunii nr. 6.226/2024 si Deciziei 2014/955/UE.</div>'+
+    '<table class="dt"><thead><tr><th style="width:50px">Activ</th><th style="min-width:90px">Cod</th><th>Denumire</th><th style="min-width:100px">Categorie</th><th style="min-width:60px">Tip</th><th style="min-width:50px">&#215;</th></tr></thead>'+
     '<tbody>'+CFG.waste_codes.map((w,i)=>{
       var catBg=w.category==='periculos'?'#D32F2F':w.category==='reciclabil'?'#2E7D32':'#1565C0';
       var catLabel=w.category==='periculos'?'Periculos':w.category==='reciclabil'?'Reciclabil':'Nepericulos';
-      return '<tr>'+
+      return '<tr style="'+(w.active===false?'opacity:.5':'')+'">'+
+      '<td style="text-align:center"><input type="checkbox" '+(w.active!==false?'checked':'')+' onchange="CFG.waste_codes['+i+'].active=this.checked;saveCfg();render()" style="accent-color:var(--teal);width:16px;height:16px"></td>'+
       '<td>'+(w.standard?'<strong>'+w.code+'</strong>':'<input value="'+w.code+'" onchange="CFG.waste_codes['+i+'].code=this.value;CFG.waste_codes['+i+'].dangerous=CFG.waste_codes['+i+'].category===\'periculos\'" style="border:1px solid var(--brd);border-radius:4px;padding:4px;width:100%;font-size:12px">')+'</td>'+
       '<td>'+(w.standard?'<span style="font-size:12px">'+w.name+'</span>':'<input value="'+w.name+'" onchange="CFG.waste_codes['+i+'].name=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px;width:100%;font-size:12px">')+'</td>'+
       '<td>'+(w.standard?'<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;background:'+catBg+'">'+catLabel+'</span>':'<select onchange="CFG.waste_codes['+i+'].category=this.value;CFG.waste_codes['+i+'].dangerous=this.value===\'periculos\'" style="border:1px solid var(--brd);border-radius:4px;padding:4px;font-size:12px"><option value="periculos"'+(w.category==='periculos'?' selected':'')+'>Periculos</option><option value="nepericulos"'+(w.category==='nepericulos'?' selected':'')+'>Nepericulos</option><option value="reciclabil"'+(w.category==='reciclabil'?' selected':'')+'>Reciclabil</option></select>')+'</td>'+
@@ -12256,6 +12540,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.2',date:'2026-03-26',notes:'NOU: IAAM — Sectia de dobandire (atribuire epidemiologica) cu coloana separata si toggle timeline\nNOU: 7 audituri Interventii cu Impact Major (APCI): IAP/VAP, CVP, CVC, SSI, SST, ITU, ATB\nNOU: 66 elemente audit predefinite bazate pe dovezi cu sectiuni (Insertie/Ingrijire/Preoperator)\nNOU: Raport Word Complianta Igiena Mainilor cu filtre: perioada, sectie, categorie, moment OMS'},
+  {version:'12.1',date:'2026-03-26',notes:'NOU: IAAM tabel — coloana Nr. Inregistrare (registru) vizibila in lista cazuri\nNOU: IAAM tabel — sortare pe orice coloana (click pe header, sageata directie)\nNOU: IAAM cautare — include si nr. inregistrare\nNOU: Deseuri — checkbox Activ per cod (selecteaza care apar in modul)\nNOU: Deseuri — nota Instructiunea 6.226/2024 pe 18 01 08*/09 (medicamente populatie)'},
   {version:'12.0',date:'2026-03-26',notes:'FIX: Dark mode — preferinta per browser, nu mai vine din fisierul sincronizat\nFIX: Hover capete tabel — textul nu mai devine invizibil\nFIX: Notificari — marcheaza citite persista, nu revin la navigare\nFIX: Reconectare JSON — Combina conecteaza si fisierul daca era deconectat\nNOU: Dashboard — filtre Azi/Maine/7/30/90 zile pe evenimente cu contoare\nNOU: Toolbar — butoane Salveaza si Backup cu iconite\nNOU: Config — navigare rapida (quick-jump) catre orice sectiune\nNOU: Autocontrol — dropdown sectii grupat Spital/Ambulatoriu\nNOU: Autocontrol — prefix (A) in liste netestate pentru cabinete\nNOU: Dropdowns sortate alfabetic\nNOU: Coduri deseuri predefinite Ordinul 1226/2012'},
   {version:'11.9',date:'2026-03-25',notes:'NOU: Configurare — structuri spital impartite in I. Spital si II. Ambulatoriu (cabinete separate)\nNOU: Autocontrol — doua matrice separate Spital si Ambulatoriu cu filtre (Conforme/NC/NC>25%/Netestat)\nNOU: Buton Adauga sectie/cabinet si jos langa Salveaza (nu doar in header)\nFIX: Reconectare JSON — pill galben mai clar (Click pentru reconectare) + stare galbena in config\nFIX: Restaurare file handle mai robusta la refresh'},
   {version:'11.8',date:'2026-03-24',notes:'FIX: Data tratament ATB — campul date nu mai pierde focusul\nFIX: Obiective SMART — click pe inputuri nu mai colapeseaza obiectivul\nFIX: Reconectare JSON — config arata verde dupa reconectare\nFIX: Cronologie IAAM — luna raportarii se sincronizeaza cu data internarii\nNOU: Pas 9 IAAM structurat — checkboxes izolare/echipamente + dropdowns precautiuni/biocide/reinstruire\nNOU: Checkbox fara contacti (IAAM nu mai ramane la 90%)\nNOU: Roluri Medic Boli Infectioase si Asistent Igiena\nNOU: 12 tipuri structuri spital (laborator, bloc alimentar, spalatorie, cabinete etc)\nNOU: Data raportarii CPIAAM + obiectiv raportare 24h auto'},

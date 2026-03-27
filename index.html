@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.13</title>
+<title>CPIAAM Management v12.14</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Comitetul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1861,7 +1861,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.13';
+const APP_VERSION='12.14';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -12842,6 +12842,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.14',date:'2026-03-27',notes:'FIX: Iconita PWA pe desktop Windows — generate PNG 192x192 si 512x512 (scut teal cu cruce alba)\nFIX: manifest.json cu PNG prioritar fata de SVG'},
   {version:'12.13',date:'2026-03-27',notes:'FIX: Banner update pe versiunea online — buton "Reincarca pagina" in loc de "Descarca acum" (actualizare prin Service Worker, nu descarcare HTML)'},
   {version:'12.12',date:'2026-03-27',notes:'NOU: Buton "Instaleaza" vizibil in toolbar pe versiunea online — apare automat cand browserul permite instalarea, dispare dupa instalare'},
   {version:'12.11',date:'2026-03-27',notes:'FIX: Schimbare fisier sync — numele spitalului se importa din fisierul nou (nu mai ramane cel vechi)'},

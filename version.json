@@ -1,10 +1,10 @@
 {
-  "version": "12.13",
+  "version": "12.14",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
+    "FIX: Iconita PWA pe desktop Windows — PNG 192x192 si 512x512 (scut teal cu cruce alba)",
     "FIX: Banner update pe versiunea online — 'Reincarca pagina' in loc de 'Descarca acum'",
     "NOU: Buton 'Instaleaza' vizibil in toolbar pe versiunea online",
-    "FIX: Schimbare fisier sync — numele spitalului se importa din fisierul nou",
-    "NOU: Iconita PWA + PWA offline complet"
+    "FIX: Schimbare fisier sync — numele spitalului se importa din fisierul nou"
   ]
 }

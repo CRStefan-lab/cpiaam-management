@@ -1,14 +1,20 @@
 {
-  "version": "12.2",
+  "version": "12.3",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: IAAM — Sectia de dobandire (atribuire epidemiologica) — camp separat in formular",
-    "NOU: IAAM tabel — coloana Atribuire sortabila, evidentiata cand difera de raportoare",
-    "NOU: IAAM cronologie — toggle Raportoare/Dobandire pentru grupare pe sectia corecta",
-    "NOU: Dashboard — grafic IAAM per sectie foloseste sectia de dobandire",
-    "NOU: 7 audituri Interventii cu Impact Major (APCI/Saving Lives): IAP, CVP, CVC, SSI, SST, ITU, ATB",
-    "NOU: 66 elemente de audit predefinite bazate pe dovezi, cu sectiuni (Insertie/Ingrijire/Preoperator etc.)",
-    "NOU: Raport Word Complianta Igiena Mainilor cu filtre: perioada, sectie, categorie personal, moment OMS",
-    "NOU: Raport IGM agrega date din toate auditurile: per moment, per categorie, per sectie"
+    "NOU: Autocontrol — probe aplicabile per sectie (matrice checkboxuri in Configurare)",
+    "NOU: Autocontrol — celule N/A in matrice pentru combinatii neaplicabile (vizual distinct de netestat)",
+    "NOU: Autocontrol — 3 butoane dialog proba: Anuleaza / Salveaza+Noua / Salveaza",
+    "NOU: Autocontrol — camp Nr. inregistrare pe fiecare proba + afisare in popup",
+    "NOU: Biocide — documente multiple per tip atasament (aviz, fisa tehnica, SDS)",
+    "NOU: Biocide — avize producator vizibile in dialogul de editare",
+    "NOU: Sync — smart merge config arrays (sectii, produse biocide, tipuri probe)",
+    "NOU: Reconectare automata la primul click dupa restart browser",
+    "FIX: Precautiuni implementate (IAAM pas 9) se salveaza si se reafiseaza corect",
+    "FIX: Setup wizard — import backup functioneaza pe versiunea locala (file://)",
+    "FIX: Previzualizare JSON — doar citire, fara buton de combinare",
+    "UX: Buton backup — iconita noua si denumire Salvare back-up",
+    "UX: Coloana Neconformitati redenumita Detalii proba in autocontrol",
+    "UX: Cabinete ambulatoriu — prefix Cab. automat in dropdown-uri si afisare"
   ]
 }

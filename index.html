@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.2</title>
+<title>CPIAAM Management v12.3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -144,6 +144,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .ac-cell-yl{background:#FAEEDA;color:#633806}
 .ac-cell-rd{background:#F7C1C1;color:#791F1F}
 .ac-cell-gr{background:var(--bg);color:#9CA3AF}
+.ac-cell-na{background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 6px);color:#D1D5DB;font-size:9px;font-style:italic}
 /* Cell popup */
 .ac-popup{position:absolute;z-index:999;background:var(--card);border:1px solid var(--brd);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:12px 14px;min-width:220px;max-width:340px;font-size:12px}
 .ac-popup-title{font-weight:700;color:var(--navy);margin-bottom:8px;font-size:13px;display:flex;justify-content:space-between;align-items:center}
@@ -349,7 +350,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dark .dash-cfg-panel{border-color:#334155}.dark .dash-cfg-panel label{color:#94A3B8}
 .dark .cal-nav button{border-color:#475569;color:#CBD5E1}.dark .cal-nav button:hover{background:#334155;border-color:#2DD4BF}
 .dark .ac-cell-gn{background:#1A3D1A;color:#86EFAC}.dark .ac-cell-yl{background:#3D2E0A;color:#FCD34D}
-.dark .ac-cell-rd{background:#450A0A;color:#FCA5A5}.dark .ac-cell-gr{background:#1E293B;color:#64748B}
+.dark .ac-cell-rd{background:#450A0A;color:#FCA5A5}.dark .ac-cell-gr{background:#1E293B;color:#64748B}.dark .ac-cell-na{background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(255,255,255,.04) 3px,rgba(255,255,255,.04) 6px);color:#475569}
 .dark .ac-matrix td:first-child{background:#0F172A;color:#CBD5E1}
 .dark .ac-matrix th{background:#0F172A}
 .dark .ac-collapse-hdr{color:var(--txt)}.dark .ac-summary-hdr{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:#FCD34D}.dark .ac-summary-hdr strong{color:#FBBF24}
@@ -989,7 +990,7 @@ body{display:block!important;background:#fff!important}
       <button class="tb-icon" onclick="toggleLang()" title="Schimba limba / Switch language" id="btn-lang">RO</button>
       <button class="tb-icon" onclick="toggleDark()" title="Mod zi/noapte" id="btn-dark">&#9728;&#65039;</button>
       <button class="tb-icon" onclick="toolbarSave()" title="Salveaza datele acum" id="btn-save" style="font-size:14px">&#128190;</button>
-      <button class="tb-icon" onclick="toolbarBackup()" title="Descarca backup JSON" id="btn-bkp" style="font-size:14px">&#128229;</button>
+      <button class="tb-icon" onclick="toolbarBackup()" title="Salvare back-up" id="btn-bkp" style="font-size:14px">⏬</button>
       <div class="tb-sep"></div>
       <div class="yr-nav">
         <button onclick="changeYear(-1)" title="Anul anterior">&#9664;</button>
@@ -1230,6 +1231,16 @@ function syncIndicatorClick(){
 function toggleSyncMenu(){const m=document.getElementById('sync-menu');if(!m)return;m.classList.toggle('sh')}
 function closeSyncMenu(){const m=document.getElementById('sync-menu');if(m)m.classList.remove('sh')}
 document.addEventListener('click',function(e){if(!e.target.closest('#sync-indicator')&&!e.target.closest('#sync-menu'))closeSyncMenu()});
+// Auto-reconnect on first user interaction (needs user gesture for permission)
+var _autoReconnectDone=false;
+document.addEventListener('click',async function(){
+  if(_autoReconnectDone||_fileHandle||!CFG.sync_file_name)return;
+  _autoReconnectDone=true;
+  const stored=await loadFileHandle();if(!stored)return;
+  try{const perm=await stored.requestPermission({mode:'readwrite'});
+    if(perm==='granted'){_fileHandle=stored;await _syncAfterReconnect();showToast('Reconectat automat la '+stored.name)}
+  }catch(e){}
+},{once:false});
 function disconnectSync(){stopSyncPoll();_fileHandle=null;CFG.sync_file_name='';saveCfg();updateSyncIndicator();render()}
 async function syncReconnect(){
   if(!window.showOpenFilePicker){alert('Browserul nu suporta File System Access API.');return}
@@ -1396,8 +1407,7 @@ async function _fileActionPreview(){
     h+='</div>';
     closeM();
     openM(isEN?'File Preview (read-only)':'Previzualizare fisier (doar citire)',h,
-      '<button class="btn bo" onclick="_pendingFileHandle=null;closeM()">'+(isEN?'Close':'Inchide')+'</button>'+
-      '<button class="btn bp" onclick="closeM();_fileActionMerge()">'+(isEN?'Import & Merge':'Importa si combina')+'</button>');
+      '<button class="btn bo" onclick="_pendingFileHandle=null;closeM()">'+(isEN?'Close':'Inchide')+'</button>');
   }catch(e){alert('Eroare citire: '+e.message);_pendingFileHandle=null;closeM()}
 }
 // ── Option 2: Merge (import without changing connection) ──
@@ -1487,9 +1497,39 @@ async function _fileActionSwitch(){
     startSyncPoll();
   }catch(e){alert((isEN?'Error switching file: ':'Eroare la schimbarea fisierului: ')+e.message)}
 }
+// Smart merge config arrays by ID — adds new items, updates existing by _modifiedAt
+function _smartMergeCfg(local,remote){
+  const arrayKeys=['sections','biocide_products','probe_types','waste_codes','doc_categories','infection_types'];
+  arrayKeys.forEach(key=>{
+    if(!remote[key]||!Array.isArray(remote[key]))return;
+    if(!local[key]||!Array.isArray(local[key])){local[key]=remote[key];return}
+    const localArr=local[key];const remoteArr=remote[key];
+    // Build local map by id or name
+    const localMap={};localArr.forEach((item,i)=>{
+      const k=typeof item==='string'?item:(item.id||item.name||JSON.stringify(item));
+      localMap[k]={item,idx:i};
+    });
+    remoteArr.forEach(rItem=>{
+      const k=typeof rItem==='string'?rItem:(rItem.id||rItem.name||JSON.stringify(rItem));
+      if(!localMap[k]){
+        // New item from remote — add it
+        localArr.push(rItem);
+      } else if(typeof rItem==='object'&&rItem._modifiedAt){
+        // Existing item — update if remote is newer
+        const lItem=localMap[k].item;
+        if(!lItem._modifiedAt||rItem._modifiedAt>lItem._modifiedAt){
+          localArr[localMap[k].idx]=rItem;
+        }
+      }
+    });
+    delete remote[key]; // prevent Object.assign from overwriting
+  });
+  // Merge remaining scalar fields
+  Object.assign(local,remote);
+}
 async function _importFromHandle(fh,skipReload){
   const file=await fh.getFile();const text=await file.text();const d=JSON.parse(text);
-  if(d.config){const cfg=_extractCfg(d.config);if(cfg)Object.assign(CFG,cfg);CFG.sync_file_name=fh.name;await saveCfg()}
+  if(d.config){const cfg=_extractCfg(d.config);if(cfg){_smartMergeCfg(CFG,cfg);CFG.sync_file_name=fh.name;await saveCfg()}}
   // Support old format keys → remap to current store names
   const oldMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
   for(const[key,store] of Object.entries(oldMap)){if(d[key]&&!d[store])d[store]=d[key]}
@@ -1802,7 +1842,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.2';
+const APP_VERSION='12.3';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -2766,7 +2806,7 @@ function logActivity(text){
 function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activity')||'[]')}
 
 // Resolve ID→name for each config type. Returns name or '(dezactivat)' if not found.
-function rSec(id){if(!id)return '—';const s=CFG.sections.find(x=>x.id===id)||CFG.sections.find(x=>x.name===id);return s?(s.name||s.id):id}
+function rSec(id){if(!id)return '—';const s=CFG.sections.find(x=>x.id===id)||CFG.sections.find(x=>x.name===id);return s?_secDisplayName(s):id}
 function secLabel(secId){const sec=CFG.sections.find(s=>s.id===secId)||CFG.sections.find(s=>s.name===secId);if(!sec)return 'Sectia —';const t=sec.type||'sectie';const prefixes={sectie:'Sectia',compartiment:'Compartimentul',cpu_upu:'CPU/UPU',bloc_operator:'Bloc Operator',bloc_alimentar:'Bloc Alimentar',spalatorie:'Spalatoria',laborator:'Laboratorul',cabinet:'Cabinetul',explorari:'Explorari Functionale',radiologie:'Radiologie/Imagistica',serviciu:'Serviciul',altul:''};return (prefixes[t]||'Sectia')+' '+(sec.name||sec.id)}
 const ROLE_MAP={coordinator:'Coordonator CPIAAM',medic_bi:'Medic Boli Infectioase',asistent_igiena:'Asistent Igiena',director_medical:'Director medical',manager:'Manager',sef_sectie:'Sef Sectie',asistent_sef:'Asistent Sef',administrator:'Administrator',responsabil_deseuri:'Responsabil deseuri',other:'Altul'};
 const ROLE_HIDDEN_FROM_USER_MENU=['director_medical','manager'];
@@ -2786,12 +2826,26 @@ function sn(obj){if(!obj)return '—';if(typeof obj==='string')return obj;return
 // Find config item by ID
 function findSec(id){return CFG.sections.find(x=>x.id===id)}
 function findWaste(id){return (CFG.waste_codes||[]).find(x=>x.id===id)}
+// Check if a probe type applies to a section (for autocontrol filtering)
+function isProbeApplicable(secId,ptId){
+  const sec=CFG.sections.find(x=>x.id===secId);
+  if(!sec)return true;
+  const ap=sec.applicable_probes;
+  if(!ap||!Array.isArray(ap)||ap.length===0)return true; // all applicable by default
+  return ap.includes(ptId);
+}
+function getApplicableCombinations(probeTypes,sections){
+  let count=0;
+  probeTypes.forEach(pt=>{sections.forEach(s=>{if(isProbeApplicable(s.id,pt.id))count++})});
+  return count;
+}
 
 // Section helpers — now return IDs
 function secNames(){return CFG.sections.map(s=>sn(s))}
 function secIds(){return CFG.sections.map(s=>s.id)}
-function secOpts(selId){return CFG.sections.slice().sort(function(a,b){return sn(a).localeCompare(sn(b))}).map(s=>'<option value="'+s.id+'" '+(s.id===selId?'selected':'')+'>'+sn(s)+'</option>').join('')}
-function secOptsGrouped(selId){var sp=[],am=[];CFG.sections.forEach(function(s){if(s.type==='cabinet')am.push(s);else sp.push(s)});sp.sort(function(a,b){return sn(a).localeCompare(sn(b))});am.sort(function(a,b){return sn(a).localeCompare(sn(b))});var h='<optgroup label="Spital">'+sp.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+sn(s)+'</option>'}).join('')+'</optgroup>';if(am.length)h+='<optgroup label="Ambulatoriu">'+am.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+sn(s)+'</option>'}).join('')+'</optgroup>';return h}
+function _secDisplayName(s){var n=sn(s);if(s.type==='cabinet'&&!n.startsWith('Cab.'))return 'Cab. '+n;return n}
+function secOpts(selId){return CFG.sections.slice().sort(function(a,b){return _secDisplayName(a).localeCompare(_secDisplayName(b))}).map(s=>'<option value="'+s.id+'" '+(s.id===selId?'selected':'')+'>'+_secDisplayName(s)+'</option>').join('')}
+function secOptsGrouped(selId){var sp=[],am=[];CFG.sections.forEach(function(s){if(s.type==='cabinet')am.push(s);else sp.push(s)});sp.sort(function(a,b){return sn(a).localeCompare(sn(b))});am.sort(function(a,b){return sn(a).localeCompare(sn(b))});var h='<optgroup label="Spital">'+sp.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+sn(s)+'</option>'}).join('')+'</optgroup>';if(am.length)h+='<optgroup label="Ambulatoriu">'+am.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+_secDisplayName(s)+'</option>'}).join('')+'</optgroup>';return h}
 
 // Generic opts from array of {id,name}
 function optsId(arr,selId){return (arr||[]).slice().sort(function(a,b){var na=typeof a==='string'?a:(a.name||a.id||'');var nb=typeof b==='string'?b:(b.name||b.id||'');return na.localeCompare(nb)}).map(v=>{const id=v.id||v.name||v;const nm=v.name||v.id||v;const sel=id===selId||nm===selId;return '<option value="'+id+'" '+(sel?'selected':'')+'>'+nm+'</option>'}).join('')}
@@ -3722,7 +3776,7 @@ function renderIaamSection(step){
     {var bioProds=(CFG.biocide_products||[]).map(function(p){return '<option value="'+esc(p.name||p.id)+'"'+(d.biocide_used===(p.name||p.id)?' selected':'')+'>'+esc(p.name||p.id)+'</option>'}).join('');
     h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
       '<div class="fg"><label>Izolare pacient</label><div style="margin-top:4px"><label style="cursor:pointer;display:flex;align-items:center;gap:6px"><input type="checkbox" id="f-izolare" '+(d.isolation?'checked':'')+' style="accent-color:var(--teal);width:16px;height:16px"> DA — pacient izolat</label></div></div>'+
-      '<div class="fg"><label>Precautiuni implementate</label><select id="f-precautiuni"><option value="">— selecteaza —</option><option'+(d.precautions==='Standard'?' selected':'')+'>Standard</option><option'+(d.precautions==='Contact'?' selected':'')+'>Precautiuni de contact</option><option'+(d.precautions==='Aeriene'?' selected':'')+'>Precautiuni aeriene</option><option'+(d.precautions==='Picatura'?' selected':'')+'>Precautiuni de picatura</option><option'+(d.precautions==='Contact+Aeriene'?' selected':'')+'>Contact + Aeriene</option><option'+(d.precautions==='Contact+Picatura'?' selected':'')+'>Contact + Picatura</option></select></div>'+
+      '<div class="fg"><label>Precautiuni implementate</label><select id="f-precautiuni"><option value="">— selecteaza —</option><option value="Standard"'+(d.precautions==='Standard'?' selected':'')+'>Standard</option><option value="Contact"'+((d.precautions==='Contact'||d.precautions==='Precautiuni de contact')?' selected':'')+'>Precautiuni de contact</option><option value="Aeriene"'+((d.precautions==='Aeriene'||d.precautions==='Precautiuni aeriene')?' selected':'')+'>Precautiuni aeriene</option><option value="Picatura"'+((d.precautions==='Picatura'||d.precautions==='Precautiuni de picatura')?' selected':'')+'>Precautiuni de picatura</option><option value="Contact+Aeriene"'+((d.precautions==='Contact+Aeriene'||d.precautions==='Contact + Aeriene')?' selected':'')+'>Contact + Aeriene</option><option value="Contact+Picatura"'+((d.precautions==='Contact+Picatura'||d.precautions==='Contact + Picatura')?' selected':'')+'>Contact + Picatura</option></select></div>'+
       '<div class="fg"><label>Echipamente protectie utilizate</label><div style="margin-top:4px"><label style="cursor:pointer;display:flex;align-items:center;gap:6px"><input type="checkbox" id="f-epp" '+(d.ppe_used?'checked':'')+' style="accent-color:var(--teal);width:16px;height:16px"> DA</label></div></div>'+
       '<div class="fg"><label>Curatenie terminala efectuata</label><div style="margin-top:4px"><label style="cursor:pointer;display:flex;align-items:center;gap:6px"><input type="checkbox" id="f-curatenie" '+(d.terminal_cleaning?'checked':'')+' style="accent-color:var(--teal);width:16px;height:16px"> DA</label></div></div>'+
       '<div class="fg"><label>Biocide utilizate</label><select id="f-biocid"><option value="">— selecteaza —</option><option value="Conform PO intern"'+(d.biocide_used==='Conform PO intern'?' selected':'')+'>Conform PO intern</option>'+bioProds+'<option value="Altul"'+(d.biocide_used==='Altul'?' selected':'')+'>Altul</option></select></div>'+
@@ -4841,7 +4895,9 @@ async function rAuto(el){
   const testedSections=new Set(data.map(r=>r.section));
   const secCov=testedSections.size,secTotal=sections.length,secPct=secTotal>0?Math.round(secCov/secTotal*100):0;
   const testedTypes=new Set(data.map(r=>r.probe_type));
-  const typCov=testedTypes.size,typTotal=probeTypes.length,typPct=typTotal>0?Math.round(typCov/typTotal*100):0;
+  // Count only probe types that have at least one applicable section
+  const applicableTypes=probeTypes.filter(pt=>sections.some(s=>isProbeApplicable(s.id,pt.id)));
+  const typCov=testedTypes.size,typTotal=applicableTypes.length,typPct=typTotal>0?Math.round(typCov/typTotal*100):0;
   const ncByTSQ={};
   allData.filter(r=>r.result==='neconform').forEach(r=>{const k=r.probe_type+'|||'+r.section;const q=r.quarter||Math.ceil(r.month/3);if(!ncByTSQ[k])ncByTSQ[k]=new Set();ncByTSQ[k].add(q)});
   const recurringNC=Object.entries(ncByTSQ).filter(([,qs])=>qs.size>1).length;
@@ -4885,13 +4941,14 @@ async function rAuto(el){
 // ═══ TAB 1 — PREZENTARE ═══
 function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
   let h='';
-  // Count untested
+  // Count untested (skip non-applicable combinations)
   let untestedCount=0;const untestedByType={};
   probeTypes.forEach(pt=>{sections.forEach(s=>{
+    if(!isProbeApplicable(s.id,pt.id))return; // skip N/A
     const c=matrix[pt.id]&&matrix[pt.id][s.id];
     if(!c||c.total===0){untestedCount++;if(!untestedByType[pt.id])untestedByType[pt.id]=[];untestedByType[pt.id].push(s)}
   })});
-  const totalCombos=probeTypes.length*sections.length;
+  const totalCombos=getApplicableCombinations(probeTypes,sections);
 
   // A. SUMAR COLAPSABIL — compact
   if(untestedCount>0){
@@ -4900,7 +4957,8 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
     probeTypes.forEach(pt=>{
       const us=untestedByType[pt.id];
       if(!us||us.length===0)return;
-      if(us.length===sections.length) fullyUntested.push(pt);
+      var applicableSecs=sections.filter(s=>isProbeApplicable(s.id,pt.id)).length;
+      if(us.length>=applicableSecs) fullyUntested.push(pt);
       else partialUntested.push({pt,sections:us});
     });
 
@@ -4978,7 +5036,8 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
       filteredSec.forEach(function(s){
         var cell=matrix[pt.id]&&matrix[pt.id][s.id]?matrix[pt.id][s.id]:{total:0,conf:0,nc:0};
         var cls,txt;
-        if(cell.total===0){cls='ac-cell-gr';txt='—'}
+        if(!isProbeApplicable(s.id,pt.id)){cls='ac-cell-na';txt='N/A'}
+        else if(cell.total===0){cls='ac-cell-gr';txt='—'}
         else{
           var ncPct=cell.nc/cell.total*100;
           if(ncPct===0){cls='ac-cell-gn';txt=cell.total}
@@ -5035,9 +5094,10 @@ function showAutoPopup(evt,ptId,secId){
     records.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 
     let html='<div class="ac-popup-title"><span>'+rProbe(ptId)+' — '+rSec(secId)+'</span><button class="ac-popup-close" onclick="closeAutoPopup()">&times;</button></div>';
-    html+='<table><thead><tr><th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Result':'Rezultat')+'</th><th>'+(isEN?'Pathogen':'Germen')+'</th></tr></thead><tbody>';
+    html+='<table><thead><tr><th>'+(isEN?'Reg. No.':'Nr. Inreg.')+'</th><th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Result':'Rezultat')+'</th><th>'+(isEN?'Pathogen':'Germen')+'</th></tr></thead><tbody>';
     records.forEach(r=>{
-      html+='<tr><td>'+(r.date||MO[r.month-1]||'—')+'</td><td>'+(r.result==='conform'?'<span class="bdg bdg-g">C</span>':'<span class="bdg bdg-r">NC</span>')+'</td><td>'+(r.organism||'—')+'</td></tr>';
+      const regDisp=r.reg_number?r.reg_number:'—';
+      html+='<tr><td>'+regDisp+'</td><td>'+(r.date||MO[r.month-1]||'—')+'</td><td>'+(r.result==='conform'?'<span class="bdg bdg-g">C</span>':'<span class="bdg bdg-r">NC</span>')+'</td><td>'+(r.organism||'—')+'</td></tr>';
     });
     html+='</tbody></table>';
     if(records.length===0) html+='<div style="color:var(--txtL);text-align:center;padding:8px">—</div>';
@@ -5112,6 +5172,7 @@ function renderAutoTab2(data,allData,matrix,probeTypes,sections,isEN,qLabel){
   const curQTested=new Set(curQData.map(r=>r.probe_type+'|||'+r.section));
   const planA=[];
   probeTypes.forEach(pt=>{sections.forEach(s=>{
+    if(!isProbeApplicable(s.id,pt.id))return; // skip N/A
     if(!curQTested.has(pt.id+'|||'+s.id)){planA.push({ptId:pt.id,secId:s.id,ptName:sn(pt),secName:sn(s)})}
   })});
 
@@ -5128,6 +5189,7 @@ function renderAutoTab2(data,allData,matrix,probeTypes,sections,isEN,qLabel){
   const sixMonthsAgo=new Date();sixMonthsAgo.setMonth(sixMonthsAgo.getMonth()-6);
   const planC=[];
   probeTypes.forEach(pt=>{sections.forEach(s=>{
+    if(!isProbeApplicable(s.id,pt.id))return; // skip N/A
     const recs=allData.filter(r=>r.probe_type===pt.id&&r.section===s.id);
     if(recs.length===0){planC.push({ptId:pt.id,secId:s.id,ptName:sn(pt),secName:sn(s),last:isEN?'never':'niciodata'});return}
     const lastRec=recs.sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
@@ -5287,7 +5349,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
       '<th class="ac-sortable" onclick="setAutoSort(\'type\')">'+(isEN?'Sample Type':'Tip Proba')+sortArr('type')+'</th>'+
       '<th class="ac-sortable" onclick="setAutoSort(\'section\')">'+(isEN?'Section':'Sectie')+sortArr('section')+'</th>'+
       '<th class="ac-sortable" onclick="setAutoSort(\'result\')">'+(isEN?'Result':'Rezultat')+sortArr('result')+'</th>'+
-      '<th class="ac-sortable" onclick="setAutoSort(\'organism\')">'+(isEN?'Details':'Neconformitati')+sortArr('organism')+'</th>'+
+      '<th class="ac-sortable" onclick="setAutoSort(\'organism\')">'+(isEN?'Sample details':'Detalii proba')+sortArr('organism')+'</th>'+
       '<th>'+(isEN?'Actions':'Actiuni')+'</th>'+
     '</tr></thead><tbody>';
     pageData.forEach((r,i)=>{
@@ -5348,6 +5410,7 @@ async function editAuto(id){
     '<div class="fr3"><div class="fg"><label>'+(isEN?'Sample Date':'Data recoltare')+'</label><input type="date" id="f-auto-dt" value="'+(r.date||'')+'" onchange="autoDateChanged()"></div>'+
     '<div class="fg"><label>'+(isEN?'Quarter':'Trimestru')+'</label><select id="f-auto-q">'+[1,2,3,4].map(q=>'<option value="'+q+'" '+(r.quarter===q?'selected':'')+'>T'+q+'</option>').join('')+'</select></div>'+
     '<div class="fg"><label>'+(isEN?'Month':'Luna')+'</label><select id="f-auto-mo">'+moOpts(r.month)+'</select></div></div>'+
+    '<div class="fg"><label>'+(isEN?'Registration No.':'Nr. inregistrare')+'</label><input id="f-auto-reg" value="'+esc(r.reg_number||'')+'" placeholder="'+(isEN?'e.g. 1234/2025':'ex: 1234/2025')+'"></div>'+
     '<div class="fg"><label>'+(isEN?'Sample Details':'Detalii proba')+'</label><input id="f-auto-det" value="'+esc(r.details||'')+'" placeholder="'+(isEN?'e.g. bed room 3, faucet, left wall':'ex: pat salon 3, robinet chiuveta proceduri, perete stang')+'"></div>'+
     '<div class="fr"><div class="fg"><label>'+(isEN?'Result':'Rezultat')+'</label><select id="f-auto-res" onchange="autoResChanged()"><option value="conform" '+(r.result==='conform'?'selected':'')+'>Conform</option><option value="neconform" '+(r.result==='neconform'?'selected':'')+'>Neconform</option></select></div>'+
     '<div class="fg"><label>DSP</label><select id="f-auto-dsp"><option value="false" '+(!r.dsp_parallel?'selected':'')+'>Nu</option><option value="true" '+(r.dsp_parallel?'selected':'')+'>Da</option></select></div></div>'+
@@ -5358,18 +5421,30 @@ async function editAuto(id){
       '<div class="fg"><label>'+(isEN?'Non-conformity details':'Neconformitati detaliate')+'</label><textarea id="f-auto-nc" rows="2" placeholder="'+(isEN?'Describe non-conformities...':'Descrie neconformitatile...')+'">'+(r.nc_details||'')+'</textarea></div>'+
     '</div>'+
     '<div class="fg"><label>'+(isEN?'Notes':'Observatii')+'</label><textarea id="f-auto-n" rows="2">'+(r.notes||'')+'</textarea></div>',
-  '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaza')+'</button><button class="btn bp" onclick="saveAuto('+(id||'null')+')">'+(isEN?'Save':'Salveaza')+'</button>');
+  '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaza')+'</button>'+(!id?'<button class="btn bp" style="background:var(--teal);opacity:.85" onclick="saveAutoAndNew()">'+(isEN?'Save + New':'Salveaza + Noua')+'</button>':'')+
+  '<button class="btn bp" onclick="saveAuto('+(id||'null')+')">'+(isEN?'Save & Close':'Salveaza')+'</button>');
   setTimeout(()=>{addDatePreview('f-auto-dt');attachDirtyTracking()},50);
 }
-async function saveAuto(id){
+async function _collectAutoRec(id){
   const mc=document.getElementById('mdc');
   const v=s=>{const el=mc.querySelector('#'+s);return el?el.value:''};
   const orgSel=v('f-auto-org');const orgCustom=v('f-auto-org-custom').trim();
   const organism=orgSel==='__custom'?orgCustom:(orgSel||'');
-  const rec={year:A.year,quarter:+v('f-auto-q'),month:+v('f-auto-mo'),date:v('f-auto-dt'),probe_type:v('f-auto-tp'),section:v('f-auto-sec'),result:v('f-auto-res'),organism:organism,dsp_parallel:v('f-auto-dsp')==='true',notes:v('f-auto-n').trim(),details:v('f-auto-det').trim()};
+  const rec={year:A.year,quarter:+v('f-auto-q'),month:+v('f-auto-mo'),date:v('f-auto-dt'),probe_type:v('f-auto-tp'),section:v('f-auto-sec'),result:v('f-auto-res'),organism:organism,dsp_parallel:v('f-auto-dsp')==='true',notes:v('f-auto-n').trim(),details:v('f-auto-det').trim(),reg_number:v('f-auto-reg').trim()};
   if(rec.result==='neconform'){rec.nc_details=(mc.querySelector('#f-auto-nc')?.value||'').trim();rec.ufc_count=+v('f-auto-ufc')||null}
-  if(!rec.probe_type||!rec.section){alert('Completeaza tipul si sectia.');return}
-  if(id)rec.id=id;await pt('autocontrol',rec);logActivity((id?'Editat':'Adaugat')+' proba autocontrol — '+rSec(rec.section));closeM();render();
+  if(!rec.probe_type||!rec.section){alert('Completeaza tipul si sectia.');return null}
+  if(id)rec.id=id;return rec;
+}
+async function saveAuto(id){
+  const rec=await _collectAutoRec(id);if(!rec)return;
+  await pt('autocontrol',rec);logActivity((id?'Editat':'Adaugat')+' proba autocontrol — '+rSec(rec.section));closeM();render();
+}
+async function saveAutoAndNew(){
+  const rec=await _collectAutoRec(null);if(!rec)return;
+  await pt('autocontrol',rec);logActivity('Adaugat proba autocontrol — '+rSec(rec.section));
+  const keep={probe_type:rec.probe_type,section:rec.section,date:rec.date,quarter:rec.quarter,month:rec.month};
+  closeM();render();
+  setTimeout(()=>{editAuto(null);setTimeout(()=>{const mc=document.getElementById('mdc');if(!mc)return;const s=(id,val)=>{const el=mc.querySelector('#'+id);if(el)el.value=val};s('f-auto-tp',keep.probe_type);s('f-auto-sec',keep.section);s('f-auto-dt',keep.date);s('f-auto-q',keep.quarter);s('f-auto-mo',keep.month)},100)},100);
 }
 function expAutoCSV(){ga('autocontrol').then(d=>{const rows=d.filter(r=>r.year===A.year);if(!rows.length){alert('Nimic de exportat.');return}
   const csv='\uFEFF'+'Trimestru,Luna,Data,Tip Proba,Sectie,Rezultat,Germen,UFC,Detalii,DSP,Obs\n'+rows.map(r=>r.quarter+','+r.month+',"'+(r.date||'')+'","'+rProbe(r.probe_type)+'","'+rSec(r.section)+'",'+r.result+',"'+(r.organism||'')+'","'+(r.ufc_count||'')+'","'+(r.details||'')+'",'+( r.dsp_parallel?'Da':'Nu')+',"'+(r.notes||'')+'"').join('\n');
@@ -5779,6 +5854,27 @@ async function rBio(el){
   el.innerHTML=h;
 }
 var _editBioRec=null;
+function _renderBioAvizeInDialog(prodId){
+  if(!prodId)return '';
+  const pidx=CFG.biocide_products.findIndex(p=>p.id===prodId);
+  if(pidx<0)return '';
+  const p=CFG.biocide_products[pidx];
+  const avize=p.avize||[];
+  const now=new Date();const soon=new Date(Date.now()+30*86400000);
+  let h='<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--brd)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><label style="font-size:13px;font-weight:700;color:var(--navy)">Avize produs</label>'+
+    '<button class="btn bsm" style="font-size:10px" onclick="addBioAviz('+pidx+');editBio(_editBioRec?.id)">+ Adauga aviz</button></div>';
+  if(avize.length===0)h+='<div style="font-size:11px;color:var(--txtL)">Niciun aviz inregistrat</div>';
+  else{
+    h+='<table class="dt" style="font-size:11px"><thead><tr><th>Nr. Aviz</th><th>Emitere</th><th>Expirare</th><th>Status</th><th>&#215;</th></tr></thead><tbody>';
+    avize.forEach(function(a,ai){
+      var status='—';if(a.date_expiry){var exp=new Date(a.date_expiry);status=exp<now?'<span style="color:var(--red);font-weight:700">Expirat</span>':exp<soon?'<span style="color:#D97706;font-weight:700">Expira curand</span>':'<span style="color:#059669">Valabil</span>'}
+      h+='<tr><td>'+esc(a.nr||'—')+'</td><td>'+(a.date_issued||'—')+'</td><td>'+(a.date_expiry||'—')+'</td><td>'+status+'</td>'+
+        '<td class="act"><button onclick="CFG.biocide_products['+pidx+'].avize.splice('+ai+',1);saveCfg();editBio(_editBioRec?.id)" title="Sterge aviz">&#128465;</button></td></tr>';
+    });
+    h+='</tbody></table>';
+  }
+  h+='</div>';return h;
+}
 function bioProdChanged(){
   const sel=document.getElementById('f-prod');if(!sel||!sel.value)return;
   const prod=CFG.biocide_products.find(p=>p.id===sel.value);if(!prod)return;
@@ -5797,21 +5893,22 @@ async function editBio(id){
     attHtml='<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)"><label style="font-size:13px;font-weight:700;color:var(--navy);display:block;margin-bottom:10px">Documente ata\u0219ate</label>';
     attHtml+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
     BIO_ATT_TYPES.forEach(t=>{
-      const has=r.attachments&&r.attachments[t.key];
-      if(has){
-        attHtml+='<div style="border:2px solid '+t.brd+';border-radius:8px;padding:10px;background:'+t.bg+'">'+
-          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'+
-          '<span style="font-size:16px">'+t.icon+'</span><strong style="font-size:12px;color:'+t.color+'">'+t.label+'</strong></div>'+
-          '<div style="font-size:11px;color:var(--txt);margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+r.attachments[t.key].name+'">'+r.attachments[t.key].name+'</div>'+
-          '<div style="display:flex;gap:4px">'+
-          '<button class="btn bsm" style="background:'+t.color+';color:#fff;font-size:10px;border:none" onclick="uploadBioAttModal(\''+t.key+'\')">Inlocuie\u0219te</button>'+
-          '<button class="btn bo bsm" style="font-size:10px;color:var(--red)" onclick="removeBioAttModal(\''+t.key+'\')">Sterge</button></div></div>';
+      const files=_getBioAttFiles(r,t.key);
+      attHtml+='<div style="border:2px solid '+t.brd+';border-radius:8px;padding:10px;background:'+t.bg+'">'+
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'+
+        '<span style="font-size:16px">'+t.icon+'</span><strong style="font-size:12px;color:'+t.color+'">'+t.label+'</strong>'+
+        '<button class="btn bsm" style="background:'+t.color+';color:#fff;font-size:10px;border:none;margin-left:auto;padding:2px 8px" onclick="uploadBioAttModal(\''+t.key+'\')">+ Adauga</button></div>';
+      if(files.length>0){
+        files.forEach((f,fi)=>{
+          attHtml+='<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;font-size:11px">'+
+            '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(f.name)+'">'+esc(f.name)+'</span>'+
+            '<button onclick="downloadBioAttModal(\''+t.key+'\','+fi+')" title="Descarca" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px">&#11015;</button>'+
+            '<button onclick="removeBioAttModal(\''+t.key+'\','+fi+')" title="Sterge" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px;color:var(--red)">&#128465;</button></div>';
+        });
       }else{
-        attHtml+='<div onclick="uploadBioAttModal(\''+t.key+'\')" style="border:2px dashed '+t.brd+';border-radius:8px;padding:14px;background:'+t.bg+';cursor:pointer;text-align:center;transition:.15s" onmouseover="this.style.borderColor=\''+t.color+'\'" onmouseout="this.style.borderColor=\''+t.brd+'\'">'+
-          '<div style="font-size:20px;margin-bottom:4px">'+t.icon+'</div>'+
-          '<div style="font-size:12px;font-weight:600;color:'+t.color+'">'+t.label+'</div>'+
-          '<div style="font-size:10px;color:var(--txtL);margin-top:2px">Click pentru \u00EEnc\u0103rcare</div></div>';
+        attHtml+='<div style="font-size:10px;color:var(--txtL);text-align:center;padding:4px 0">Niciun document</div>';
       }
+      attHtml+='</div>';
     });
     attHtml+='</div></div>';
   }else{
@@ -5829,35 +5926,61 @@ async function editBio(id){
     '<div class="fg"><label>Distribuitor</label><input id="f-bio-dist" value="'+esc(r.distributor||'')+'" list="dl-bio-dist" placeholder="Distribuitor"></div>'+
     '<div class="fg"><label>Tip produs (EU)</label><select id="f-bio-ptype"><option value="">— Neselectat —</option>'+BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(r.product_type===t.id?' selected':'')+' title="'+esc(t.desc)+'">'+t.id+' — '+esc(t.name)+'</option>'}).join('')+'</select></div></div>'+
     '<datalist id="dl-bio-mfr">'+[...new Set(CFG.biocide_products.map(p=>p.manufacturer).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('')+'</datalist>'+
-    '<datalist id="dl-bio-dist">'+[...new Set(CFG.biocide_products.map(p=>p.distributor).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('')+'</datalist>'+attHtml,
+    '<datalist id="dl-bio-dist">'+[...new Set(CFG.biocide_products.map(p=>p.distributor).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('')+'</datalist>'+
+    _renderBioAvizeInDialog(selProd)+attHtml,
   '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveBio('+(id||'null')+')">Salveaza</button>');
   setTimeout(()=>attachDirtyTracking(),50);
 }
+// Normalize attachments: old format (single object) → array
+function _getBioAttFiles(r,key){
+  if(!r||!r.attachments||!r.attachments[key])return [];
+  const v=r.attachments[key];
+  if(Array.isArray(v))return v;
+  return [v]; // backward compat: single object → array of 1
+}
+function _migrateBioAtt(r,key){
+  if(!r.attachments)r.attachments={};
+  const v=r.attachments[key];
+  if(v&&!Array.isArray(v))r.attachments[key]=[v]; // migrate single→array
+  if(!r.attachments[key])r.attachments[key]=[];
+}
 function uploadBioAttModal(key){
   if(!_editBioRec||!_editBioRec.id)return;
-  const inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.doc,.docx,.jpg,.png,.jpeg';
-  inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;
-    if(f.size>10*1024*1024){alert('Fisierul depaseste 10MB.');return}
-    if(!_editBioRec.attachments)_editBioRec.attachments={};
-    if(_attDirHandle){
-      try{const ext=f.name.split('.').pop()||'bin';
-        const fname='bio_'+_editBioRec.id+'_'+key+'.'+ext;
-        await attWriteFile('biocide',fname,f);
-        _editBioRec.attachments[key]={name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true};
-        await pt('biocide',_editBioRec);editBio(_editBioRec.id);return;
-      }catch(err){console.warn('Disk write failed, fallback to base64:',err)}
+  const inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.doc,.docx,.jpg,.png,.jpeg';inp.multiple=true;
+  inp.onchange=async e=>{const files=Array.from(e.target.files);if(!files.length)return;
+    _migrateBioAtt(_editBioRec,key);
+    for(const f of files){
+      if(f.size>10*1024*1024){alert('Fisierul '+f.name+' depaseste 10MB.');continue}
+      const idx=_editBioRec.attachments[key].length;
+      if(_attDirHandle){
+        try{const ext=f.name.split('.').pop()||'bin';
+          const fname='bio_'+_editBioRec.id+'_'+key+'_'+idx+'_'+Date.now()+'.'+ext;
+          await attWriteFile('biocide',fname,f);
+          _editBioRec.attachments[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});continue;
+        }catch(err){console.warn('Disk write failed, fallback to base64:',err)}
+      }
+      const data=await new Promise(res=>{const rd=new FileReader();rd.onload=ev=>res(ev.target.result);rd.readAsDataURL(f)});
+      _editBioRec.attachments[key].push({name:f.name,type:f.type,size:f.size,data:data});
     }
-    const reader=new FileReader();reader.onload=async ev=>{
-      _editBioRec.attachments[key]={name:f.name,type:f.type,size:f.size,data:ev.target.result};
-      await pt('biocide',_editBioRec);editBio(_editBioRec.id)};reader.readAsDataURL(f)};inp.click();
+    await pt('biocide',_editBioRec);editBio(_editBioRec.id)};inp.click();
 }
-function removeBioAttModal(key){
+function removeBioAttModal(key,idx){
   if(!_editBioRec||!_editBioRec.id||!_editBioRec.attachments)return;
   if(!confirm('Stergi documentul atasat?'))return;
-  const att=_editBioRec.attachments[key];
+  _migrateBioAtt(_editBioRec,key);
+  const att=_editBioRec.attachments[key][idx];
   if(att&&att.on_disk&&att.filename)attDeleteFile('biocide',att.filename);
-  delete _editBioRec.attachments[key];
+  _editBioRec.attachments[key].splice(idx,1);
   pt('biocide',_editBioRec).then(()=>editBio(_editBioRec.id));
+}
+function downloadBioAttModal(key,idx){
+  if(!_editBioRec||!_editBioRec.attachments)return;
+  const files=_getBioAttFiles(_editBioRec,key);
+  const att=files[idx];if(!att)return;
+  if(att.on_disk&&att.filename){
+    attReadFile('biocide',att.filename).then(file=>saveAs(file,att.name)).catch(()=>alert('Nu pot citi fisierul de pe disc.'));return;
+  }
+  if(att.data){const a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
 }
 async function saveBio(id){
   const v=s=>document.getElementById(s).value;
@@ -5880,32 +6003,37 @@ const BIO_ATT_TYPES=[
 ];
 function bioAttIcons(r){
   return '<div style="display:flex;gap:3px;flex-wrap:wrap">'+BIO_ATT_TYPES.map(t=>{
-    const has=r.attachments&&r.attachments[t.key];
-    if(!has)return '';
-    return '<button onclick="downloadBioAtt('+r.id+',\''+t.key+'\')" title="'+t.title+' \u2014 '+r.attachments[t.key].name+'" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid '+t.brd+';background:'+t.bg+';color:'+t.color+'">'+t.icon+' '+t.label+'</button>';
+    const files=_getBioAttFiles(r,t.key);
+    if(!files.length)return '';
+    const cnt=files.length>1?' ('+files.length+')':'';
+    return '<button onclick="downloadBioAtt('+r.id+',\''+t.key+'\')" title="'+t.title+cnt+'" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid '+t.brd+';background:'+t.bg+';color:'+t.color+'">'+t.icon+' '+t.label+cnt+'</button>';
   }).join('')+'</div>';
 }
 function uploadBioAtt(id,key){
-  const inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.doc,.docx,.jpg,.png,.jpeg';
-  inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;
-    if(f.size>10*1024*1024){alert('Fisierul depaseste 10MB.');return}
+  const inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.doc,.docx,.jpg,.png,.jpeg';inp.multiple=true;
+  inp.onchange=async e=>{const files=Array.from(e.target.files);if(!files.length)return;
     const data=await ga('biocide');const rec=data.find(x=>x.id===id);if(!rec)return;
-    if(!rec.attachments)rec.attachments={};
-    if(_attDirHandle){
-      try{const ext=f.name.split('.').pop()||'bin';
-        const fname='bio_'+id+'_'+key+'.'+ext;
-        await attWriteFile('biocide',fname,f);
-        rec.attachments[key]={name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true};
-        await pt('biocide',rec);render();return;
-      }catch(err){console.warn('Disk write failed, fallback to base64:',err)}
+    _migrateBioAtt(rec,key);
+    for(const f of files){
+      if(f.size>10*1024*1024){alert('Fisierul '+f.name+' depaseste 10MB.');continue}
+      const idx=rec.attachments[key].length;
+      if(_attDirHandle){
+        try{const ext=f.name.split('.').pop()||'bin';
+          const fname='bio_'+id+'_'+key+'_'+idx+'_'+Date.now()+'.'+ext;
+          await attWriteFile('biocide',fname,f);
+          rec.attachments[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});continue;
+        }catch(err){console.warn('Disk write failed, fallback to base64:',err)}
+      }
+      const rd=await new Promise(res=>{const r=new FileReader();r.onload=ev=>res(ev.target.result);r.readAsDataURL(f)});
+      rec.attachments[key].push({name:f.name,type:f.type,size:f.size,data:rd});
     }
-    const reader=new FileReader();reader.onload=async ev=>{
-      rec.attachments[key]={name:f.name,type:f.type,size:f.size,data:ev.target.result};
-      await pt('biocide',rec);render()};reader.readAsDataURL(f)};inp.click();
+    await pt('biocide',rec);render()};inp.click();
 }
 async function downloadBioAtt(id,key){
   const data=await ga('biocide');const rec=data.find(x=>x.id===id);
-  if(!rec?.attachments?.[key])return;const att=rec.attachments[key];
+  const files=_getBioAttFiles(rec,key);if(!files.length)return;
+  // If single file, download directly; if multiple, download first
+  const att=files[0];
   if(att.on_disk&&att.filename){
     try{const file=await attReadFile('biocide',att.filename);
       saveAs(file,att.name);return}catch(e){console.warn('Disk read failed:',e);alert('Nu pot citi fisierul de pe disc. Reconecteaza folderul de atasamente din Configurare.')}
@@ -10622,7 +10750,11 @@ async function genRegistruIAAMExcel(){
 async function genAnalizaAutoWord(){
   showGen('Se genereaza analiza autocontrol...');const y=A.year,data=await collectAllData(y);const{au}=data;const AN=runAllAnalysis(data);const c=au.filter(p=>p.result==='conform').length;
   const children=[...wCover('Analiza Autocontrol','Autocontrol Microbiologic — '+y,WC.teal)];
-  children.push(wH1('1. Volumul Activitatii',WC.teal));children.push(wSp(40));addNarrative(children,AN.auto);
+  children.push(wH1('1. Volumul Activitatii',WC.teal));children.push(wSp(40));
+  var _appCombos=getApplicableCombinations(CFG.probe_types||[],CFG.sections||[]);
+  var _totalCombos=(CFG.probe_types||[]).length*(CFG.sections||[]).length;
+  if(_appCombos<_totalCombos){children.push(wP('Combinatii monitorizate: '+_appCombos+' din '+_totalCombos+' posibile (conform configurarii probelor aplicabile per sectie).'))}
+  addNarrative(children,AN.auto);
   children.push(wSp(80));children.push(wH2('2. Pe Tipuri de Probe',WC.teal));children.push(wSp(40));
   const abt={};au.forEach(r=>{const pn=rProbe(r.probe_type);if(!abt[pn])abt[pn]={t:0,nc:0};abt[pn].t++;if(r.result==='neconform')abt[pn].nc++});
   const W=[3200,1200,1200,1200,2226];children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W,rows:[wTblHead(['Tip proba','Total','Conforme','Neconf.','Conformitate'],W),
@@ -10725,6 +10857,59 @@ const SEC_TYPES=[
 ];
 function _secTypeOpts(sel){return SEC_TYPES.map(function(t){return '<option value="'+t.v+'"'+(sel===t.v?' selected':'')+'>'+t.n+'</option>'}).join('')}
 
+// ── Probe Applicability Matrix ──
+function _renderProbeApplicabilityUI(){
+  var pts=CFG.probe_types||[];var secs=CFG.sections||[];
+  if(!pts.length||!secs.length)return '<div style="color:var(--txtL);font-size:12px">Adauga mai intai sectii si tipuri de probe.</div>';
+  var h='<div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table class="dt" style="font-size:11px"><thead><tr><th style="position:sticky;left:0;background:var(--bg);z-index:2">Sectie</th>';
+  pts.forEach(function(pt){h+='<th style="writing-mode:vertical-lr;transform:rotate(180deg);white-space:nowrap;padding:4px 2px;font-size:10px">'+sn(pt)+'</th>'});
+  h+='<th style="font-size:10px">Toate</th></tr></thead><tbody>';
+  secs.forEach(function(s,si){
+    var ap=s.applicable_probes;var allChecked=!ap||!ap.length;
+    h+='<tr><td style="position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;font-weight:600;font-size:11px">'+_secDisplayName(s)+'</td>';
+    pts.forEach(function(pt){
+      var checked=allChecked||ap.includes(pt.id);
+      h+='<td style="text-align:center"><input type="checkbox" data-sec="'+si+'" data-pt="'+pt.id+'" '+(checked?'checked':'')+' onchange="toggleProbeApplicability('+si+',\''+pt.id+'\',this.checked)" style="accent-color:var(--teal);width:14px;height:14px;cursor:pointer"></td>';
+    });
+    h+='<td style="text-align:center"><button class="btn bsm" style="font-size:9px;padding:2px 6px" onclick="toggleAllProbes('+si+')">&#8645;</button></td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div style="margin-top:8px;display:flex;gap:8px"><button class="btn bp" onclick="saveCfg();showToast(\'Salvat!\')">Salveaza</button>'+
+    '<button class="btn bo bsm" onclick="resetAllProbeApplicability()">Reseteaza tot (toate bifate)</button></div>';
+  return h;
+}
+function toggleProbeApplicability(secIdx,ptId,checked){
+  var s=CFG.sections[secIdx];if(!s)return;
+  var pts=CFG.probe_types||[];
+  // If no applicable_probes yet, initialize with ALL probe IDs
+  if(!s.applicable_probes||!s.applicable_probes.length){
+    s.applicable_probes=pts.map(function(p){return p.id});
+  }
+  if(checked&&!s.applicable_probes.includes(ptId)){s.applicable_probes.push(ptId)}
+  else if(!checked){s.applicable_probes=s.applicable_probes.filter(function(id){return id!==ptId})}
+  // If all are checked, clear array (=all applicable, default)
+  if(s.applicable_probes.length>=pts.length)s.applicable_probes=[];
+  saveCfg();
+}
+function toggleAllProbes(secIdx){
+  var s=CFG.sections[secIdx];if(!s)return;
+  var pts=CFG.probe_types||[];
+  var ap=s.applicable_probes;var allChecked=!ap||!ap.length;
+  if(allChecked){
+    // Currently all checked → uncheck all
+    s.applicable_probes=['__none__']; // placeholder = nothing applicable
+  }else{
+    // Not all checked → check all
+    s.applicable_probes=[];
+  }
+  saveCfg();render();
+}
+function resetAllProbeApplicability(){
+  CFG.sections.forEach(function(s){s.applicable_probes=[]});
+  saveCfg();render();
+}
+
 // ═══════════════════════════════════════════════════════════════
 var _cfgTab='spital';
 async function rCfg(el){
@@ -10736,7 +10921,7 @@ async function rCfg(el){
   // Quick-jump navigation per tab
   var _qj={
     spital:[['cfg-info','Informatii'],['cfg-pers','Personal'],['cfg-sec-sp','Sectii'],['cfg-sec-am','Ambulatoriu']],
-    dateintro:[['cfg-ipc','Categorii IPC'],['cfg-prof','Categorii Profesionale'],['cfg-probe','Tipuri Probe'],['cfg-lab','Probe Laborator'],['cfg-ecdc','Categorii IAAM'],['cfg-risk','Factori Risc'],['cfg-comorb','Comorbiditati'],['cfg-disp','Dispozitive'],['cfg-bio','Biocide'],['cfg-des','Coduri Deseuri'],['cfg-atp','Suprafete ATP/UV']],
+    dateintro:[['cfg-ipc','Categorii IPC'],['cfg-prof','Categorii Profesionale'],['cfg-probe','Tipuri Probe'],['cfg-probe-map','Probe/Sectii'],['cfg-lab','Probe Laborator'],['cfg-ecdc','Categorii IAAM'],['cfg-risk','Factori Risc'],['cfg-comorb','Comorbiditati'],['cfg-disp','Dispozitive'],['cfg-bio','Biocide'],['cfg-des','Coduri Deseuri'],['cfg-atp','Suprafete ATP/UV']],
     date:[['cfg-lang','Format/Limba'],['cfg-sync','Sincronizare'],['cfg-bkp','Backup'],['cfg-loc','Locatie fisier'],['cfg-att','Atasamente']],
     ai:[['cfg-ai','Configurare AI']]
   };
@@ -10852,6 +11037,11 @@ async function rCfg(el){
   '<div class="pn" id="cfg-probe"><div class="ph"><h3>Tipuri de Probe (Autocontrol)</h3></div><div class="pb">'+
     '<div class="tag-list">'+CFG.probe_types.map((p,i)=>{const nm=typeof p==='string'?p:(p.name||p.id||'?');return '<span class="tag">'+nm+'<span class="tag-x" onclick="CFG.probe_types.splice('+i+',1);saveCfg();render()">&#215;</span></span>'}).join('')+'</div>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-probe" placeholder="Tip proba nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-probe\').value.trim();if(v){CFG.probe_types.push({id:genId(\'probe\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
+  '</div></div>'+
+
+  '<div class="pn" id="cfg-probe-map"><div class="ph"><h3>Probe aplicabile per sectie</h3></div><div class="pb">'+
+    '<div class="ib inf" style="margin-bottom:10px">Bifeaza tipurile de probe microbiologice care se aplica fiecarei sectii. Probele nebifate NU vor aparea ca "netestate" in analiza autocontrol.</div>'+
+    _renderProbeApplicabilityUI()+
   '</div></div>'+
 
   '<div class="pn" id="cfg-lab"><div class="ph"><h3>Tipuri Probe Laborator (Antibiograma)</h3></div><div class="pb">'+
@@ -11258,6 +11448,7 @@ async function wizSkipImport(){
         // Set file handle for future sync
         _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();await saveFileHandle(fh);
         localStorage.setItem('cpiaam_had_data','true');
+        localStorage.setItem('cpiaam_setup_complete','true');
         alert('Date importate cu succes!');location.reload();
       }catch(e){alert('Eroare la import: '+e.message)}
     }).catch(e=>{if(e.name!=='AbortError')alert('Eroare: '+e.message)});
@@ -11268,10 +11459,13 @@ async function wizSkipImport(){
       try{
         const d=JSON.parse(await f.text());
         if(d.config){Object.assign(CFG,d.config);CFG.setup_complete=true;await saveCfg()}
+        // Import all data stores (direct names)
         for(const s of ST){if(d[s]&&Array.isArray(d[s])){await cl(s);for(const r of d[s])await pt(s,r)}}
-        const storeMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
-        for(const[key,store] of Object.entries(storeMap)){if(d[key])for(const r of d[key])await pt(store,r)}
+        // Import short-key aliases from older backups
+        const storeMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines',events:'events',audits:'audits',trainings:'trainings',atp:'atp',uvcheck:'uvcheck',ac:'atb_consum',obj:'objectives',lab:'lab_isolates'};
+        for(const[key,store] of Object.entries(storeMap)){if(d[key]&&Array.isArray(d[key]))for(const r of d[key])await pt(store,r)}
         localStorage.setItem('cpiaam_had_data','true');
+        localStorage.setItem('cpiaam_setup_complete','true');
         alert('Date importate cu succes!');location.reload();
       }catch(e){alert('Eroare import: '+e.message)}};
     inp.click();
@@ -11447,6 +11641,7 @@ async function finishWizard(){
   CFG.current_user=WZ.author_name;
   CFG.file_location=WZ.file_location||'browser';
   CFG.setup_complete=true;
+  localStorage.setItem('cpiaam_setup_complete','true');
   ensureConfigIds();
   // Save file handle + att dir if picked during wizard
   if(_fileHandle){CFG.sync_file_name=_fileHandle.name;await saveFileHandle(_fileHandle);await syncWrite()}
@@ -12540,6 +12735,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.3',date:'2026-03-27',notes:'NOU: Autocontrol — probe aplicabile per sectie (matrice checkboxuri in Configurare)\nNOU: Autocontrol — celule N/A in matrice pentru combinatii neaplicabile\nNOU: Autocontrol — 3 butoane dialog proba: Anuleaza / Salveaza+Noua / Salveaza\nNOU: Autocontrol — camp Nr. inregistrare pe fiecare proba + afisare in popup\nNOU: Biocide — documente multiple per tip atasament + avize in dialog editare\nNOU: Sync — smart merge config + reconectare automata la primul click\nFIX: Precautiuni implementate IAAM se salveaza corect\nFIX: Setup wizard import backup pe versiunea locala\nFIX: Previzualizare JSON fara buton de combinare\nUX: Buton backup ⏬ Salvare back-up\nUX: Coloana Detalii proba (ex Neconformitati)\nUX: Prefix Cab. automat pentru cabinete ambulatoriu'},
   {version:'12.2',date:'2026-03-26',notes:'NOU: IAAM — Sectia de dobandire (atribuire epidemiologica) cu coloana separata si toggle timeline\nNOU: 7 audituri Interventii cu Impact Major (APCI): IAP/VAP, CVP, CVC, SSI, SST, ITU, ATB\nNOU: 66 elemente audit predefinite bazate pe dovezi cu sectiuni (Insertie/Ingrijire/Preoperator)\nNOU: Raport Word Complianta Igiena Mainilor cu filtre: perioada, sectie, categorie, moment OMS'},
   {version:'12.1',date:'2026-03-26',notes:'NOU: IAAM tabel — coloana Nr. Inregistrare (registru) vizibila in lista cazuri\nNOU: IAAM tabel — sortare pe orice coloana (click pe header, sageata directie)\nNOU: IAAM cautare — include si nr. inregistrare\nNOU: Deseuri — checkbox Activ per cod (selecteaza care apar in modul)\nNOU: Deseuri — nota Instructiunea 6.226/2024 pe 18 01 08*/09 (medicamente populatie)'},
   {version:'12.0',date:'2026-03-26',notes:'FIX: Dark mode — preferinta per browser, nu mai vine din fisierul sincronizat\nFIX: Hover capete tabel — textul nu mai devine invizibil\nFIX: Notificari — marcheaza citite persista, nu revin la navigare\nFIX: Reconectare JSON — Combina conecteaza si fisierul daca era deconectat\nNOU: Dashboard — filtre Azi/Maine/7/30/90 zile pe evenimente cu contoare\nNOU: Toolbar — butoane Salveaza si Backup cu iconite\nNOU: Config — navigare rapida (quick-jump) catre orice sectiune\nNOU: Autocontrol — dropdown sectii grupat Spital/Ambulatoriu\nNOU: Autocontrol — prefix (A) in liste netestate pentru cabinete\nNOU: Dropdowns sortate alfabetic\nNOU: Coduri deseuri predefinite Ordinul 1226/2012'},
@@ -13371,7 +13567,11 @@ function showUpgradeNotice(fromVer){
   try{await odb()}catch(e){console.error('DB init error:',e)}
   const configs=await ga('config');
   document.getElementById('app-loading').style.display='none';
-  if(configs.length>0&&configs[0].setup_complete){
+  const lsSetup=localStorage.getItem('cpiaam_setup_complete')==='true';
+  if((configs.length>0&&configs[0].setup_complete)||lsSetup){
+    // If localStorage says setup is complete but IDB doesn't have config yet, reload config
+    if(lsSetup&&(configs.length===0||!configs[0].setup_complete)){try{await loadCfg()}catch(e){}}
+
     await loadCfg();
     // Dark mode: prefer localStorage (per-browser) over CFG (synced)
     var lsDark=localStorage.getItem('cpiaam_dark_mode');

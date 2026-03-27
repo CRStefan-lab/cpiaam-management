@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.14</title>
+<title>CPIAAM Management v12.15</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Comitetul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1506,17 +1506,24 @@ async function _fileActionSwitch(){
 // Smart merge config arrays by ID — adds new items, updates existing by _modifiedAt
 function _smartMergeCfg(local,remote){
   const arrayKeys=['sections','biocide_products','probe_types','waste_codes','doc_categories','infection_types'];
+  // For sections, match by name (not id) — two hospitals both have "Medicina Interna" with different ids
+  const nameBasedKeys=['sections'];
   arrayKeys.forEach(key=>{
     if(!remote[key]||!Array.isArray(remote[key]))return;
     if(!local[key]||!Array.isArray(local[key])){local[key]=remote[key];return}
     const localArr=local[key];const remoteArr=remote[key];
-    // Build local map by id or name
+    const useNameKey=nameBasedKeys.includes(key);
+    // Build local map — for sections use name as key to prevent duplicates
     const localMap={};localArr.forEach((item,i)=>{
-      const k=typeof item==='string'?item:(item.id||item.name||JSON.stringify(item));
+      const k=typeof item==='string'?item:
+        useNameKey?(item.name||item.id||JSON.stringify(item)):
+        (item.id||item.name||JSON.stringify(item));
       localMap[k]={item,idx:i};
     });
     remoteArr.forEach(rItem=>{
-      const k=typeof rItem==='string'?rItem:(rItem.id||rItem.name||JSON.stringify(rItem));
+      const k=typeof rItem==='string'?rItem:
+        useNameKey?(rItem.name||rItem.id||JSON.stringify(rItem)):
+        (rItem.id||rItem.name||JSON.stringify(rItem));
       if(!localMap[k]){
         // New item from remote — add it
         localArr.push(rItem);
@@ -1861,7 +1868,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.14';
+const APP_VERSION='12.15';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -12842,6 +12849,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.15',date:'2026-03-27',notes:'FIX: Sectii duplicate la sincronizare — merge pe baza numelui sectiei (nu ID-ul intern)\nFIX: Descarcare actualizare sugereaza CPIAAM_Management.html (nu index.html)\nNOU: Coloana Tip Proba in matricea Autocontrol ramane fixa la scroll (sticky)'},
   {version:'12.14',date:'2026-03-27',notes:'FIX: Iconita PWA pe desktop Windows — generate PNG 192x192 si 512x512 (scut teal cu cruce alba)\nFIX: manifest.json cu PNG prioritar fata de SVG'},
   {version:'12.13',date:'2026-03-27',notes:'FIX: Banner update pe versiunea online — buton "Reincarca pagina" in loc de "Descarca acum" (actualizare prin Service Worker, nu descarcare HTML)'},
   {version:'12.12',date:'2026-03-27',notes:'NOU: Buton "Instaleaza" vizibil in toolbar pe versiunea online — apare automat cand browserul permite instalarea, dispare dupa instalare'},
@@ -13447,13 +13455,24 @@ function analyzeObiective(objectives){
 // ═══════════════════════════════════════════════════════════════
 // PWA install prompt
 var _pwaInstallPrompt=null;
-function _updateInstallBtn(){var b=document.getElementById('btn-pwa-install');if(b)b.style.display=_pwaInstallPrompt?'':'none';}
+function _updateInstallBtn(){var b=document.getElementById('btn-pwa-install');if(!b)return;
+  // Show button on https:// always (either PWA prompt or shortcut download), hide on file://
+  if(location.protocol==='https:'){b.style.display='';b.title=_pwaInstallPrompt?'Instaleaza aplicatia pe acest calculator':'Descarca scurtatura pe Desktop';}
+  else{b.style.display='none';}
+}
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();_pwaInstallPrompt=e;_updateInstallBtn();});
 window.addEventListener('appinstalled',function(){_pwaInstallPrompt=null;_updateInstallBtn();showToast('Aplicatia a fost instalata cu succes!');});
 function installPWA(){
   if(_pwaInstallPrompt){_pwaInstallPrompt.prompt();_pwaInstallPrompt.userChoice.then(function(r){if(r.outcome==='accepted'){_pwaInstallPrompt=null;_updateInstallBtn();}});return;}
-  if(location.protocol==='https:')showToast(CFG.lang==='en'?'Use browser menu > Install app':'Foloseste meniul browserului > Instaleaza aplicatia');
-  else showToast(CFG.lang==='en'?'Install available only from online version':'Instalare disponibila doar din versiunea online');
+  // Fallback: download a .url shortcut file for desktop
+  downloadDesktopShortcut();
+}
+function downloadDesktopShortcut(){
+  var appUrl='https://crstefan-lab.github.io/cpiaam-management/';
+  var ico='https://crstefan-lab.github.io/cpiaam-management/icon-192.png';
+  var content='[InternetShortcut]\r\nURL='+appUrl+'\r\nIconIndex=0\r\nIconFile='+ico+'\r\n';
+  saveAs(new Blob([content],{type:'application/internet-shortcut'}),'CPIAAM Management.url');
+  showToast(CFG.lang==='en'?'Shortcut downloaded — move it to your Desktop':'Scurtatura descarcata — muta-o pe Desktop');
 }
 function downloadApp(){
   const html='<!DOCTYPE html>'+document.documentElement.outerHTML;
@@ -13659,9 +13678,9 @@ async function downloadUpdate(url,version){
     if(window.showSaveFilePicker){
       try{
         var pathParts=location.pathname.split('/');
-        var currentName=pathParts[pathParts.length-1]||'CPIAAM_Management.html';
+        var currentName=pathParts[pathParts.length-1]||'';
         try{currentName=decodeURIComponent(currentName)}catch(e){}
-        if(!currentName||currentName==='')currentName='CPIAAM_Management.html';
+        if(!currentName||currentName===''||currentName==='index.html')currentName='CPIAAM_Management.html';
         var opts={suggestedName:currentName,types:[{description:'HTML',accept:{'text/html':['.html']}}]};
         var fh=await window.showSaveFilePicker(opts);
         var wr=await fh.createWritable();
@@ -13809,6 +13828,7 @@ function showUpgradeNotice(fromVer){
     setTimeout(checkBackupReminder,2000);
     setTimeout(buildNotifications,3000);
     setTimeout(checkForUpdate,4000);
+    setTimeout(_updateInstallBtn,500);
   } else {
     checkEmptyDB();
     showWizard();

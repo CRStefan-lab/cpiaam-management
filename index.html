@@ -140,9 +140,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .ac-matrix{overflow-x:auto;margin-bottom:14px;border:1px solid var(--brd);border-radius:8px}
 .ac-matrix table{border-collapse:collapse;width:100%;font-size:11px;table-layout:auto}
 .ac-matrix th{background:#1E293B;color:#fff;padding:5px 4px;text-align:center;font-weight:600;white-space:nowrap;font-size:9.5px;letter-spacing:.2px;max-width:90px;overflow:hidden;text-overflow:ellipsis}
-.ac-matrix th:first-child{text-align:left;min-width:120px;max-width:160px;padding-left:8px}
+.ac-matrix th:first-child{text-align:left;min-width:120px;max-width:160px;padding-left:8px;position:sticky;left:0;z-index:3;background:#1E293B}
 .ac-matrix td{padding:4px 3px;text-align:center;border:1px solid var(--brd);font-weight:700;font-size:11px;transition:.15s;min-width:32px}
-.ac-matrix td:first-child{text-align:left;font-weight:500;background:#F8FAFC;cursor:default;white-space:nowrap;padding-left:8px;font-size:11px}
+.ac-matrix td:first-child{text-align:left;font-weight:500;background:#F8FAFC;cursor:default;white-space:nowrap;padding-left:8px;font-size:11px;position:sticky;left:0;z-index:1;box-shadow:2px 0 4px rgba(0,0,0,.06)}
 .ac-matrix td.ac-cell-c{cursor:pointer}.ac-matrix td.ac-cell-c:hover{opacity:.85;box-shadow:inset 0 0 0 2px rgba(0,0,0,.15)}
 .ac-cell-gn{background:#C0DD97;color:#27500A}
 .ac-cell-yl{background:#FAEEDA;color:#633806}

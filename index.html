@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.4</title>
+<title>CPIAAM Management v12.6</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1348,7 +1348,7 @@ async function syncReadFile(){
     }
     // No local data, not connected — direct import
     _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();await saveFileHandle(fh);
-    await _importFromHandle(fh,true);updateSyncIndicator();startSyncPoll();render();
+    await _importFromHandle(fh,true,'replace');updateSyncIndicator();startSyncPoll();render();
   }catch(e){if(e.name!=='AbortError')alert('Eroare import: '+e.message)}}
 var _pendingFileHandle=null;
 function _showFileActionDialog(newName,currentName){
@@ -1492,7 +1492,7 @@ async function _fileActionSwitch(){
     // Step 4: Connect to new file and do pure import
     _fileHandle=_pendingFileHandle;_pendingFileHandle=null;
     CFG.sync_file_name=_fileHandle.name;await saveCfg();await saveFileHandle(_fileHandle);
-    await _importFromHandle(_fileHandle,true);
+    await _importFromHandle(_fileHandle,true,'replace');
     showToast(isEN?'Connected to: ':'Conectat la: '+_fileHandle.name);
     startSyncPoll();
   }catch(e){alert((isEN?'Error switching file: ':'Eroare la schimbarea fisierului: ')+e.message)}
@@ -1524,12 +1524,25 @@ function _smartMergeCfg(local,remote){
     });
     delete remote[key]; // prevent Object.assign from overwriting
   });
+  // Protect identity fields — never overwrite local hospital/user info from remote
+  const protectedKeys=['hospital_name','hospital_short','compartment_name','hospital_code_pps','current_user','author_name','sync_file_name','file_location','setup_complete'];
+  protectedKeys.forEach(k=>{delete remote[k]});
   // Merge remaining scalar fields
   Object.assign(local,remote);
 }
-async function _importFromHandle(fh,skipReload){
+async function _importFromHandle(fh,skipReload,mode){
+  // mode: 'merge' (default, poll/reconnect) or 'replace' (switch file)
   const file=await fh.getFile();const text=await file.text();const d=JSON.parse(text);
-  if(d.config){const cfg=_extractCfg(d.config);if(cfg){_smartMergeCfg(CFG,cfg);CFG.sync_file_name=fh.name;await saveCfg()}}
+  if(d.config){const cfg=_extractCfg(d.config);if(cfg){
+    if(mode==='replace'){
+      // Replace config entirely, but keep local identity fields
+      var savedIdentity={hospital_name:CFG.hospital_name,hospital_short:CFG.hospital_short,compartment_name:CFG.compartment_name,hospital_code_pps:CFG.hospital_code_pps,current_user:CFG.current_user,author_name:CFG.author_name};
+      Object.assign(CFG,cfg);Object.assign(CFG,savedIdentity);
+    } else {
+      _smartMergeCfg(CFG,cfg);
+    }
+    CFG.sync_file_name=fh.name;await saveCfg();
+  }}
   // Support old format keys → remap to current store names
   const oldMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
   for(const[key,store] of Object.entries(oldMap)){if(d[key]&&!d[store])d[store]=d[key]}
@@ -1842,7 +1855,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.4';
+const APP_VERSION='12.6';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -2988,6 +3001,10 @@ async function toggleLang(){
   CFG.lang=CFG.lang==='ro'?'en':'ro';updateMO();await saveCfg();updateLangUI();render()}
 function updateLangUI(){
   const btn=document.getElementById('btn-lang');if(btn)btn.textContent=CFG.lang==='ro'?'RO':'EN';
+  const isEN=CFG.lang==='en';
+  const bkp=document.getElementById('btn-bkp');if(bkp)bkp.title=isEN?'Save backup':'Salvare back-up';
+  const sv=document.getElementById('btn-save');if(sv)sv.title=isEN?'Save data now':'Salveaza datele acum';
+  const dk=document.getElementById('btn-dark');if(dk)dk.title=isEN?'Day/Night mode':'Mod zi/noapte';
   updateSidebar();updateSyncIndicator();
   document.getElementById('pt').textContent=getPageTitle(A.page);}
 function getPageTitle(p){
@@ -5859,18 +5876,19 @@ async function rBio(el){
 var _editBioRec=null;
 function _renderBioAvizeInDialog(prodId){
   if(!prodId)return '';
+  var isEN=CFG.lang==='en';
   const pidx=CFG.biocide_products.findIndex(p=>p.id===prodId);
   if(pidx<0)return '';
   const p=CFG.biocide_products[pidx];
   const avize=p.avize||[];
   const now=new Date();const soon=new Date(Date.now()+30*86400000);
-  let h='<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--brd)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><label style="font-size:13px;font-weight:700;color:var(--navy)">Avize produs</label>'+
-    '<button class="btn bsm" style="font-size:10px" onclick="addBioAviz('+pidx+');editBio(_editBioRec?.id)">+ Adauga aviz</button></div>';
-  if(avize.length===0)h+='<div style="font-size:11px;color:var(--txtL)">Niciun aviz inregistrat</div>';
+  let h='<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--brd)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><label style="font-size:13px;font-weight:700;color:var(--navy)">'+(isEN?'Product approvals':'Avize produs')+'</label>'+
+    '<button class="btn bsm" style="font-size:10px" onclick="addBioAviz('+pidx+');editBio(_editBioRec?.id)">+ '+(isEN?'Add approval':'Adauga aviz')+'</button></div>';
+  if(avize.length===0)h+='<div style="font-size:11px;color:var(--txtL)">'+(isEN?'No approvals registered':'Niciun aviz inregistrat')+'</div>';
   else{
-    h+='<table class="dt" style="font-size:11px"><thead><tr><th>Nr. Aviz</th><th>Emitere</th><th>Expirare</th><th>Status</th><th>&#215;</th></tr></thead><tbody>';
+    h+='<table class="dt" style="font-size:11px"><thead><tr><th>'+(isEN?'Approval No.':'Nr. Aviz')+'</th><th>'+(isEN?'Issued':'Emitere')+'</th><th>'+(isEN?'Expiry':'Expirare')+'</th><th>Status</th><th>&#215;</th></tr></thead><tbody>';
     avize.forEach(function(a,ai){
-      var status='—';if(a.date_expiry){var exp=new Date(a.date_expiry);status=exp<now?'<span style="color:var(--red);font-weight:700">Expirat</span>':exp<soon?'<span style="color:#D97706;font-weight:700">Expira curand</span>':'<span style="color:#059669">Valabil</span>'}
+      var status='—';if(a.date_expiry){var exp=new Date(a.date_expiry);status=exp<now?'<span style="color:var(--red);font-weight:700">'+(isEN?'Expired':'Expirat')+'</span>':exp<soon?'<span style="color:#D97706;font-weight:700">'+(isEN?'Expiring soon':'Expira curand')+'</span>':'<span style="color:#059669">'+(isEN?'Valid':'Valabil')+'</span>'}
       h+='<tr><td>'+esc(a.nr||'—')+'</td><td>'+(a.date_issued||'—')+'</td><td>'+(a.date_expiry||'—')+'</td><td>'+status+'</td>'+
         '<td class="act"><button onclick="CFG.biocide_products['+pidx+'].avize.splice('+ai+',1);saveCfg();editBio(_editBioRec?.id)" title="Sterge aviz">&#128465;</button></td></tr>';
     });
@@ -5886,6 +5904,7 @@ function bioProdChanged(){
   if(dist&&!dist.value&&prod.distributor)dist.value=prod.distributor;
 }
 async function editBio(id){
+  const isEN=CFG.lang==='en';
   let r=id?(await ga('biocide')).find(x=>x.id===id):{year:A.year,type:'iesire',month:new Date().getMonth()+1};
   if(!r)r={year:A.year,type:'iesire',month:new Date().getMonth()+1};
   _editBioRec=r;
@@ -5893,29 +5912,29 @@ async function editBio(id){
   const prods=CFG.biocide_products.map(p=>'<option value="'+p.id+'"'+(p.id===selProd?' selected':'')+'>'+sn(p)+'</option>').join('');
   let attHtml='';
   if(id){
-    attHtml='<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)"><label style="font-size:13px;font-weight:700;color:var(--navy);display:block;margin-bottom:10px">Documente ata\u0219ate</label>';
+    attHtml='<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)"><label style="font-size:13px;font-weight:700;color:var(--navy);display:block;margin-bottom:10px">'+(isEN?'Attached documents':'Documente ata\u0219ate')+'</label>';
     attHtml+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
     BIO_ATT_TYPES.forEach(t=>{
       const files=_getBioAttFiles(r,t.key);
       attHtml+='<div style="border:2px solid '+t.brd+';border-radius:8px;padding:10px;background:'+t.bg+'">'+
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'+
         '<span style="font-size:16px">'+t.icon+'</span><strong style="font-size:12px;color:'+t.color+'">'+t.label+'</strong>'+
-        '<button class="btn bsm" style="background:'+t.color+';color:#fff;font-size:10px;border:none;margin-left:auto;padding:2px 8px" onclick="uploadBioAttModal(\''+t.key+'\')">+ Adauga</button></div>';
+        '<button class="btn bsm" style="background:'+t.color+';color:#fff;font-size:10px;border:none;margin-left:auto;padding:2px 8px" onclick="uploadBioAttModal(\''+t.key+'\')">+ '+(isEN?'Add':'Adauga')+'</button></div>';
       if(files.length>0){
         files.forEach((f,fi)=>{
           attHtml+='<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;font-size:11px">'+
             '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(f.name)+'">'+esc(f.name)+'</span>'+
-            '<button onclick="downloadBioAttModal(\''+t.key+'\','+fi+')" title="Descarca" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px">&#11015;</button>'+
-            '<button onclick="removeBioAttModal(\''+t.key+'\','+fi+')" title="Sterge" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px;color:var(--red)">&#128465;</button></div>';
+            '<button onclick="downloadBioAttModal(\''+t.key+'\','+fi+')" title="'+(isEN?'Download':'Descarca')+'" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px">&#11015;</button>'+
+            '<button onclick="removeBioAttModal(\''+t.key+'\','+fi+')" title="'+(isEN?'Delete':'Sterge')+'" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px;color:var(--red)">&#128465;</button></div>';
         });
       }else{
-        attHtml+='<div style="font-size:10px;color:var(--txtL);text-align:center;padding:4px 0">Niciun document</div>';
+        attHtml+='<div style="font-size:10px;color:var(--txtL);text-align:center;padding:4px 0">'+(isEN?'No documents':'Niciun document')+'</div>';
       }
       attHtml+='</div>';
     });
     attHtml+='</div></div>';
   }else{
-    attHtml='<div class="ib inf" style="margin-top:14px;font-size:11px">Documentele (aviz, fisa tehnica, SDS) pot fi atasate dupa salvarea produsului.</div>';
+    attHtml='<div class="ib inf" style="margin-top:14px;font-size:11px">'+(isEN?'Documents (approval, technical sheet, SDS) can be attached after saving.':'Documentele (aviz, fisa tehnica, SDS) pot fi atasate dupa salvarea produsului.')+'</div>';
   }
   openM(id?'Editare':'Inregistrare Noua',
     '<div class="fr"><div class="fg"><label>Produs</label><select id="f-prod" onchange="bioProdChanged()"><option value="">— Selecteaza produs —</option>'+prods+'</select><div style="margin-top:4px"><input id="f-prod-custom" placeholder="sau introdu manual un produs nou" value="'+(CFG.biocide_products.find(p=>p.id===(r.product_id||r.product_name))?'':esc(r.product_name||''))+'" style="font-size:11px"></div></div>'+
@@ -10862,11 +10881,12 @@ function _secTypeOpts(sel){return SEC_TYPES.map(function(t){return '<option valu
 
 // ── Probe Applicability Matrix ──
 function _renderProbeApplicabilityUI(){
+  var isEN=CFG.lang==='en';
   var pts=CFG.probe_types||[];var secs=CFG.sections||[];
-  if(!pts.length||!secs.length)return '<div style="color:var(--txtL);font-size:12px">Adauga mai intai sectii si tipuri de probe.</div>';
-  var h='<div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table class="dt" style="font-size:11px"><thead><tr><th style="position:sticky;left:0;background:var(--bg);z-index:2">Sectie</th>';
+  if(!pts.length||!secs.length)return '<div style="color:var(--txtL);font-size:12px">'+(isEN?'Add sections and probe types first.':'Adauga mai intai sectii si tipuri de probe.')+'</div>';
+  var h='<div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table class="dt" style="font-size:11px"><thead><tr><th style="position:sticky;left:0;background:var(--bg);z-index:2">'+(isEN?'Section':'Sectie')+'</th>';
   pts.forEach(function(pt){h+='<th style="writing-mode:vertical-lr;transform:rotate(180deg);white-space:nowrap;padding:4px 2px;font-size:10px">'+sn(pt)+'</th>'});
-  h+='<th style="font-size:10px">Toate</th></tr></thead><tbody>';
+  h+='<th style="font-size:10px">'+(isEN?'All':'Toate')+'</th></tr></thead><tbody>';
   secs.forEach(function(s,si){
     var ap=s.applicable_probes;var allChecked=!ap||!ap.length;
     h+='<tr><td style="position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;font-weight:600;font-size:11px">'+_secDisplayName(s)+'</td>';
@@ -10878,8 +10898,8 @@ function _renderProbeApplicabilityUI(){
     h+='</tr>';
   });
   h+='</tbody></table></div>';
-  h+='<div style="margin-top:8px;display:flex;gap:8px"><button class="btn bp" onclick="saveCfg();showToast(\'Salvat!\')">Salveaza</button>'+
-    '<button class="btn bo bsm" onclick="resetAllProbeApplicability()">Reseteaza tot (toate bifate)</button></div>';
+  h+='<div style="margin-top:8px;display:flex;gap:8px"><button class="btn bp" onclick="saveCfg();showToast(isEN?\'Saved!\':\'Salvat!\')">'+(isEN?'Save':'Salveaza')+'</button>'+
+    '<button class="btn bo bsm" onclick="resetAllProbeApplicability()">'+(isEN?'Reset all (all checked)':'Reseteaza tot (toate bifate)')+'</button></div>';
   return h;
 }
 function toggleProbeApplicability(secIdx,ptId,checked){
@@ -10916,6 +10936,7 @@ function resetAllProbeApplicability(){
 // ═══════════════════════════════════════════════════════════════
 var _cfgTab='spital';
 async function rCfg(el){
+  var isEN=CFG.lang==='en';
   // ── Tab navigation ──
   var h='<div class="ac-type-tabs" style="margin-bottom:16px">'+
     [['spital','&#127973; Spital'],['dateintro','&#128203; Introducere date'],['date','&#128190; Date & Backup'],['ai','&#129302; AI']].map(t=>
@@ -10971,8 +10992,8 @@ async function rCfg(el){
       var i=s._idx,nPer=(s.bed_periods||[]).length,wb=nPer>0?getWeightedBeds(s.name,A.year).toFixed(1):'';
       var isAmbul=AMBUL_TYPES.indexOf(s.type)>=0;
       return '<tr>'+
-      '<td><input value="'+s.name+'" onchange="CFG.sections['+i+'].name=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px"></td>'+
-      '<td><input value="'+(s.code||'')+'" onchange="CFG.sections['+i+'].code=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px;text-align:center"></td>'+
+      '<td><input value="'+s.name+'" onchange="CFG.sections['+i+'].name=this.value;if(!CFG.sections['+i+'].code)autoGenCode('+i+')" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px"></td>'+
+      '<td><input value="'+(s.code||'')+'" onchange="CFG.sections['+i+'].code=this.value" placeholder="auto" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px;text-align:center"></td>'+
       (isAmbul?'':
       '<td><select onchange="CFG.sections['+i+'].type=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px;width:100%">'+_secTypeOpts(s.type)+'</select></td>')+
       '<td><div style="display:flex;align-items:center;gap:4px">'+
@@ -10993,7 +11014,7 @@ async function rCfg(el){
     // II. AMBULATORIU
     h+=
     '<div class="pn" id="cfg-sec-am" style="margin-top:14px"><div class="ph"><h3>II. Ambulatoriu — Cabinete</h3><button class="btn bp bsm" onclick="addSection(\'ambulatoriu\')">+ Adauga cabinet</button></div><div class="pb">'+
-      '<div class="ib inf">Cabinetele din ambulatoriul spitalului. Fiecare cabinet apare separat in autocontrol pentru monitorizarea probelor microbiologice.</div>'+
+      '<div class="ib inf">Cabinetele din ambulatoriul spitalului. Fiecare cabinet apare separat in autocontrol pentru monitorizarea probelor microbiologice.<br><strong>Important:</strong> Foloseste prefixul "Cab." in denumire (ex: "Cab. Pediatrie") pentru a diferentia cabinetele de sectiile cu acelasi nume.</div>'+
       '<table class="dt"><thead><tr><th>Denumire cabinet</th><th style="width:70px">Cod</th><th style="width:160px">Paturi</th><th style="width:50px">&#215;</th></tr></thead>'+
       '<tbody>'+ambulSec.map(secRow).join('')+'</tbody></table>'+
       '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn bp" onclick="saveCfg();alert(\'Salvat!\')">Salveaza</button><button class="btn bp bsm" onclick="addSection(\'ambulatoriu\')">+ Adauga cabinet</button></div>'+
@@ -11042,8 +11063,8 @@ async function rCfg(el){
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-probe" placeholder="Tip proba nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-probe\').value.trim();if(v){CFG.probe_types.push({id:genId(\'probe\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
-  '<div class="pn" id="cfg-probe-map"><div class="ph"><h3>Probe aplicabile per sectie</h3></div><div class="pb">'+
-    '<div class="ib inf" style="margin-bottom:10px">Bifeaza tipurile de probe microbiologice care se aplica fiecarei sectii. Probele nebifate NU vor aparea ca "netestate" in analiza autocontrol.</div>'+
+  '<div class="pn" id="cfg-probe-map"><div class="ph"><h3>'+(isEN?'Applicable probes per section':'Probe aplicabile per sectie')+'</h3></div><div class="pb">'+
+    '<div class="ib inf" style="margin-bottom:10px">'+(isEN?'Check the microbiological probe types that apply to each section. Unchecked probes will NOT appear as "untested" in autocontrol analysis.':'Bifeaza tipurile de probe microbiologice care se aplica fiecarei sectii. Probele nebifate NU vor aparea ca "netestate" in analiza autocontrol.')+'</div>'+
     _renderProbeApplicabilityUI()+
   '</div></div>'+
 
@@ -11095,20 +11116,12 @@ async function rCfg(el){
   '</div></div>'+
 
   '<div class="pn" id="cfg-bio"><div class="ph"><h3>Produse Biocide</h3></div><div class="pb">'+
-    '<table class="dt" style="font-size:12px"><thead><tr><th>Produs</th><th>Producator</th><th>Distribuitor</th><th>In stoc</th><th>Avize</th><th style="width:40px">&#215;</th></tr></thead><tbody>'+
+    '<table class="dt" style="font-size:12px"><thead><tr><th>Produs</th><th>Producator</th><th>Distribuitor</th><th>In stoc</th><th style="width:40px">&#215;</th></tr></thead><tbody>'+
     CFG.biocide_products.map((p,i)=>{const nm=typeof p==='string'?p:(p.name||'?');
-      var avize=p.avize||[];
-      var avizInfo=avize.length?avize.map(function(a){
-        var exp=a.date_expiry?new Date(a.date_expiry):null;
-        var expSoon=exp&&exp<new Date(Date.now()+30*86400000);
-        var expired=exp&&exp<new Date();
-        return '<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:'+(expired?'#FEE2E2':expSoon?'#FEF3C7':'#D1FAE5')+';color:'+(expired?'#991B1B':expSoon?'#92400E':'#065F46')+'">'+esc(a.nr||'—')+' &rarr; '+(a.date_expiry||'?')+'</span>';
-      }).join(' '):'<span style="font-size:10px;color:var(--txtL)">—</span>';
       return '<tr><td>'+esc(nm)+'</td>'+
       '<td><input value="'+esc(p.manufacturer||'')+'" onchange="CFG.biocide_products['+i+'].manufacturer=this.value;saveCfg()" placeholder="Producator" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;width:100%;font-size:11px"></td>'+
       '<td><input value="'+esc(p.distributor||'')+'" onchange="CFG.biocide_products['+i+'].distributor=this.value;saveCfg()" placeholder="Distribuitor" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;width:100%;font-size:11px"></td>'+
       '<td style="text-align:center"><input type="checkbox" '+(p.in_stock?'checked':'')+' onchange="CFG.biocide_products['+i+'].in_stock=this.checked;saveCfg()" title="Produs in stoc"></td>'+
-      '<td>'+avizInfo+' <button class="btn bo bsm" style="padding:1px 6px;font-size:10px" onclick="editBioAvize('+i+')">&#9998;</button></td>'+
       '<td class="act"><button onclick="CFG.biocide_products.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>'}).join('')+
     '</tbody></table>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-bio" placeholder="Produs biocid nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-bio\').value.trim();if(v){CFG.biocide_products.push({id:genId(\'bio\'),name:v,manufacturer:\'\',distributor:\'\',in_stock:true,avize:[]});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
@@ -11273,11 +11286,41 @@ async function rCfg(el){
   if(_cfgTab==='ai')setTimeout(showAiFields,50);
 }
 
+function _autoCode(name,isCabinet){
+  if(!name)return '';
+  // Remove "Cab. " prefix for cabinet code generation
+  var n=name.replace(/^Cab\.\s*/i,'').trim();
+  if(!n)return isCabinet?'AMB':'';
+  // Common abbreviations
+  var abbr={'Medicina Interna':'INT','Chirurgie Generala':'CHIRGEN','Obstetrica-Ginecologie':'OG','Obstetrica Ginecologie':'OG',
+    'Pediatrie':'PED','Ortopedie si Traumatologie':'ORTO','Neurologie':'NEURO','Oftalmologie':'OFT','Dermatovenerologie':'DER',
+    'Neonatologie':'NN','Cardiologie':'CARD','Psihiatrie':'PSIH','Urologie':'URO','Gastroenterologie':'GASTRO',
+    'Medicina Muncii':'MM','Chirurgie Pediatrica':'CHIRPED','Boli Cronice':'CRO','O.R.L.':'ORL','A.T.I.':'ATI',
+    'R.M.F.B.':'RMFB','U.P.U./C.P.U.':'UPU','Bloc Operator':'BO','Bloc Alimentar':'BALIM','TESA':'TESA',
+    'Laborator Analize Medicale':'LAB','Sterilizare':'STER','Farmacie':'FAR','Spalatorie':'SPAL'};
+  var code=abbr[n];
+  if(!code){
+    // Generate from first letters of words, max 4 chars
+    var words=n.replace(/[.\-\/()]/g,' ').split(/\s+/).filter(w=>w.length>1&&!['si','de','din','la','cu','sau'].includes(w.toLowerCase()));
+    if(words.length===1)code=words[0].substring(0,3).toUpperCase();
+    else code=words.map(w=>w[0]).join('').toUpperCase().substring(0,4);
+  }
+  return isCabinet?'AMB'+code:code;
+}
+function autoGenCode(secIdx){
+  var s=CFG.sections[secIdx];if(!s)return;
+  var isCab=s.type==='cabinet';
+  var newCode=_autoCode(s.name,isCab);
+  // Check uniqueness — append number if duplicate
+  var existing=CFG.sections.filter((x,i)=>i!==secIdx&&x.code===newCode);
+  if(existing.length>0){var n=2;while(CFG.sections.some((x,i)=>i!==secIdx&&x.code===newCode+n))n++;newCode=newCode+n}
+  s.code=newCode;saveCfg();render();
+}
 function addSection(kind){
   if(kind==='ambulatoriu'){
-    CFG.sections.push({id:genId('sec'),name:'Cabinet nou',beds:0,code:'',type:'cabinet',bed_periods:[]});
+    CFG.sections.push({id:genId('sec'),name:'Cab. ',beds:0,code:'AMB',type:'cabinet',bed_periods:[]});
   } else {
-    CFG.sections.push({id:genId('sec'),name:'Sectie noua',beds:0,code:'',bed_periods:[]});
+    CFG.sections.push({id:genId('sec'),name:'',beds:0,code:'',bed_periods:[]});
   }
   saveCfg();render();
 }
@@ -12738,6 +12781,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.6',date:'2026-03-27',notes:'NOU: Auto-generare cod sectie/cabinet la completarea numelui (dictionar 30+ specialitati)\nNOU: Cabinet nou pre-inserat cu Cab. si cod AMB\nNOU: Nota informativa prefixul Cab. pentru diferentiere cabinete/sectii'},
+  {version:'12.5',date:'2026-03-27',notes:'FIX: Sync config — schimbare fisier face replace complet, pastreaza identitate locala\nFIX: Import backup — protejare hospital_name la import din alt spital\nUX: Avize biocide scoase din Configurare (gestionate din dialogul editare)\nUX: Traduceri EN complete — toolbar, biocide, avize, matrice probe'},
   {version:'12.4',date:'2026-03-27',notes:'NOU: Autocontrol tabel Probe — coloana Nr. Inregistrare vizibila si sortabila'},
   {version:'12.3',date:'2026-03-27',notes:'NOU: Autocontrol — probe aplicabile per sectie (matrice checkboxuri in Configurare)\nNOU: Autocontrol — celule N/A in matrice pentru combinatii neaplicabile\nNOU: Autocontrol — 3 butoane dialog proba: Anuleaza / Salveaza+Noua / Salveaza\nNOU: Autocontrol — camp Nr. inregistrare pe fiecare proba + afisare in popup\nNOU: Biocide — documente multiple per tip atasament + avize in dialog editare\nNOU: Sync — smart merge config + reconectare automata la primul click\nFIX: Precautiuni implementate IAAM se salveaza corect\nFIX: Setup wizard import backup pe versiunea locala\nFIX: Previzualizare JSON fara buton de combinare\nUX: Buton backup ⏬ Salvare back-up\nUX: Coloana Detalii proba (ex Neconformitati)\nUX: Prefix Cab. automat pentru cabinete ambulatoriu'},
   {version:'12.2',date:'2026-03-26',notes:'NOU: IAAM — Sectia de dobandire (atribuire epidemiologica) cu coloana separata si toggle timeline\nNOU: 7 audituri Interventii cu Impact Major (APCI): IAP/VAP, CVP, CVC, SSI, SST, ITU, ATB\nNOU: 66 elemente audit predefinite bazate pe dovezi cu sectiuni (Insertie/Ingrijire/Preoperator)\nNOU: Raport Word Complianta Igiena Mainilor cu filtre: perioada, sectie, categorie, moment OMS'},
@@ -13354,7 +13399,7 @@ function impAll(){if(!confirm('Importul inlocuieste datele existente. Continua?'
     // Support old format keys (ia→iaam, etc.)
     const oldMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
     for(const[key,store] of Object.entries(oldMap)){if(d[key]&&!d[store]){d[store]=d[key];delete d[key]}}
-    if(d.config){const cfg=_extractCfg(d.config);if(cfg)Object.assign(CFG,cfg);await saveCfg()}
+    if(d.config){const cfg=_extractCfg(d.config);if(cfg){var savedId={hospital_name:CFG.hospital_name,hospital_short:CFG.hospital_short,compartment_name:CFG.compartment_name,current_user:CFG.current_user,author_name:CFG.author_name};Object.assign(CFG,cfg);Object.assign(CFG,savedId)}await saveCfg()}
     // Import all stores by name
     for(const s of ST)if(d[s]&&Array.isArray(d[s])){await cl(s);for(const i of d[s])await pt(s,i)}
     // Write imported attachments to disk if directory available

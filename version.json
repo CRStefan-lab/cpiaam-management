@@ -1,7 +1,9 @@
 {
-  "version": "12.4",
+  "version": "12.6",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Autocontrol tabel Probe — coloana Nr. Inregistrare vizibila si sortabila"
+    "NOU: Configurare — auto-generare cod sectie/cabinet la completarea numelui (dictionar 30+ specialitati)",
+    "NOU: Configurare — cabinet nou pre-inserat cu Cab. si cod AMB",
+    "NOU: Configurare — nota informativa privind prefixul Cab. pentru diferentierea cabinetelor de sectii"
   ]
 }

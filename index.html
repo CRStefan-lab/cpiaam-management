@@ -13457,25 +13457,15 @@ function analyzeObiective(objectives){
 // ═════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════
-// PWA install prompt
+// PWA install prompt — show button ONLY when Chrome offers native install
 var _pwaInstallPrompt=null;
 function _updateInstallBtn(){var b=document.getElementById('btn-pwa-install');if(!b)return;
-  // Show button on https:// always (either PWA prompt or shortcut download), hide on file://
-  if(location.protocol==='https:'){b.style.display='';b.title=_pwaInstallPrompt?'Instaleaza aplicatia pe acest calculator':'Descarca scurtatura pe Desktop';}
-  else{b.style.display='none';}
+  b.style.display=_pwaInstallPrompt?'':'none';
 }
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();_pwaInstallPrompt=e;_updateInstallBtn();});
 window.addEventListener('appinstalled',function(){_pwaInstallPrompt=null;_updateInstallBtn();showToast('Aplicatia a fost instalata cu succes!');});
 function installPWA(){
-  if(_pwaInstallPrompt){_pwaInstallPrompt.prompt();_pwaInstallPrompt.userChoice.then(function(r){if(r.outcome==='accepted'){_pwaInstallPrompt=null;_updateInstallBtn();}});return;}
-  // Fallback: download a .url shortcut file for desktop
-  downloadDesktopShortcut();
-}
-function downloadDesktopShortcut(){
-  var appUrl='https://crstefan-lab.github.io/cpiaam-management/';
-  var content='[InternetShortcut]\r\nURL='+appUrl+'\r\nIconIndex=0\r\nIconFile='+appUrl+'favicon.ico\r\n';
-  saveAs(new Blob([content],{type:'application/internet-shortcut'}),'CPIAAM Management.url');
-  showToast(CFG.lang==='en'?'Shortcut downloaded — move it to your Desktop':'Scurtatura descarcata — muta-o pe Desktop');
+  if(_pwaInstallPrompt){_pwaInstallPrompt.prompt();_pwaInstallPrompt.userChoice.then(function(r){if(r.outcome==='accepted'){_pwaInstallPrompt=null;_updateInstallBtn();}});}
 }
 function downloadApp(){
   const html='<!DOCTYPE html>'+document.documentElement.outerHTML;

@@ -1,10 +1,10 @@
 {
-  "version": "12.11",
+  "version": "12.13",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX: Schimbare fisier sync — numele spitalului se importa din fisierul nou (nu mai ramane cel vechi)",
-    "NOU: Iconita PWA — scut medical teal cu cruce (varianta E), design profesional",
-    "NOU: PWA (Progressive Web App) — aplicatia se poate instala pe desktop direct din browser",
-    "NOU: Service Worker — CDN-uri (Chart.js, docx, xlsx) cachate local, functioneaza offline complet"
+    "FIX: Banner update pe versiunea online — 'Reincarca pagina' in loc de 'Descarca acum'",
+    "NOU: Buton 'Instaleaza' vizibil in toolbar pe versiunea online",
+    "FIX: Schimbare fisier sync — numele spitalului se importa din fisierul nou",
+    "NOU: Iconita PWA + PWA offline complet"
   ]
 }

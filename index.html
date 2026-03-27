@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.11</title>
+<title>CPIAAM Management v12.13</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Comitetul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -995,6 +995,7 @@ body{display:block!important;background:#fff!important}
       <button class="tb-icon" onclick="toggleDark()" title="Mod zi/noapte" id="btn-dark">&#9728;&#65039;</button>
       <button class="tb-icon" onclick="toolbarSave()" title="Salveaza datele acum" id="btn-save" style="font-size:14px">&#128190;</button>
       <button class="tb-icon" onclick="toolbarBackup()" title="Salvare back-up" id="btn-bkp" style="font-size:14px">⏬</button>
+      <button id="btn-pwa-install" onclick="installPWA()" title="Instaleaza aplicatia pe acest calculator" style="display:none;font-size:12px;background:var(--acc);color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:600">&#128229; Instaleaza</button>
       <div class="tb-sep"></div>
       <div class="yr-nav">
         <button onclick="changeYear(-1)" title="Anul anterior">&#9664;</button>
@@ -1860,7 +1861,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.11';
+const APP_VERSION='12.13';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -12841,6 +12842,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.13',date:'2026-03-27',notes:'FIX: Banner update pe versiunea online — buton "Reincarca pagina" in loc de "Descarca acum" (actualizare prin Service Worker, nu descarcare HTML)'},
+  {version:'12.12',date:'2026-03-27',notes:'NOU: Buton "Instaleaza" vizibil in toolbar pe versiunea online — apare automat cand browserul permite instalarea, dispare dupa instalare'},
   {version:'12.11',date:'2026-03-27',notes:'FIX: Schimbare fisier sync — numele spitalului se importa din fisierul nou (nu mai ramane cel vechi)'},
   {version:'12.10',date:'2026-03-27',notes:'NOU: Iconita PWA — scut medical teal cu cruce, design profesional (varianta E)\nNOU: icon.svg inclus in dist/ si referentiat in manifest.json'},
   {version:'12.9',date:'2026-03-27',notes:'NOU: PWA — aplicatia se instaleaza pe desktop direct din browser, functioneaza offline complet\nNOU: Service Worker — CDN-uri cachate local (Chart.js, docx, xlsx, FileSaver)\nNOU: Update automat — detectare versiune noua + notificare utilizator\nNOU: Wizard adaptat — buton Instaleaza pe https://, Descarca pe file://'},
@@ -13443,9 +13446,11 @@ function analyzeObiective(objectives){
 // ═══════════════════════════════════════════════════════════════
 // PWA install prompt
 var _pwaInstallPrompt=null;
-window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();_pwaInstallPrompt=e});
+function _updateInstallBtn(){var b=document.getElementById('btn-pwa-install');if(b)b.style.display=_pwaInstallPrompt?'':'none';}
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();_pwaInstallPrompt=e;_updateInstallBtn();});
+window.addEventListener('appinstalled',function(){_pwaInstallPrompt=null;_updateInstallBtn();showToast('Aplicatia a fost instalata cu succes!');});
 function installPWA(){
-  if(_pwaInstallPrompt){_pwaInstallPrompt.prompt();_pwaInstallPrompt.userChoice.then(function(r){if(r.outcome==='accepted')showToast('Aplicatia a fost instalata!');_pwaInstallPrompt=null});return}
+  if(_pwaInstallPrompt){_pwaInstallPrompt.prompt();_pwaInstallPrompt.userChoice.then(function(r){if(r.outcome==='accepted'){_pwaInstallPrompt=null;_updateInstallBtn();}});return;}
   if(location.protocol==='https:')showToast(CFG.lang==='en'?'Use browser menu > Install app':'Foloseste meniul browserului > Instaleaza aplicatia');
   else showToast(CFG.lang==='en'?'Install available only from online version':'Instalare disponibila doar din versiunea online');
 }
@@ -13628,10 +13633,14 @@ function showUpdateBanner(d){
   const cl=Array.isArray(d.changelog)?d.changelog.join(' • '):'';
   const b=document.createElement('div');b.id='update-banner';
   b.style.cssText='background:#FAEEDA;color:#854F0B;padding:12px 18px;font-size:13px;display:flex;align-items:center;gap:12px;justify-content:space-between;border-bottom:1px solid #E8C97A;font-family:var(--f);flex-wrap:wrap';
+  var isHttps=location.protocol==='https:';
+  var actionBtn=isHttps
+    ?'<button class="btn bp bsm" onclick="window.location.reload()">Reincarca pagina</button>'
+    :'<button class="btn bp bsm" onclick="downloadUpdate(\''+esc(d.url)+'\',\''+esc(d.version)+'\')">Descarca acum</button>';
   b.innerHTML='<div style="flex:1;min-width:200px"><strong>Versiune noua disponibila (v'+esc(d.version)+')</strong>'+
     (cl?' — <span style="font-size:12px">'+esc(cl)+'</span>':'')+
     '</div><div style="display:flex;gap:6px;flex-shrink:0">'+
-    '<button class="btn bp bsm" onclick="downloadUpdate(\''+esc(d.url)+'\',\''+esc(d.version)+'\')">Descarca acum</button>'+
+    actionBtn+
     '<button class="btn bo bsm" onclick="dismissUpdate()" style="line-height:1">&times;</button></div>';
   const mn=document.getElementById('app-mn');
   if(mn)mn.insertBefore(b,mn.firstChild);

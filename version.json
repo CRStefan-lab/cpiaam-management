@@ -1,7 +1,11 @@
 {
-  "version": "12.7",
+  "version": "12.9",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Fisierul JSON sugerat cu numele spitalului (CPIAAM_Municipal_Motru.json in loc de CPIAAM_data.json)"
+    "NOU: PWA (Progressive Web App) — aplicatia se poate instala pe desktop direct din browser",
+    "NOU: Service Worker — CDN-uri (Chart.js, docx, xlsx) cachate local, functioneaza offline complet",
+    "NOU: Update automat — Service Worker detecteaza versiune noua si notifica utilizatorul",
+    "NOU: Wizard — buton 'Instaleaza aplicatia' pe versiunea online, cu text clar ca datele raman locale",
+    "NOU: Buton installPWA() — declanseaza install prompt din browser"
   ]
 }

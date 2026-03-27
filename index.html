@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.7</title>
+<title>CPIAAM Management v12.9</title>
+<meta name="theme-color" content="#0D9488">
+<meta name="description" content="CPIAAM Management — Aplicatie pentru Comitetul de Prevenire a Infectiilor Asociate Asistentei Medicale">
+<link rel="manifest" href="manifest.json">
+<script>if('serviceWorker' in navigator && location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW:',e)})}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1856,7 +1860,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.7';
+const APP_VERSION='12.9';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -10683,7 +10687,7 @@ async function checkIncompleteIaam(){
 // ── Raport Anual ──
 async function genRaportAnualWord(){
   if(!await checkIncompleteIaam())return;
-  showGen('Se colecteaza datele...');const y=A.year,data=await collectAllData(y);const{ia,au,de,bi}=data;
+  showGen('Se colecteaza datele...');const y=A.year,data=await collectAllData(y);const{ia,au,de,bi,audits,trainings,atb,objectives}=data;
   const AN=runAllAnalysis(data);const conf=au.filter(p=>p.result==='conform').length;
   const totD=de.reduce((s,r)=>s+CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0),0);
   const consBio=bi.filter(b=>b.type==='iesire').reduce((s,b)=>s+(+b.value_lei||0),0);
@@ -10691,7 +10695,9 @@ async function genRaportAnualWord(){
   const children=[...wCover('Raport de Activitate',CFG.cpiaam_name+' — '+y)];
   // 1. IAAM
   children.push(wH1('1. Infectii Asociate Asistentei Medicale'));children.push(wSp(40));addNarrative(children,AN.iaam);children.push(wSp(60));
-  if(ia.length>0){const WK=[2256,2256,2256,2256];children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WK,rows:[wTblHead(['Total IAAM','MDR','Non-MDR','% MDR'],WK),wTblRow([String(ia.length),String(mdr),String(ia.length-mdr),fp(mdr,ia.length)],WK)]}));
+  if(ia.length>0){const WK=[1800,1800,1800,1800,1826];
+    const rateStr=AN.iaam.rate!==null?AN.iaam.rate.toFixed(2).replace('.',',')+'‰':'—';
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WK,rows:[wTblHead(['Total IAAM','MDR','Non-MDR','% MDR','Rata/1000 zile-pac.'],WK),wTblRow([String(ia.length),String(mdr),String(ia.length-mdr),fp(mdr,ia.length),rateStr],WK)]}));
     children.push(wSp(100));children.push(wH2('1.1. Distributie pe sectii'));children.push(wSp(40));
     const sc={};ia.forEach(r=>{const sn=rSec(r.section);sc[sn]=(sc[sn]||0)+1});const WS=[4500,2263,2263];
     children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WS,rows:[wTblHead(['Sectie','Nr. cazuri','%'],WS),...Object.entries(sc).sort((a,b)=>b[1]-a[1]).map(([s,n],i)=>wTblRow([s,String(n),fp(n,ia.length)],WS,i%2===1)),wTblRow([{text:'TOTAL',bold:true},{text:String(ia.length),bold:true},{text:'100%',bold:true}],WS)]}));
@@ -10717,6 +10723,53 @@ async function genRaportAnualWord(){
     wTblRow(['Stoc initial 01.01.'+y,'—',fn(Math.round(si))+' lei'],WB),wTblRow(['Intrari '+y,'—',fn(Math.round(intr))+' lei'],WB,true),
     wTblRow(['Consum (iesiri)','—',fn(Math.round(consBio))+' lei'],WB),wTblRow([{text:'Stoc final 31.12.'+y,bold:true},'—',{text:fn(Math.round(si+intr-consBio))+' lei',bold:true}],WB,true)]}));
   addRecs(children,AN.biocide,'4.1. Recomandari Biocide');
+  // 5. Consum Antibiotice
+  children.push(wPB());children.push(wH1('5. Consumul de Antibiotice'));children.push(wSp(40));
+  addNarrative(children,AN.atb);children.push(wSp(60));
+  if(atb&&atb.length>0){
+    const totalDDD=atb.reduce((s,r)=>s+(+r.ddd||0),0);
+    const access=atb.filter(r=>r.aware==='Access').reduce((s,r)=>s+(+r.ddd||0),0);
+    const watch=atb.filter(r=>r.aware==='Watch').reduce((s,r)=>s+(+r.ddd||0),0);
+    const reserve=atb.filter(r=>r.aware==='Reserve').reduce((s,r)=>s+(+r.ddd||0),0);
+    const W5=[3000,1500,1500,1500,1526];
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W5,rows:[wTblHead(['Clasificare AWaRe','DDD','% Total','Target OMS','Status'],W5),
+      wTblRow(['Access',totalDDD>0?access.toFixed(1):'—',totalDDD>0?fp(access,totalDDD):'—','>60%',totalDDD>0&&access/totalDDD>=0.6?'OK':'Sub target'],W5),
+      wTblRow(['Watch',totalDDD>0?watch.toFixed(1):'—',totalDDD>0?fp(watch,totalDDD):'—','<30%','—'],W5,true),
+      wTblRow(['Reserve',totalDDD>0?reserve.toFixed(1):'—',totalDDD>0?fp(reserve,totalDDD):'—','<10%','—'],W5),
+      wTblRow([{text:'TOTAL',bold:true},{text:totalDDD.toFixed(1),bold:true},{text:'100%',bold:true},'',''],W5,true)]}));
+  }
+  addRecs(children,AN.atb,'5.1. Recomandari Antibiotice');
+  // 6. Audituri IPC
+  children.push(wPB());children.push(wH1('6. Audituri IPC'));children.push(wSp(40));
+  addNarrative(children,AN.audituri);children.push(wSp(60));
+  if(audits&&audits.length>0){
+    const byType={};audits.forEach(a=>{const t=a.audit_type||a.type||'General';if(!byType[t])byType[t]={n:0,sum:0};byType[t].n++;byType[t].sum+=(+a.compliance||0)});
+    const W6=[4000,1500,1500,2026];
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W6,rows:[wTblHead(['Tip audit','Nr. audituri','Complianta medie','Target'],W6),
+      ...Object.entries(byType).map(([t,d],i)=>wTblRow([t,String(d.n),Math.round(d.sum/d.n)+' %','>80%'],W6,i%2===1)),
+      wTblRow([{text:'TOTAL',bold:true},{text:String(audits.length),bold:true},{text:Math.round(audits.reduce((s,a)=>s+(+a.compliance||0),0)/audits.length)+' %',bold:true},''],W6)]}));
+  }
+  addRecs(children,AN.audituri,'6.1. Recomandari Audituri');
+  // 7. Instruire Personal
+  children.push(wPB());children.push(wH1('7. Instruire Personal'));children.push(wSp(40));
+  addNarrative(children,AN.instruiri);children.push(wSp(60));
+  if(trainings&&trainings.length>0){
+    const totalP=trainings.reduce((s,t)=>s+(t.participants?.length||+t.participant_count||0),0);
+    const W7=[4500,2263,2263];
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W7,rows:[wTblHead(['Indicator','Valoare','Observatii'],W7),
+      wTblRow(['Nr. sesiuni instruire',String(trainings.length),''],W7),
+      wTblRow(['Total participanti',String(totalP),''],W7,true)]}));
+  }
+  addRecs(children,AN.instruiri,'7.1. Recomandari Instruire');
+  // 8. Obiective SMART
+  children.push(wPB());children.push(wH1('8. Obiective SMART IPC'));children.push(wSp(40));
+  addNarrative(children,AN.obiective);children.push(wSp(60));
+  if(objectives&&objectives.length>0){
+    const W8=[4000,1500,1500,2026];
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W8,rows:[wTblHead(['Obiectiv','Progres','Status','Termen'],W8),
+      ...objectives.map((o,i)=>{const nm=o.name||o.title||'Obiectiv '+(i+1);const pr=(o.progress||0)+'%';const st=o.status==='achieved'?'ATINS':o.progress>=50?'In progres':'Neatins';const dl=o.deadline||'—';return wTblRow([nm,pr,st,dl],W8,i%2===1)})]}));
+  }
+  addRecs(children,AN.obiective,'8.1. Recomandari Obiective');
   children.push(...wSigBlock());
   await saveDocx(makeDoc(children,'Raport Anual '+y,'Raport_CPIAAM_'+y),'Raport_Anual_CPIAAM_'+y+'.docx');logActivity('Generat Raport Anual '+y);
 }
@@ -11528,8 +11581,14 @@ function renderWizStep(step){
     c.innerHTML=bar+
       '<h2>Bun venit!</h2><p class="wiz-sub">Configureaza-ti spitalul pentru a incepe lucrul cu CPIAAM Manager.</p>'+
       '<div style="background:#EBF5FB;border:2px solid #2563B0;border-radius:8px;padding:14px;margin-bottom:16px;text-align:center">'+
-        '<button class="btn-dl" onclick="downloadApp()" style="margin-bottom:10px">&#128190; Descarca aplicatia pe calculator</button>'+
-        '<p style="font-size:12px;color:#1B3A6B;line-height:1.5;margin:0">Pentru functionalitate completa (sincronizare date, backup automat, lucru offline), descarca aplicatia si pune-o intr-un folder pe calculator (recomandat in OneDrive sau Google Drive). Poti folosi aplicatia si direct din browser, dar datele vor fi doar locale si se pierd la stergerea datelor de navigare.</p>'+
+        (location.protocol==='https:'?
+          '<button class="btn-dl" onclick="installPWA()" style="margin-bottom:10px">&#128228; Instaleaza aplicatia pe calculator</button>'+
+          '<p style="font-size:12px;color:#1B3A6B;line-height:1.5;margin:0">Aplicatia se instaleaza direct din browser si functioneaza offline. <strong>Datele raman doar pe PC-ul tau</strong>, nu sunt trimise online si nu sunt accesibile altor persoane. Sincronizarea cu colegii se face prin fisierul JSON partajat (OneDrive/Google Drive).</p>'+
+          '<div style="margin-top:8px"><button class="btn bo bsm" onclick="downloadApp()" style="font-size:11px">sau descarca fisierul HTML (fallback)</button></div>'
+        :
+          '<button class="btn-dl" onclick="downloadApp()" style="margin-bottom:10px">&#128190; Descarca aplicatia pe calculator</button>'+
+          '<p style="font-size:12px;color:#1B3A6B;line-height:1.5;margin:0">Descarca aplicatia si pune-o intr-un folder pe calculator (recomandat in OneDrive sau Google Drive). Pentru update automat si functionare offline completa, foloseste versiunea online: <a href="https://crstefan-lab.github.io/cpiaam-management/" target="_blank" style="color:#2563B0">crstefan-lab.github.io/cpiaam-management</a></p>'
+        )+
       '</div>'+
       '<div class="fg"><label>Denumirea spitalului</label><input id="wz-hosp" value="'+WZ.hospital_name+'" placeholder="ex: Spitalul Municipal ..."></div>'+
       '<div class="fg"><label>Denumirea compartimentului</label><input id="wz-cpiaam" value="'+WZ.cpiaam_name+'" placeholder="C.P.I.A.A.M."></div>'+
@@ -12782,6 +12841,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.9',date:'2026-03-27',notes:'NOU: PWA — aplicatia se instaleaza pe desktop direct din browser, functioneaza offline complet\nNOU: Service Worker — CDN-uri cachate local (Chart.js, docx, xlsx, FileSaver)\nNOU: Update automat — detectare versiune noua + notificare utilizator\nNOU: Wizard adaptat — buton Instaleaza pe https://, Descarca pe file://'},
+  {version:'12.8',date:'2026-03-27',notes:'NOU: Raport Anual CPIAAM complet — 8 sectiuni (+ Consum ATB, Audituri, Instruire, Obiective SMART)\nNOU: HAI Rate per 1000 zile-pacient in tabelul IAAM\nNOU: Analiza ATB cu DDD/100 zile-pacient si clasificare AWaRe OMS\nNOU: Analiza Audituri IPC, Instruire Personal, Obiective SMART\nFIX: Uniformizare calcul rata IAAM pe zile-pacient'},
   {version:'12.7',date:'2026-03-27',notes:'NOU: Fisierul JSON sugerat cu numele spitalului (ex: CPIAAM_Municipal_Motru.json)'},
   {version:'12.6',date:'2026-03-27',notes:'NOU: Auto-generare cod sectie/cabinet la completarea numelui (dictionar 30+ specialitati)\nNOU: Cabinet nou pre-inserat cu Cab. si cod AMB\nNOU: Nota informativa prefixul Cab. pentru diferentiere cabinete/sectii'},
   {version:'12.5',date:'2026-03-27',notes:'FIX: Sync config — schimbare fisier face replace complet, pastreaza identitate locala\nFIX: Import backup — protejare hospital_name la import din alt spital\nUX: Avize biocide scoase din Configurare (gestionate din dialogul editare)\nUX: Traduceri EN complete — toolbar, biocide, avize, matrice probe'},
@@ -13215,15 +13276,17 @@ async function exportMultiAnWord(){
 
 // ═══════════════════════════════════════════════════════════════
 function getTotalOmZile(deseuri){return deseuri.reduce((s,r)=>s+(+r.om_zile||0),0)}
-function ratePer1000(cases,omZile){return omZile>0?(cases/omZile*1000):null}
+function getTotalZileSpit(deseuri){return deseuri.reduce((s,r)=>s+(+r.zile_spit||0),0)}
+function ratePer1000(cases,days){return days>0?(cases/days*1000):null}
 function pct(n,d){return d>0?((n/d)*100):0}
 
 function analyzeIAAM(ia,prevIa,deseuri){
   const R={narrative:[],alerts:[],recommendations:[],insights:[]};
-  const n=ia.length,mdr=ia.filter(r=>r.mdr).length,omZ=getTotalOmZile(deseuri);
-  const rate=ratePer1000(n,omZ);const prevN=prevIa?prevIa.length:null;
+  const n=ia.length,mdr=ia.filter(r=>r.mdr).length,zileSpit=getTotalZileSpit(deseuri);
+  const rate=ratePer1000(n,zileSpit);const prevN=prevIa?prevIa.length:null;
+  R.rate=rate;R.zileSpit=zileSpit; // expose for reports
   let intro='In anul '+A.year+', la nivelul '+CFG.hospital_name+' au fost identificate si raportate '+n+' cazuri de infectii asociate asistentei medicale (IAAM), confirmate clinic si microbiologic.';
-  if(rate!==null)intro+=' Rata de incidenta calculata este de '+rate.toFixed(2).replace('.',',')+'\u2030 (cazuri/1000 om-zile).';
+  if(rate!==null)intro+=' Rata de incidenta calculata este de '+rate.toFixed(2).replace('.',',')+'\u2030 (cazuri/1000 zile-pacient).';
   R.narrative.push(intro);
   if(prevN!==null&&prevN>0){const ch=n-prevN;const pc=((ch/prevN)*100).toFixed(0);
     if(ch>0){R.narrative.push('Fata de anul anterior ('+prevN+' cazuri), se constata o crestere cu '+ch+' cazuri (+'+pc+'%).');R.alerts.push({level:'amber',text:'Crestere IAAM: de la '+prevN+' la '+n+' cazuri (+'+pc+'%).'});}
@@ -13296,11 +13359,77 @@ async function collectAllData(year){
   const ia=(await ga('iaam')).filter(r=>r.year===year),au=(await ga('autocontrol')).filter(r=>r.year===year),
     de=(await ga('deseuri')).filter(r=>r.year===year),bi=(await ga('biocide')).filter(r=>r.year===year),
     pps=(await ga('pps')).filter(r=>r.year===year);
+  const audits=(await ga('audits')).filter(r=>r.year===year),
+    trainings=(await ga('trainings')).filter(r=>r.year===year),
+    atb=(await ga('atb_consum')).filter(r=>r.year===year),
+    objectives=(await ga('objectives')).filter(r=>r.year===year);
   const pIa=(await ga('iaam')).filter(r=>r.year===year-1),pAu=(await ga('autocontrol')).filter(r=>r.year===year-1),
     pDe=(await ga('deseuri')).filter(r=>r.year===year-1);
-  return{ia,au,de,bi,pps,pIa,pAu,pDe};
+  return{ia,au,de,bi,pps,audits,trainings,atb,objectives,pIa,pAu,pDe};
 }
-function runAllAnalysis(d){return{iaam:analyzeIAAM(d.ia,d.pIa,d.de),auto:analyzeAutocontrol(d.au,d.pAu),deseuri:analyzeDeseuri(d.de,d.pDe),biocide:analyzeBiocide(d.bi)}}
+function runAllAnalysis(d){return{iaam:analyzeIAAM(d.ia,d.pIa,d.de),auto:analyzeAutocontrol(d.au,d.pAu),deseuri:analyzeDeseuri(d.de,d.pDe),biocide:analyzeBiocide(d.bi),audituri:analyzeAudituri(d.audits),instruiri:analyzeInstruiri(d.trainings),atb:analyzeATB(d.atb,d.de),obiective:analyzeObiective(d.objectives)}}
+
+// ═══ Analiza Audituri IPC ═══
+function analyzeAudituri(audits){
+  const R={narrative:[],alerts:[],recommendations:[],insights:[]};
+  if(!audits||!audits.length){R.narrative.push('Nu au fost realizate audituri IPC in '+A.year+'.');R.recommendations.push('Programarea unui calendar de audituri pentru anul urmator.');return R}
+  const avg=audits.reduce((s,a)=>s+(+a.compliance||0),0)/audits.length;
+  R.narrative.push('In '+A.year+' au fost realizate '+audits.length+' audituri IPC. Complianta medie: '+avg.toFixed(1).replace('.',',')+' %.');
+  const byType={};audits.forEach(a=>{const t=a.audit_type||a.type||'general';if(!byType[t])byType[t]={n:0,sum:0};byType[t].n++;byType[t].sum+=(+a.compliance||0)});
+  Object.entries(byType).forEach(([t,d])=>{R.narrative.push('- '+t+': '+d.n+' audituri, complianta medie '+Math.round(d.sum/d.n)+' %.')});
+  if(avg<80)R.alerts.push({level:'red',text:'Complianta medie audituri sub 80%: '+avg.toFixed(1)+'%.'});
+  else if(avg<90)R.alerts.push({level:'amber',text:'Complianta medie audituri sub 90%: '+avg.toFixed(1)+'%.'});
+  R.recommendations.push('Continuarea programului de audituri cu frecventa trimestriala.');
+  return R;
+}
+
+// ═══ Analiza Instruire Personal ═══
+function analyzeInstruiri(trainings){
+  const R={narrative:[],alerts:[],recommendations:[],insights:[]};
+  if(!trainings||!trainings.length){R.narrative.push('Nu au fost inregistrate instruiri in '+A.year+'.');R.recommendations.push('Planificarea instruirilor obligatorii.');return R}
+  const totalParticipanti=trainings.reduce((s,t)=>s+(t.participants?.length||+t.participant_count||0),0);
+  R.narrative.push('In '+A.year+' au fost realizate '+trainings.length+' sesiuni de instruire, cu '+totalParticipanti+' participanti.');
+  const byTopic={};trainings.forEach(t=>{const topic=t.topic||t.title||'General';byTopic[topic]=(byTopic[topic]||0)+1});
+  if(Object.keys(byTopic).length>1){R.narrative.push('Tematici abordate: '+Object.entries(byTopic).map(([t,n])=>t+' ('+n+')').join(', ')+'.')}
+  R.recommendations.push('Mentinerea programului de instruire conform planului anual.');
+  return R;
+}
+
+// ═══ Analiza Consum Antibiotice ═══
+function analyzeATB(atb,deseuri){
+  const R={narrative:[],alerts:[],recommendations:[],insights:[]};
+  if(!atb||!atb.length){R.narrative.push('Nu au fost inregistrate date de consum antibiotice in '+A.year+'.');return R}
+  const totalDDD=atb.reduce((s,r)=>s+(+r.ddd||0),0);
+  const zileSpit=getTotalZileSpit(deseuri||[]);
+  const ddd100=zileSpit>0?(totalDDD/zileSpit*100):null;
+  R.narrative.push('Consum total: '+totalDDD.toFixed(1).replace('.',',')+' DDD.'+(ddd100!==null?' Densitatea consumului: '+ddd100.toFixed(2).replace('.',',')+' DDD/100 zile-pacient.':''));
+  // AWaRe classification
+  const access=atb.filter(r=>r.aware==='Access').reduce((s,r)=>s+(+r.ddd||0),0);
+  const watch=atb.filter(r=>r.aware==='Watch').reduce((s,r)=>s+(+r.ddd||0),0);
+  const reserve=atb.filter(r=>r.aware==='Reserve').reduce((s,r)=>s+(+r.ddd||0),0);
+  if(totalDDD>0){
+    const accessPct=pct(access,totalDDD);
+    R.narrative.push('Clasificare AWaRe (OMS): Access '+accessPct.toFixed(1).replace('.',',')+' %, Watch '+pct(watch,totalDDD).toFixed(1).replace('.',',')+' %, Reserve '+pct(reserve,totalDDD).toFixed(1).replace('.',',')+' %.');
+    if(accessPct<60)R.alerts.push({level:'red',text:'Ponderea Access sub 60% (OMS recomanda >60%): '+accessPct.toFixed(1)+'%.'});
+  }
+  R.recommendations.push('Continuarea monitorizarii consumului de antibiotice si promovarea prescrierii rationale.');
+  return R;
+}
+
+// ═══ Analiza Obiective SMART ═══
+function analyzeObiective(objectives){
+  const R={narrative:[],alerts:[],recommendations:[],insights:[]};
+  if(!objectives||!objectives.length){R.narrative.push('Nu au fost definite obiective SMART IPC in '+A.year+'.');R.recommendations.push('Definirea obiectivelor SMART pentru anul urmator.');return R}
+  const atinse=objectives.filter(o=>o.status==='achieved'||o.progress>=100).length;
+  const partial=objectives.filter(o=>o.status!=='achieved'&&o.progress>0&&o.progress<100).length;
+  const neatinse=objectives.length-atinse-partial;
+  R.narrative.push('Obiective SMART '+A.year+': '+objectives.length+' definite. '+atinse+' atinse, '+partial+' partial realizate, '+neatinse+' neatinse.');
+  if(atinse===objectives.length)R.insights.push('Toate obiectivele SMART au fost atinse.');
+  else if(neatinse>0)R.alerts.push({level:'amber',text:neatinse+' obiective neatinse.'});
+  objectives.forEach(o=>{const nm=o.name||o.title||'Obiectiv';const pr=o.progress||0;R.narrative.push('- '+nm+': '+pr+'% realizat'+(o.status==='achieved'?' (ATINS)':'')+'.')});
+  R.recommendations.push('Redefinirea obiectivelor neatinse si stabilirea celor noi pentru '+(A.year+1)+'.');
+  return R;
+}
 
 
 </script>
@@ -13310,6 +13439,14 @@ function runAllAnalysis(d){return{iaam:analyzeIAAM(d.ia,d.pIa,d.de),auto:analyze
 // ═════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════
+// PWA install prompt
+var _pwaInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();_pwaInstallPrompt=e});
+function installPWA(){
+  if(_pwaInstallPrompt){_pwaInstallPrompt.prompt();_pwaInstallPrompt.userChoice.then(function(r){if(r.outcome==='accepted')showToast('Aplicatia a fost instalata!');_pwaInstallPrompt=null});return}
+  if(location.protocol==='https:')showToast(CFG.lang==='en'?'Use browser menu > Install app':'Foloseste meniul browserului > Instaleaza aplicatia');
+  else showToast(CFG.lang==='en'?'Install available only from online version':'Instalare disponibila doar din versiunea online');
+}
 function downloadApp(){
   const html='<!DOCTYPE html>'+document.documentElement.outerHTML;
   saveAs(new Blob([html],{type:'text/html;charset=utf-8'}),'CPIAAM_Management.html');
@@ -13466,6 +13603,23 @@ function checkForUpdate(){
   fetch(UPDATE_URL,{cache:'no-store'}).then(r=>r.json()).then(d=>{
     if(vCmp(d.version,APP_VERSION)>0) showUpdateBanner(d);
   }).catch(()=>{/* offline or error — silent */});
+}
+// PWA: listen for Service Worker update notification
+if('serviceWorker' in navigator&&navigator.serviceWorker.controller){
+  navigator.serviceWorker.addEventListener('message',function(e){
+    if(e.data&&e.data.type==='UPDATE_AVAILABLE'){
+      showPWAUpdateBanner();
+    }
+  });
+}
+function showPWAUpdateBanner(){
+  if(document.getElementById('pwa-update-banner'))return;
+  var b=document.createElement('div');b.id='pwa-update-banner';
+  b.style.cssText='background:#D1FAE5;color:#065F46;padding:12px 18px;font-size:13px;display:flex;align-items:center;gap:12px;justify-content:space-between;border-bottom:1px solid #A7F3D0;font-family:var(--f)';
+  b.innerHTML='<div><strong>Versiune noua disponibila!</strong> Actualizeaza pentru cea mai recenta versiune.</div>'+
+    '<button class="btn bp bsm" onclick="window.location.reload()">Actualizeaza</button>';
+  var mn=document.getElementById('app-mn');
+  if(mn)mn.insertBefore(b,mn.firstChild);
 }
 function showUpdateBanner(d){
   if(document.getElementById('update-banner'))return;

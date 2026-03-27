@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.9</title>
+<title>CPIAAM Management v12.11</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Comitetul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1540,9 +1540,9 @@ async function _importFromHandle(fh,skipReload,mode){
   const file=await fh.getFile();const text=await file.text();const d=JSON.parse(text);
   if(d.config){const cfg=_extractCfg(d.config);if(cfg){
     if(mode==='replace'){
-      // Replace config entirely, but keep local identity fields
-      var savedIdentity={hospital_name:CFG.hospital_name,hospital_short:CFG.hospital_short,compartment_name:CFG.compartment_name,hospital_code_pps:CFG.hospital_code_pps,current_user:CFG.current_user,author_name:CFG.author_name};
-      Object.assign(CFG,cfg);Object.assign(CFG,savedIdentity);
+      // Replace config entirely from new file; keep only who's using THIS PC
+      var savedUser={current_user:CFG.current_user,author_name:CFG.author_name};
+      Object.assign(CFG,cfg);Object.assign(CFG,savedUser);
     } else {
       _smartMergeCfg(CFG,cfg);
     }
@@ -1860,7 +1860,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.9';
+const APP_VERSION='12.11';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -12841,6 +12841,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.11',date:'2026-03-27',notes:'FIX: Schimbare fisier sync — numele spitalului se importa din fisierul nou (nu mai ramane cel vechi)'},
+  {version:'12.10',date:'2026-03-27',notes:'NOU: Iconita PWA — scut medical teal cu cruce, design profesional (varianta E)\nNOU: icon.svg inclus in dist/ si referentiat in manifest.json'},
   {version:'12.9',date:'2026-03-27',notes:'NOU: PWA — aplicatia se instaleaza pe desktop direct din browser, functioneaza offline complet\nNOU: Service Worker — CDN-uri cachate local (Chart.js, docx, xlsx, FileSaver)\nNOU: Update automat — detectare versiune noua + notificare utilizator\nNOU: Wizard adaptat — buton Instaleaza pe https://, Descarca pe file://'},
   {version:'12.8',date:'2026-03-27',notes:'NOU: Raport Anual CPIAAM complet — 8 sectiuni (+ Consum ATB, Audituri, Instruire, Obiective SMART)\nNOU: HAI Rate per 1000 zile-pacient in tabelul IAAM\nNOU: Analiza ATB cu DDD/100 zile-pacient si clasificare AWaRe OMS\nNOU: Analiza Audituri IPC, Instruire Personal, Obiective SMART\nFIX: Uniformizare calcul rata IAAM pe zile-pacient'},
   {version:'12.7',date:'2026-03-27',notes:'NOU: Fisierul JSON sugerat cu numele spitalului (ex: CPIAAM_Municipal_Motru.json)'},

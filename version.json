@@ -1,20 +1,7 @@
 {
-  "version": "12.3",
+  "version": "12.4",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Autocontrol — probe aplicabile per sectie (matrice checkboxuri in Configurare)",
-    "NOU: Autocontrol — celule N/A in matrice pentru combinatii neaplicabile (vizual distinct de netestat)",
-    "NOU: Autocontrol — 3 butoane dialog proba: Anuleaza / Salveaza+Noua / Salveaza",
-    "NOU: Autocontrol — camp Nr. inregistrare pe fiecare proba + afisare in popup",
-    "NOU: Biocide — documente multiple per tip atasament (aviz, fisa tehnica, SDS)",
-    "NOU: Biocide — avize producator vizibile in dialogul de editare",
-    "NOU: Sync — smart merge config arrays (sectii, produse biocide, tipuri probe)",
-    "NOU: Reconectare automata la primul click dupa restart browser",
-    "FIX: Precautiuni implementate (IAAM pas 9) se salveaza si se reafiseaza corect",
-    "FIX: Setup wizard — import backup functioneaza pe versiunea locala (file://)",
-    "FIX: Previzualizare JSON — doar citire, fara buton de combinare",
-    "UX: Buton backup — iconita noua si denumire Salvare back-up",
-    "UX: Coloana Neconformitati redenumita Detalii proba in autocontrol",
-    "UX: Cabinete ambulatoriu — prefix Cab. automat in dropdown-uri si afisare"
+    "NOU: Autocontrol tabel Probe — coloana Nr. Inregistrare vizibila si sortabila"
   ]
 }

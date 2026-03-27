@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.3</title>
+<title>CPIAAM Management v12.4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1842,7 +1842,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.3';
+const APP_VERSION='12.4';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -5328,6 +5328,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
     else if(sc==='type'){va=rProbe(a.probe_type);vb=rProbe(b.probe_type)}
     else if(sc==='section'){va=rSec(a.section);vb=rSec(b.section)}
     else if(sc==='result'){va=a.result;vb=b.result}
+    else if(sc==='reg'){va=a.reg_number||'';vb=b.reg_number||''}
     else if(sc==='organism'){va=a.organism||'';vb=b.organism||''}
     else{va=a.date||'';vb=b.date||''}
     return va<vb?-sd:va>vb?sd:0;
@@ -5346,6 +5347,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
     h+='<table class="dt"><thead><tr>'+
       '<th>#</th>'+
       '<th class="ac-sortable" onclick="setAutoSort(\'date\')">'+(isEN?'Sample Date':'Data Recoltare')+sortArr('date')+'</th>'+
+      '<th class="ac-sortable" onclick="setAutoSort(\'reg\')">'+(isEN?'Reg. No.':'Nr. Inreg.')+sortArr('reg')+'</th>'+
       '<th class="ac-sortable" onclick="setAutoSort(\'type\')">'+(isEN?'Sample Type':'Tip Proba')+sortArr('type')+'</th>'+
       '<th class="ac-sortable" onclick="setAutoSort(\'section\')">'+(isEN?'Section':'Sectie')+sortArr('section')+'</th>'+
       '<th class="ac-sortable" onclick="setAutoSort(\'result\')">'+(isEN?'Result':'Rezultat')+sortArr('result')+'</th>'+
@@ -5356,6 +5358,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
       const rowNum=_autoPage*AC_PAGE_SIZE+i+1;
       h+='<tr><td>'+rowNum+'</td>'+
         '<td>'+fmtDate(r.date)+'</td>'+
+        '<td style="font-size:11px">'+(r.reg_number||'—')+'</td>'+
         '<td>'+rProbe(r.probe_type)+'</td>'+
         '<td>'+rSec(r.section)+'</td>'+
         '<td>'+(r.result==='conform'?'<span class="bdg bdg-g">Conform</span>':'<span class="bdg bdg-r">Neconform</span>')+'</td>'+
@@ -12735,6 +12738,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.4',date:'2026-03-27',notes:'NOU: Autocontrol tabel Probe — coloana Nr. Inregistrare vizibila si sortabila'},
   {version:'12.3',date:'2026-03-27',notes:'NOU: Autocontrol — probe aplicabile per sectie (matrice checkboxuri in Configurare)\nNOU: Autocontrol — celule N/A in matrice pentru combinatii neaplicabile\nNOU: Autocontrol — 3 butoane dialog proba: Anuleaza / Salveaza+Noua / Salveaza\nNOU: Autocontrol — camp Nr. inregistrare pe fiecare proba + afisare in popup\nNOU: Biocide — documente multiple per tip atasament + avize in dialog editare\nNOU: Sync — smart merge config + reconectare automata la primul click\nFIX: Precautiuni implementate IAAM se salveaza corect\nFIX: Setup wizard import backup pe versiunea locala\nFIX: Previzualizare JSON fara buton de combinare\nUX: Buton backup ⏬ Salvare back-up\nUX: Coloana Detalii proba (ex Neconformitati)\nUX: Prefix Cab. automat pentru cabinete ambulatoriu'},
   {version:'12.2',date:'2026-03-26',notes:'NOU: IAAM — Sectia de dobandire (atribuire epidemiologica) cu coloana separata si toggle timeline\nNOU: 7 audituri Interventii cu Impact Major (APCI): IAP/VAP, CVP, CVC, SSI, SST, ITU, ATB\nNOU: 66 elemente audit predefinite bazate pe dovezi cu sectiuni (Insertie/Ingrijire/Preoperator)\nNOU: Raport Word Complianta Igiena Mainilor cu filtre: perioada, sectie, categorie, moment OMS'},
   {version:'12.1',date:'2026-03-26',notes:'NOU: IAAM tabel — coloana Nr. Inregistrare (registru) vizibila in lista cazuri\nNOU: IAAM tabel — sortare pe orice coloana (click pe header, sageata directie)\nNOU: IAAM cautare — include si nr. inregistrare\nNOU: Deseuri — checkbox Activ per cod (selecteaza care apar in modul)\nNOU: Deseuri — nota Instructiunea 6.226/2024 pe 18 01 08*/09 (medicamente populatie)'},

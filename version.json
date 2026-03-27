@@ -1,10 +1,9 @@
 {
-  "version": "12.15",
+  "version": "12.16",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX: Sectii duplicate la sincronizare — merge pe baza numelui sectiei",
-    "FIX: Descarcare actualizare sugereaza CPIAAM_Management.html (nu index.html)",
-    "NOU: Coloana Tip Proba in matricea Autocontrol ramane fixa la scroll (sticky)",
-    "FIX: Iconita PWA pe desktop Windows cu PNG 192x512"
+    "FIX: PWA auto-update — actualizare automata fara dialog de salvare",
+    "FIX: Coloana Tip Proba sticky in matricea Autocontrol",
+    "NOU: Buton Instaleaza descarca scurtatura .url pe desktop"
   ]
 }

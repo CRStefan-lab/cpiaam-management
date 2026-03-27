@@ -1,5 +1,5 @@
-// CPIAAM Service Worker — v12.15
-const CACHE_NAME = 'cpiaam-v12.15';
+// CPIAAM Service Worker — v12.16
+const CACHE_NAME = 'cpiaam-v12.16';
 const CDN_CACHE = 'cpiaam-cdn-v1';
 
 // CDN resources — cached permanently (versions pinned)
@@ -15,7 +15,7 @@ const CDN_URLS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     Promise.all([
-      caches.open(CACHE_NAME).then(cache => cache.addAll(['./index.html', './manifest.json'])),
+      caches.open(CACHE_NAME).then(cache => cache.addAll(['./index.html', './manifest.json', './favicon.ico', './icon-192.png'])),
       caches.open(CDN_CACHE).then(cache => cache.addAll(CDN_URLS))
     ]).then(() => self.skipWaiting())
   );

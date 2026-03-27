@@ -3,10 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.15</title>
+<title>CPIAAM Management v12.16</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Comitetul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="icon-192.png">
 <script>if('serviceWorker' in navigator && location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW:',e)})}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
@@ -138,8 +141,8 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .ac-mtab.act{color:var(--navy);border-bottom-color:var(--navy)}
 /* Matrix */
 .ac-matrix{overflow-x:auto;margin-bottom:14px;border:1px solid var(--brd);border-radius:8px}
-.ac-matrix table{border-collapse:collapse;width:100%;font-size:11px;table-layout:auto}
-.ac-matrix th{background:#1E293B;color:#fff;padding:5px 4px;text-align:center;font-weight:600;white-space:nowrap;font-size:9.5px;letter-spacing:.2px;max-width:90px;overflow:hidden;text-overflow:ellipsis}
+.ac-matrix table{border-collapse:separate;border-spacing:0;width:100%;font-size:11px;table-layout:auto}
+.ac-matrix th{background:#1E293B;color:#fff;padding:5px 4px;text-align:center;font-weight:600;white-space:nowrap;font-size:9.5px;letter-spacing:.2px;max-width:90px;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #334155}
 .ac-matrix th:first-child{text-align:left;min-width:120px;max-width:160px;padding-left:8px;position:sticky;left:0;z-index:3;background:#1E293B}
 .ac-matrix td{padding:4px 3px;text-align:center;border:1px solid var(--brd);font-weight:700;font-size:11px;transition:.15s;min-width:32px}
 .ac-matrix td:first-child{text-align:left;font-weight:500;background:#F8FAFC;cursor:default;white-space:nowrap;padding-left:8px;font-size:11px;position:sticky;left:0;z-index:1;box-shadow:2px 0 4px rgba(0,0,0,.06)}
@@ -1868,7 +1871,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.15';
+const APP_VERSION='12.16';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -12849,6 +12852,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.16',date:'2026-03-27',notes:'FIX: PWA auto-update — actualizare automata fara dialog de salvare sau interventia utilizatorului\nFIX: Coloana Tip Proba sticky in matricea Autocontrol (border-collapse fix)\nNOU: Buton Instaleaza pe PWA descarca scurtatura .url daca aplicatia e deja instalata'},
   {version:'12.15',date:'2026-03-27',notes:'FIX: Sectii duplicate la sincronizare — merge pe baza numelui sectiei (nu ID-ul intern)\nFIX: Descarcare actualizare sugereaza CPIAAM_Management.html (nu index.html)\nNOU: Coloana Tip Proba in matricea Autocontrol ramane fixa la scroll (sticky)'},
   {version:'12.14',date:'2026-03-27',notes:'FIX: Iconita PWA pe desktop Windows — generate PNG 192x192 si 512x512 (scut teal cu cruce alba)\nFIX: manifest.json cu PNG prioritar fata de SVG'},
   {version:'12.13',date:'2026-03-27',notes:'FIX: Banner update pe versiunea online — buton "Reincarca pagina" in loc de "Descarca acum" (actualizare prin Service Worker, nu descarcare HTML)'},
@@ -13469,8 +13473,7 @@ function installPWA(){
 }
 function downloadDesktopShortcut(){
   var appUrl='https://crstefan-lab.github.io/cpiaam-management/';
-  var ico='https://crstefan-lab.github.io/cpiaam-management/icon-192.png';
-  var content='[InternetShortcut]\r\nURL='+appUrl+'\r\nIconIndex=0\r\nIconFile='+ico+'\r\n';
+  var content='[InternetShortcut]\r\nURL='+appUrl+'\r\nIconIndex=0\r\nIconFile='+appUrl+'favicon.ico\r\n';
   saveAs(new Blob([content],{type:'application/internet-shortcut'}),'CPIAAM Management.url');
   showToast(CFG.lang==='en'?'Shortcut downloaded — move it to your Desktop':'Scurtatura descarcata — muta-o pe Desktop');
 }
@@ -13628,25 +13631,36 @@ const UPDATE_URL='https://crstefan-lab.github.io/cpiaam-management/version.json'
 function vCmp(a,b){const pa=(a+'').split('.').map(Number),pb=(b+'').split('.').map(Number);for(let i=0;i<Math.max(pa.length,pb.length);i++){const x=pa[i]||0,y=pb[i]||0;if(x!==y)return x-y}return 0}
 function checkForUpdate(){
   fetch(UPDATE_URL,{cache:'no-store'}).then(r=>r.json()).then(d=>{
-    if(vCmp(d.version,APP_VERSION)>0) showUpdateBanner(d);
+    if(vCmp(d.version,APP_VERSION)>0){
+      // On HTTPS/PWA: trigger SW update — auto-reload will follow via controllerchange/message
+      if(location.protocol==='https:'&&'serviceWorker' in navigator){
+        navigator.serviceWorker.ready.then(function(reg){if(reg)reg.update()}).catch(function(){});
+        // Also show banner as fallback in case SW update takes long
+        setTimeout(function(){if(vCmp(d.version,APP_VERSION)>0)showUpdateBanner(d)},8000);
+      } else {
+        showUpdateBanner(d);
+      }
+    }
   }).catch(()=>{/* offline or error — silent */});
 }
-// PWA: listen for Service Worker update notification
-if('serviceWorker' in navigator&&navigator.serviceWorker.controller){
-  navigator.serviceWorker.addEventListener('message',function(e){
-    if(e.data&&e.data.type==='UPDATE_AVAILABLE'){
-      showPWAUpdateBanner();
-    }
-  });
+// PWA: auto-update via Service Worker
+var _swReloading=false;
+function _swAutoReload(){
+  if(_swReloading)return;_swReloading=true;
+  showToast('Se actualizeaza aplicatia...');
+  setTimeout(function(){window.location.reload()},1500);
 }
-function showPWAUpdateBanner(){
-  if(document.getElementById('pwa-update-banner'))return;
-  var b=document.createElement('div');b.id='pwa-update-banner';
-  b.style.cssText='background:#D1FAE5;color:#065F46;padding:12px 18px;font-size:13px;display:flex;align-items:center;gap:12px;justify-content:space-between;border-bottom:1px solid #A7F3D0;font-family:var(--f)';
-  b.innerHTML='<div><strong>Versiune noua disponibila!</strong> Actualizeaza pentru cea mai recenta versiune.</div>'+
-    '<button class="btn bp bsm" onclick="window.location.reload()">Actualizeaza</button>';
-  var mn=document.getElementById('app-mn');
-  if(mn)mn.insertBefore(b,mn.firstChild);
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('message',function(e){
+    if(e.data&&e.data.type==='UPDATE_AVAILABLE')_swAutoReload();
+  });
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+    if(document.visibilityState==='visible')_swAutoReload();
+  });
+  // Force SW update check on page load
+  navigator.serviceWorker.ready.then(function(reg){
+    if(reg)reg.update().catch(function(){});
+  });
 }
 function showUpdateBanner(d){
   if(document.getElementById('update-banner'))return;
@@ -13655,7 +13669,7 @@ function showUpdateBanner(d){
   b.style.cssText='background:#FAEEDA;color:#854F0B;padding:12px 18px;font-size:13px;display:flex;align-items:center;gap:12px;justify-content:space-between;border-bottom:1px solid #E8C97A;font-family:var(--f);flex-wrap:wrap';
   var isHttps=location.protocol==='https:';
   var actionBtn=isHttps
-    ?'<button class="btn bp bsm" onclick="window.location.reload()">Reincarca pagina</button>'
+    ?'<button class="btn bp bsm" onclick="forceUpdatePWA()">Actualizeaza acum</button>'
     :'<button class="btn bp bsm" onclick="downloadUpdate(\''+esc(d.url)+'\',\''+esc(d.version)+'\')">Descarca acum</button>';
   b.innerHTML='<div style="flex:1;min-width:200px"><strong>Versiune noua disponibila (v'+esc(d.version)+')</strong>'+
     (cl?' — <span style="font-size:12px">'+esc(cl)+'</span>':'')+
@@ -13666,7 +13680,21 @@ function showUpdateBanner(d){
   if(mn)mn.insertBefore(b,mn.firstChild);
   else document.body.insertBefore(b,document.body.firstChild);
 }
+function forceUpdatePWA(){
+  showToast('Se actualizeaza...');
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.ready.then(function(reg){
+      if(reg)reg.update().then(function(){
+        // Give SW time to install, then force reload
+        setTimeout(function(){window.location.reload()},2000);
+      }).catch(function(){window.location.reload()});
+    }).catch(function(){window.location.reload()});
+  } else {
+    window.location.reload();
+  }
+}
 async function downloadUpdate(url,version){
+  // Only used on file:// — downloads new HTML directly (no save dialog)
   showToast('Se descarca actualizarea...');
   try{
     var response=await fetch(url,{cache:'no-store'});
@@ -13675,46 +13703,21 @@ async function downloadUpdate(url,version){
     if(newHTML.length<1000||!newHTML.includes('APP_VERSION')){
       throw new Error('Continut invalid');
     }
-    if(window.showSaveFilePicker){
-      try{
-        var pathParts=location.pathname.split('/');
-        var currentName=pathParts[pathParts.length-1]||'';
-        try{currentName=decodeURIComponent(currentName)}catch(e){}
-        if(!currentName||currentName===''||currentName==='index.html')currentName='CPIAAM_Management.html';
-        var opts={suggestedName:currentName,types:[{description:'HTML',accept:{'text/html':['.html']}}]};
-        var fh=await window.showSaveFilePicker(opts);
-        var wr=await fh.createWritable();
-        await wr.write(newHTML);
-        await wr.close();
-        dismissUpdate();
-        showUpdateSuccess(version,true);
-        return;
-      }catch(fsErr){
-        if(fsErr.name==='AbortError'){showToast('Actualizare anulata');return}
-        console.warn('SaveFilePicker failed, using saveAs:',fsErr);
-      }
-    }
     saveAs(new Blob([newHTML],{type:'text/html;charset=utf-8'}),'CPIAAM_Management.html');
     dismissUpdate();
-    showUpdateSuccess(version,false);
+    showUpdateSuccess(version);
   }catch(err){
     console.error('Update error:',err);
     showToast('\u26A0 Eroare la descarcare. Verifica conexiunea.');
   }
 }
-function showUpdateSuccess(version,savedInPlace){
+function showUpdateSuccess(version){
   var banner=document.getElementById('update-banner');if(banner)banner.remove();
   var b=document.createElement('div');b.id='update-success';
   b.style.cssText='background:#D1FAE5;color:#065F46;padding:16px 20px;font-size:13px;border-bottom:2px solid #6EE7B7;font-family:var(--f);text-align:center;line-height:1.6';
-  if(savedInPlace){
-    b.innerHTML='<strong>\u2713 Versiunea '+esc(version)+' a fost salvata!</strong><br>'+
-      '<span style="font-size:12px">Inchide aceasta pagina si redeschide fisierul pentru a folosi versiunea noua.</span><br>'+
-      '<span style="font-size:11px;color:#047857">Datele tale sunt in siguranta — sunt stocate in browser, nu in fisier.</span>';
-  }else{
-    b.innerHTML='<strong>\u2713 Versiunea '+esc(version)+' a fost descarcata!</strong><br>'+
-      '<span style="font-size:12px">Copiaza fisierul descarcat PESTE cel vechi din folderul aplicatiei, apoi redeschide.</span><br>'+
-      '<span style="font-size:11px;color:#047857">Datele tale sunt in siguranta — sunt stocate in browser, nu in fisier.</span>';
-  }
+  b.innerHTML='<strong>\u2713 Versiunea '+esc(version)+' a fost descarcata!</strong><br>'+
+    '<span style="font-size:12px">Copiaza fisierul descarcat PESTE cel vechi din folderul aplicatiei, apoi redeschide.</span><br>'+
+    '<span style="font-size:11px;color:#047857">Datele tale sunt in siguranta — sunt stocate in browser, nu in fisier.</span>';
   var mn=document.getElementById('app-mn');
   if(mn)mn.insertBefore(b,mn.firstChild);
   else document.body.insertBefore(b,document.body.firstChild);

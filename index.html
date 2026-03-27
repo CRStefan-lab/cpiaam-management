@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.6</title>
+<title>CPIAAM Management v12.7</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -1280,7 +1280,8 @@ async function _syncAfterReconnect(){
 }
 async function syncPickFile(){
   if(!window.showSaveFilePicker){alert('Browserul tau nu suporta File System Access API. Foloseste Chrome sau Edge.');return}
-  try{const _spOpts={suggestedName:'CPIAAM_data.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]};
+  try{var _sfName='CPIAAM_'+(CFG.hospital_name||CFG.hospital_short||'data').replace(/[^a-zA-Z0-9\u00C0-\u024F]/g,'_').replace(/_+/g,'_').substring(0,40)+'.json';
+  const _spOpts={suggestedName:_sfName,types:[{description:'JSON',accept:{'application/json':['.json']}}]};
     const _spSh=await loadFileHandle().catch(()=>null);if(_spSh)_spOpts.startIn=_spSh;
     _fileHandle=await window.showSaveFilePicker(_spOpts);
     CFG.sync_file_name=_fileHandle.name;await saveCfg();
@@ -1855,7 +1856,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.6';
+const APP_VERSION='12.7';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -12781,6 +12782,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.7',date:'2026-03-27',notes:'NOU: Fisierul JSON sugerat cu numele spitalului (ex: CPIAAM_Municipal_Motru.json)'},
   {version:'12.6',date:'2026-03-27',notes:'NOU: Auto-generare cod sectie/cabinet la completarea numelui (dictionar 30+ specialitati)\nNOU: Cabinet nou pre-inserat cu Cab. si cod AMB\nNOU: Nota informativa prefixul Cab. pentru diferentiere cabinete/sectii'},
   {version:'12.5',date:'2026-03-27',notes:'FIX: Sync config — schimbare fisier face replace complet, pastreaza identitate locala\nFIX: Import backup — protejare hospital_name la import din alt spital\nUX: Avize biocide scoase din Configurare (gestionate din dialogul editare)\nUX: Traduceri EN complete — toolbar, biocide, avize, matrice probe'},
   {version:'12.4',date:'2026-03-27',notes:'NOU: Autocontrol tabel Probe — coloana Nr. Inregistrare vizibila si sortabila'},

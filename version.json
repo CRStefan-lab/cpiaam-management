@@ -1,9 +1,7 @@
 {
-  "version": "12.6",
+  "version": "12.7",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Configurare — auto-generare cod sectie/cabinet la completarea numelui (dictionar 30+ specialitati)",
-    "NOU: Configurare — cabinet nou pre-inserat cu Cab. si cod AMB",
-    "NOU: Configurare — nota informativa privind prefixul Cab. pentru diferentierea cabinetelor de sectii"
+    "NOU: Fisierul JSON sugerat cu numele spitalului (CPIAAM_Municipal_Motru.json in loc de CPIAAM_data.json)"
   ]
 }

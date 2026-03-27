@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.16</title>
+<title>CPIAAM Management v12.18</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Comitetul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -141,9 +141,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .ac-mtab.act{color:var(--navy);border-bottom-color:var(--navy)}
 /* Matrix */
 .ac-matrix{overflow-x:auto;margin-bottom:14px;border:1px solid var(--brd);border-radius:8px}
-.ac-matrix table{border-collapse:separate;border-spacing:0;width:100%;font-size:11px;table-layout:auto}
+.ac-matrix table{border-collapse:separate;border-spacing:0;font-size:11px;table-layout:auto}
 .ac-matrix th{background:#1E293B;color:#fff;padding:5px 4px;text-align:center;font-weight:600;white-space:nowrap;font-size:9.5px;letter-spacing:.2px;max-width:90px;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #334155}
-.ac-matrix th:first-child{text-align:left;min-width:120px;max-width:160px;padding-left:8px;position:sticky;left:0;z-index:3;background:#1E293B}
+.ac-matrix th:first-child{text-align:left;min-width:150px;max-width:200px;padding-left:8px;position:sticky;left:0;z-index:3;background:#1E293B}
 .ac-matrix td{padding:4px 3px;text-align:center;border:1px solid var(--brd);font-weight:700;font-size:11px;transition:.15s;min-width:32px}
 .ac-matrix td:first-child{text-align:left;font-weight:500;background:#F8FAFC;cursor:default;white-space:nowrap;padding-left:8px;font-size:11px;position:sticky;left:0;z-index:1;box-shadow:2px 0 4px rgba(0,0,0,.06)}
 .ac-matrix td.ac-cell-c{cursor:pointer}.ac-matrix td.ac-cell-c:hover{opacity:.85;box-shadow:inset 0 0 0 2px rgba(0,0,0,.15)}
@@ -1339,7 +1339,7 @@ async function syncWrite(){
     await wr.write(JSON.stringify({version:APP_VERSION,exported:new Date().toISOString(),exportedBy:getCurrentUser(),config:CFG,...d},null,2));
     await wr.close();
     // Update timestamp so poll doesn't trigger on our own write
-    try{var f=await _fileHandle.getFile();_lastSyncRead=f.lastModified}catch(e){}
+    try{var f=await _fileHandle.getFile();_lastSyncRead=f.lastModified;_lastSyncSize=f.size}catch(e){}
   }catch(e){console.warn('Sync write failed:',e)}
 }
 async function syncReadFile(){
@@ -1488,7 +1488,7 @@ async function _fileActionSwitch(){
       var bkOpts={suggestedName:backupName,types:[{description:'JSON Backup',accept:{'application/json':['.json']}}]};
       var bkHandle=await window.showSaveFilePicker(bkOpts);
       var bkWr=await bkHandle.createWritable();await bkWr.write(backupJson);await bkWr.close();
-      showToast(isEN?'Backup saved: ':'Backup salvat: '+backupName);
+      showToast((isEN?'Backup saved: ':'Backup salvat: ')+backupName);
     }catch(bkErr){
       if(bkErr.name==='AbortError'){
         // User cancelled backup — ask if they want to continue anyway
@@ -1502,7 +1502,7 @@ async function _fileActionSwitch(){
     _fileHandle=_pendingFileHandle;_pendingFileHandle=null;
     CFG.sync_file_name=_fileHandle.name;await saveCfg();await saveFileHandle(_fileHandle);
     await _importFromHandle(_fileHandle,true,'replace');
-    showToast(isEN?'Connected to: ':'Conectat la: '+_fileHandle.name);
+    showToast((isEN?'Connected to: ':'Conectat la: ')+_fileHandle.name);
     startSyncPoll();
   }catch(e){alert((isEN?'Error switching file: ':'Eroare la schimbarea fisierului: ')+e.message)}
 }
@@ -1871,7 +1871,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.16';
+const APP_VERSION='12.18';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -5061,12 +5061,13 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
     });
     o+='</div>';
     if(filteredSec.length===0){o+='<div class="ib inf" style="margin-bottom:8px">'+(isEN?'No sections match this filter.':'Nicio structura nu corespunde filtrului.')+'</div>';return o}
-    o+='<div class="ac-matrix" style="position:relative"><table><thead><tr><th>'+(isEN?'Sample Type':'Tip Proba')+'</th>';
-    filteredSec.forEach(function(s){o+='<th>'+sn(s)+'</th>'});
+    // Matrix: sections as rows (sticky), probe types as columns
+    o+='<div class="ac-matrix" style="position:relative"><table><thead><tr><th>'+(isEN?'Section':'Sectie')+'</th>';
+    probeTypes.forEach(function(pt){o+='<th>'+sn(pt)+'</th>'});
     o+='</tr></thead><tbody>';
-    probeTypes.forEach(function(pt){
-      o+='<tr><td>'+sn(pt)+'</td>';
-      filteredSec.forEach(function(s){
+    filteredSec.forEach(function(s){
+      o+='<tr><td>'+sn(s)+'</td>';
+      probeTypes.forEach(function(pt){
         var cell=matrix[pt.id]&&matrix[pt.id][s.id]?matrix[pt.id][s.id]:{total:0,conf:0,nc:0};
         var cls,txt;
         if(!isProbeApplicable(s.id,pt.id)){cls='ac-cell-na';txt='N/A'}
@@ -5490,7 +5491,7 @@ function impAutoCSV(){const inp=document.createElement('input');inp.type='file';
   const ptName=cols[3],secName=cols[4];
   const ptId=(CFG.probe_types||[]).find(x=>x.name===ptName)?.id||ptName;
   const secId=CFG.sections.find(x=>x.name===secName)?.id||secName;
-  await pt('autocontrol',{year:A.year,quarter:+cols[0]||1,month:+cols[1]||1,date:cols[2],probe_type:ptId,section:secId,result:cols[5].toLowerCase().includes('neconform')?'neconform':'conform',organism:cols[6]||'',dsp_parallel:cols[7]?.toLowerCase()==='da',notes:cols[8]||''});cnt++}
+  await pt('autocontrol',{year:A.year,quarter:+cols[0]||1,month:+cols[1]||1,date:cols[2],probe_type:ptId,section:secId,result:cols[5].toLowerCase().includes('neconform')?'neconform':'conform',organism:cols[6]||'',ufc_count:cols[7]||'',details:cols[8]||'',dsp_parallel:cols[9]?.toLowerCase()==='da',notes:cols[10]||''});cnt++}
   alert(cnt+' probe importate.');render()};inp.click()}
 
 // ── Autocontrol Excel (cerinta 3) ──
@@ -10963,7 +10964,7 @@ function _renderProbeApplicabilityUI(){
     h+='</tr>';
   });
   h+='</tbody></table></div>';
-  h+='<div style="margin-top:8px;display:flex;gap:8px"><button class="btn bp" onclick="saveCfg();showToast(isEN?\'Saved!\':\'Salvat!\')">'+(isEN?'Save':'Salveaza')+'</button>'+
+  h+='<div style="margin-top:8px;display:flex;gap:8px"><button class="btn bp" onclick="saveCfg();showToast(CFG.lang===\'en\'?\'Saved!\':\'Salvat!\')">'+(isEN?'Save':'Salveaza')+'</button>'+
     '<button class="btn bo bsm" onclick="resetAllProbeApplicability()">'+(isEN?'Reset all (all checked)':'Reseteaza tot (toate bifate)')+'</button></div>';
   return h;
 }
@@ -11294,6 +11295,7 @@ async function rCfg(el){
     '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);background:var(--bg)"><input type="radio" name="cfg-floc" value="cloud"'+(CFG.file_location==='cloud'?' checked':'')+' onchange="saveFileLocationCfg(this.value)" style="accent-color:var(--navy)"> '+T('sync_cloud')+'</label>'+
     '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);background:var(--bg)"><input type="radio" name="cfg-floc" value="unknown"'+(CFG.file_location==='unknown'?' checked':'')+' onchange="saveFileLocationCfg(this.value)" style="accent-color:var(--navy)"> '+T('sync_nu_stiu')+'</label>'+
     '</div>'+
+    '<div style="margin-top:12px"><button class="btn bp" onclick="var v=document.querySelector(\'input[name=cfg-floc]:checked\');if(v){saveFileLocationCfg(v.value);showToast(\'Salvat!\')}">Salveaza</button></div>'+
     '<p style="font-size:11px;color:var(--txtL);margin-top:8px">'+T('sync_nota_cloud')+'</p>'+
   '</div></div>'+
 
@@ -11385,7 +11387,7 @@ function addSection(kind){
   if(kind==='ambulatoriu'){
     CFG.sections.push({id:genId('sec'),name:'Cab. ',beds:0,code:'AMB',type:'cabinet',bed_periods:[]});
   } else {
-    CFG.sections.push({id:genId('sec'),name:'',beds:0,code:'',bed_periods:[]});
+    CFG.sections.push({id:genId('sec'),name:'',beds:0,code:'',type:'sectie',bed_periods:[]});
   }
   saveCfg();render();
 }
@@ -12852,6 +12854,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.18',date:'2026-03-27',notes:'FIX: 8 buguri rezolvate — audit complet aplicatie\nFIX: Import CSV autocontrol — coloane UFC, Detalii, DSP corectate\nFIX: Backup/restore biocide cu atasamente multiple (format array)\nFIX: Sync merge spurios dupa fiecare scriere (lastSyncSize)\nFIX: Toast mesaje incomplete in engleza (operator precedence)\nFIX: Buton Salveaza probe aplicabile — ReferenceError rezolvat\nUX: Matrice Autocontrol inversata — sectii pe randuri (sticky), probe pe coloane\nUX: Sectie noua primeste type=sectie implicit'},
+  {version:'12.17',date:'2026-03-27',notes:'FIX: PWA auto-update seamless — actualizare automata fara dialog de salvare\nFIX: Coloana Tip Proba sticky in matricea Autocontrol\nNOU: Favicon iconita teal in browser tab si bookmark-uri\nNOU: Buton Salveaza sub Locatia fisierului in Configurare\nUX: Buton Instaleaza doar cand Chrome ofera PWA prompt nativ'},
   {version:'12.16',date:'2026-03-27',notes:'FIX: PWA auto-update — actualizare automata fara dialog de salvare sau interventia utilizatorului\nFIX: Coloana Tip Proba sticky in matricea Autocontrol (border-collapse fix)\nNOU: Buton Instaleaza pe PWA descarca scurtatura .url daca aplicatia e deja instalata'},
   {version:'12.15',date:'2026-03-27',notes:'FIX: Sectii duplicate la sincronizare — merge pe baza numelui sectiei (nu ID-ul intern)\nFIX: Descarcare actualizare sugereaza CPIAAM_Management.html (nu index.html)\nNOU: Coloana Tip Proba in matricea Autocontrol ramane fixa la scroll (sticky)'},
   {version:'12.14',date:'2026-03-27',notes:'FIX: Iconita PWA pe desktop Windows — generate PNG 192x192 si 512x512 (scut teal cu cruce alba)\nFIX: manifest.json cu PNG prioritar fata de SVG'},
@@ -13479,11 +13483,14 @@ async function expAll(){const d={};for(const s of ST){if(s==='config')continue;d
     for(const rec of (d.biocide||[])){
       if(!rec.attachments)continue;
       for(const key of Object.keys(rec.attachments)){
-        const att=rec.attachments[key];
-        if(att.on_disk&&att.filename&&!att.data){
-          try{const file=await attReadFile('biocide',att.filename);
-            att.data=await new Promise(ok=>{const r=new FileReader();r.onload=e=>ok(e.target.result);r.readAsDataURL(file)});
-          }catch(e){console.warn('Cannot read bio attachment for backup:',att.filename,e)}
+        const val=rec.attachments[key];
+        const items=Array.isArray(val)?val:[val];
+        for(const att of items){
+          if(att&&att.on_disk&&att.filename&&!att.data){
+            try{const file=await attReadFile('biocide',att.filename);
+              att.data=await new Promise(ok=>{const r=new FileReader();r.onload=e=>ok(e.target.result);r.readAsDataURL(file)});
+            }catch(e){console.warn('Cannot read bio attachment for backup:',att.filename,e)}
+          }
         }
       }
     }
@@ -13565,18 +13572,22 @@ function impAll(){if(!confirm('Importul inlocuieste datele existente. Continua?'
     if(_attDirHandle){
       for(const rec of (d.biocide||[])){
         if(!rec.attachments)continue;
+        let bioChanged=false;
         for(const key of Object.keys(rec.attachments)){
-          const att=rec.attachments[key];
-          if(att.data&&!att.on_disk){
-            try{const resp=await fetch(att.data);const blob=await resp.blob();
-              const ext=att.name?.split('.').pop()||'bin';
-              const fname='bio_'+rec.id+'_'+key+'.'+ext;
-              await attWriteFile('biocide',fname,blob);
-              att.filename=fname;att.on_disk=true;delete att.data;
-              await pt('biocide',rec);
-            }catch(err){console.warn('Import: cannot write bio att to disk:',err)}
+          const val=rec.attachments[key];
+          const items=Array.isArray(val)?val:[val];
+          for(const att of items){
+            if(att&&att.data&&!att.on_disk){
+              try{const resp=await fetch(att.data);const blob=await resp.blob();
+                const ext=att.name?.split('.').pop()||'bin';
+                const fname='bio_'+rec.id+'_'+key+'_'+Math.random().toString(36).slice(2,6)+'.'+ext;
+                await attWriteFile('biocide',fname,blob);
+                att.filename=fname;att.on_disk=true;delete att.data;bioChanged=true;
+              }catch(err){console.warn('Import: cannot write bio att to disk:',err)}
+            }
           }
         }
+        if(bioChanged)await pt('biocide',rec);
       }
       for(const rec of (d.documents||[])){
         if(rec.file_data&&!(rec.file_meta&&rec.file_meta.on_disk)){
@@ -13675,10 +13686,10 @@ function forceUpdatePWA(){
   if('serviceWorker' in navigator){
     navigator.serviceWorker.ready.then(function(reg){
       if(reg)reg.update().then(function(){
-        // Give SW time to install, then force reload
-        setTimeout(function(){window.location.reload()},2000);
-      }).catch(function(){window.location.reload()});
-    }).catch(function(){window.location.reload()});
+        // Give SW time to install, then force reload (guarded)
+        setTimeout(function(){if(!_swReloading){_swReloading=true;window.location.reload()}},2000);
+      }).catch(function(){_swAutoReload()});
+    }).catch(function(){_swAutoReload()});
   } else {
     window.location.reload();
   }

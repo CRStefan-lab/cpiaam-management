@@ -1,9 +1,11 @@
 {
-  "version": "12.16",
+  "version": "12.18",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX: PWA auto-update — actualizare automata fara dialog de salvare",
-    "FIX: Coloana Tip Proba sticky in matricea Autocontrol",
-    "NOU: Buton Instaleaza descarca scurtatura .url pe desktop"
+    "FIX: 8 buguri rezolvate — audit complet aplicatie",
+    "FIX: Import CSV autocontrol — coloane UFC, Detalii, DSP corectate",
+    "FIX: Backup/restore biocide cu atasamente multiple",
+    "FIX: Sync merge spurios dupa scriere",
+    "UX: Matrice Autocontrol inversata — sectii pe randuri, probe pe coloane"
   ]
 }

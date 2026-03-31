@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.18</title>
+<title>CPIAAM Management v12.20</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Comitetul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1871,7 +1871,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.18';
+const APP_VERSION='12.20';
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -7903,7 +7903,7 @@ async function rTerm(el){
   (data.length===0?'<div class="es"><p>Nicio raportare '+(tf.search||tf.status?'gasita cu filtrele selectate':'definita')+'.</p></div>':
     '<table class="dt"><thead><tr><th>Denumire</th><th>Destinatar</th><th>Frecventa</th><th>Termen</th><th>Status</th><th>Actiuni</th></tr></thead><tbody>'+
     data.map(d=>{const st=deadlineStatus(d);return '<tr><td><strong>'+d.name+'</strong></td><td>'+(d.recipient||'—')+'</td>'+
-      '<td><span class="bdg bdg-b">'+(d.frequency==='lunar'?'Lunar':d.frequency==='trimestrial'?'Trim.':d.frequency==='anual'?'Anual':d.frequency==='singulara'?'O data':'Perioada def.')+'</span></td>'+
+      '<td><span class="bdg bdg-b">'+(d.frequency==='saptamanal'?'Sapt.'+(d.day_of_week!=null?' '+_DL_DAYS[d.day_of_week]:''):d.frequency==='lunar'?'Lunar'+(d.day_of_month?' ('+d.day_of_month+')':''):d.frequency==='trimestrial'?'Trim.':d.frequency==='anual'?'Anual':d.frequency==='singulara'?'O data':'Perioada def.')+'</span>'+(d.active_months&&d.active_months.length?'<div style="font-size:9px;color:var(--txtL)">'+d.active_months.map(function(m){return MO[m-1].slice(0,3)}).join(', ')+'</div>':'')+'</td>'+
       '<td style="font-size:11px">'+fmtDate(d.due_date)+'</td>'+
       '<td><select onchange="updateDeadlineStatus('+d.id+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px">'+
         '<option value="neinceput"'+(d.status==='neinceput'?' selected':'')+'>Neinceput</option>'+
@@ -7915,17 +7915,39 @@ async function rTerm(el){
   '</div></div>';
   el.innerHTML=h;
 }
+var _DL_DAYS=['Luni','Marti','Miercuri','Joi','Vineri','Sambata','Duminica'];
+function _dlFreqExtra(r){
+  // Conditional fields based on frequency
+  var f=r.frequency||'singulara';
+  var h='<div id="freq-extra" style="margin-top:8px">';
+  if(f==='saptamanal'){
+    h+='<div class="fr"><div class="fg"><label>Ziua din saptamana</label><select id="f-dow">';
+    for(var i=0;i<7;i++)h+='<option value="'+i+'"'+((r.day_of_week||0)==i?' selected':'')+'>'+_DL_DAYS[i]+'</option>';
+    h+='</select></div>';
+    h+='<div class="fg"><label>Lunile active</label><div id="f-months" style="display:flex;flex-wrap:wrap;gap:3px">';
+    var am=r.active_months||[];var allM=!am.length;
+    for(var m=1;m<=12;m++){var ch=allM||am.includes(m);h+='<label style="font-size:10px;cursor:pointer;padding:2px 5px;border:1px solid var(--brd);border-radius:4px;background:'+(ch?'var(--teal)':'var(--bg)')+';color:'+(ch?'#fff':'inherit')+'"><input type="checkbox" value="'+m+'" '+(ch?'checked':'')+' onchange="this.parentElement.style.background=this.checked?\'var(--teal)\':\'var(--bg)\';this.parentElement.style.color=this.checked?\'#fff\':\'inherit\'" style="display:none">'+MO[m-1].slice(0,3)+'</label>';}
+    h+='</div><div style="font-size:10px;color:var(--txtL)">Nebifat = tot anul</div></div></div>';
+  } else if(f==='lunar'){
+    h+='<div class="fg" style="max-width:200px"><label>Pana pe data de</label><input type="number" id="f-dom" min="1" max="28" value="'+(r.day_of_month||15)+'" style="width:60px"><span style="font-size:11px;color:var(--txtL);margin-left:4px">a fiecarei luni</span></div>';
+  }
+  h+='</div>';
+  return h;
+}
 async function editDeadline(id){
   let r=id?(await ga('deadlines')).find(x=>x.id===id):{frequency:'singulara',status:'neinceput'};if(!r)r={frequency:'singulara',status:'neinceput'};
   openM(id?'Editare Raportare':'Raportare Noua',
     '<div class="fg"><label>Denumire raportare</label><input id="f-name" value="'+(r.name||'')+'"></div>'+
     '<div class="fr"><div class="fg"><label>Destinatar</label><input id="f-dest" value="'+(r.recipient||'')+'" placeholder="DSP, APM, ANMCS, Manager..."></div>'+
-    '<div class="fg"><label>Frecventa</label><select id="f-freq">'+
+    '<div class="fg"><label>Frecventa</label><select id="f-freq" onchange="_dlFreqChange()">'+
       '<option value="singulara"'+(r.frequency==='singulara'?' selected':'')+'>Singulara</option>'+
+      '<option value="saptamanal"'+(r.frequency==='saptamanal'?' selected':'')+'>Saptamanal</option>'+
       '<option value="lunar"'+(r.frequency==='lunar'?' selected':'')+'>Lunar</option>'+
       '<option value="trimestrial"'+(r.frequency==='trimestrial'?' selected':'')+'>Trimestrial</option>'+
       '<option value="anual"'+(r.frequency==='anual'?' selected':'')+'>Anual</option>'+
-      '<option value="perioada"'+(r.frequency==='perioada'?' selected':'')+'>Perioada definita</option></select></div></div>'+
+      '<option value="perioada"'+(r.frequency==='perioada'?' selected':'')+'>Perioada definita</option></select>'+
+      '<div style="font-size:10px;color:var(--txtL);margin-top:2px">Perioada definita = termen unic cu date personalizate</div></div></div>'+
+    _dlFreqExtra(r)+
     '<div class="fr"><div class="fg"><label>Termen limita</label><input type="date" id="f-due" value="'+(r.due_date||'')+'"></div>'+
     '<div class="fg"><label>Status</label><select id="f-st">'+
       '<option value="neinceput"'+(r.status==='neinceput'?' selected':'')+'>Neinceput</option>'+
@@ -7937,10 +7959,24 @@ async function editDeadline(id){
   '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveDeadline('+(id||'null')+')">Salveaza</button>');
   setTimeout(()=>{addDatePreview('f-due');attachDirtyTracking()},50);
 }
+function _dlFreqChange(){
+  var fe=document.getElementById('freq-extra');if(!fe)return;
+  var f=document.getElementById('f-freq').value;
+  fe.innerHTML=_dlFreqExtra({frequency:f}).replace(/<div id="freq-extra"[^>]*>/,'').replace(/<\/div>$/,'');
+}
 async function saveDeadline(id){
-  const v=s=>document.getElementById(s).value;
+  const v=s=>{var e=document.getElementById(s);return e?e.value:''};
   const rec={name:v('f-name').trim(),recipient:v('f-dest').trim(),frequency:v('f-freq'),due_date:v('f-due'),status:v('f-st'),url:v('f-url').trim(),observations:v('f-obs').trim()};
   if(!rec.name){alert('Completeaza denumirea.');return}
+  // Save frequency-specific fields
+  if(rec.frequency==='saptamanal'){
+    rec.day_of_week=+(v('f-dow'))||0;
+    var mCbs=document.querySelectorAll('#f-months input[type=checkbox]:checked');
+    rec.active_months=Array.from(mCbs).map(cb=>+cb.value);
+  }
+  if(rec.frequency==='lunar'){
+    rec.day_of_month=+(v('f-dom'))||15;
+  }
   if(id)rec.id=id;await pt('deadlines',rec);logActivity((id?'Editat':'Adaugat')+' termen — '+rec.name);closeM();render();
 }
 async function updateDeadlineStatus(id,status){
@@ -7949,15 +7985,36 @@ async function updateDeadlineStatus(id,status){
 }
 async function genRecurringDeadlines(){
   const y=A.year,existing=await ga('deadlines');
-  const templates=existing.filter(d=>d.frequency&&d.frequency!=='singulara');
-  if(templates.length===0){alert('Nu exista raportari repetitive. Adauga mai intai raportari cu frecventa lunar/trimestrial/anual.');return}
+  const templates=existing.filter(d=>d.frequency&&d.frequency!=='singulara'&&d.frequency!=='perioada');
+  if(templates.length===0){alert('Nu exista raportari repetitive. Adauga mai intai raportari cu frecventa saptamanal/lunar/trimestrial/anual.');return}
   let cnt=0;
   for(const t of templates){
-    const months=t.frequency==='lunar'?[1,2,3,4,5,6,7,8,9,10,11,12]:t.frequency==='trimestrial'?[3,6,9,12]:t.frequency==='anual'?[12]:[];
-    for(const m of months){
-      const due=y+'-'+String(m).padStart(2,'0')+'-'+(t.due_date?t.due_date.slice(-2):'15');
-      const exists=existing.find(d=>d.name===t.name&&d.due_date===due);
-      if(!exists){await pt('deadlines',{name:t.name+' — '+(MO[m-1]||'')+' '+y,recipient:t.recipient,frequency:t.frequency,due_date:due,status:'neinceput',url:t.url||'',observations:''});cnt++}
+    if(t.frequency==='saptamanal'){
+      // Generate weekly deadlines — respecting day_of_week and active_months
+      var targetDow=t.day_of_week||0; // 0=Luni(JS:1) mapped below
+      var jsDow=(targetDow+1)%7; // Convert: 0=Luni→JS1, 1=Marti→JS2, ..., 6=Duminica→JS0
+      var am=t.active_months||[];var allMonths=!am.length;
+      var dt=new Date(y,0,1);
+      // Find first occurrence of target day
+      while(dt.getDay()!==jsDow)dt.setDate(dt.getDate()+1);
+      while(dt.getFullYear()===y){
+        var mo=dt.getMonth()+1;
+        if(allMonths||am.includes(mo)){
+          var due=dt.toISOString().slice(0,10);
+          var wk=Math.ceil(((dt-new Date(y,0,1))/86400000+1)/7);
+          var exists=existing.find(d=>d.name===t.name&&d.due_date===due);
+          if(!exists){await pt('deadlines',{name:t.name+' — S'+wk+' '+y,recipient:t.recipient,frequency:t.frequency,due_date:due,status:'neinceput',url:t.url||'',observations:''});cnt++}
+        }
+        dt.setDate(dt.getDate()+7);
+      }
+    } else {
+      const months=t.frequency==='lunar'?[1,2,3,4,5,6,7,8,9,10,11,12]:t.frequency==='trimestrial'?[3,6,9,12]:t.frequency==='anual'?[12]:[];
+      var dom=t.day_of_month||15;
+      for(const m of months){
+        const due=y+'-'+String(m).padStart(2,'0')+'-'+String(dom).padStart(2,'0');
+        const exists=existing.find(d=>d.name===t.name&&d.due_date===due);
+        if(!exists){await pt('deadlines',{name:t.name+' — '+(MO[m-1]||'')+' '+y,recipient:t.recipient,frequency:t.frequency,due_date:due,status:'neinceput',url:t.url||'',observations:''});cnt++}
+      }
     }
   }
   alert(cnt+' instante generate pentru '+y+'.');render();
@@ -10410,8 +10467,24 @@ function makeDoc(children,title,docName){return new Document({
   numbering:{config:[{reference:'bullets',levels:[{level:0,format:LevelFormat.BULLET,text:'\u2022',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:720,hanging:360}}}}]}]},
   sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1134,right:1134,bottom:1134,left:1134}}},headers:{default:wHeader(title)},footers:{default:wFooter(docName)},children}]})}
 
+var _docDirHandle=null;
 async function saveDocx(doc,filename){showGen('Se genereaza '+filename+'...');
-  try{const blob=await Packer.toBlob(doc);saveAs(blob,filename)}catch(e){alert('Eroare: '+e.message);console.error(e)}hideGen()}
+  try{
+    const blob=await Packer.toBlob(doc);
+    if(window.showSaveFilePicker){
+      try{
+        var opts={suggestedName:filename,types:[{description:'Word Document',accept:{'application/vnd.openxmlformats-officedocument.wordprocessingml.document':['.docx']}}]};
+        if(_docDirHandle)opts.startIn=_docDirHandle;
+        var fh=await window.showSaveFilePicker(opts);
+        _docDirHandle=fh;
+        var wr=await fh.createWritable();await wr.write(blob);await wr.close();
+        hideGen();return;
+      }catch(fsErr){
+        if(fsErr.name==='AbortError'){hideGen();return}
+      }
+    }
+    saveAs(blob,filename);
+  }catch(e){alert('Eroare: '+e.message);console.error(e)}hideGen()}
 
 function addNarrative(ch,an){an.narrative.forEach(p=>{ch.push(wP(p,{size:20,before:40}))});
   if(an.alerts.length>0){ch.push(wSp(60));an.alerts.forEach(a=>{ch.push(a.level==='red'?wAlertBox(a.text):wInfoBox(a.text));ch.push(wSp(20))})}
@@ -10948,12 +11021,15 @@ function _secTypeOpts(sel){return SEC_TYPES.map(function(t){return '<option valu
 // ── Probe Applicability Matrix ──
 function _renderProbeApplicabilityUI(){
   var isEN=CFG.lang==='en';
-  var pts=CFG.probe_types||[];var secs=CFG.sections||[];
+  var pts=(CFG.probe_types||[]).slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'')});
+  var secs=(CFG.sections||[]).slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'')});
   if(!pts.length||!secs.length)return '<div style="color:var(--txtL);font-size:12px">'+(isEN?'Add sections and probe types first.':'Adauga mai intai sectii si tipuri de probe.')+'</div>';
-  var h='<div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table class="dt" style="font-size:11px"><thead><tr><th style="position:sticky;left:0;background:var(--bg);z-index:2">'+(isEN?'Section':'Sectie')+'</th>';
-  pts.forEach(function(pt){h+='<th style="writing-mode:vertical-lr;transform:rotate(180deg);white-space:nowrap;padding:4px 2px;font-size:10px">'+sn(pt)+'</th>'});
-  h+='<th style="font-size:10px">'+(isEN?'All':'Toate')+'</th></tr></thead><tbody>';
+  var h='<div class="ib inf" style="margin-bottom:10px;font-size:12px">'+(isEN?'Check the sample types that apply to each section. Unchecked types will NOT appear as "untested" in autocontrol analysis.':'Bifeaza tipurile de probe microbiologice care se aplica fiecarei sectii. Probele nebifate NU vor aparea ca &quot;netestate&quot; in analiza autocontrol.')+'</div>';
+  h+='<div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table class="dt" style="font-size:11px"><thead style="position:sticky;top:0;z-index:3"><tr><th style="position:sticky;left:0;background:var(--navy);color:#fff;z-index:4">'+(isEN?'Section':'Sectie')+'</th>';
+  pts.forEach(function(pt){h+='<th style="writing-mode:vertical-lr;transform:rotate(180deg);white-space:nowrap;padding:4px 2px;font-size:10px;background:var(--navy);color:#fff">'+sn(pt)+'</th>'});
+  h+='<th style="font-size:10px;background:var(--navy);color:#fff">'+(isEN?'All':'Toate')+'</th></tr></thead><tbody>';
   secs.forEach(function(s,si){
+    si=CFG.sections.indexOf(s);
     var ap=s.applicable_probes;var allChecked=!ap||!ap.length;
     h+='<tr><td style="position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;font-weight:600;font-size:11px">'+_secDisplayName(s)+'</td>';
     pts.forEach(function(pt){
@@ -12854,6 +12930,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.20',date:'2026-03-31',notes:'NOU: Calendar raportari — zi din saptamana, luni active (ex: Oct-Mai), zi din luna (ex: pana pe 5)\nNOU: Probe aplicabile per sectie — tabel sticky cu sortare alfabetica si text explicativ\nNOU: Generare documente Word — alegere folder de salvare, tine minte locatia\nNOU: Calendar — frecventa raportare saptamanala'},
+  {version:'12.19',date:'2026-03-31',notes:'NOU: Probe aplicabile per sectie — tabel sticky cu sortare alfabetica si text explicativ\nNOU: Generare documente Word — alegere folder de salvare, tine minte locatia\nNOU: Calendar — frecventa raportare saptamanala + explicatie Perioada definita'},
   {version:'12.18',date:'2026-03-27',notes:'FIX: 8 buguri rezolvate — audit complet aplicatie\nFIX: Import CSV autocontrol — coloane UFC, Detalii, DSP corectate\nFIX: Backup/restore biocide cu atasamente multiple (format array)\nFIX: Sync merge spurios dupa fiecare scriere (lastSyncSize)\nFIX: Toast mesaje incomplete in engleza (operator precedence)\nFIX: Buton Salveaza probe aplicabile — ReferenceError rezolvat\nUX: Matrice Autocontrol inversata — sectii pe randuri (sticky), probe pe coloane\nUX: Sectie noua primeste type=sectie implicit'},
   {version:'12.17',date:'2026-03-27',notes:'FIX: PWA auto-update seamless — actualizare automata fara dialog de salvare\nFIX: Coloana Tip Proba sticky in matricea Autocontrol\nNOU: Favicon iconita teal in browser tab si bookmark-uri\nNOU: Buton Salveaza sub Locatia fisierului in Configurare\nUX: Buton Instaleaza doar cand Chrome ofera PWA prompt nativ'},
   {version:'12.16',date:'2026-03-27',notes:'FIX: PWA auto-update — actualizare automata fara dialog de salvare sau interventia utilizatorului\nFIX: Coloana Tip Proba sticky in matricea Autocontrol (border-collapse fix)\nNOU: Buton Instaleaza pe PWA descarca scurtatura .url daca aplicatia e deja instalata'},

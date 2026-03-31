@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.20</title>
+<title>CPIAAM Management v12.22</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Comitetul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1189,7 +1189,7 @@ async function _syncPoll(){
     var file=await _fileHandle.getFile();var modified=file.lastModified;var fsize=file.size;
     if(_lastSyncRead===0&&_lastSyncSize===0){_lastSyncRead=modified;_lastSyncSize=fsize;return}
     if(modified===_lastSyncRead&&fsize===_lastSyncSize)return;
-    console.log('[CPIAAM Sync] File changed, merging...');
+    // File changed, merging
     _lastSyncRead=modified;_lastSyncSize=fsize;
     flashSyncIndicator();
     await _importFromHandle(_fileHandle,true);
@@ -1203,7 +1203,6 @@ function startSyncPoll(){
   _fileHandle.getFile().then(function(f){_lastSyncRead=f.lastModified;_lastSyncSize=f.size}).catch(function(){});
   _syncPollTimer=setInterval(_syncPoll,interval);
   setTimeout(_syncPoll,5000);
-  console.log('[CPIAAM Sync] Auto-poll started (every '+(interval/1000)+'s)');
 }
 function stopSyncPoll(){if(_syncPollTimer){clearInterval(_syncPollTimer);_syncPollTimer=null}}
 function flashSyncIndicator(){
@@ -1871,7 +1870,22 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.20';
+const APP_VERSION='12.22';
+const _DEFAULT_ATP_SURFACES=[
+  {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
+  {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
+  {id:'atp_005',name:'Robinet chiuveta',threshold:150},{id:'atp_006',name:'Saltea pat',threshold:150},
+  {id:'atp_007',name:'Stativ perfuzie',threshold:150},{id:'atp_008',name:'Tablie/margine pat',threshold:150},
+  {id:'atp_009',name:'Carucior tratamente',threshold:75},{id:'atp_010',name:'Dozator sapun',threshold:150},
+  {id:'atp_011',name:'Masa tratamente',threshold:150},{id:'atp_012',name:'Chiuveta',threshold:150},
+  {id:'atp_013',name:'Vesela',threshold:60},{id:'atp_014',name:'Suprafete contact direct alimente',threshold:60},
+  {id:'atp_015',name:'Suprafete contact indirect alimente',threshold:120},{id:'atp_016',name:'Tegumente',threshold:300},
+  {id:'atp_017',name:'Alta suprafata',threshold:150}
+];
+const _DEFAULT_UV_SURFACES=[
+  {id:'uv_001',name:'Pat salon'},{id:'uv_002',name:'Noptiera'},{id:'uv_003',name:'Podea'},
+  {id:'uv_004',name:'Perete'},{id:'uv_005',name:'Alte suprafete'}
+];
 var A={year:new Date().getFullYear(),page:'dashboard',charts:{},darkMode:false,notifications:[],dashWidgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true}};
 
 // ═══ INTERNATIONALIZATION ═══
@@ -1944,21 +1958,8 @@ var CFG={
   dark_mode:false, file_location:'', changelog:[], dash_widgets:{kpi:true,charts:true,docsKpi:true,termKpi:true,desChart:true,iaamSec:true},
   ipc_categories:[],
   audit_prof_categories:['Medic','Asistent medical','Infirmiera','Brancardier','Altul'],
-  atp_surface_types:[
-    {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
-    {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
-    {id:'atp_005',name:'Robinet chiuveta',threshold:150},{id:'atp_006',name:'Saltea pat',threshold:150},
-    {id:'atp_007',name:'Stativ perfuzie',threshold:150},{id:'atp_008',name:'Tablie/margine pat',threshold:150},
-    {id:'atp_009',name:'Carucior tratamente',threshold:75},{id:'atp_010',name:'Dozator sapun',threshold:150},
-    {id:'atp_011',name:'Masa tratamente',threshold:150},{id:'atp_012',name:'Chiuveta',threshold:150},
-    {id:'atp_013',name:'Vesela',threshold:60},{id:'atp_014',name:'Suprafete contact direct alimente',threshold:60},
-    {id:'atp_015',name:'Suprafete contact indirect alimente',threshold:120},{id:'atp_016',name:'Tegumente',threshold:300},
-    {id:'atp_017',name:'Alta suprafata',threshold:150}
-  ],
-  uv_surface_types:[
-    {id:'uv_001',name:'Pat salon'},{id:'uv_002',name:'Noptiera'},{id:'uv_003',name:'Podea'},
-    {id:'uv_004',name:'Perete'},{id:'uv_005',name:'Alte suprafete'}
-  ]
+  atp_surface_types:_DEFAULT_ATP_SURFACES.map(s=>({...s})),
+  uv_surface_types:_DEFAULT_UV_SURFACES.map(s=>({...s}))
 };
 
 // Section templates for wizard
@@ -1987,23 +1988,10 @@ async function loadCfg(){
   try{const all=await ga('config');if(all.length>0){const c=all[0];Object.assign(CFG,c)}}catch(e){}
   // Migrate: populate atp_surface_types if missing
   if(!CFG.atp_surface_types||!CFG.atp_surface_types.length){
-    CFG.atp_surface_types=[
-      {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
-      {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
-      {id:'atp_005',name:'Robinet chiuveta',threshold:150},{id:'atp_006',name:'Saltea pat',threshold:150},
-      {id:'atp_007',name:'Stativ perfuzie',threshold:150},{id:'atp_008',name:'Tablie/margine pat',threshold:150},
-      {id:'atp_009',name:'Carucior tratamente',threshold:75},{id:'atp_010',name:'Dozator sapun',threshold:150},
-      {id:'atp_011',name:'Masa tratamente',threshold:150},{id:'atp_012',name:'Chiuveta',threshold:150},
-      {id:'atp_013',name:'Vesela',threshold:60},{id:'atp_014',name:'Suprafete contact direct alimente',threshold:60},
-      {id:'atp_015',name:'Suprafete contact indirect alimente',threshold:120},{id:'atp_016',name:'Tegumente',threshold:300},
-      {id:'atp_017',name:'Alta suprafata',threshold:150}
-    ];
+    CFG.atp_surface_types=_DEFAULT_ATP_SURFACES.map(s=>({...s}));
   }
   if(!CFG.uv_surface_types||!CFG.uv_surface_types.length){
-    CFG.uv_surface_types=[
-      {id:'uv_001',name:'Pat salon'},{id:'uv_002',name:'Noptiera'},{id:'uv_003',name:'Podea'},
-      {id:'uv_004',name:'Perete'},{id:'uv_005',name:'Alte suprafete'}
-    ];
+    CFG.uv_surface_types=_DEFAULT_UV_SURFACES.map(s=>({...s}));
   }
   // Migrate: populate ipc_categories if missing
   if(!CFG.ipc_categories||!CFG.ipc_categories.length){
@@ -2128,18 +2116,6 @@ async function loadCfg(){
 }
 async function saveCfg(){CFG.id=1;await pt('config',CFG);updateSidebar()}
 
-function updateSidebar(){
-  document.getElementById('sb-title').textContent=CFG.cpiaam_name||'C.P.I.A.A.M.';
-  document.getElementById('sb-sub').textContent=CFG.hospital_name||'—';
-  // Translate sidebar items with data-t
-  document.querySelectorAll('[data-t]').forEach(el=>{el.textContent=T(el.dataset.t)});
-  // Credit footer — HARDCODAT, nu se poate edita din interfata
-  document.getElementById('sb-footer').innerHTML=
-    '<div>Dezvoltat de <strong>Dr. Chitu Robert Stefan</strong><br>cu asistenta Claude AI (Anthropic)<br>&copy; 2025&ndash;2026 &middot; <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ro" target="_blank" style="color:#94A3B8;font-size:10px">CC BY-NC-SA 4.0</a></div>'+
-    '<div style="margin-top:4px">v'+APP_VERSION+' &middot; Date locale — IndexedDB</div>'+
-    '<div style="margin-top:4px"><a href="#" onclick="event.preventDefault();nav(\'terms\')" style="color:#94A3B8;font-size:10px;text-decoration:underline">'+T('sb_termeni')+'</a></div>';
-}
-
 function getP(role){return CFG.personnel.find(p=>p.role===role)||{name:'—',title:''}}
 function getMgr(){var d=getP('director_medical');return d.name!=='—'?d:getP('manager')}
 function getCoord(){return getP('coordinator')}
@@ -2224,7 +2200,6 @@ async function migrateDataToIds(){
     if(r.category&&!r.category.startsWith('doccat_')&&docCatMap[r.category]){r.category=docCatMap[r.category];changed=true}
     if(changed){await pt('documents',r);migrated++}
   }
-  if(migrated>0)console.log('[CPIAAM Migration] Migrated '+migrated+' records from text→ID references.');
   return migrated;
 }
 
@@ -2253,7 +2228,7 @@ function ensureConfigIds(){
         // Fix missing name — try fallbacks
         if(!item.name||item.name==='undefined'){
           // Try to recover from defaults by index position
-          if(defaults&&i<defaults.length){item.name=defaults[i];changed=true;console.log('[CPIAAM] Recovered name for '+prefix+'['+i+']: '+defaults[i])}
+          if(defaults&&i<defaults.length){item.name=defaults[i];changed=true}
           else if(item.label){item.name=item.label;changed=true}
           else if(typeof item.value==='string'){item.name=item.value;changed=true}
           else{item.name=prefix+'_'+(i+1);changed=true}
@@ -2327,7 +2302,6 @@ function ensureConfigIds(){
     ];changed=true;
   }
 
-  if(changed)console.log('[CPIAAM] Config IDs ensured/repaired, saving...');
   return changed;
 }
 
@@ -2345,7 +2319,6 @@ function getWeightedBeds(secIdOrName,year){
     const days=Math.round((ed-sd)/864e5)+1;tbd+=Math.max(0,days)*(p.beds||0);
   });return tbd/diy;
 }
-function getTotalBeds(){return CFG.sections.reduce((s,sec)=>s+(sec.beds||0),0)}
 function getTotalWeightedBeds(year){return CFG.sections.reduce((s,sec)=>s+getWeightedBeds(sec.id,year),0)}
 
 
@@ -2825,6 +2798,13 @@ en:{
 // CPIAAM — Helpers — Utility Functions
 // ═════════════════════════════════════════════════════════════
 
+// Toast notification
+function showToast(msg){
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:500;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
+  t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
+}
+
 // Activity log (localStorage, max 20 entries)
 function logActivity(text){
   const log=JSON.parse(localStorage.getItem('cpiaam_activity')||'[]');
@@ -2843,18 +2823,12 @@ function roleOpts(sel){return Object.entries(ROLE_MAP).map(([v,n])=>'<option val
 function roleName(role){return ROLE_MAP[role]||role||'Altul'}
 function rProbe(id){if(!id)return '—';const a=CFG.probe_types||[];const p=a.find(x=>x.id===id)||a.find(x=>x.name===id);return p?(p.name||p.id):id}
 function rInf(id){if(!id)return '—';return iaamCatLabel(id)}
-function rWaste(id){if(!id)return '—';const a=CFG.waste_codes||[];const w=a.find(x=>x.id===id)||a.find(x=>x.name===id)||a.find(x=>x.code===id);return w?(w.name||w.code):id}
-function rWasteCode(id){if(!id)return '—';const a=CFG.waste_codes||[];const w=a.find(x=>x.id===id)||a.find(x=>x.code===id);return w?w.code:id}
-function rWasteObj(id){const a=CFG.waste_codes||[];return a.find(x=>x.id===id)||a.find(x=>x.code===id)||null}
 function rBioProd(id){if(!id)return '—';const a=CFG.biocide_products||[];const p=a.find(x=>x.id===id)||a.find(x=>x.name===id);return p?(p.name||p.id):id}
 function rDocCat(id){if(!id)return '—';const a=CFG.doc_categories||[];const c=a.find(x=>x.id===id)||a.find(x=>x.name===id);return c?(c.name||c.id):id}
 
 // Safe name accessor — never returns undefined
 function sn(obj){if(!obj)return '—';if(typeof obj==='string')return obj;return obj.name||obj.label||obj.code||obj.id||'?'}
 
-// Find config item by ID
-function findSec(id){return CFG.sections.find(x=>x.id===id)}
-function findWaste(id){return (CFG.waste_codes||[]).find(x=>x.id===id)}
 // Check if a probe type applies to a section (for autocontrol filtering)
 function isProbeApplicable(secId,ptId){
   const sec=CFG.sections.find(x=>x.id===secId);
@@ -2869,9 +2843,6 @@ function getApplicableCombinations(probeTypes,sections){
   return count;
 }
 
-// Section helpers — now return IDs
-function secNames(){return CFG.sections.map(s=>sn(s))}
-function secIds(){return CFG.sections.map(s=>s.id)}
 function _secDisplayName(s){var n=sn(s);if(s.type==='cabinet'&&!n.startsWith('Cab.'))return 'Cab. '+n;return n}
 function secOpts(selId){return CFG.sections.slice().sort(function(a,b){return _secDisplayName(a).localeCompare(_secDisplayName(b))}).map(s=>'<option value="'+s.id+'" '+(s.id===selId?'selected':'')+'>'+_secDisplayName(s)+'</option>').join('')}
 function secOptsGrouped(selId){var sp=[],am=[];CFG.sections.forEach(function(s){if(s.type==='cabinet')am.push(s);else sp.push(s)});sp.sort(function(a,b){return sn(a).localeCompare(sn(b))});am.sort(function(a,b){return sn(a).localeCompare(sn(b))});var h='<optgroup label="Spital">'+sp.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+sn(s)+'</option>'}).join('')+'</optgroup>';if(am.length)h+='<optgroup label="Ambulatoriu">'+am.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+_secDisplayName(s)+'</option>'}).join('')+'</optgroup>';return h}
@@ -2900,6 +2871,10 @@ function calcAge(dob){if(!dob)return '';const b=new Date(dob),t=new Date(),m=t.g
 function calcDays(d1,d2){if(!d1||!d2)return '';const a=new Date(d1),b=new Date(d2);const diff=Math.ceil((b-a)/864e5);return diff>=0?diff:''}
 function germenName(code){for(const g of GERMENI_LIST)for(const it of g.items)if(it.c===code)return it.n;return code}
 function iaamCatLabel(code){if(!code)return '—';for(const g of IAAM_CATS)for(const it of g.items)if(it.c===code)return it.c+' — '+it.n;if(LEGACY_CODE_MAP[code]){const nc=LEGACY_CODE_MAP[code];for(const g of IAAM_CATS)for(const it of g.items)if(it.c===nc)return it.c+' — '+it.n+' (legacy: '+code+')'}const cust=(CFG.iaam_custom_cats||[]).find(x=>x.id===code);if(cust)return cust.name;const old=(CFG.infection_types||[]).find(x=>x.id===code||x.name===code);if(old)return typeof old==='string'?old:(old.name||code);return code}
+// IPC Category helpers (used by audituri, obiective, config_page)
+function ipcCatById(id){if(!id)return null;return (CFG.ipc_categories||[]).find(function(x){return x.id===id})||(CFG.ipc_categories||[]).find(function(x){return x.name_ro===id||x.name_en===id||x.audit_type===id})}
+function activeIpcCats(){return (CFG.ipc_categories||[]).filter(function(c){return c.active!==false})}
+
 function iaamCatOpts(sel){let h='<option value="">—</option>';IAAM_CATS.forEach(g=>{h+='<optgroup label="'+g.g+'">';g.items.forEach(it=>{h+='<option value="'+it.c+'"'+(it.c===sel?' selected':'')+'>'+it.c+' — '+it.n+'</option>'});h+='</optgroup>'});const cust=CFG.iaam_custom_cats||[];if(cust.length){h+='<optgroup label="Personalizate">';cust.forEach(c=>{h+='<option value="'+c.id+'"'+(c.id===sel?' selected':'')+'>'+esc(c.name)+'</option>'});h+='</optgroup>'}return h}
 function germeniOpts(){let h='<option value="">— Selecteaza germen —</option>';GERMENI_LIST.forEach(g=>{h+='<optgroup label="'+g.g+'">';g.items.forEach(it=>{h+='<option value="'+it.c+'">'+it.n+' ('+it.c+')</option>'});h+='</optgroup>'});return h}
 function needsMDRo(code){if(!code)return false;if(code.startsWith('VIR'))return false;if(code.startsWith('CAN')||code.startsWith('ASP')||code.startsWith('YEA')||code.startsWith('FUN')||code.startsWith('FIL'))return false;if(code==='PAROTH'||code.startsWith('_'))return false;return true}
@@ -2909,7 +2884,6 @@ function atbOpts(){let h='<option value="">— Selecteaza antibiotic —</option
 
 function detLabel(v){return DET_LABELS[v]||v||'—'}
 function moOpts(s){return MO.map((m,i)=>'<option value="'+(i+1)+'" '+(i+1===s?'selected':'')+'>'+m+'</option>').join('')}
-function optsA(arr,sel){return arr.map(v=>'<option '+(v===sel?'selected':'')+'>'+v+'</option>').join('')}
 function optsO(obj,sel){return Object.entries(obj).map(([k,v])=>'<option value="'+k+'" '+(k===sel?'selected':'')+'>'+v+'</option>').join('')}
 
 
@@ -2918,6 +2892,17 @@ function optsO(obj,sel){return Object.entries(obj).map(([k,v])=>'<option value="
 // ═════════════════════════════════════════════════════════════
 // CPIAAM — UI — Navigation, Modal, Dark Mode, Notifications
 // ═════════════════════════════════════════════════════════════
+
+// SIDEBAR UPDATE
+function updateSidebar(){
+  document.getElementById('sb-title').textContent=CFG.cpiaam_name||'C.P.I.A.A.M.';
+  document.getElementById('sb-sub').textContent=CFG.hospital_name||'—';
+  document.querySelectorAll('[data-t]').forEach(el=>{el.textContent=T(el.dataset.t)});
+  document.getElementById('sb-footer').innerHTML=
+    '<div>Dezvoltat de <strong>Dr. Chitu Robert Stefan</strong><br>cu asistenta Claude AI (Anthropic)<br>&copy; 2025&ndash;2026 &middot; <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ro" target="_blank" style="color:#94A3B8;font-size:10px">CC BY-NC-SA 4.0</a></div>'+
+    '<div style="margin-top:4px">v'+APP_VERSION+' &middot; Date locale — IndexedDB</div>'+
+    '<div style="margin-top:4px"><a href="#" onclick="event.preventDefault();nav(\'terms\')" style="color:#94A3B8;font-size:10px;text-decoration:underline">'+T('sb_termeni')+'</a></div>';
+}
 
 // NAVIGATION, MODAL, UTILITIES
 // ═══════════════════════════════════════════════════════════════
@@ -3131,11 +3116,6 @@ function clearNotif(){A.notifications=[];A._notifDismissedAt=Date.now();localSto
 // ═══════════════════════════════════════════════════════════════
 // 5A.3 — PRINT DASHBOARD
 // ═══════════════════════════════════════════════════════════════
-function printDashboard(){
-  const ph=document.querySelector('.print-header');
-  if(ph)ph.innerHTML='<h1>'+(CFG.cpiaam_name||'C.P.I.A.A.M.')+' — '+(CFG.hospital_name||'')+'</h1><p>Dashboard '+A.year+' — Printat la '+fmtDateNow()+'</p>';
-  setTimeout(()=>window.print(),200)}
-
 // ═══════════════════════════════════════════════════════════════
 // 5A.4 — SPARKLINES (SVG inline)
 // ═══════════════════════════════════════════════════════════════
@@ -7113,11 +7093,12 @@ async function genAntibiogramaWHONET(){
 
 // ═══════════════════════════════════════════════════════════════
 
-// ATB_LIST lookup helpers for DDD/AWaRe
-function _atbFlat(){const m={};ATB_LIST.forEach(g=>g.items.forEach(it=>{m[it.a]=it}));return m}
-function atbDDD(atc){const m=_atbFlat();return m[atc]?.ddd||0}
-function atbAWaRe(atc){const m=_atbFlat();return m[atc]?.aw||'X'}
-function atbName(atc){const m=_atbFlat();return m[atc]?.n||atc}
+// ATB_LIST lookup helpers for DDD/AWaRe (cached)
+var _atbFlatCache=null;
+function _atbFlat(){if(_atbFlatCache)return _atbFlatCache;const m={};ATB_LIST.forEach(g=>g.items.forEach(it=>{m[it.a]=it}));_atbFlatCache=m;return m}
+function atbDDD(atc){return _atbFlat()[atc]?.ddd||0}
+function atbAWaRe(atc){return _atbFlat()[atc]?.aw||'X'}
+function atbName(atc){return _atbFlat()[atc]?.n||atc}
 function calcDDD(atc,qty_g){const d=atbDDD(atc);return d>0?qty_g/d:0}
 function calcDDDper100(totalDDD,bedDays){return bedDays>0?(totalDDD/bedDays)*100:0}
 
@@ -7902,7 +7883,7 @@ async function rTerm(el){
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
   (data.length===0?'<div class="es"><p>Nicio raportare '+(tf.search||tf.status?'gasita cu filtrele selectate':'definita')+'.</p></div>':
     '<table class="dt"><thead><tr><th>Denumire</th><th>Destinatar</th><th>Frecventa</th><th>Termen</th><th>Status</th><th>Actiuni</th></tr></thead><tbody>'+
-    data.map(d=>{const st=deadlineStatus(d);return '<tr><td><strong>'+d.name+'</strong></td><td>'+(d.recipient||'—')+'</td>'+
+    data.map(d=>{const st=deadlineStatus(d);return '<tr><td><strong>'+esc(d.name)+'</strong></td><td>'+esc(d.recipient||'—')+'</td>'+
       '<td><span class="bdg bdg-b">'+(d.frequency==='saptamanal'?'Sapt.'+(d.day_of_week!=null?' '+_DL_DAYS[d.day_of_week]:''):d.frequency==='lunar'?'Lunar'+(d.day_of_month?' ('+d.day_of_month+')':''):d.frequency==='trimestrial'?'Trim.':d.frequency==='anual'?'Anual':d.frequency==='singulara'?'O data':'Perioada def.')+'</span>'+(d.active_months&&d.active_months.length?'<div style="font-size:9px;color:var(--txtL)">'+d.active_months.map(function(m){return MO[m-1].slice(0,3)}).join(', ')+'</div>':'')+'</td>'+
       '<td style="font-size:11px">'+fmtDate(d.due_date)+'</td>'+
       '<td><select onchange="updateDeadlineStatus('+d.id+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px">'+
@@ -7972,7 +7953,8 @@ async function saveDeadline(id){
   if(rec.frequency==='saptamanal'){
     rec.day_of_week=+(v('f-dow'))||0;
     var mCbs=document.querySelectorAll('#f-months input[type=checkbox]:checked');
-    rec.active_months=Array.from(mCbs).map(cb=>+cb.value);
+    var am=Array.from(mCbs).map(cb=>+cb.value);
+    rec.active_months=am.length===12?[]:am; // [] = all months
   }
   if(rec.frequency==='lunar'){
     rec.day_of_month=+(v('f-dom'))||15;
@@ -8011,7 +7993,8 @@ async function genRecurringDeadlines(){
       const months=t.frequency==='lunar'?[1,2,3,4,5,6,7,8,9,10,11,12]:t.frequency==='trimestrial'?[3,6,9,12]:t.frequency==='anual'?[12]:[];
       var dom=t.day_of_month||15;
       for(const m of months){
-        const due=y+'-'+String(m).padStart(2,'0')+'-'+String(dom).padStart(2,'0');
+        var maxDay=new Date(y,m,0).getDate();var clampedDom=Math.min(dom,maxDay);
+        const due=y+'-'+String(m).padStart(2,'0')+'-'+String(clampedDom).padStart(2,'0');
         const exists=existing.find(d=>d.name===t.name&&d.due_date===due);
         if(!exists){await pt('deadlines',{name:t.name+' — '+(MO[m-1]||'')+' '+y,recipient:t.recipient,frequency:t.frequency,due_date:due,status:'neinceput',url:t.url||'',observations:''});cnt++}
       }
@@ -9609,10 +9592,6 @@ async function genIgmBlankForm(){
   finally{hideGen()}
 }
 
-// ═══ BACKWARD COMPAT — keep old function names working for existing data ═══
-function auditTypeName(id){return _audCatName(id)}
-function auditTypeIcon(id){return '&#128203;'}
-
 </script>
 <script>
 // ═════════════════════════════════════════════════════════════
@@ -10481,6 +10460,7 @@ async function saveDocx(doc,filename){showGen('Se genereaza '+filename+'...');
         hideGen();return;
       }catch(fsErr){
         if(fsErr.name==='AbortError'){hideGen();return}
+        console.warn('File save failed, using fallback:',fsErr);
       }
     }
     saveAs(blob,filename);
@@ -11594,8 +11574,6 @@ function ipcCatName(id){
   if(!c)return '—';
   return (CFG.lang==='en'&&c.name_en)?c.name_en:c.name_ro;
 }
-function ipcCatById(id){if(!id)return null;return (CFG.ipc_categories||[]).find(function(x){return x.id===id})||(CFG.ipc_categories||[]).find(function(x){return x.name_ro===id||x.name_en===id||x.audit_type===id})}
-function activeIpcCats(){return (CFG.ipc_categories||[]).filter(function(c){return c.active!==false})}
 
 </script>
 <script>
@@ -11900,7 +11878,7 @@ function renderPWStep(step){
 }
 async function finishPostWizard(){
   CFG.tutorial_shown=true;await saveCfg();
-  hidePW();render();setTimeout(buildNotifications,1000);setTimeout(checkBackupReminder,2000);
+  hidePW();render();setTimeout(buildNotifications,1000);
 }
 
 function rerunWizard(){
@@ -12930,6 +12908,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.22',date:'2026-03-31',notes:'OPT: Curatenie cod — 13 functii moarte sterse, -4 KB\nOPT: showToast mutat in helpers.js, updateSidebar in ui.js, ipcCatById in helpers.js\nOPT: Cache _atbFlat() — lookup antibiotice instantaneu\nOPT: Constante ATP/UV deduplicate (o singura sursa)\nOPT: 9 console.log de debug eliminate din productie'},
+  {version:'12.21',date:'2026-03-31',notes:'FIX: Calendar lunar — date invalide corectate (ex: 31 feb devine 28 feb)\nFIX: Salvare documente Word — eroare la scriere nu mai e ascunsa\nFIX: Luni active — toate bifate salveaza ca tot anul (nu 12 luni individual)\nFIX: Numele raportarilor escapate corect in HTML'},
   {version:'12.20',date:'2026-03-31',notes:'NOU: Calendar raportari — zi din saptamana, luni active (ex: Oct-Mai), zi din luna (ex: pana pe 5)\nNOU: Probe aplicabile per sectie — tabel sticky cu sortare alfabetica si text explicativ\nNOU: Generare documente Word — alegere folder de salvare, tine minte locatia\nNOU: Calendar — frecventa raportare saptamanala'},
   {version:'12.19',date:'2026-03-31',notes:'NOU: Probe aplicabile per sectie — tabel sticky cu sortare alfabetica si text explicativ\nNOU: Generare documente Word — alegere folder de salvare, tine minte locatia\nNOU: Calendar — frecventa raportare saptamanala + explicatie Perioada definita'},
   {version:'12.18',date:'2026-03-27',notes:'FIX: 8 buguri rezolvate — audit complet aplicatie\nFIX: Import CSV autocontrol — coloane UFC, Detalii, DSP corectate\nFIX: Backup/restore biocide cu atasamente multiple (format array)\nFIX: Sync merge spurios dupa fiecare scriere (lastSyncSize)\nFIX: Toast mesaje incomplete in engleza (operator precedence)\nFIX: Buton Salveaza probe aplicabile — ReferenceError rezolvat\nUX: Matrice Autocontrol inversata — sectii pe randuri (sticky), probe pe coloane\nUX: Sectie noua primeste type=sectie implicit'},
@@ -13625,7 +13605,6 @@ function migrateBackupData(d){
       d[s].forEach(r=>{if(!r._appVersion)r._appVersion=fromVer});
     }
   });
-  if(migrated>0)console.log('Migrare backup: '+migrated+' campuri actualizate din v'+fromVer);
   return d;
 }
 
@@ -13690,21 +13669,6 @@ function impAll(){if(!confirm('Importul inlocuieste datele existente. Continua?'
 // CPIAAM — Init — Application Startup
 // ═════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════
-// ── Backup Reminder (cerinta 8) ──
-function checkBackupReminder(){
-  // Backup reminders now appear only in the notification bell (buildNotifications)
-}
-function showBackupReminder(msg){
-  const d=document.createElement('div');d.id='backup-reminder';
-  d.style.cssText='position:fixed;bottom:20px;right:20px;background:#FFFBEB;border:2px solid #D4A017;border-radius:12px;padding:16px 20px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:400;max-width:380px;font-size:13px;font-family:var(--f)';
-  d.innerHTML='<div style="display:flex;align-items:flex-start;gap:10px"><span style="font-size:20px">&#128190;</span><div>'+
-    '<strong style="color:#92400E">Backup Recomandat</strong><p style="margin:6px 0;color:#92400E">'+msg+'</p>'+
-    '<p style="font-size:11px;color:#92400E;opacity:.7;margin-bottom:8px">Salveaza backup-ul intr-un folder sincronizat cu OneDrive sau Google Drive pentru siguranta maxima.</p>'+
-    '<div style="display:flex;gap:6px"><button onclick="expAll();document.getElementById(\'backup-reminder\').remove()" class="btn bw" style="font-size:11px;padding:5px 10px">Salveaza Backup</button>'+
-    '<button onclick="document.getElementById(\'backup-reminder\').remove()" class="btn bo" style="font-size:11px;padding:5px 10px">Mai tarziu</button></div></div></div>';
-  document.body.appendChild(d);
-}
 // ═══ AUTO-UPDATE CHECK ═══
 const UPDATE_URL='https://crstefan-lab.github.io/cpiaam-management/version.json';
 function vCmp(a,b){const pa=(a+'').split('.').map(Number),pb=(b+'').split('.').map(Number);for(let i=0;i<Math.max(pa.length,pb.length);i++){const x=pa[i]||0,y=pb[i]||0;if(x!==y)return x-y}return 0}
@@ -13804,11 +13768,6 @@ function showUpdateSuccess(version){
 function dismissUpdate(){
   const b=document.getElementById('update-banner');if(b)b.remove();
 }
-function showToast(msg){
-  const t=document.createElement('div');
-  t.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:500;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
-  t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
-}
 async function checkForUpdateManual(e){
   const btn=e?e.currentTarget:null;
   if(btn){btn.disabled=true;btn.textContent='\u23F3'}
@@ -13857,7 +13816,6 @@ async function checkUpgradeBackup(){
   if(!lastVer)return; // prima rulare, nu exista date vechi
   if(lastVer===APP_VERSION)return; // aceeasi versiune
   // Versiune diferita — facem backup automat
-  console.log('Upgrade detectat: v'+lastVer+' → v'+APP_VERSION+'. Auto-backup...');
   try{
     const d={};for(const s of ST){if(s==='config')continue;d[s]=await ga(s)}
     const out={version:lastVer,upgraded_to:APP_VERSION,auto_backup:true,exported:new Date().toISOString(),config:CFG,...d};
@@ -13865,7 +13823,6 @@ async function checkUpgradeBackup(){
     const fname='CPIAAM_AutoBackup_v'+lastVer+'_'+new Date().toISOString().slice(0,10)+'.json';
     // Salvam in IndexedDB un backup intern (nu cerem file picker)
     await pt('config',{id:'_auto_backup_'+lastVer,type:'auto_backup',version:lastVer,date:new Date().toISOString(),data:JSON.stringify(out)},true);
-    console.log('Auto-backup salvat intern ('+fname+')');
     showUpgradeNotice(lastVer);
   }catch(e){console.error('Auto-backup failed:',e)}
 }
@@ -13881,7 +13838,6 @@ function showUpgradeNotice(fromVer){
 }
 
 (async()=>{
-  console.log('CPIAAM v'+APP_VERSION+' | DB='+DB+' VER='+VER);
   try{await odb()}catch(e){console.error('DB init error:',e)}
   const configs=await ga('config');
   document.getElementById('app-loading').style.display='none';
@@ -13907,7 +13863,6 @@ function showUpgradeNotice(fromVer){
     // Restore file handles from IndexedDB (persists across refresh/close)
     restoreFileHandle().then(()=>{updateSyncIndicator();if(_fileHandle)startSyncPoll()});
     restoreAttDirHandle();
-    setTimeout(checkBackupReminder,2000);
     setTimeout(buildNotifications,3000);
     setTimeout(checkForUpdate,4000);
     setTimeout(_updateInstallBtn,500);

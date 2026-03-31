@@ -1,9 +1,10 @@
 {
-  "version": "12.20",
+  "version": "12.22",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Calendar raportari — zi din saptamana, luni active, zi din luna",
-    "NOU: Probe aplicabile — tabel sticky cu sortare alfabetica",
-    "NOU: Generare documente Word — alegere folder, tine minte locatia"
+    "OPT: Curatenie cod — 13 functii moarte sterse, -4 KB",
+    "OPT: Functii mutate in modulele corecte (showToast, updateSidebar, ipcCatById)",
+    "OPT: Cache _atbFlat(), constante ATP/UV deduplicate",
+    "OPT: 9 console.log de debug eliminate"
   ]
 }

@@ -1,10 +1,10 @@
 {
-  "version": "12.24",
+  "version": "12.25",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
+    "FIX: Update pe fisier local — dialog salvare directa peste fisierul vechi",
     "FIX: Sync — remapare automata ID-uri sectii/probe intre utilizatori",
     "FIX: Sync config — merge pe nume elimina duplicate",
-    "FIX: Import backup — sectii se importa corect si fara hospital_name",
-    "NOU: PPS import HelicsWin — suport fisiere XML"
+    "NOU: PPS import HelicsWin — suport XML"
   ]
 }

@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.24</title>
+<title>CPIAAM Management v12.25</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Comitetul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1907,7 +1907,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.24';
+const APP_VERSION='12.25';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -12958,6 +12958,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.25',date:'2026-04-02',notes:'FIX: Update pe fisier local — dialog salvare directa peste fisierul vechi (nu mai trebuie copiat manual)\nFIX: Sync — remapare automata ID-uri sectii/probe intre utilizatori\nFIX: Sync config — merge pe nume elimina duplicate\nFIX: Import backup — config fara hospital_name nu mai e ignorat\nNOU: PPS import HelicsWin — suport XML'},
   {version:'12.24',date:'2026-04-02',notes:'FIX: Sync — remapare automata ID-uri sectii/probe intre utilizatori (problema sectii afisate ca ID brut)\nFIX: Sync config — merge pe nume pentru TOATE array-urile (sectii, probe, biocide) — elimina duplicate\nFIX: Import backup — config fara hospital_name nu mai e ignorat\nNOU: PPS import HelicsWin — suport fisiere XML\nNOU: Copyright dinamic + LICENSE'},
   {version:'12.23',date:'2026-04-02',notes:'FIX: Sync config — merge pe nume pentru TOATE array-urile (sectii, probe, biocide, deseuri) — elimina duplicate\nFIX: Import backup — config fara hospital_name nu mai e ignorat (sectii se importa corect)\nNOU: PPS import HelicsWin — suport fisiere XML + CSV + Excel\nNOU: Copyright dinamic in footer (an calculat automat)\nNOU: Fisier LICENSE adaugat'},
   {version:'12.22',date:'2026-03-31',notes:'OPT: Curatenie cod — 13 functii moarte sterse, -4 KB\nOPT: showToast mutat in helpers.js, updateSidebar in ui.js, ipcCatById in helpers.js\nOPT: Cache _atbFlat() — lookup antibiotice instantaneu\nOPT: Constante ATP/UV deduplicate (o singura sursa)\nOPT: 9 console.log de debug eliminate din productie'},
@@ -13789,7 +13790,7 @@ function forceUpdatePWA(){
   }
 }
 async function downloadUpdate(url,version){
-  // Only used on file:// — downloads new HTML directly (no save dialog)
+  // Used on file:// — save new HTML over the current file
   showToast('Se descarca actualizarea...');
   try{
     var response=await fetch(url,{cache:'no-store'});
@@ -13798,19 +13799,31 @@ async function downloadUpdate(url,version){
     if(newHTML.length<1000||!newHTML.includes('APP_VERSION')){
       throw new Error('Continut invalid');
     }
+    // Try showSaveFilePicker — lets user save directly over current file
+    if(window.showSaveFilePicker){
+      try{
+        var curName='CPIAAM_Management.html';
+        try{var pp=decodeURIComponent(location.pathname.split('/').pop()||'');if(pp&&pp.endsWith('.html'))curName=pp}catch(e){}
+        var fh=await window.showSaveFilePicker({suggestedName:curName,types:[{description:'HTML',accept:{'text/html':['.html']}}]});
+        var wr=await fh.createWritable();await wr.write(newHTML);await wr.close();
+        dismissUpdate();showUpdateSuccess(version,true);return;
+      }catch(fsErr){if(fsErr.name==='AbortError'){showToast('Actualizare anulata');return}}
+    }
     saveAs(new Blob([newHTML],{type:'text/html;charset=utf-8'}),'CPIAAM_Management.html');
-    dismissUpdate();
-    showUpdateSuccess(version);
+    dismissUpdate();showUpdateSuccess(version,false);
   }catch(err){
-    console.error('Update error:',err);
     showToast('\u26A0 Eroare la descarcare. Verifica conexiunea.');
   }
 }
-function showUpdateSuccess(version){
+function showUpdateSuccess(version,savedInPlace){
   var banner=document.getElementById('update-banner');if(banner)banner.remove();
   var b=document.createElement('div');b.id='update-success';
   b.style.cssText='background:#D1FAE5;color:#065F46;padding:16px 20px;font-size:13px;border-bottom:2px solid #6EE7B7;font-family:var(--f);text-align:center;line-height:1.6';
-  b.innerHTML='<strong>\u2713 Versiunea '+esc(version)+' a fost descarcata!</strong><br>'+
+  b.innerHTML=savedInPlace?
+    '<strong>\u2713 Versiunea '+esc(version)+' a fost salvata!</strong><br>'+
+    '<span style="font-size:12px">Inchide aceasta pagina si redeschide fisierul pentru a folosi versiunea noua.</span><br>'+
+    '<span style="font-size:11px;color:#047857">Datele tale sunt in siguranta — sunt stocate in browser, nu in fisier.</span>'
+  : '<strong>\u2713 Versiunea '+esc(version)+' a fost descarcata!</strong><br>'+
     '<span style="font-size:12px">Copiaza fisierul descarcat PESTE cel vechi din folderul aplicatiei, apoi redeschide.</span><br>'+
     '<span style="font-size:11px;color:#047857">Datele tale sunt in siguranta — sunt stocate in browser, nu in fisier.</span>';
   var mn=document.getElementById('app-mn');

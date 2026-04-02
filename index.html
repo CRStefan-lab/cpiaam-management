@@ -1,4 +1,11 @@
 <!DOCTYPE html>
+<!--
+  CPIAAM Management — Sistem de Management IPC
+  Copyright (c) 2025-present Dr. Chitu Robert Stefan, Romania
+  Licenta: CC BY-NC-SA 4.0
+  https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ro
+  Contact: cpiaam.app@gmail.com
+-->
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
@@ -2899,7 +2906,7 @@ function updateSidebar(){
   document.getElementById('sb-sub').textContent=CFG.hospital_name||'—';
   document.querySelectorAll('[data-t]').forEach(el=>{el.textContent=T(el.dataset.t)});
   document.getElementById('sb-footer').innerHTML=
-    '<div>Dezvoltat de <strong>Dr. Chitu Robert Stefan</strong><br>cu asistenta Claude AI (Anthropic)<br>&copy; 2025&ndash;2026 &middot; <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ro" target="_blank" style="color:#94A3B8;font-size:10px">CC BY-NC-SA 4.0</a></div>'+
+    '<div>Dezvoltat de <strong>Dr. Chitu Robert Stefan</strong><br>cu asistenta Claude AI (Anthropic)<br>&copy; 2025&ndash;'+new Date().getFullYear()+' &middot; <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ro" target="_blank" style="color:#94A3B8;font-size:10px">CC BY-NC-SA 4.0</a></div>'+
     '<div style="margin-top:4px">v'+APP_VERSION+' &middot; Date locale — IndexedDB</div>'+
     '<div style="margin-top:4px"><a href="#" onclick="event.preventDefault();nav(\'terms\')" style="color:#94A3B8;font-size:10px;text-decoration:underline">'+T('sb_termeni')+'</a></div>';
 }

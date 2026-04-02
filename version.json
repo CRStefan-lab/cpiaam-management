@@ -1,10 +1,10 @@
 {
-  "version": "12.22",
+  "version": "12.24",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "OPT: Curatenie cod — 13 functii moarte sterse, -4 KB",
-    "OPT: Functii mutate in modulele corecte (showToast, updateSidebar, ipcCatById)",
-    "OPT: Cache _atbFlat(), constante ATP/UV deduplicate",
-    "OPT: 9 console.log de debug eliminate"
+    "FIX: Sync — remapare automata ID-uri sectii/probe intre utilizatori",
+    "FIX: Sync config — merge pe nume elimina duplicate",
+    "FIX: Import backup — sectii se importa corect si fara hospital_name",
+    "NOU: PPS import HelicsWin — suport fisiere XML"
   ]
 }

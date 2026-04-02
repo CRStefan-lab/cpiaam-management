@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.22</title>
+<title>CPIAAM Management v12.24</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Comitetul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1515,36 +1515,39 @@ async function _fileActionSwitch(){
 // Smart merge config arrays by ID — adds new items, updates existing by _modifiedAt
 function _smartMergeCfg(local,remote){
   const arrayKeys=['sections','biocide_products','probe_types','waste_codes','doc_categories','infection_types'];
-  // For sections, match by name (not id) — two hospitals both have "Medicina Interna" with different ids
-  const nameBasedKeys=['sections'];
+  // ALL arrays merge by name to prevent duplicates when same item has different IDs across users
   arrayKeys.forEach(key=>{
     if(!remote[key]||!Array.isArray(remote[key]))return;
     if(!local[key]||!Array.isArray(local[key])){local[key]=remote[key];return}
     const localArr=local[key];const remoteArr=remote[key];
-    const useNameKey=nameBasedKeys.includes(key);
-    // Build local map — for sections use name as key to prevent duplicates
-    const localMap={};localArr.forEach((item,i)=>{
-      const k=typeof item==='string'?item:
-        useNameKey?(item.name||item.id||JSON.stringify(item)):
-        (item.id||item.name||JSON.stringify(item));
-      localMap[k]={item,idx:i};
+    // Build local map by name (primary) and id (fallback)
+    const localByName={};const localById={};
+    localArr.forEach((item,i)=>{
+      if(typeof item==='string'){localByName[item]={item,idx:i};return}
+      if(item.name)localByName[item.name]={item,idx:i};
+      if(item.id)localById[item.id]={item,idx:i};
     });
     remoteArr.forEach(rItem=>{
-      const k=typeof rItem==='string'?rItem:
-        useNameKey?(rItem.name||rItem.id||JSON.stringify(rItem)):
-        (rItem.id||rItem.name||JSON.stringify(rItem));
-      if(!localMap[k]){
-        // New item from remote — add it
+      if(typeof rItem==='string'){if(!localByName[rItem])localArr.push(rItem);return}
+      // Match by name first, then by id
+      var match=rItem.name?localByName[rItem.name]:null;
+      if(!match&&rItem.id)match=localById[rItem.id];
+      if(!match){
+        // New item from remote — add it (keep remote id)
         localArr.push(rItem);
-      } else if(typeof rItem==='object'&&rItem._modifiedAt){
-        // Existing item — update if remote is newer
-        const lItem=localMap[k].item;
-        if(!lItem._modifiedAt||rItem._modifiedAt>lItem._modifiedAt){
-          localArr[localMap[k].idx]=rItem;
-        }
+      } else {
+        // Existing item — merge remote fields into local (keep local id)
+        var lItem=match.item;
+        Object.keys(rItem).forEach(function(k){
+          if(k==='id')return; // keep local id
+          if(lItem[k]===undefined||lItem[k]===null||lItem[k]===''){
+            // Local field missing/empty — take remote value
+            lItem[k]=rItem[k];
+          }
+        });
       }
     });
-    delete remote[key]; // prevent Object.assign from overwriting
+    delete remote[key];
   });
   // Protect identity fields — never overwrite local hospital/user info from remote
   const protectedKeys=['hospital_name','hospital_short','compartment_name','hospital_code_pps','current_user','author_name','sync_file_name','file_location','setup_complete'];
@@ -1568,6 +1571,34 @@ async function _importFromHandle(fh,skipReload,mode){
   // Support old format keys → remap to current store names
   const oldMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
   for(const[key,store] of Object.entries(oldMap)){if(d[key]&&!d[store])d[store]=d[key]}
+  // ── ID Remapping — when same-name items have different IDs across users ──
+  var _idRemap={};
+  if(d.config){
+    var rcfg=_extractCfg(d.config)||{};
+    // Build remap: remote_id → local_id for config arrays matched by name
+    ['sections','probe_types','biocide_products','waste_codes','doc_categories'].forEach(function(key){
+      var localArr=CFG[key]||[];var remoteArr=rcfg[key]||[];
+      var localByName={};localArr.forEach(function(it){if(it.name)localByName[it.name]=it.id});
+      remoteArr.forEach(function(rIt){
+        if(rIt.name&&rIt.id&&localByName[rIt.name]&&localByName[rIt.name]!==rIt.id){
+          _idRemap[rIt.id]=localByName[rIt.name];
+        }
+      });
+    });
+  }
+  // Apply remap to all data records from file
+  if(Object.keys(_idRemap).length>0){
+    var _remapFields=['section','probe_type','biocide_product','waste_code','doc_category'];
+    for(var _sk of ST){
+      if(_sk==='config'||!d[_sk]||!Array.isArray(d[_sk]))continue;
+      d[_sk].forEach(function(rec){
+        _remapFields.forEach(function(f){if(rec[f]&&_idRemap[rec[f]])rec[f]=_idRemap[rec[f]]});
+        if(rec.applicable_probes&&Array.isArray(rec.applicable_probes)){
+          rec.applicable_probes=rec.applicable_probes.map(function(id){return _idRemap[id]||id});
+        }
+      });
+    }
+  }
   // ── Smart Merge ──
   var report={added:0,updated:0,deleted:0,kept:0,conflicts:0,byUser:{}};
   for(const s of ST){
@@ -1864,20 +1895,19 @@ function setCurrentUser(name){
 // Extract valid config object from potentially corrupted backup structures
 function _extractCfg(c){
   if(!c||typeof c!=='object')return null;
-  // If it's a plain config object with hospital_name — use directly
-  if(!Array.isArray(c)&&c.hospital_name)return c;
+  // If it's a plain config object — check for any known config keys
+  function _looksLikeCfg(o){return o&&typeof o==='object'&&(o.hospital_name||o.sections||o.probe_types||o.setup_complete!==undefined)}
+  if(!Array.isArray(c)&&_looksLikeCfg(c))return c;
   // If it's an array (from getAll on config store) — unwrap
   let obj=Array.isArray(c)?c[0]:c;
   if(!obj||typeof obj!=='object')return null;
-  // If it has hospital_name at this level — use it
-  if(obj.hospital_name)return obj;
+  if(_looksLikeCfg(obj))return obj;
   // Check nested "0" keys (corrupted by Object.assign on array)
-  for(let i=0;i<5;i++){if(obj['0']&&typeof obj['0']==='object'){obj=obj['0']}else break;if(obj.hospital_name)return obj}
-  // Last resort — return first level that looks like config
+  for(let i=0;i<5;i++){if(obj['0']&&typeof obj['0']==='object'){obj=obj['0']}else break;if(_looksLikeCfg(obj))return obj}
   return null;
 }
 
-const APP_VERSION='12.22';
+const APP_VERSION='12.24';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6126,7 +6156,7 @@ function importHelicsWin(){
     '<strong>Pasi:</strong><br>1. In HelicsWin, exporta datele in format CSV sau Excel<br>'+
     '2. Fisierul trebuie sa contina coloane: Sectie, Nr. pacienti, Cu antibiotice, IAAM, Nr. prescriptii<br>'+
     '3. Daca numele sectiilor difera, le poti mapa dupa import</div>'+
-    '<div class="fg"><label>Fisier CSV sau Excel din HelicsWin</label><input type="file" id="f-hw" accept=".csv,.xlsx,.xls"></div>'+
+    '<div class="fg"><label>Fisier CSV, Excel sau XML din HelicsWin</label><input type="file" id="f-hw" accept=".csv,.xlsx,.xls,.xml"></div>'+
     '<div id="hw-preview"></div>',
   '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" onclick="processHelicsWin()">Importa</button>');
   document.getElementById('f-hw').onchange=previewHelicsWin;
@@ -6136,6 +6166,19 @@ async function previewHelicsWin(){
   let rows=[];
   if(f.name.endsWith('.csv')){
     const t=await f.text();rows=t.split('\n').filter(l=>l.trim()).map(l=>l.match(/(".*?"|[^,;\t]+)/g)?.map(c=>c.replace(/^"|"$/g,'').trim())||[]);
+  } else if(f.name.endsWith('.xml')){
+    const t=await f.text();const parser=new DOMParser();const doc=parser.parseFromString(t,'text/xml');
+    // Try to extract tabular data from XML (HelicsWin format)
+    const allRows=doc.querySelectorAll('Row,row,tr,record,Record');
+    if(allRows.length>0){
+      allRows.forEach(r=>{const cells=r.querySelectorAll('Cell,cell,td,Data,data,field,Field,*');
+        rows.push(Array.from(cells).map(c=>c.textContent.trim()))});
+    } else {
+      // Fallback: try spreadsheet XML format (Excel XML)
+      try{const ab=await f.arrayBuffer();const wb=XLSX.read(ab);const ws=wb.Sheets[wb.SheetNames[0]];
+        rows=XLSX.utils.sheet_to_json(ws,{header:1})}catch(e){
+        document.getElementById('hw-preview').innerHTML='<div class="ib wrn">Format XML nerecunoscut. Exporta din HelicsWin in format CSV sau Excel.</div>';return}
+    }
   } else {
     const ab=await f.arrayBuffer();const wb=XLSX.read(ab);const ws=wb.Sheets[wb.SheetNames[0]];
     rows=XLSX.utils.sheet_to_json(ws,{header:1});
@@ -12915,6 +12958,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.24',date:'2026-04-02',notes:'FIX: Sync — remapare automata ID-uri sectii/probe intre utilizatori (problema sectii afisate ca ID brut)\nFIX: Sync config — merge pe nume pentru TOATE array-urile (sectii, probe, biocide) — elimina duplicate\nFIX: Import backup — config fara hospital_name nu mai e ignorat\nNOU: PPS import HelicsWin — suport fisiere XML\nNOU: Copyright dinamic + LICENSE'},
+  {version:'12.23',date:'2026-04-02',notes:'FIX: Sync config — merge pe nume pentru TOATE array-urile (sectii, probe, biocide, deseuri) — elimina duplicate\nFIX: Import backup — config fara hospital_name nu mai e ignorat (sectii se importa corect)\nNOU: PPS import HelicsWin — suport fisiere XML + CSV + Excel\nNOU: Copyright dinamic in footer (an calculat automat)\nNOU: Fisier LICENSE adaugat'},
   {version:'12.22',date:'2026-03-31',notes:'OPT: Curatenie cod — 13 functii moarte sterse, -4 KB\nOPT: showToast mutat in helpers.js, updateSidebar in ui.js, ipcCatById in helpers.js\nOPT: Cache _atbFlat() — lookup antibiotice instantaneu\nOPT: Constante ATP/UV deduplicate (o singura sursa)\nOPT: 9 console.log de debug eliminate din productie'},
   {version:'12.21',date:'2026-03-31',notes:'FIX: Calendar lunar — date invalide corectate (ex: 31 feb devine 28 feb)\nFIX: Salvare documente Word — eroare la scriere nu mai e ascunsa\nFIX: Luni active — toate bifate salveaza ca tot anul (nu 12 luni individual)\nFIX: Numele raportarilor escapate corect in HTML'},
   {version:'12.20',date:'2026-03-31',notes:'NOU: Calendar raportari — zi din saptamana, luni active (ex: Oct-Mai), zi din luna (ex: pana pe 5)\nNOU: Probe aplicabile per sectie — tabel sticky cu sortare alfabetica si text explicativ\nNOU: Generare documente Word — alegere folder de salvare, tine minte locatia\nNOU: Calendar — frecventa raportare saptamanala'},

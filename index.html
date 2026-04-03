@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.27</title>
+<title>CPIAAM Management v12.28</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1907,7 +1907,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.27';
+const APP_VERSION='12.28';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6019,16 +6019,16 @@ function uploadBioAttModal(key){
     _migrateBioAtt(_editBioRec,key);
     for(const f of files){
       if(f.size>10*1024*1024){alert('Fisierul '+f.name+' depaseste 10MB.');continue}
-      const idx=_editBioRec.attachments[key].length;
-      if(_attDirHandle){
-        try{const ext=f.name.split('.').pop()||'bin';
-          const fname='bio_'+_editBioRec.id+'_'+key+'_'+idx+'_'+Date.now()+'.'+ext;
-          await attWriteFile('biocide',fname,f);
-          _editBioRec.attachments[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});continue;
-        }catch(err){console.warn('Disk write failed, fallback to base64:',err)}
+      if(!_attDirHandle){
+        alert(CFG.lang==='en'?'Please configure the attachments folder first.\nGo to: Configure > Data & Backup > Storage Attachments > Choose folder':'Configureaza mai intai folderul de atasamente.\nMergi la: Configurare > Date & Backup > Stocare Atasamente > Alege folder atasamente');
+        return;
       }
-      const data=await new Promise(res=>{const rd=new FileReader();rd.onload=ev=>res(ev.target.result);rd.readAsDataURL(f)});
-      _editBioRec.attachments[key].push({name:f.name,type:f.type,size:f.size,data:data});
+      const idx=_editBioRec.attachments[key].length;
+      try{const ext=f.name.split('.').pop()||'bin';
+        const fname='bio_'+_editBioRec.id+'_'+key+'_'+idx+'_'+Date.now()+'.'+ext;
+        await attWriteFile('biocide',fname,f);
+        _editBioRec.attachments[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});
+      }catch(err){alert('Eroare la salvarea fisierului: '+err.message);return}
     }
     await pt('biocide',_editBioRec);editBio(_editBioRec.id)};inp.click();
 }
@@ -6084,16 +6084,16 @@ function uploadBioAtt(id,key){
     _migrateBioAtt(rec,key);
     for(const f of files){
       if(f.size>10*1024*1024){alert('Fisierul '+f.name+' depaseste 10MB.');continue}
-      const idx=rec.attachments[key].length;
-      if(_attDirHandle){
-        try{const ext=f.name.split('.').pop()||'bin';
-          const fname='bio_'+id+'_'+key+'_'+idx+'_'+Date.now()+'.'+ext;
-          await attWriteFile('biocide',fname,f);
-          rec.attachments[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});continue;
-        }catch(err){console.warn('Disk write failed, fallback to base64:',err)}
+      if(!_attDirHandle){
+        alert(CFG.lang==='en'?'Please configure the attachments folder first.\nGo to: Configure > Data & Backup > Storage Attachments > Choose folder':'Configureaza mai intai folderul de atasamente.\nMergi la: Configurare > Date & Backup > Stocare Atasamente > Alege folder atasamente');
+        return;
       }
-      const rd=await new Promise(res=>{const r=new FileReader();r.onload=ev=>res(ev.target.result);r.readAsDataURL(f)});
-      rec.attachments[key].push({name:f.name,type:f.type,size:f.size,data:rd});
+      const idx=rec.attachments[key].length;
+      try{const ext=f.name.split('.').pop()||'bin';
+        const fname='bio_'+id+'_'+key+'_'+idx+'_'+Date.now()+'.'+ext;
+        await attWriteFile('biocide',fname,f);
+        rec.attachments[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});
+      }catch(err){alert('Eroare la salvarea fisierului: '+err.message);return}
     }
     await pt('biocide',rec);render()};inp.click();
 }
@@ -7872,18 +7872,17 @@ async function saveDoc(id){
   const fileInput=document.getElementById('f-file');
   if(fileInput.files.length>0){
     const f=fileInput.files[0];if(f.size>10*1024*1024){alert('Max 10MB.');return}
-    rec.file_name=f.name;rec.file_type=f.type;
-    if(_attDirHandle){
-      try{const ext=f.name.split('.').pop()||'bin';
-        const fname='doc_'+(id||Date.now())+'.'+ext;
-        await attWriteFile('documents',fname,f);
-        rec.file_meta={filename:fname,size:f.size,type:f.type,on_disk:true};
-        delete rec.file_data;
-        await pt('documents',rec);logActivity((id?'Editat':'Adaugat')+' document — '+rec.name);closeM();render();return;
-      }catch(err){console.warn('Disk write failed, fallback to base64:',err)}
+    if(!_attDirHandle){
+      alert(CFG.lang==='en'?'Please configure the attachments folder first.\nGo to: Configure > Data & Backup > Storage Attachments > Choose folder':'Configureaza mai intai folderul de atasamente.\nMergi la: Configurare > Date & Backup > Stocare Atasamente > Alege folder atasamente');
+      return;
     }
-    const data=await new Promise(ok=>{const r=new FileReader();r.onload=e=>ok(e.target.result);r.readAsDataURL(f)});
-    rec.file_data=data;
+    rec.file_name=f.name;rec.file_type=f.type;
+    try{const ext=f.name.split('.').pop()||'bin';
+      const fname='doc_'+(id||Date.now())+'.'+ext;
+      await attWriteFile('documents',fname,f);
+      rec.file_meta={filename:fname,size:f.size,type:f.type,on_disk:true};
+      delete rec.file_data;
+    }catch(err){alert('Eroare la salvarea fisierului: '+err.message);return}
   }
   await pt('documents',rec);logActivity((id?'Editat':'Adaugat')+' document — '+rec.name);closeM();render();
 }
@@ -12970,6 +12969,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.28',date:'2026-04-03',notes:'FIX: Deduplicare automata categorii documente, sectii, probe la pornire\nUX: Atasamente obligatoriu pe disc — folder de atasamente necesar pentru upload fisiere (Documente si Biocide)\nUX: Mesaj clar daca folderul nu e configurat'},
   {version:'12.27',date:'2026-04-03',notes:'FIX: Deduplicare automata categorii documente, sectii, probe la pornire\nFIX: Categorii duplicate (ex: Acreditare ANMCS x2) eliminate automat'},
   {version:'12.26',date:'2026-04-02',notes:'FIX: Update pe fisier local — descarcare directa cu instructiuni clare\nFIX: Sync — remapare automata ID-uri sectii/probe intre utilizatori\nFIX: Sync config — merge pe nume elimina duplicate\nFIX: Import backup — config fara hospital_name nu mai e ignorat\nFIX: Denumire corecta — Compartimentul (nu Comitetul)\nNOU: PPS import HelicsWin — suport XML'},
   {version:'12.25',date:'2026-04-02',notes:'FIX: Update pe fisier local — dialog salvare directa peste fisierul vechi (nu mai trebuie copiat manual)\nFIX: Sync — remapare automata ID-uri sectii/probe intre utilizatori\nFIX: Sync config — merge pe nume elimina duplicate\nFIX: Import backup — config fara hospital_name nu mai e ignorat\nNOU: PPS import HelicsWin — suport XML'},

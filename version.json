@@ -1,8 +1,9 @@
 {
-  "version": "12.27",
+  "version": "12.28",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX: Deduplicare automata categorii documente, sectii, probe la pornire",
-    "FIX: Categorii duplicate eliminate automat"
+    "FIX: Deduplicare automata categorii duplicate la pornire",
+    "UX: Atasamente obligatoriu pe disc — folder necesar pentru upload",
+    "UX: Mesaj clar daca folderul de atasamente nu e configurat"
   ]
 }

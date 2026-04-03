@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.26</title>
+<title>CPIAAM Management v12.27</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1907,7 +1907,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.26';
+const APP_VERSION='12.27';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -2304,6 +2304,18 @@ function ensureConfigIds(){
     CFG.doc_categories=DEF_DOCCAT.map(name=>({id:genId('doccat'),name}));
     changed=true;
   }else{CFG.doc_categories=normalizeArr(CFG.doc_categories,'doccat',DEF_DOCCAT)}
+  // ── Deduplicate all config arrays by name (fixes sync merge duplicates) ──
+  ['sections','probe_types','infection_types','waste_codes','doc_categories','biocide_products','ipc_categories'].forEach(function(key){
+    var arr=CFG[key];if(!arr||!Array.isArray(arr))return;
+    var seen={};var deduped=[];
+    for(var i=0;i<arr.length;i++){
+      var item=arr[i];var name=typeof item==='string'?item:(item.name||item.name_ro||'');
+      if(!name){deduped.push(item);continue}
+      if(seen[name]){changed=true;continue} // skip duplicate
+      seen[name]=true;deduped.push(item);
+    }
+    CFG[key]=deduped;
+  });
   // Personnel: ensure IDs
   (CFG.personnel||[]).forEach(p=>{if(badId(p.id)){p.id=genId('pers');changed=true}});
   // ATP/UV surface types
@@ -12958,6 +12970,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.27',date:'2026-04-03',notes:'FIX: Deduplicare automata categorii documente, sectii, probe la pornire\nFIX: Categorii duplicate (ex: Acreditare ANMCS x2) eliminate automat'},
   {version:'12.26',date:'2026-04-02',notes:'FIX: Update pe fisier local — descarcare directa cu instructiuni clare\nFIX: Sync — remapare automata ID-uri sectii/probe intre utilizatori\nFIX: Sync config — merge pe nume elimina duplicate\nFIX: Import backup — config fara hospital_name nu mai e ignorat\nFIX: Denumire corecta — Compartimentul (nu Comitetul)\nNOU: PPS import HelicsWin — suport XML'},
   {version:'12.25',date:'2026-04-02',notes:'FIX: Update pe fisier local — dialog salvare directa peste fisierul vechi (nu mai trebuie copiat manual)\nFIX: Sync — remapare automata ID-uri sectii/probe intre utilizatori\nFIX: Sync config — merge pe nume elimina duplicate\nFIX: Import backup — config fara hospital_name nu mai e ignorat\nNOU: PPS import HelicsWin — suport XML'},
   {version:'12.24',date:'2026-04-02',notes:'FIX: Sync — remapare automata ID-uri sectii/probe intre utilizatori (problema sectii afisate ca ID brut)\nFIX: Sync config — merge pe nume pentru TOATE array-urile (sectii, probe, biocide) — elimina duplicate\nFIX: Import backup — config fara hospital_name nu mai e ignorat\nNOU: PPS import HelicsWin — suport fisiere XML\nNOU: Copyright dinamic + LICENSE'},

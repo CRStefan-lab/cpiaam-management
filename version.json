@@ -1,10 +1,8 @@
 {
-  "version": "12.26",
+  "version": "12.27",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX: Update pe fisier local — descarcare directa cu instructiuni clare",
-    "FIX: Sync — remapare automata ID-uri sectii/probe intre utilizatori",
-    "FIX: Sync config — merge pe nume elimina duplicate",
-    "FIX: Denumire corecta — Compartimentul de Prevenire a IAAM"
+    "FIX: Deduplicare automata categorii documente, sectii, probe la pornire",
+    "FIX: Categorii duplicate eliminate automat"
   ]
 }

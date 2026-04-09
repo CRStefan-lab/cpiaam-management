@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.30</title>
+<title>CPIAAM Management v12.31</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1907,7 +1907,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.30';
+const APP_VERSION='12.31';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -5948,7 +5948,10 @@ function _renderBioAvizeInDialog(prodId){
     h+='<table class="dt" style="font-size:11px"><thead><tr><th>'+(isEN?'Approval No.':'Nr. Aviz')+'</th><th>'+(isEN?'Issued':'Emitere')+'</th><th>'+(isEN?'Expiry':'Expirare')+'</th><th>Status</th><th>&#215;</th></tr></thead><tbody>';
     avize.forEach(function(a,ai){
       var status='—';if(a.date_expiry){var exp=new Date(a.date_expiry);status=exp<now?'<span style="color:var(--red);font-weight:700">'+(isEN?'Expired':'Expirat')+'</span>':exp<soon?'<span style="color:#D97706;font-weight:700">'+(isEN?'Expiring soon':'Expira curand')+'</span>':'<span style="color:#059669">'+(isEN?'Valid':'Valabil')+'</span>'}
-      h+='<tr><td>'+esc(a.nr||'—')+'</td><td>'+(a.date_issued||'—')+'</td><td>'+(a.date_expiry||'—')+'</td><td>'+status+'</td>'+
+      h+='<tr><td><input value="'+esc(a.nr||'')+'" placeholder="Nr. aviz" onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].nr=this.value;saveCfg()" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px;width:90px"></td>'+
+        '<td><input type="date" value="'+(a.date_issued||'')+'" onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].date_issued=this.value;saveCfg()" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px"></td>'+
+        '<td><input type="date" value="'+(a.date_expiry||'')+'" onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].date_expiry=this.value;saveCfg()" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px"></td>'+
+        '<td>'+status+'</td>'+
         '<td class="act"><button onclick="CFG.biocide_products['+pidx+'].avize.splice('+ai+',1);saveCfg();editBio(_editBioRec?.id)" title="Sterge aviz">&#128465;</button></td></tr>';
     });
     h+='</tbody></table>';
@@ -12998,6 +13001,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.31',date:'2026-04-09',notes:'NOU: Biocide — coloana Aviz cu data expirarii (verde/portocaliu/rosu)\nFIX: Biocide avize — campuri editabile direct in dialog (nr, emitere, expirare)\nFIX: Calendar — ziua raportarii corecta (timezone local)\nUX: Instante generate automat la salvarea raportarii\nUX: Scos butonul Genereaza Instante Anuale'},
   {version:'12.30',date:'2026-04-09',notes:'NOU: Biocide — coloana Aviz cu data expirarii (verde/portocaliu/rosu)\nFIX: Calendar — ziua raportarii corecta (timezone local, nu UTC)\nUX: Instante generate automat la salvarea raportarii\nUX: Scos butonul Genereaza Instante Anuale'},
   {version:'12.29',date:'2026-04-09',notes:'FIX: Calendar — ziua raportarii corecta (timezone local, nu UTC)\nUX: Instante generate automat la salvarea raportarii (nu mai trebuie buton separat)\nUX: Scos butonul Genereaza Instante Anuale'},
   {version:'12.28',date:'2026-04-03',notes:'FIX: Deduplicare automata categorii documente, sectii, probe la pornire\nUX: Atasamente obligatoriu pe disc — folder de atasamente necesar pentru upload fisiere (Documente si Biocide)\nUX: Mesaj clar daca folderul nu e configurat'},

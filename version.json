@@ -1,10 +1,10 @@
 {
-  "version": "12.30",
+  "version": "12.31",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Biocide — coloana Aviz cu data expirarii (verde/portocaliu/rosu)",
+    "NOU: Biocide — coloana Aviz cu data expirarii in tabel",
+    "FIX: Biocide avize — campuri editabile direct in dialog",
     "FIX: Calendar — ziua raportarii corecta (timezone local)",
-    "UX: Instante generate automat la salvarea raportarii",
-    "UX: Scos butonul Genereaza Instante Anuale"
+    "UX: Instante generate automat la salvarea raportarii"
   ]
 }

@@ -1,10 +1,10 @@
 {
-  "version": "12.32",
+  "version": "12.33",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
+    "NOU: Biocide atasamente — buton vizualizare rapida (deschide PDF in tab nou)",
+    "NOU: Calendar — expirare avize biocide apar pe calendar",
     "UX: Luni active — default debifate, bifezi doar lunile dorite",
-    "NOU: Biocide — coloana Aviz cu data expirarii",
-    "FIX: Biocide avize — campuri editabile direct in dialog",
-    "FIX: Calendar — ziua raportarii corecta (timezone local)"
+    "NOU: Biocide — coloana Aviz cu data expirarii"
   ]
 }

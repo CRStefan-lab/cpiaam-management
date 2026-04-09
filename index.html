@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.28</title>
+<title>CPIAAM Management v12.30</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1907,7 +1907,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.28';
+const APP_VERSION='12.30';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -5909,12 +5909,25 @@ async function rBio(el){
   h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn bp" onclick="editBio()">+ Inregistrare</button></div>'+
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
   (data.length===0?'<div class="es"><p>Nicio inregistrare biocide'+(bf.search||bf.type||bf.month?' cu filtrele selectate':'')+'.</p></div>':
-    '<table class="dt"><thead><tr><th>#</th><th>Produs</th><th>TP</th><th>UM</th><th>Tip</th><th>Luna</th><th style="text-align:right">Cant.</th><th style="text-align:right">Valoare</th><th>Docs</th><th>Actiuni</th></tr></thead><tbody>'+
-    data.map((r,i)=>'<tr><td>'+(i+1)+'</td><td><strong>'+(r.product_id?rBioProd(r.product_id):r.product_name||'—')+'</strong></td><td style="font-size:11px">'+(r.product_type||'')+'</td><td>'+(r.unit||'')+'</td>'+
+    '<table class="dt"><thead><tr><th>#</th><th>Produs</th><th>TP</th><th>UM</th><th>Tip</th><th>Luna</th><th style="text-align:right">Cant.</th><th style="text-align:right">Valoare</th><th>Docs</th><th>Aviz</th><th>Actiuni</th></tr></thead><tbody>'+
+    data.map((r,i)=>{
+      // Find aviz expiry for this product
+      var avizTd='<td style="font-size:11px;white-space:nowrap">—</td>';
+      var prod=(CFG.biocide_products||[]).find(p=>p.id===r.product_id);
+      if(prod&&prod.avize&&prod.avize.length>0){
+        var latest=prod.avize.reduce((a,b)=>((b.date_expiry||'')>(a.date_expiry||'')?b:a),prod.avize[0]);
+        if(latest.date_expiry){
+          var exp=new Date(latest.date_expiry);var now=new Date();var soon=new Date(Date.now()+30*86400000);
+          var cls=exp<now?'color:var(--red);font-weight:700':exp<soon?'color:#D97706;font-weight:600':'color:var(--teal)';
+          avizTd='<td style="font-size:11px;white-space:nowrap;'+cls+'" title="'+(latest.number||'')+'">'+(exp<now?'&#9888; ':'')+(exp<soon&&exp>=now?'&#9203; ':'')+fmtDate(latest.date_expiry)+'</td>';
+        } else {avizTd='<td style="font-size:11px;color:var(--txtL)">Nr: '+(latest.number||'—')+'</td>'}
+      }
+      return '<tr><td>'+(i+1)+'</td><td><strong>'+(r.product_id?rBioProd(r.product_id):r.product_name||'—')+'</strong></td><td style="font-size:11px">'+(r.product_type||'')+'</td><td>'+(r.unit||'')+'</td>'+
       '<td><span class="bdg '+(r.type==='intrare'?'bdg-g':r.type==='iesire'?'bdg-a':'bdg-b')+'">'+(r.type==='stoc_initial'?'Stoc initial':r.type==='intrare'?'Intrare':'Iesire')+'</span></td>'+
       '<td>'+(r.month?MO[r.month-1]:'')+'</td><td style="text-align:right">'+fn(r.quantity)+'</td><td style="text-align:right">'+fn(Math.round((r.value_lei||0)*100)/100)+'</td>'+
       '<td style="white-space:nowrap;font-size:14px">'+bioAttIcons(r)+'</td>'+
-      '<td class="act"><button onclick="editBio('+r.id+')">&#9998;</button><button onclick="delRec(\'biocide\','+r.id+')">&#128465;</button></td></tr>').join('')+
+      avizTd+
+      '<td class="act"><button onclick="editBio('+r.id+')">&#9998;</button><button onclick="delRec(\'biocide\','+r.id+')">&#128465;</button></td></tr>'}).join('')+
     '</tbody></table>')+
   '</div></div>';
   el.innerHTML=h;
@@ -7940,7 +7953,7 @@ async function rTerm(el){
       '<option value="">Toate statusurile</option><option value="neinceput"'+(tf.status==='neinceput'?' selected':'')+'>Neinceput</option><option value="in_lucru"'+(tf.status==='in_lucru'?' selected':'')+'>In lucru</option><option value="finalizat"'+(tf.status==='finalizat'?' selected':'')+'>Finalizat</option><option value="trimis"'+(tf.status==='trimis'?' selected':'')+'>Trimis</option></select>'+
     '<button class="btn bo bsm" onclick="_termFilters={search:\'\',dest:\'\',status:\'\'};render()">Reset</button>'+
   '</div>';
-  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px;gap:8px"><button class="btn bo" onclick="genRecurringDeadlines()">Genereaza Instante Anuale</button><button class="btn bp" onclick="editDeadline()">+ Adauga Raportare</button></div>'+
+  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px;gap:8px"><button class="btn bp" onclick="editDeadline()">+ Adauga Raportare</button></div>'+
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
   (data.length===0?'<div class="es"><p>Nicio raportare '+(tf.search||tf.status?'gasita cu filtrele selectate':'definita')+'.</p></div>':
     '<table class="dt"><thead><tr><th>Denumire</th><th>Destinatar</th><th>Frecventa</th><th>Termen</th><th>Status</th><th>Actiuni</th></tr></thead><tbody>'+
@@ -8020,47 +8033,63 @@ async function saveDeadline(id){
   if(rec.frequency==='lunar'){
     rec.day_of_month=+(v('f-dom'))||15;
   }
-  if(id)rec.id=id;await pt('deadlines',rec);logActivity((id?'Editat':'Adaugat')+' termen — '+rec.name);closeM();render();
+  if(id)rec.id=id;
+  rec._isTemplate=true; // Mark as template (not a generated instance)
+  await pt('deadlines',rec);
+  // Auto-generate instances for recurring deadlines
+  if(rec.frequency&&rec.frequency!=='singulara'&&rec.frequency!=='perioada'){
+    var genCnt=await _genInstancesForTemplate(rec);
+    logActivity((id?'Editat':'Adaugat')+' termen — '+rec.name+(genCnt?' (+'+genCnt+' instante)':''));
+  } else {
+    logActivity((id?'Editat':'Adaugat')+' termen — '+rec.name);
+  }
+  closeM();render();
 }
 async function updateDeadlineStatus(id,status){
   const data=await ga('deadlines');const rec=data.find(x=>x.id===id);if(!rec)return;
   rec.status=status;await pt('deadlines',rec);
 }
-async function genRecurringDeadlines(){
-  const y=A.year,existing=await ga('deadlines');
-  const templates=existing.filter(d=>d.frequency&&d.frequency!=='singulara'&&d.frequency!=='perioada');
-  if(templates.length===0){alert('Nu exista raportari repetitive. Adauga mai intai raportari cu frecventa saptamanal/lunar/trimestrial/anual.');return}
-  let cnt=0;
-  for(const t of templates){
-    if(t.frequency==='saptamanal'){
-      // Generate weekly deadlines — respecting day_of_week and active_months
-      var targetDow=t.day_of_week||0; // 0=Luni(JS:1) mapped below
-      var jsDow=(targetDow+1)%7; // Convert: 0=Luni→JS1, 1=Marti→JS2, ..., 6=Duminica→JS0
-      var am=t.active_months||[];var allMonths=!am.length;
-      var dt=new Date(y,0,1);
-      // Find first occurrence of target day
-      while(dt.getDay()!==jsDow)dt.setDate(dt.getDate()+1);
-      while(dt.getFullYear()===y){
-        var mo=dt.getMonth()+1;
-        if(allMonths||am.includes(mo)){
-          var due=dt.toISOString().slice(0,10);
-          var wk=Math.ceil(((dt-new Date(y,0,1))/86400000+1)/7);
-          var exists=existing.find(d=>d.name===t.name&&d.due_date===due);
-          if(!exists){await pt('deadlines',{name:t.name+' — S'+wk+' '+y,recipient:t.recipient,frequency:t.frequency,due_date:due,status:'neinceput',url:t.url||'',observations:''});cnt++}
-        }
-        dt.setDate(dt.getDate()+7);
+// Format date as YYYY-MM-DD using local timezone (not UTC)
+function _localDateStr(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
+
+async function _genInstancesForTemplate(t){
+  var y=A.year;var existing=await ga('deadlines');var cnt=0;
+  if(t.frequency==='saptamanal'){
+    var targetDow=t.day_of_week||0;
+    var jsDow=(targetDow+1)%7; // 0=Luni→JS1, ..., 6=Duminica→JS0
+    var am=t.active_months||[];var allMonths=!am.length;
+    var dt=new Date(y,0,1);
+    while(dt.getDay()!==jsDow)dt.setDate(dt.getDate()+1);
+    while(dt.getFullYear()===y){
+      var mo=dt.getMonth()+1;
+      if(allMonths||am.includes(mo)){
+        var due=_localDateStr(dt);
+        var wk=Math.ceil(((dt-new Date(y,0,1))/86400000+1)/7);
+        var exists=existing.find(d=>d.name===t.name&&d.due_date===due);
+        if(!exists){await pt('deadlines',{name:t.name+' — S'+wk+' '+y,recipient:t.recipient,frequency:'singulara',due_date:due,status:'neinceput',_parentName:t.name});cnt++}
       }
-    } else {
-      const months=t.frequency==='lunar'?[1,2,3,4,5,6,7,8,9,10,11,12]:t.frequency==='trimestrial'?[3,6,9,12]:t.frequency==='anual'?[12]:[];
-      var dom=t.day_of_month||15;
-      for(const m of months){
-        var maxDay=new Date(y,m,0).getDate();var clampedDom=Math.min(dom,maxDay);
-        const due=y+'-'+String(m).padStart(2,'0')+'-'+String(clampedDom).padStart(2,'0');
-        const exists=existing.find(d=>d.name===t.name&&d.due_date===due);
-        if(!exists){await pt('deadlines',{name:t.name+' — '+(MO[m-1]||'')+' '+y,recipient:t.recipient,frequency:t.frequency,due_date:due,status:'neinceput',url:t.url||'',observations:''});cnt++}
-      }
+      dt.setDate(dt.getDate()+7);
+    }
+  } else {
+    var months=t.frequency==='lunar'?[1,2,3,4,5,6,7,8,9,10,11,12]:t.frequency==='trimestrial'?[3,6,9,12]:t.frequency==='anual'?[12]:[];
+    var dom=t.day_of_month||15;
+    for(var mi=0;mi<months.length;mi++){
+      var m=months[mi];
+      var maxDay=new Date(y,m,0).getDate();var clampedDom=Math.min(dom,maxDay);
+      var due=y+'-'+String(m).padStart(2,'0')+'-'+String(clampedDom).padStart(2,'0');
+      var exists=existing.find(d=>d.name===t.name&&d.due_date===due);
+      if(!exists){await pt('deadlines',{name:t.name+' — '+(MO[m-1]||'')+' '+y,recipient:t.recipient,frequency:'singulara',due_date:due,status:'neinceput',_parentName:t.name});cnt++}
     }
   }
+  return cnt;
+}
+
+async function genRecurringDeadlines(){
+  var y=A.year;var existing=await ga('deadlines');
+  var templates=existing.filter(d=>d._isTemplate&&d.frequency&&d.frequency!=='singulara'&&d.frequency!=='perioada');
+  if(templates.length===0){alert('Nu exista raportari repetitive.');return}
+  var cnt=0;
+  for(var i=0;i<templates.length;i++){cnt+=await _genInstancesForTemplate(templates[i])}
   alert(cnt+' instante generate pentru '+y+'.');render();
 }
 
@@ -12969,6 +12998,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.30',date:'2026-04-09',notes:'NOU: Biocide — coloana Aviz cu data expirarii (verde/portocaliu/rosu)\nFIX: Calendar — ziua raportarii corecta (timezone local, nu UTC)\nUX: Instante generate automat la salvarea raportarii\nUX: Scos butonul Genereaza Instante Anuale'},
+  {version:'12.29',date:'2026-04-09',notes:'FIX: Calendar — ziua raportarii corecta (timezone local, nu UTC)\nUX: Instante generate automat la salvarea raportarii (nu mai trebuie buton separat)\nUX: Scos butonul Genereaza Instante Anuale'},
   {version:'12.28',date:'2026-04-03',notes:'FIX: Deduplicare automata categorii documente, sectii, probe la pornire\nUX: Atasamente obligatoriu pe disc — folder de atasamente necesar pentru upload fisiere (Documente si Biocide)\nUX: Mesaj clar daca folderul nu e configurat'},
   {version:'12.27',date:'2026-04-03',notes:'FIX: Deduplicare automata categorii documente, sectii, probe la pornire\nFIX: Categorii duplicate (ex: Acreditare ANMCS x2) eliminate automat'},
   {version:'12.26',date:'2026-04-02',notes:'FIX: Update pe fisier local — descarcare directa cu instructiuni clare\nFIX: Sync — remapare automata ID-uri sectii/probe intre utilizatori\nFIX: Sync config — merge pe nume elimina duplicate\nFIX: Import backup — config fara hospital_name nu mai e ignorat\nFIX: Denumire corecta — Compartimentul (nu Comitetul)\nNOU: PPS import HelicsWin — suport XML'},

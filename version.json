@@ -1,9 +1,10 @@
 {
-  "version": "12.28",
+  "version": "12.30",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX: Deduplicare automata categorii duplicate la pornire",
-    "UX: Atasamente obligatoriu pe disc — folder necesar pentru upload",
-    "UX: Mesaj clar daca folderul de atasamente nu e configurat"
+    "NOU: Biocide — coloana Aviz cu data expirarii (verde/portocaliu/rosu)",
+    "FIX: Calendar — ziua raportarii corecta (timezone local)",
+    "UX: Instante generate automat la salvarea raportarii",
+    "UX: Scos butonul Genereaza Instante Anuale"
   ]
 }

@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.33</title>
+<title>CPIAAM Management v12.34</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1907,7 +1907,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.33';
+const APP_VERSION='12.34';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6100,8 +6100,60 @@ function bioAttIcons(r){
     const files=_getBioAttFiles(r,t.key);
     if(!files.length)return '';
     const cnt=files.length>1?' ('+files.length+')':'';
-    return '<button onclick="downloadBioAtt('+r.id+',\''+t.key+'\')" title="'+t.title+cnt+'" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid '+t.brd+';background:'+t.bg+';color:'+t.color+'">'+t.icon+' '+t.label+cnt+'</button>';
+    return '<button onclick="showBioAttPopup(event,'+r.id+',\''+t.key+'\')" title="'+t.title+cnt+'" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid '+t.brd+';background:'+t.bg+';color:'+t.color+'">'+t.icon+' '+t.label+cnt+'</button>';
   }).join('')+'</div>';
+}
+function showBioAttPopup(evt,id,key){
+  evt.stopPropagation();
+  // Remove any existing popup
+  var old=document.getElementById('bio-att-popup');if(old)old.remove();
+  ga('biocide').then(function(data){
+    var rec=data.find(function(x){return x.id===id});if(!rec)return;
+    var files=_getBioAttFiles(rec,key);if(!files.length)return;
+    var t=BIO_ATT_TYPES.find(function(x){return x.key===key})||{icon:'',label:key};
+    var h='<div id="bio-att-popup" style="position:fixed;z-index:600;background:var(--card);border:1px solid var(--brd);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);padding:10px 12px;min-width:250px;max-width:400px;font-size:12px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong>'+t.icon+' '+t.label+'</strong>'+
+      '<button onclick="document.getElementById(\'bio-att-popup\').remove()" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--txtL)">&times;</button></div>';
+    files.forEach(function(f,fi){
+      h+='<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--brd)">'+
+        '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(f.name)+'">'+esc(f.name)+'</span>'+
+        '<button onclick="viewBioAttIdx('+id+',\''+key+'\','+fi+')" title="Vizualizeaza" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px">&#128065;</button>'+
+        '<button onclick="downloadBioAttIdx('+id+',\''+key+'\','+fi+')" title="Descarca" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px">&#11015;</button></div>';
+    });
+    h+='<div style="margin-top:8px;display:flex;gap:6px">'+
+      '<button class="btn bsm" style="font-size:10px" onclick="editBio('+id+');document.getElementById(\'bio-att-popup\').remove()">&#9998; Editare</button>'+
+      (files.length>1?'<button class="btn bsm bo" style="font-size:10px" onclick="downloadBioAttAll('+id+',\''+key+'\')">&#11015; Descarca toate</button>':'')+
+      '</div></div>';
+    var popup=document.createElement('div');popup.innerHTML=h;var el=popup.firstChild;
+    document.body.appendChild(el);
+    // Position near click
+    var r=evt.target.getBoundingClientRect();
+    el.style.left=Math.min(r.left,window.innerWidth-el.offsetWidth-10)+'px';
+    el.style.top=Math.min(r.bottom+4,window.innerHeight-el.offsetHeight-10)+'px';
+    // Close on outside click
+    setTimeout(function(){document.addEventListener('click',function _cl(e){if(!el.contains(e.target)){el.remove();document.removeEventListener('click',_cl)}})},100);
+  });
+}
+async function viewBioAttIdx(id,key,idx){
+  var data=await ga('biocide');var rec=data.find(function(x){return x.id===id});if(!rec)return;
+  var files=_getBioAttFiles(rec,key);var att=files[idx];if(!att)return;
+  if(att.on_disk&&att.filename){try{var file=await attReadFile('biocide',att.filename);window.open(URL.createObjectURL(file),'_blank');return}catch(e){alert('Nu pot citi fisierul de pe disc.')};return}
+  if(att.data)window.open(att.data,'_blank');
+}
+async function downloadBioAttIdx(id,key,idx){
+  var data=await ga('biocide');var rec=data.find(function(x){return x.id===id});if(!rec)return;
+  var files=_getBioAttFiles(rec,key);var att=files[idx];if(!att)return;
+  if(att.on_disk&&att.filename){try{var file=await attReadFile('biocide',att.filename);saveAs(file,att.name);return}catch(e){alert('Nu pot citi fisierul de pe disc.')};return}
+  if(att.data){var a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
+}
+async function downloadBioAttAll(id,key){
+  var data=await ga('biocide');var rec=data.find(function(x){return x.id===id});if(!rec)return;
+  var files=_getBioAttFiles(rec,key);
+  for(var i=0;i<files.length;i++){
+    var att=files[i];
+    if(att.on_disk&&att.filename){try{var file=await attReadFile('biocide',att.filename);saveAs(file,att.name)}catch(e){}}
+    else if(att.data){var a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
+  }
 }
 function uploadBioAtt(id,key){
   const inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.doc,.docx,.jpg,.png,.jpeg';inp.multiple=true;
@@ -13028,6 +13080,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.34',date:'2026-04-09',notes:'NOU: Biocide DOCS popup — click pe badge arata lista fisierelor cu vizualizare/descarcare/editare\nNOU: Vizualizare rapida PDF in tab nou + descarcare individuala sau toate\nNOU: Calendar — expirare avize biocide pe calendar\nNOU: Biocide — coloana Aviz cu data expirarii\nFIX: Biocide avize — campuri editabile direct in dialog'},
   {version:'12.33',date:'2026-04-09',notes:'NOU: Biocide atasamente — buton vizualizare rapida (deschide PDF in tab nou)\nNOU: Calendar — expirare avize biocide apar pe calendar (punct galben)\nUX: Luni active — default debifate, bifezi doar lunile dorite\nNOU: Biocide — coloana Aviz cu data expirarii\nFIX: Biocide avize — campuri editabile direct in dialog'},
   {version:'12.32',date:'2026-04-09',notes:'UX: Luni active — default debifate, bifezi doar lunile dorite\nNOU: Biocide — coloana Aviz cu data expirarii (verde/portocaliu/rosu)\nFIX: Biocide avize — campuri editabile direct in dialog\nFIX: Calendar — ziua raportarii corecta (timezone local)\nUX: Instante generate automat la salvarea raportarii'},
   {version:'12.31',date:'2026-04-09',notes:'NOU: Biocide — coloana Aviz cu data expirarii (verde/portocaliu/rosu)\nFIX: Biocide avize — campuri editabile direct in dialog (nr, emitere, expirare)\nFIX: Calendar — ziua raportarii corecta (timezone local)\nUX: Instante generate automat la salvarea raportarii\nUX: Scos butonul Genereaza Instante Anuale'},

@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.31</title>
+<title>CPIAAM Management v12.32</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1907,7 +1907,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.31';
+const APP_VERSION='12.32';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -7983,9 +7983,9 @@ function _dlFreqExtra(r){
     for(var i=0;i<7;i++)h+='<option value="'+i+'"'+((r.day_of_week||0)==i?' selected':'')+'>'+_DL_DAYS[i]+'</option>';
     h+='</select></div>';
     h+='<div class="fg"><label>Lunile active</label><div id="f-months" style="display:flex;flex-wrap:wrap;gap:3px">';
-    var am=r.active_months||[];var allM=!am.length;
-    for(var m=1;m<=12;m++){var ch=allM||am.includes(m);h+='<label style="font-size:10px;cursor:pointer;padding:2px 5px;border:1px solid var(--brd);border-radius:4px;background:'+(ch?'var(--teal)':'var(--bg)')+';color:'+(ch?'#fff':'inherit')+'"><input type="checkbox" value="'+m+'" '+(ch?'checked':'')+' onchange="this.parentElement.style.background=this.checked?\'var(--teal)\':\'var(--bg)\';this.parentElement.style.color=this.checked?\'#fff\':\'inherit\'" style="display:none">'+MO[m-1].slice(0,3)+'</label>';}
-    h+='</div><div style="font-size:10px;color:var(--txtL)">Nebifat = tot anul</div></div></div>';
+    var am=r.active_months||[];
+    for(var m=1;m<=12;m++){var ch=am.includes(m);h+='<label style="font-size:10px;cursor:pointer;padding:2px 5px;border:1px solid var(--brd);border-radius:4px;background:'+(ch?'var(--teal)':'var(--bg)')+';color:'+(ch?'#fff':'inherit')+'"><input type="checkbox" value="'+m+'" '+(ch?'checked':'')+' onchange="this.parentElement.style.background=this.checked?\'var(--teal)\':\'var(--bg)\';this.parentElement.style.color=this.checked?\'#fff\':\'inherit\'" style="display:none">'+MO[m-1].slice(0,3)+'</label>';}
+    h+='</div><div style="font-size:10px;color:var(--txtL)">Bifeaza lunile in care raportezi. Nebifat = tot anul.</div></div></div>';
   } else if(f==='lunar'){
     h+='<div class="fg" style="max-width:200px"><label>Pana pe data de</label><input type="number" id="f-dom" min="1" max="28" value="'+(r.day_of_month||15)+'" style="width:60px"><span style="font-size:11px;color:var(--txtL);margin-left:4px">a fiecarei luni</span></div>';
   }
@@ -13001,6 +13001,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.32',date:'2026-04-09',notes:'UX: Luni active — default debifate, bifezi doar lunile dorite\nNOU: Biocide — coloana Aviz cu data expirarii (verde/portocaliu/rosu)\nFIX: Biocide avize — campuri editabile direct in dialog\nFIX: Calendar — ziua raportarii corecta (timezone local)\nUX: Instante generate automat la salvarea raportarii'},
   {version:'12.31',date:'2026-04-09',notes:'NOU: Biocide — coloana Aviz cu data expirarii (verde/portocaliu/rosu)\nFIX: Biocide avize — campuri editabile direct in dialog (nr, emitere, expirare)\nFIX: Calendar — ziua raportarii corecta (timezone local)\nUX: Instante generate automat la salvarea raportarii\nUX: Scos butonul Genereaza Instante Anuale'},
   {version:'12.30',date:'2026-04-09',notes:'NOU: Biocide — coloana Aviz cu data expirarii (verde/portocaliu/rosu)\nFIX: Calendar — ziua raportarii corecta (timezone local, nu UTC)\nUX: Instante generate automat la salvarea raportarii\nUX: Scos butonul Genereaza Instante Anuale'},
   {version:'12.29',date:'2026-04-09',notes:'FIX: Calendar — ziua raportarii corecta (timezone local, nu UTC)\nUX: Instante generate automat la salvarea raportarii (nu mai trebuie buton separat)\nUX: Scos butonul Genereaza Instante Anuale'},

@@ -1,10 +1,9 @@
 {
-  "version": "12.34",
+  "version": "12.37",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Biocide DOCS popup — click pe badge arata lista fisierelor",
-    "NOU: Vizualizare rapida PDF + descarcare individuala sau toate",
-    "NOU: Calendar — expirare avize biocide pe calendar",
-    "NOU: Biocide — coloana Aviz cu data expirarii"
+    "NOU: Raport Trimestrial complet — 10 sectiuni + comparatie T anterior",
+    "NOU: Sumar executiv trimestrial cu KPI-uri cheie",
+    "NOU: Miscarea Bolnavilor — grad utilizare, DMS"
   ]
 }

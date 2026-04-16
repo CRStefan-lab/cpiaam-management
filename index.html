@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.38</title>
+<title>CPIAAM Management v12.39</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1908,7 +1908,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.38';
+const APP_VERSION='12.39';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -5880,7 +5880,36 @@ async function rStatistici(el){
   var year=A.year;
   var ha=await getHospitalActivity(year);
 
+  // ── Calculate indicators first (needed for display above tables) ──
+  var totalOmZile=0,totalExternati=0,totalPaturi=0,cntPaturi=0;
+  ha.months.forEach(function(mo){
+    if(mo.omzile)totalOmZile+=+mo.omzile;
+    if(mo.externati)totalExternati+=+mo.externati;
+    if(mo.paturi_medii){totalPaturi+=+mo.paturi_medii;cntPaturi++}
+  });
+  var avgPaturi=cntPaturi>0?Math.round(totalPaturi/cntPaturi*10)/10:0;
+  var iaamData=await ga('iaam');
+  var iaamCount=iaamData.filter(function(r){return r.year===year&&!r._deleted}).length;
+  var deseuri=await ga('deseuri');
+  var deseuriKg=0;
+  deseuri.forEach(function(r){if(r.year===year)(CFG.waste_codes||[]).forEach(function(w){deseuriKg+=(+r[w.id]||0)})});
+  var iaamRate=totalOmZile>0?Math.round(iaamCount/totalOmZile*1000*100)/100:0;
+  var desKgOmZile=totalOmZile>0?Math.round(deseuriKg/totalOmZile*1000*100)/100:0;
+  var desKgExt=totalExternati>0?Math.round(deseuriKg/totalExternati*100)/100:0;
+
   var h='<h2>Statistici Spital</h2>';
+
+  // ── SECTION C (moved up): Indicatori Calculati ──
+  h+='<div class="pn"><div class="ph"><h3>'+(isEN?'Calculated Indicators':'Indicatori Calculati')+' '+year+'</h3></div><div class="pb">';
+  h+='<div class="kg">';
+  h+='<div class="kc bl"><div class="kl">TOTAL OM-ZILE</div><div class="kv">'+fn(totalOmZile)+'</div></div>';
+  h+='<div class="kc gn"><div class="kl">TOTAL EXTERNATI</div><div class="kv">'+fn(totalExternati)+'</div></div>';
+  h+='<div class="kc bl"><div class="kl">PATURI MEDII</div><div class="kv">'+avgPaturi+'</div></div>';
+  h+='<div class="kc '+(iaamRate>0?'rd':'tl')+'"><div class="kl">IAAM / 1000 ZILE-PAT</div><div class="kv">'+iaamRate+'</div></div>';
+  h+='<div class="kc am"><div class="kl">KG DESEURI / 1000 ZILE-PAT</div><div class="kv">'+desKgOmZile+'</div></div>';
+  h+='<div class="kc am"><div class="kl">KG DESEURI / PACIENT EXTERNAT</div><div class="kv">'+desKgExt+'</div></div>';
+  h+='</div>';
+  h+='</div></div>';
 
   // ── SECTION A: Date Totale Spital ──
   h+='<div class="pn"><div class="ph"><h3>'+(isEN?'Hospital Total Data':'Date Totale Spital')+'</h3></div><div class="pb">';
@@ -5930,37 +5959,6 @@ async function rStatistici(el){
     }
     h+='</div>';
   }
-
-  // ── SECTION C: Indicatori Calculati ──
-  var totalOmZile=0,totalExternati=0,totalPaturi=0,cntPaturi=0;
-  ha.months.forEach(function(mo){
-    if(mo.omzile)totalOmZile+=+mo.omzile;
-    if(mo.externati)totalExternati+=+mo.externati;
-    if(mo.paturi_medii){totalPaturi+=+mo.paturi_medii;cntPaturi++}
-  });
-  var avgPaturi=cntPaturi>0?Math.round(totalPaturi/cntPaturi*10)/10:0;
-
-  // Get IAAM count and deseuri kg for this year
-  var iaamData=await ga('iaam');
-  var iaamCount=iaamData.filter(function(r){return r.year===year&&!r._deleted}).length;
-  var deseuri=await ga('deseuri');
-  var deseuriKg=0;
-  deseuri.forEach(function(r){if(r.year===year)(CFG.waste_codes||[]).forEach(function(w){deseuriKg+=(+r[w.id]||0)})});
-
-  var iaamRate=totalOmZile>0?Math.round(iaamCount/totalOmZile*1000*100)/100:0;
-  var desKgOmZile=totalOmZile>0?Math.round(deseuriKg/totalOmZile*1000*100)/100:0;
-  var desKgExt=totalExternati>0?Math.round(deseuriKg/totalExternati*100)/100:0;
-
-  h+='<div class="pn"><div class="ph"><h3>'+(isEN?'Calculated Indicators':'Indicatori Calculati')+' '+year+'</h3></div><div class="pb">';
-  h+='<div class="kg">';
-  h+='<div class="kc bl"><div class="kl">TOTAL OM-ZILE</div><div class="kv">'+fn(totalOmZile)+'</div></div>';
-  h+='<div class="kc gn"><div class="kl">TOTAL EXTERNATI</div><div class="kv">'+fn(totalExternati)+'</div></div>';
-  h+='<div class="kc bl"><div class="kl">PATURI MEDII</div><div class="kv">'+avgPaturi+'</div></div>';
-  h+='<div class="kc '+(iaamRate>0?'rd':'tl')+'"><div class="kl">IAAM / 1000 ZILE-PAT</div><div class="kv">'+iaamRate+'</div></div>';
-  h+='<div class="kc am"><div class="kl">KG DESEURI / 1000 ZILE-PAT</div><div class="kv">'+desKgOmZile+'</div></div>';
-  h+='<div class="kc am"><div class="kl">KG DESEURI / PACIENT EXTERNAT</div><div class="kv">'+desKgExt+'</div></div>';
-  h+='</div>';
-  h+='</div></div>';
 
   el.innerHTML=h;
 }
@@ -13556,6 +13554,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.39',date:'2026-04-16',notes:'UX: Statistici Spital — indicatori calculati mutati deasupra tabelului\nFIX: KPI cards stilizate corect\nFIX: Calcul deseuri kg corect'},
   {version:'12.38',date:'2026-04-16',notes:'FIX: Statistici Spital — indicatori calculati stilizati ca KPI cards (nu text simplu)\nFIX: Calcul deseuri kg corect (sumat pe coduri deseuri)'},
   {version:'12.37',date:'2026-04-16',notes:'NOU: Raport Trimestrial complet — 10 sectiuni (IAAM, Autocontrol, Deseuri, Biocide, ATB, Audituri, Instruire)\nNOU: Comparatie cu trimestrul anterior — tabel indicatori cu delta si trend\nNOU: Sumar executiv trimestrial cu KPI-uri cheie\nNOU: Miscarea Bolnavilor — grad utilizare paturi, DMS'},
   {version:'12.36',date:'2026-04-16',notes:'NOU: Raport Anual extins — Miscarea Bolnavilor din Statistici Spital + IAAM/1000 zile-pat calculat automat\nNOU: Sectiune ATB extinsa — top 10 substante, distributie AWaRe, DDD/100 zile-pat, interpretare OMS\nNOU: Audituri — tabel cu min/max conformitate per tip\nNOU: Instruire — tabel sesiuni cu data/tema/formator/participanti\nNOU: Obiective SMART conditionat — apare doar daca exista date\nNOU: Concluzii extinse — recomandari ATB stewardship si frecventa audituri'},

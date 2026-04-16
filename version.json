@@ -1,8 +1,9 @@
 {
-  "version": "12.38",
+  "version": "12.39",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX: Statistici Spital — indicatori calculati stilizati ca KPI cards",
-    "FIX: Calcul deseuri kg corect (sumat pe coduri deseuri)"
+    "UX: Statistici Spital — indicatori calculati mutati deasupra tabelului",
+    "FIX: KPI cards stilizate corect",
+    "FIX: Calcul deseuri kg corect"
   ]
 }

@@ -1,9 +1,8 @@
 {
-  "version": "12.37",
+  "version": "12.38",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Raport Trimestrial complet — 10 sectiuni + comparatie T anterior",
-    "NOU: Sumar executiv trimestrial cu KPI-uri cheie",
-    "NOU: Miscarea Bolnavilor — grad utilizare, DMS"
+    "FIX: Statistici Spital — indicatori calculati stilizati ca KPI cards",
+    "FIX: Calcul deseuri kg corect (sumat pe coduri deseuri)"
   ]
 }

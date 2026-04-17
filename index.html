@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.39</title>
+<title>CPIAAM Management v12.40</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1908,7 +1908,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.39';
+const APP_VERSION='12.40';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -5875,6 +5875,7 @@ async function _migrateDeseuriToHA(){
 
 // ═══ RENDER PAGE ═══
 var _haSecOpen=false;
+var _haAmbSecOpen=false;
 async function rStatistici(el){
   var isEN=CFG.lang==='en';
   var year=A.year;
@@ -5930,26 +5931,71 @@ async function rStatistici(el){
   h+='<button class="btn bd bsm" onclick="if(confirm(\'Stergi datele statistice pentru '+year+'?\')){clearHA()}">Sterge tot anul</button>';
   h+='</div></div></div>';
 
-  // ── SECTION B: Date per Sectie (colapsabil) ──
-  var secs=CFG.sections||[];
-  if(secs.length>0){
+  // ── SECTION B: Date per Sectie (colapsabil) — doar sectii si compartimente ──
+  var allSecs=CFG.sections||[];
+  var internareSecs=allSecs.filter(function(s){return s.type==='sectie'||s.type==='compartiment'});
+  var ambulSecs=allSecs.filter(function(s){return s.type==='cabinet'});
+
+  if(internareSecs.length>0){
     h+='<div class="pn"><div class="ph" onclick="_haSecOpen=!_haSecOpen;render()" style="cursor:pointer"><h3>';
-    h+='<span class="ac-arrow'+(_haSecOpen?' open':'')+'">&#9654;</span> '+(isEN?'Details per section':'Detalii per sectie')+' <span style="font-size:11px;color:var(--txtL);font-weight:400">(optional)</span>';
+    h+='<span class="ac-arrow'+(_haSecOpen?' open':'')+'">&#9654;</span> '+(isEN?'Details per section (hospital)':'Detalii per sectie (spital)')+' <span style="font-size:11px;color:var(--txtL);font-weight:400">(optional — doar sectii cu internare)</span>';
     h+='</h3></div>';
     if(_haSecOpen){
       h+='<div class="pb" style="overflow-x:auto"><table class="dt" style="font-size:10px"><thead><tr><th>Luna</th>';
-      secs.forEach(function(s){h+='<th colspan="2" style="text-align:center;border-bottom:none">'+_secDisplayName(s)+'</th>'});
+      internareSecs.forEach(function(s){h+='<th colspan="2" style="text-align:center;border-bottom:none">'+_secDisplayName(s)+'</th>'});
       h+='</tr><tr><th></th>';
-      secs.forEach(function(){h+='<th style="font-size:9px">Om-zile</th><th style="font-size:9px">Ext.</th>'});
+      internareSecs.forEach(function(){h+='<th style="font-size:9px">Om-zile</th><th style="font-size:9px">Ext.</th>'});
       h+='</tr></thead><tbody>';
       for(var m=0;m<12;m++){
         var mo=ha.months[m]||{};
         var secData={};(mo.sections||[]).forEach(function(sd){secData[sd.section_id]=sd});
         h+='<tr><td style="font-weight:600;white-space:nowrap;font-size:11px">'+MO[m].slice(0,3)+'</td>';
-        secs.forEach(function(s){
+        internareSecs.forEach(function(s){
           var sd=secData[s.id]||{};
           h+='<td><input type="number" class="ha-sec-inp" data-m="'+m+'" data-sid="'+s.id+'" data-f="omzile" value="'+(sd.omzile||'')+'" min="0" style="width:60px;font-size:10px"></td>';
           h+='<td><input type="number" class="ha-sec-inp" data-m="'+m+'" data-sid="'+s.id+'" data-f="externati" value="'+(sd.externati||'')+'" min="0" style="width:60px;font-size:10px"></td>';
+        });
+        h+='</tr>';
+      }
+      h+='</tbody></table>';
+      h+='<div style="margin-top:8px"><button class="btn bp bsm" onclick="saveHA()">Salveaza</button></div>';
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+
+  // ── SECTION D: Ambulatoriu — total + per cabinet (colapsabil) ──
+  h+='<div class="pn"><div class="ph"><h3>'+(isEN?'Outpatient — Total Consultations':'Ambulatoriu — Total Consultatii/Luna')+'</h3></div><div class="pb">';
+  h+='<div class="ib inf" style="margin-bottom:10px;font-size:11px">Folosit pentru raportarea DSP: nr. total pacienti/consultatii pe luna pentru ambulatoriu.</div>';
+  h+='<div style="overflow-x:auto"><table class="dt" style="font-size:12px"><thead><tr>';
+  h+='<th>Luna</th><th>Total consultatii</th>';
+  h+='</tr></thead><tbody>';
+  for(var m=0;m<12;m++){
+    var mo=ha.months[m]||{};
+    h+='<tr><td style="font-weight:600;white-space:nowrap">'+MO[m]+'</td>';
+    h+='<td><input type="number" class="ha-inp" data-m="'+m+'" data-f="ambul_total" value="'+(mo.ambul_total||'')+'" min="0" style="width:120px"></td>';
+    h+='</tr>';
+  }
+  h+='</tbody></table></div>';
+  h+='<div style="margin-top:10px"><button class="btn bp" onclick="saveHA()">Salveaza</button></div>';
+  h+='</div></div>';
+
+  // ── SECTION E: Ambulatoriu per cabinet (colapsabil) ──
+  if(ambulSecs.length>0){
+    h+='<div class="pn"><div class="ph" onclick="_haAmbSecOpen=!_haAmbSecOpen;render()" style="cursor:pointer"><h3>';
+    h+='<span class="ac-arrow'+(_haAmbSecOpen?' open':'')+'">&#9654;</span> '+(isEN?'Outpatient — per cabinet (optional)':'Ambulatoriu — Defalcat per cabinet')+' <span style="font-size:11px;color:var(--txtL);font-weight:400">(optional)</span>';
+    h+='</h3></div>';
+    if(_haAmbSecOpen){
+      h+='<div class="pb" style="overflow-x:auto"><table class="dt" style="font-size:10px"><thead><tr><th>Luna</th>';
+      ambulSecs.forEach(function(s){h+='<th style="text-align:center">'+_secDisplayName(s)+'</th>'});
+      h+='</tr></thead><tbody>';
+      for(var m=0;m<12;m++){
+        var mo=ha.months[m]||{};
+        var secData={};(mo.sections||[]).forEach(function(sd){secData[sd.section_id]=sd});
+        h+='<tr><td style="font-weight:600;white-space:nowrap;font-size:11px">'+MO[m].slice(0,3)+'</td>';
+        ambulSecs.forEach(function(s){
+          var sd=secData[s.id]||{};
+          h+='<td><input type="number" class="ha-sec-inp" data-m="'+m+'" data-sid="'+s.id+'" data-f="consultatii" value="'+(sd.consultatii||'')+'" min="0" style="width:70px;font-size:10px"></td>';
         });
         h+='</tr>';
       }
@@ -13554,6 +13600,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.40',date:'2026-04-17',notes:'NOU: Statistici Spital — sectiune Ambulatoriu cu total consultatii lunar (pentru raportare DSP)\nNOU: Ambulatoriu — defalcat per cabinet (colapsabil)\nFIX: Detalii per sectie — afiseaza doar sectii si compartimente (nu cabinete, farmacie, etc.)'},
   {version:'12.39',date:'2026-04-16',notes:'UX: Statistici Spital — indicatori calculati mutati deasupra tabelului\nFIX: KPI cards stilizate corect\nFIX: Calcul deseuri kg corect'},
   {version:'12.38',date:'2026-04-16',notes:'FIX: Statistici Spital — indicatori calculati stilizati ca KPI cards (nu text simplu)\nFIX: Calcul deseuri kg corect (sumat pe coduri deseuri)'},
   {version:'12.37',date:'2026-04-16',notes:'NOU: Raport Trimestrial complet — 10 sectiuni (IAAM, Autocontrol, Deseuri, Biocide, ATB, Audituri, Instruire)\nNOU: Comparatie cu trimestrul anterior — tabel indicatori cu delta si trend\nNOU: Sumar executiv trimestrial cu KPI-uri cheie\nNOU: Miscarea Bolnavilor — grad utilizare paturi, DMS'},

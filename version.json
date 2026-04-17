@@ -1,9 +1,9 @@
 {
-  "version": "12.39",
+  "version": "12.40",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "UX: Statistici Spital — indicatori calculati mutati deasupra tabelului",
-    "FIX: KPI cards stilizate corect",
-    "FIX: Calcul deseuri kg corect"
+    "NOU: Statistici Spital — Ambulatoriu cu total consultatii lunar (pentru DSP)",
+    "NOU: Ambulatoriu — defalcat per cabinet (colapsabil)",
+    "FIX: Detalii per sectie — doar sectii si compartimente"
   ]
 }

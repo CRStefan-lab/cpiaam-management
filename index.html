@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.42</title>
+<title>CPIAAM Management v12.43</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1964,7 +1964,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.42';
+const APP_VERSION='12.43';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -12693,15 +12693,15 @@ async function rCfg(el){
   var isEN=CFG.lang==='en';
   // ── Tab navigation ──
   var h='<div class="ac-type-tabs" style="margin-bottom:16px">'+
-    [['spital','&#127973; Spital'],['dateintro','&#128203; Introducere date'],['date','&#128190; Date & Backup'],['ai','&#129302; AI']].map(t=>
+    [['spital','&#127973; '+(isEN?'Hospital':'Spital')],['dateintro','&#128203; '+(isEN?'Data Entry':'Introducere date')],['date','&#128190; '+(isEN?'Data & Backup':'Date & Backup')],['ai','&#129302; AI']].map(t=>
       '<div class="ac-ttab'+(t[0]===_cfgTab?' act':'')+'" onclick="_cfgTab=\''+t[0]+'\';render()">'+t[1]+'</div>').join('')+'</div>';
 
   // Quick-jump navigation per tab
   var _qj={
-    spital:[['cfg-info','Informatii'],['cfg-pers','Personal'],['cfg-sec-sp','Sectii'],['cfg-sec-am','Ambulatoriu']],
-    dateintro:[['cfg-ipc','Categorii IPC'],['cfg-prof','Categorii Profesionale'],['cfg-probe','Tipuri Probe'],['cfg-probe-map','Probe/Sectii'],['cfg-lab','Probe Laborator'],['cfg-ecdc','Categorii IAAM'],['cfg-risk','Factori Risc'],['cfg-comorb','Comorbiditati'],['cfg-disp','Dispozitive'],['cfg-bio','Biocide'],['cfg-des','Coduri Deseuri'],['cfg-atp','Suprafete ATP/UV']],
-    date:[['cfg-lang','Format/Limba'],['cfg-sync','Sincronizare'],['cfg-bkp','Backup'],['cfg-loc','Locatie fisier'],['cfg-att','Atasamente']],
-    ai:[['cfg-ai','Configurare AI']]
+    spital:[['cfg-info',isEN?'Information':'Informatii'],['cfg-pers',isEN?'Staff':'Personal'],['cfg-sec-sp',isEN?'Wards':'Sectii'],['cfg-sec-am',isEN?'Outpatient':'Ambulatoriu']],
+    dateintro:[['cfg-ipc',isEN?'IPC Categories':'Categorii IPC'],['cfg-prof',isEN?'Professional Categories':'Categorii Profesionale'],['cfg-probe',isEN?'Sample Types':'Tipuri Probe'],['cfg-probe-map',isEN?'Samples/Wards':'Probe/Sectii'],['cfg-lab',isEN?'Lab Samples':'Probe Laborator'],['cfg-ecdc',isEN?'HAI Categories':'Categorii IAAM'],['cfg-risk',isEN?'Risk Factors':'Factori Risc'],['cfg-comorb',isEN?'Comorbidities':'Comorbiditati'],['cfg-disp',isEN?'Devices':'Dispozitive'],['cfg-bio','Biocide'],['cfg-des',isEN?'Waste Codes':'Coduri Deseuri'],['cfg-atp',isEN?'ATP/UV Surfaces':'Suprafete ATP/UV']],
+    date:[['cfg-lang',isEN?'Format/Language':'Format/Limba'],['cfg-sync',isEN?'Sync':'Sincronizare'],['cfg-bkp','Backup'],['cfg-loc',isEN?'File Location':'Locatie fisier'],['cfg-att',isEN?'Attachments':'Atasamente']],
+    ai:[['cfg-ai',isEN?'AI Configuration':'Configurare AI']]
   };
   if(_qj[_cfgTab]&&_qj[_cfgTab].length>2){
     h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--brd)">';
@@ -12711,31 +12711,31 @@ async function rCfg(el){
 
   if(_cfgTab==='spital'){
   h+=
-  '<div class="pn" id="cfg-info"><div class="ph"><h3>Informatii Spital</h3></div><div class="pb">'+
-    '<div class="fr"><div class="fg"><label>Denumire spital</label><input id="c-name" value="'+esc(CFG.hospital_name)+'"></div>'+
-    '<div class="fg"><label>Denumire scurta</label><input id="c-short" value="'+(CFG.hospital_short||'')+'"></div></div>'+
-    '<div class="fr"><div class="fg"><label>Nume compartiment</label><input id="c-cpiaam" value="'+esc(CFG.cpiaam_name)+'"></div>'+
-    '<div class="fg"><label>Cod spital PPS</label><input id="c-code" value="'+(CFG.hospital_code||'')+'"></div></div>'+
-    '<div class="fr"><div class="fg"><label>Limita bugetara biocide (lei/an)</label><input type="number" id="c-bb" value="'+(CFG.biocide_budget||'')+'"></div>'+
+  '<div class="pn" id="cfg-info"><div class="ph"><h3>'+(isEN?'Hospital Information':'Informatii Spital')+'</h3></div><div class="pb">'+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Hospital name':'Denumire spital')+'</label><input id="c-name" value="'+esc(CFG.hospital_name)+'"></div>'+
+    '<div class="fg"><label>'+(isEN?'Short name':'Denumire scurta')+'</label><input id="c-short" value="'+(CFG.hospital_short||'')+'"></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Department name':'Nume compartiment')+'</label><input id="c-cpiaam" value="'+esc(CFG.cpiaam_name)+'"></div>'+
+    '<div class="fg"><label>'+(isEN?'PPS Hospital Code':'Cod spital PPS')+'</label><input id="c-code" value="'+(CFG.hospital_code||'')+'"></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Biocide budget limit (lei/year)':'Limita bugetara biocide (lei/an)')+'</label><input type="number" id="c-bb" value="'+(CFG.biocide_budget||'')+'"></div>'+
     '<div class="fg"></div></div>'+
-    '<div class="fr" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--brd)"><div class="fg"><label>&#128100; Utilizator curent <span style="font-size:10px;color:var(--txtL)">(cine lucreaza acum pe acest calculator)</span></label>'+
-    '<select id="c-curuser" onchange="CFG.current_user=this.value;saveCfg()"><option value="">— '+esc(CFG.author_name||'Autor implicit')+' —</option>'+
+    '<div class="fr" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--brd)"><div class="fg"><label>&#128100; '+(isEN?'Current user':'Utilizator curent')+' <span style="font-size:10px;color:var(--txtL)">('+(isEN?'who is working now on this computer':'cine lucreaza acum pe acest calculator')+')</span></label>'+
+    '<select id="c-curuser" onchange="CFG.current_user=this.value;saveCfg()"><option value="">— '+esc(CFG.author_name||(isEN?'Default author':'Autor implicit'))+' —</option>'+
     (CFG.personnel||[]).map(function(p){return '<option value="'+esc(p.name)+'"'+(CFG.current_user===p.name?' selected':'')+'>'+esc(p.name)+(p.title?' ('+esc(p.title)+')':'')+'</option>'}).join('')+
     '</select>'+
-    '<span style="font-size:11px;color:var(--txtL);display:block;margin-top:4px">'+(CFG.lang==='en'?'Used for tracking who made changes in multi-user sync.':'Folosit pentru urmarirea modificarilor in sincronizarea multi-utilizator.')+'</span></div></div>'+
-    '<button class="btn bp" onclick="saveCfgForm()" style="margin-top:8px">Salveaza</button>'+
+    '<span style="font-size:11px;color:var(--txtL);display:block;margin-top:4px">'+(isEN?'Used for tracking who made changes in multi-user sync.':'Folosit pentru urmarirea modificarilor in sincronizarea multi-utilizator.')+'</span></div></div>'+
+    '<button class="btn bp" onclick="saveCfgForm()" style="margin-top:8px">'+T('btn_save')+'</button>'+
   '</div></div>'+
 
-  '<div class="pn" id="cfg-pers"><div class="ph"><h3>Personal / Semnatari</h3><button class="btn bp bsm" onclick="CFG.personnel.push({id:genId(\'pers\'),name:\'\',title:\'\',role:\'other\',sign:true});saveCfg();render()">+ Adauga persoana</button></div><div class="pb">'+
-    '<div class="ib inf">Persoanele cu „Semneaza" bifat apar pe documentele Word generate.</div>'+
-    '<table class="dt"><thead><tr><th>Nume</th><th>Titlu / Functie</th><th style="width:120px">Rol</th><th style="width:60px">Semn.</th><th style="width:50px">&#215;</th></tr></thead>'+
+  '<div class="pn" id="cfg-pers"><div class="ph"><h3>'+(isEN?'Staff / Signatories':'Personal / Semnatari')+'</h3><button class="btn bp bsm" onclick="CFG.personnel.push({id:genId(\'pers\'),name:\'\',title:\'\',role:\'other\',sign:true});saveCfg();render()">+ '+(isEN?'Add person':'Adauga persoana')+'</button></div><div class="pb">'+
+    '<div class="ib inf">'+(isEN?'Persons with "Sign" checked appear on generated Word documents.':'Persoanele cu „Semneaza" bifat apar pe documentele Word generate.')+'</div>'+
+    '<table class="dt"><thead><tr><th>'+(isEN?'Name':'Nume')+'</th><th>'+(isEN?'Title / Position':'Titlu / Functie')+'</th><th style="width:120px">'+(isEN?'Role':'Rol')+'</th><th style="width:60px">'+(isEN?'Sign.':'Semn.')+'</th><th style="width:50px">&#215;</th></tr></thead>'+
     '<tbody>'+CFG.personnel.map((p,i)=>'<tr>'+
       '<td><input value="'+p.name+'" onchange="CFG.personnel['+i+'].name=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px"></td>'+
       '<td><input value="'+(p.title||'')+'" onchange="CFG.personnel['+i+'].title=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px"></td>'+
       '<td><select onchange="CFG.personnel['+i+'].role=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px;width:100%">'+roleOpts(p.role)+'</select></td>'+
       '<td style="text-align:center"><input type="checkbox" '+(p.sign?'checked':'')+' onchange="CFG.personnel['+i+'].sign=this.checked"></td>'+
       '<td class="act"><button onclick="CFG.personnel.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>').join('')+'</tbody></table>'+
-    '<button class="btn bp" onclick="saveCfg();alert(\'Personal salvat!\')" style="margin-top:8px">Salveaza Personal</button>'+
+    '<button class="btn bp" onclick="saveCfg();alert(isEN?\'Staff saved!\':\'Personal salvat!\')" style="margin-top:8px">'+(isEN?'Save Staff':'Salveaza Personal')+'</button>'+
   '</div></div>';
 
   (function(){
@@ -14540,6 +14540,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.43',date:'2026-04-17',notes:'i18n: Pagina Settings (Configurare) traducere completa EN — toate 4 tab-uri, quick-jumps, section headers\ni18n: Form labels Spital — Hospital name, Short name, Department name, PPS Hospital Code, Biocide budget limit\ni18n: Personal / Signatories — Add person, Save Staff, table headers (Name, Title, Role, Sign.)\ni18n: Current user label + info box bilingv'},
   {version:'12.42',date:'2026-04-17',notes:'ARHITECTURA: Country config — referinte legale RO (60 refs Ord. 1101, Ord. 1226, INSP, ANMCS, DSP) centralizate in src/js/country/ro.js\nARHITECTURA: Pregatire fork international — forkul schimba doar country/ro.js → country/eu.js, restul codului agnostic\ni18n: 5 butoane title traducere EN (Edit/Delete) in atp, uvcheck, audituri, config_page\ni18n: 9 dialoguri confirmare traducere EN (sterge, reset all, import backup, etc.)\ni18n: Mesaje toast traducere EN (Saved!/Deleted!/Backup saved/Application installed)'},
   {version:'12.41',date:'2026-04-17',notes:'NOU: Import HelicsWin.Net .mdb direct in modulul PPS — parse nativ ECDC in 15ms\nNOU: Schema ECDC-PPS-IR-v1.0 — pacienti + secții + HAI + antibiograma + AMU cu ATC canonic\nNOU: Detectie automata markere ECDC Table II.6 (MRSA, C3G-NS, CAR-NS)\nNOU: Modal detalii ECDC cu HAI pe situri, top antibiotice, indicatii, rezistente\nNOU: Backup automat pps store inainte de primul import IR\nNOU: Lookup table complet HelicsWin (319 ATC codes, indicatii, diagnostice, rute) extras din ReferencePPS.mdb'},
   {version:'12.40',date:'2026-04-17',notes:'NOU: Statistici Spital — sectiune Ambulatoriu cu total consultatii lunar (pentru raportare DSP)\nNOU: Ambulatoriu — defalcat per cabinet (colapsabil)\nFIX: Detalii per sectie — afiseaza doar sectii si compartimente (nu cabinete, farmacie, etc.)'},

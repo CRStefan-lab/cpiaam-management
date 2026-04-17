@@ -1,11 +1,11 @@
 {
-  "version": "12.41",
+  "version": "12.42",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Import HelicsWin.Net .mdb direct in modulul PPS (ECDC-PPS-IR-v1.0)",
-    "NOU: Parsare ECDC nativa — 71 pacienti + HAI pe situri + antibiograma + AMU cu ATC canonic in 15ms",
-    "NOU: Detectie automata markere ECDC Table II.6 — MRSA, C3G-NS, CAR-NS",
-    "NOU: Modal detalii ECDC — HAI pe situri, top antibiotice, indicatii, rezistente",
-    "NOU: Backup automat pps store inainte de primul import IR"
+    "ARHITECTURA: Introducere country config (src/js/country/ro.js) — pregatire fork EU/international",
+    "ARHITECTURA: 60 referinte legale RO (Ord. 1101/2016, Ord. 1226/2012, INSP, ANMCS, DSP) centralizate in COUNTRY.regulations / COUNTRY.authorities",
+    "i18n: 5 butoane title traducere EN (Edit/Delete hover text) in atp, uvcheck, audituri, config_page",
+    "i18n: 9 dialoguri confirmare traducere EN (sterge rec, sterge import IR, reset all, import backup, etc.)",
+    "i18n: 5 mesaje toast traducere EN (Saved!/Deleted!/Backup saved/Application installed)"
   ]
 }

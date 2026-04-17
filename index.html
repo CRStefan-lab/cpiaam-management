@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.41</title>
+<title>CPIAAM Management v12.42</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1145,7 +1145,7 @@ async function attDeleteFile(subdir,filename){
 }
 async function migrateAttachmentsToDisk(){
   if(!_attDirHandle){alert('Selecteaza mai intai folderul de atasamente din Configurare.');return}
-  if(!confirm('Migrarea va muta atasamentele din baza de date pe disc. Continua?'))return;
+  if(!confirm(CFG.lang==='en'?'Migration will move attachments from database to disk. Continue?':'Migrarea va muta atasamentele din baza de date pe disc. Continua?'))return;
   let count=0,errors=0;
   const bios=await ga('biocide');
   for(const rec of bios){
@@ -1889,6 +1889,62 @@ function setCurrentUser(name){
 
 </script>
 <script>
+// ═════════════════════════════════════════════════════════════════════════
+// CPIAAM — Country Configuration: Romania
+// ═════════════════════════════════════════════════════════════════════════
+// Singurul loc unde apar referinte legale si autoritati nationale RO.
+// Pentru fork EU/USA/UK: se inlocuieste acest fisier cu country/eu.js etc.
+// Restul codului e agnostic la tara — foloseste COUNTRY.xxx.yyy.
+// ═════════════════════════════════════════════════════════════════════════
+
+const COUNTRY = {
+  code: 'RO',
+  name: 'Romania',
+  nameEn: 'Romania',
+
+  // ── Referinte legale nationale ──
+  // (nu traduceri — acestea SUNT numele oficiale ale reglementarilor)
+  regulations: {
+    // Ordinul MS 1101/2016 — principala reglementare IPC (IAAM)
+    mainOrder: 'OMS 1101/2016',
+    mainOrderFull: 'Ordinul MS 1101/2016',
+    mainOrderLong: 'Ordinul Ministerului Sanatatii nr. 1101/2016',
+
+    // Ordinul MS 1226/2012 — gestiunea deseurilor medicale
+    wasteOrder: 'OMS 1226/2012',
+    wasteOrderFull: 'Ordinul 1226/2012',
+
+    // Metodologie PPS (studiu prevalenta)
+    ppsMethodology: 'metodologia INSP 2023',
+    ppsMethodologyFull: 'METODOLOGIA DE APLICARE A STUDIULUI DE PREVALENTA (PPS) 2023'
+  },
+
+  // ── Autoritati nationale ──
+  authorities: {
+    ministryShort: 'MS',                     // Ministerul Sanatatii
+    ministryName: 'Ministerul Sanatatii',
+    publicHealth: 'INSP',                    // Institutul National de Sanatate Publica
+    publicHealthFull: 'Institutul National de Sanatate Publica',
+    accreditation: 'ANMCS',                  // Autoritatea Nationala Managementul Calitatii in Sanatate
+    accreditationFull: 'Autoritatea Nationala de Management al Calitatii in Sanatate',
+    publicHealthDir: 'DSP',                  // Directia de Sanatate Publica (judeteana)
+    publicHealthDirFull: 'Directia de Sanatate Publica',
+    environment: 'APM'                       // Agentia pentru Protectia Mediului
+  },
+
+  // ── Raportari obligatorii ──
+  reporting: {
+    ppsDestination: 'INSP',
+    ppsSubmissionTool: 'HelicsWin.Net',
+    monthlyReportRecipient: 'DSP'
+  }
+};
+
+// Expose globally (CPIAAM modules use window.COUNTRY)
+if (typeof window !== 'undefined') window.COUNTRY = COUNTRY;
+
+</script>
+<script>
 // ═════════════════════════════════════════════════════════════
 // CPIAAM — Config — CFG, loadCfg, saveCfg, ensureConfigIds
 // ═════════════════════════════════════════════════════════════
@@ -1908,7 +1964,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.41';
+const APP_VERSION='12.42';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -2249,8 +2305,8 @@ function ensureConfigIds(){
     'Sterile — material moale','Maini personal','Lenjerie','Filtre','Vesela','Biberoane/tetine','Barbotoare'];
   const DEF_INF=['ISC — Infectie Situs Chirurgical','ITS — Infectie Tract Sangvin','Pneumonie/VAP',
     'ITU — Infectie Tract Urinar','Bacteriemie','ICD — Clostridioides difficile','COVID-19','Sepsis','Altele'];
-  const DEF_DOCCAT=['Autorizatie Sanitara de Functionare','Aviz DSP','Aviz ISU','Autorizatie de Mediu',
-    'Plan de Conformare','Proces-verbal control DSP','Acreditare ANMCS','Alte documente'];
+  const DEF_DOCCAT=['Autorizatie Sanitara de Functionare','Aviz '+COUNTRY.authorities.publicHealthDir,'Aviz ISU','Autorizatie de Mediu',
+    'Plan de Conformare','Proces-verbal control '+COUNTRY.authorities.publicHealthDir,'Acreditare '+COUNTRY.authorities.accreditation,'Alte documente'];
 
   // Helper: normalize array — handles strings, objects missing name/id, mixed arrays
   // defaults: optional array of default names, used to recover missing names by index
@@ -3004,7 +3060,7 @@ function dismissWarning(){const w=document.getElementById('unsaved-warning');if(
 function dismissWarningAndClose(){dismissWarning();_formDirty=false;closeM()}
 function showGen(t){document.getElementById('gen-txt').textContent=t||'Se genereaza...';document.getElementById('genov').classList.add('sh')}
 function hideGen(){document.getElementById('genov').classList.remove('sh')}
-async function delRec(store,id){if(!confirm('Sigur stergi?'))return;await dl(store,id);render()}
+async function delRec(store,id){if(!confirm(T('confirma_stergere')))return;await dl(store,id);render()}
 
 // ═══════════════════════════════════════════════════════════════
 // ROUTER
@@ -5620,7 +5676,7 @@ async function renderAtpModule(isEN){
         '<td><strong>'+r.rlu_value+'</strong></td><td>'+bdg(res1)+'</td>'+
         '<td>'+(r.rlu_repeat!=null&&r.rlu_repeat!==''?'<strong>'+r.rlu_repeat+'</strong>':'\u2014')+'</td>'+
         '<td>'+(res2?bdg(res2):'\u2014')+'</td>'+
-        '<td class="act"><button onclick="editAtp('+r.id+')" title="Editeaza">&#9998;</button><button onclick="delRec(\'atp\','+r.id+')" title="Sterge">&#128465;</button></td></tr>';
+        '<td class="act"><button onclick="editAtp('+r.id+')" title="'+T('btn_edit')+'">&#9998;</button><button onclick="delRec(\'atp\','+r.id+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
     });
     h+='</tbody></table></div>';
   }
@@ -5763,7 +5819,7 @@ async function renderUvModule(isEN){
         '<td>'+uvSurfName+'</td>'+
         '<td>'+(r.result==='pass'?'<span class="bdg bdg-g">Pass</span>':'<span class="bdg bdg-r">Fail</span>')+'</td>'+
         '<td style="font-size:11px">'+(r.notes||'\u2014')+'</td>'+
-        '<td class="act"><button onclick="editUv('+r.id+')" title="Editeaza">&#9998;</button><button onclick="delRec(\'uvcheck\','+r.id+')" title="Sterge">&#128465;</button></td></tr>';
+        '<td class="act"><button onclick="editUv('+r.id+')" title="'+T('btn_edit')+'">&#9998;</button><button onclick="delRec(\'uvcheck\','+r.id+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
     });
     h+='</tbody></table></div>';
   }
@@ -6029,7 +6085,7 @@ async function saveHA(){
   });
   ha.id='ha_'+year;ha.year=year;
   await pt('hospital_activity',ha);
-  showToast('Salvat!');render();
+  showToast(CFG.lang==='en'?'Saved!':'Salvat!');render();
 }
 
 async function clearHA(){
@@ -6037,7 +6093,7 @@ async function clearHA(){
   var data=await ga('hospital_activity');
   var rec=data.find(function(r){return r.year===year});
   if(rec)await dl('hospital_activity',rec.id);
-  showToast('Sters!');render();
+  showToast(CFG.lang==='en'?'Deleted!':'Sters!');render();
 }
 
 </script>
@@ -6287,7 +6343,7 @@ function uploadBioAttModal(key){
 }
 function removeBioAttModal(key,idx){
   if(!_editBioRec||!_editBioRec.id||!_editBioRec.attachments)return;
-  if(!confirm('Stergi documentul atasat?'))return;
+  if(!confirm(CFG.lang==='en'?'Delete attached document?':'Stergi documentul atasat?'))return;
   _migrateBioAtt(_editBioRec,key);
   const att=_editBioRec.attachments[key][idx];
   if(att&&att.on_disk&&att.filename)attDeleteFile('biocide',att.filename);
@@ -7486,7 +7542,7 @@ async function _exportPPSWordFromIR(irRec,meta){
   }
   concl.forEach(c=>children.push(wBul(c,{size:20})));
   children.push(wSp(120));
-  children.push(wP('Studiul PPS se repeta ideal anual, conform metodologiei ECDC PPS v6.1 (si metodologia INSP 2023). Datele sunt raportate catre INSP prin HelicsWin.Net.',{size:18,italics:true,color:'64748B'}));
+  children.push(wP('Studiul PPS se repeta ideal anual, conform metodologiei ECDC PPS v6.1 (si '+COUNTRY.regulations.ppsMethodology+'). Datele sunt raportate catre '+COUNTRY.reporting.ppsDestination+' prin '+COUNTRY.reporting.ppsSubmissionTool+'.',{size:18,italics:true,color:'64748B'}));
 
   // Signatures
   wSigBlock().forEach(s=>children.push(s));
@@ -7592,7 +7648,7 @@ async function ppsShowIRDetails(){
 }
 
 async function ppsDeleteIR(){
-  if(!confirm('Sterge importul IR pentru anul '+A.year+'? Inregistrarile pe sectii generate automat vor fi si ele sterse. Inregistrarile manuale nu sunt afectate.'))return;
+  if(!confirm(CFG.lang==='en'?'Delete IR import for year '+A.year+'? Auto-generated per-section records will also be deleted. Manual records are not affected.':'Sterge importul IR pentru anul '+A.year+'? Inregistrarile pe sectii generate automat vor fi si ele sterse. Inregistrarile manuale nu sunt afectate.'))return;
   const all=await ga('pps');
   for(const r of all){
     if(r.year===A.year && (r.type==='pps_ir' || r._fromIR)) await dl('pps', r.id);
@@ -9188,7 +9244,7 @@ async function editDeadline(id){
   let r=id?(await ga('deadlines')).find(x=>x.id===id):{frequency:'singulara',status:'neinceput'};if(!r)r={frequency:'singulara',status:'neinceput'};
   openM(id?'Editare Raportare':'Raportare Noua',
     '<div class="fg"><label>Denumire raportare</label><input id="f-name" value="'+(r.name||'')+'"></div>'+
-    '<div class="fr"><div class="fg"><label>Destinatar</label><input id="f-dest" value="'+(r.recipient||'')+'" placeholder="DSP, APM, ANMCS, Manager..."></div>'+
+    '<div class="fr"><div class="fg"><label>Destinatar</label><input id="f-dest" value="'+(r.recipient||'')+'" placeholder="'+COUNTRY.authorities.publicHealthDir+', '+COUNTRY.authorities.environment+', '+COUNTRY.authorities.accreditation+', Manager..."></div>'+
     '<div class="fg"><label>Frecventa</label><select id="f-freq" onchange="_dlFreqChange()">'+
       '<option value="singulara"'+(r.frequency==='singulara'?' selected':'')+'>Singulara</option>'+
       '<option value="saptamanal"'+(r.frequency==='saptamanal'?' selected':'')+'>Saptamanal</option>'+
@@ -9580,57 +9636,57 @@ const NCC_MOM={
 // ═══ PREDEFINED AUDIT ITEMS ═══
 const AUDIT_ITEMS={
   curatenie:[
-    {text_ro:'Pardoseala — curatenie generala si dezinfectie',text_en:'Floor — general cleaning and disinfection',ref:'OMS 1101/2016'},
-    {text_ro:'Suprafete de lucru (mese, blaturi)',text_en:'Work surfaces (tables, countertops)',ref:'OMS 1101/2016'},
-    {text_ro:'Paturi — cadru metalic + tablie',text_en:'Beds — metal frame + headboard',ref:'OMS 1101/2016'},
-    {text_ro:'Paturi — saltele (protectie, curatenie)',text_en:'Beds — mattresses (protection, cleanliness)',ref:'OMS 1101/2016'},
-    {text_ro:'Paturi — lenjerie curata, schimbata conform protocol',text_en:'Beds — clean linens, changed per protocol',ref:'OMS 1101/2016'},
-    {text_ro:'Noptiere / mesute pacient',text_en:'Bedside tables / patient tables',ref:'OMS 1101/2016'},
-    {text_ro:'Echipamente medicale (stative, aparate)',text_en:'Medical equipment (stands, devices)',ref:'OMS 1101/2016'},
-    {text_ro:'Baie / grup sanitar — pardoseala si obiecte sanitare',text_en:'Bathroom — floor and sanitary objects',ref:'OMS 1101/2016'},
-    {text_ro:'Dozatoare sapun / dezinfectant funcionale si alimentate',text_en:'Soap / disinfectant dispensers functional and stocked',ref:'OMS 1101/2016'},
-    {text_ro:'Manere usi si intrerupatoare',text_en:'Door handles and light switches',ref:'OMS 1101/2016'},
-    {text_ro:'Cos deseuri cu capac, functional, etichetat',text_en:'Waste bin with lid, functional, labeled',ref:'OMS 1101/2016'},
-    {text_ro:'Zona curata / murdara separata si marcata',text_en:'Clean / dirty zone separated and marked',ref:'OMS 1101/2016'},
-    {text_ro:'Evidenta si respectare protocol curatenie (fisele de curatenie)',text_en:'Cleaning protocol records maintained (cleaning sheets)',ref:'OMS 1101/2016'}
+    {text_ro:'Pardoseala — curatenie generala si dezinfectie',text_en:'Floor — general cleaning and disinfection',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Suprafete de lucru (mese, blaturi)',text_en:'Work surfaces (tables, countertops)',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Paturi — cadru metalic + tablie',text_en:'Beds — metal frame + headboard',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Paturi — saltele (protectie, curatenie)',text_en:'Beds — mattresses (protection, cleanliness)',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Paturi — lenjerie curata, schimbata conform protocol',text_en:'Beds — clean linens, changed per protocol',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Noptiere / mesute pacient',text_en:'Bedside tables / patient tables',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Echipamente medicale (stative, aparate)',text_en:'Medical equipment (stands, devices)',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Baie / grup sanitar — pardoseala si obiecte sanitare',text_en:'Bathroom — floor and sanitary objects',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Dozatoare sapun / dezinfectant funcionale si alimentate',text_en:'Soap / disinfectant dispensers functional and stocked',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Manere usi si intrerupatoare',text_en:'Door handles and light switches',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Cos deseuri cu capac, functional, etichetat',text_en:'Waste bin with lid, functional, labeled',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Zona curata / murdara separata si marcata',text_en:'Clean / dirty zone separated and marked',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Evidenta si respectare protocol curatenie (fisele de curatenie)',text_en:'Cleaning protocol records maintained (cleaning sheets)',ref:COUNTRY.regulations.mainOrder}
   ],
   rotatie_biocide:[
-    {text_ro:'Planul de rotatie biocide exista si este actualizat',text_en:'Biocide rotation plan exists and is up to date',ref:'OMS 1101/2016'},
-    {text_ro:'Rotatia biocidelor se face conform planului',text_en:'Biocide rotation follows the plan',ref:'OMS 1101/2016'},
-    {text_ro:'Concentratia solutiilor este corecta',text_en:'Solution concentrations are correct',ref:'OMS 1101/2016'},
-    {text_ro:'Solutiile sunt preparate zilnic / conform instructiunilor',text_en:'Solutions are prepared daily / per instructions',ref:'OMS 1101/2016'},
-    {text_ro:'Recipientele sunt etichetate (produs, concentratie, data preparare)',text_en:'Containers are labeled (product, concentration, preparation date)',ref:'OMS 1101/2016'},
-    {text_ro:'Biocidele sunt depozitate corect (temp, lumina, termen)',text_en:'Biocides are stored correctly (temp, light, expiry)',ref:'OMS 1101/2016'},
-    {text_ro:'Personalul cunoaste protocoalele de dilutie',text_en:'Staff knows dilution protocols',ref:'OMS 1101/2016'},
-    {text_ro:'Registrul de biocide este completat la zi',text_en:'Biocide registry is up to date',ref:'OMS 1101/2016'}
+    {text_ro:'Planul de rotatie biocide exista si este actualizat',text_en:'Biocide rotation plan exists and is up to date',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Rotatia biocidelor se face conform planului',text_en:'Biocide rotation follows the plan',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Concentratia solutiilor este corecta',text_en:'Solution concentrations are correct',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Solutiile sunt preparate zilnic / conform instructiunilor',text_en:'Solutions are prepared daily / per instructions',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Recipientele sunt etichetate (produs, concentratie, data preparare)',text_en:'Containers are labeled (product, concentration, preparation date)',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Biocidele sunt depozitate corect (temp, lumina, termen)',text_en:'Biocides are stored correctly (temp, light, expiry)',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Personalul cunoaste protocoalele de dilutie',text_en:'Staff knows dilution protocols',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Registrul de biocide este completat la zi',text_en:'Biocide registry is up to date',ref:COUNTRY.regulations.mainOrder}
   ],
   sterilizare:[
     // Section A: Procesul de sterilizare
-    {text_ro:'Autoclavele sunt verificate tehnic si au buletin metrologic valid',text_en:'Autoclaves are technically verified with valid metrological certificate',ref:'OMS 1101/2016',section:'A'},
-    {text_ro:'Testele Bowie-Dick se efectueaza zilnic',text_en:'Bowie-Dick tests are performed daily',ref:'OMS 1101/2016',section:'A'},
-    {text_ro:'Indicatorii chimici sunt utilizati pe fiecare pachet',text_en:'Chemical indicators are used on every package',ref:'OMS 1101/2016',section:'A'},
-    {text_ro:'Controlul biologic se efectueaza saptamanal',text_en:'Biological control is performed weekly',ref:'OMS 1101/2016',section:'A'},
-    {text_ro:'Parametrii ciclului sunt inregistrati si verificati',text_en:'Cycle parameters are recorded and verified',ref:'OMS 1101/2016',section:'A'},
-    {text_ro:'Materialele sterile sunt depozitate corect',text_en:'Sterile materials are stored correctly',ref:'OMS 1101/2016',section:'A'},
-    {text_ro:'Termenul de valabilitate a sterilizarii este respectat',text_en:'Sterilization expiry date is respected',ref:'OMS 1101/2016',section:'A'},
+    {text_ro:'Autoclavele sunt verificate tehnic si au buletin metrologic valid',text_en:'Autoclaves are technically verified with valid metrological certificate',ref:COUNTRY.regulations.mainOrder,section:'A'},
+    {text_ro:'Testele Bowie-Dick se efectueaza zilnic',text_en:'Bowie-Dick tests are performed daily',ref:COUNTRY.regulations.mainOrder,section:'A'},
+    {text_ro:'Indicatorii chimici sunt utilizati pe fiecare pachet',text_en:'Chemical indicators are used on every package',ref:COUNTRY.regulations.mainOrder,section:'A'},
+    {text_ro:'Controlul biologic se efectueaza saptamanal',text_en:'Biological control is performed weekly',ref:COUNTRY.regulations.mainOrder,section:'A'},
+    {text_ro:'Parametrii ciclului sunt inregistrati si verificati',text_en:'Cycle parameters are recorded and verified',ref:COUNTRY.regulations.mainOrder,section:'A'},
+    {text_ro:'Materialele sterile sunt depozitate corect',text_en:'Sterile materials are stored correctly',ref:COUNTRY.regulations.mainOrder,section:'A'},
+    {text_ro:'Termenul de valabilitate a sterilizarii este respectat',text_en:'Sterilization expiry date is respected',ref:COUNTRY.regulations.mainOrder,section:'A'},
     // Section B: Reprocesare instrumente
-    {text_ro:'Decontaminarea instrumentelor se face imediat dupa utilizare',text_en:'Instrument decontamination is done immediately after use',ref:'OMS 1101/2016',section:'B'},
-    {text_ro:'Curatarea si spalarea instrumentelor respecta protocolul',text_en:'Instrument cleaning and washing follows protocol',ref:'OMS 1101/2016',section:'B'},
-    {text_ro:'Ambalarea materialelor este corecta si integra',text_en:'Material packaging is correct and intact',ref:'OMS 1101/2016',section:'B'},
-    {text_ro:'Trasabilitatea instrumentelor este asigurata',text_en:'Instrument traceability is ensured',ref:'OMS 1101/2016',section:'B'},
-    {text_ro:'Personalul are instruire specifica documentata',text_en:'Staff has documented specific training',ref:'OMS 1101/2016',section:'B'}
+    {text_ro:'Decontaminarea instrumentelor se face imediat dupa utilizare',text_en:'Instrument decontamination is done immediately after use',ref:COUNTRY.regulations.mainOrder,section:'B'},
+    {text_ro:'Curatarea si spalarea instrumentelor respecta protocolul',text_en:'Instrument cleaning and washing follows protocol',ref:COUNTRY.regulations.mainOrder,section:'B'},
+    {text_ro:'Ambalarea materialelor este corecta si integra',text_en:'Material packaging is correct and intact',ref:COUNTRY.regulations.mainOrder,section:'B'},
+    {text_ro:'Trasabilitatea instrumentelor este asigurata',text_en:'Instrument traceability is ensured',ref:COUNTRY.regulations.mainOrder,section:'B'},
+    {text_ro:'Personalul are instruire specifica documentata',text_en:'Staff has documented specific training',ref:COUNTRY.regulations.mainOrder,section:'B'}
   ],
   preoperator:[
     {text_ro:'Pregatirea preoperatorie a pielii pacientului este conformа',text_en:'Patient skin preoperative preparation is compliant',ref:'OMS Checklist'},
     {text_ro:'Tunderea (nu barbieritul) zonei operatorii — daca este necesar',text_en:'Clipping (not shaving) of surgical site — if necessary',ref:'OMS Checklist'},
     {text_ro:'Antibioticoprofilaxia administrata in intervalul corect (30-60 min)',text_en:'Antibiotic prophylaxis administered in correct interval (30-60 min)',ref:'OMS Checklist'},
     {text_ro:'Igiena mainilor echipei chirurgicale — conformitate',text_en:'Surgical team hand hygiene — compliance',ref:'WHO'},
-    {text_ro:'Echipament protectie steril complet (halat, manusi, masca, boneta)',text_en:'Complete sterile protective equipment (gown, gloves, mask, cap)',ref:'OMS 1101/2016'},
-    {text_ro:'Campul operator steril mentinut corect',text_en:'Sterile operative field correctly maintained',ref:'OMS 1101/2016'},
-    {text_ro:'Temperatura in sala de operatii conform normelor',text_en:'Operating room temperature per standards',ref:'OMS 1101/2016'},
+    {text_ro:'Echipament protectie steril complet (halat, manusi, masca, boneta)',text_en:'Complete sterile protective equipment (gown, gloves, mask, cap)',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Campul operator steril mentinut corect',text_en:'Sterile operative field correctly maintained',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Temperatura in sala de operatii conform normelor',text_en:'Operating room temperature per standards',ref:COUNTRY.regulations.mainOrder},
     {text_ro:'Verificare checklist chirurgical OMS (Sign In, Time Out, Sign Out)',text_en:'WHO surgical checklist verified (Sign In, Time Out, Sign Out)',ref:'WHO Checklist'},
-    {text_ro:'Circuitele curat/murdar respectate in blocul operator',text_en:'Clean/dirty circuits respected in operating block',ref:'OMS 1101/2016'},
-    {text_ro:'Curatenia si dezinfectia intre interventii',text_en:'Cleaning and disinfection between procedures',ref:'OMS 1101/2016'}
+    {text_ro:'Circuitele curat/murdar respectate in blocul operator',text_en:'Clean/dirty circuits respected in operating block',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Curatenia si dezinfectia intre interventii',text_en:'Cleaning and disinfection between procedures',ref:COUNTRY.regulations.mainOrder}
   ],
   dotare_igiena:[
     {text_ro:'Dozator sapun lichid',text_en:'Liquid soap dispenser',ref:''},
@@ -9640,21 +9696,21 @@ const AUDIT_ITEMS={
     {text_ro:'Afis igiena mainilor (WHO)',text_en:'Hand hygiene poster (WHO)',ref:''}
   ],
   deseuri:[
-    {text_ro:'Separarea deseurilor la sursa — containere distincte pe categorii',text_en:'Waste segregation at source — distinct containers per category',ref:'OMS 1226/2012'},
-    {text_ro:'Containere etichetate corect (cod culoare + cod deseu)',text_en:'Containers correctly labeled (color code + waste code)',ref:'OMS 1226/2012'},
-    {text_ro:'Saci galbeni pentru deseuri periculoase — integri si inchisi corect',text_en:'Yellow bags for hazardous waste — intact and properly sealed',ref:'OMS 1226/2012'},
-    {text_ro:'Cutii de carton rigide pentru obiecte ascutite/taietoare — max 3/4 pline',text_en:'Rigid cardboard boxes for sharps — max 3/4 full',ref:'OMS 1226/2012'},
-    {text_ro:'Depozitare temporara — spatiu dedicat, acces restrictionat, curat',text_en:'Temporary storage — dedicated area, restricted access, clean',ref:'OMS 1226/2012'},
-    {text_ro:'Temperatura depozitare temporara < 20°C (sau < 4°C daca > 48h)',text_en:'Temporary storage temp < 20°C (or < 4°C if > 48h)',ref:'OMS 1226/2012'},
-    {text_ro:'Transport intern pe circuite separate (curat/murdar)',text_en:'Internal transport on separate circuits (clean/dirty)',ref:'OMS 1226/2012'},
-    {text_ro:'Carucioare transport curatate si dezinfectate dupa fiecare utilizare',text_en:'Transport carts cleaned and disinfected after each use',ref:'OMS 1226/2012'},
-    {text_ro:'Evidenta cantarire pe categorii de deseuri — registru completat',text_en:'Weighing records per waste category — registry completed',ref:'OMS 1226/2012'},
-    {text_ro:'Contract valid cu firma de eliminare deseuri periculoase',text_en:'Valid contract with hazardous waste disposal company',ref:'OMS 1226/2012'},
-    {text_ro:'Borderouri de predare-primire completate si arhivate',text_en:'Handover forms completed and archived',ref:'OMS 1226/2012'},
-    {text_ro:'Personal instruit — evidenta instruirii privind gestionarea deseurilor',text_en:'Staff trained — waste management training records',ref:'OMS 1226/2012'},
-    {text_ro:'Echipament de protectie (manusi groase, sort) disponibil pentru personalul de curatenie',text_en:'Protective equipment (thick gloves, apron) available for cleaning staff',ref:'OMS 1226/2012'},
-    {text_ro:'Nu se recicleaza sau refolosesc obiecte din deseuri periculoase',text_en:'Hazardous waste items are not recycled or reused',ref:'OMS 1226/2012'},
-    {text_ro:'Deseuri lichide (chimice, farmaceutice) — colectare si eliminare conform',text_en:'Liquid waste (chemical, pharmaceutical) — compliant collection and disposal',ref:'OMS 1226/2012'}
+    {text_ro:'Separarea deseurilor la sursa — containere distincte pe categorii',text_en:'Waste segregation at source — distinct containers per category',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Containere etichetate corect (cod culoare + cod deseu)',text_en:'Containers correctly labeled (color code + waste code)',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Saci galbeni pentru deseuri periculoase — integri si inchisi corect',text_en:'Yellow bags for hazardous waste — intact and properly sealed',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Cutii de carton rigide pentru obiecte ascutite/taietoare — max 3/4 pline',text_en:'Rigid cardboard boxes for sharps — max 3/4 full',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Depozitare temporara — spatiu dedicat, acces restrictionat, curat',text_en:'Temporary storage — dedicated area, restricted access, clean',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Temperatura depozitare temporara < 20°C (sau < 4°C daca > 48h)',text_en:'Temporary storage temp < 20°C (or < 4°C if > 48h)',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Transport intern pe circuite separate (curat/murdar)',text_en:'Internal transport on separate circuits (clean/dirty)',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Carucioare transport curatate si dezinfectate dupa fiecare utilizare',text_en:'Transport carts cleaned and disinfected after each use',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Evidenta cantarire pe categorii de deseuri — registru completat',text_en:'Weighing records per waste category — registry completed',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Contract valid cu firma de eliminare deseuri periculoase',text_en:'Valid contract with hazardous waste disposal company',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Borderouri de predare-primire completate si arhivate',text_en:'Handover forms completed and archived',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Personal instruit — evidenta instruirii privind gestionarea deseurilor',text_en:'Staff trained — waste management training records',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Echipament de protectie (manusi groase, sort) disponibil pentru personalul de curatenie',text_en:'Protective equipment (thick gloves, apron) available for cleaning staff',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Nu se recicleaza sau refolosesc obiecte din deseuri periculoase',text_en:'Hazardous waste items are not recycled or reused',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Deseuri lichide (chimice, farmaceutice) — colectare si eliminare conform',text_en:'Liquid waste (chemical, pharmaceutical) — compliant collection and disposal',ref:COUNTRY.regulations.wasteOrder}
   ]
 };
 
@@ -9839,9 +9895,9 @@ async function rAudit(el){
         '<td>'+rSec(r.section)+'</td><td>'+esc(_persName(r.auditor))+'</td>'+
         '<td><span class="bdg '+pCls+'">'+pct+'%</span></td>'+
         '<td class="act">'+
-          '<button onclick="_editExistingAudit('+r.id+')" title="Editeaza">&#9998;</button>'+
+          '<button onclick="_editExistingAudit('+r.id+')" title="'+T('btn_edit')+'">&#9998;</button>'+
           '<button onclick="_genAuditWord('+r.id+')" title="Export Word">&#128196;</button>'+
-          '<button onclick="delRec(\'audits\','+r.id+')" title="Sterge">&#128465;</button></td></tr>';
+          '<button onclick="delRec(\'audits\','+r.id+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
     });
     h+='</tbody></table>';
   }
@@ -10010,7 +10066,7 @@ function _igmAddSec(){
   _igmSecs.push({id:secId,name:secName,calups:calups});
   render();
 }
-function _igmRemSec(sid){if(!confirm('Eliminati sectia din audit?'))return;_igmSecs=_igmSecs.filter(s=>s.id!==sid);render()}
+function _igmRemSec(sid){if(!confirm(CFG.lang==='en'?'Remove section from audit?':'Eliminati sectia din audit?'))return;_igmSecs=_igmSecs.filter(s=>s.id!==sid);render()}
 function _igmTogSec(sid){var bd=document.getElementById('igm-bd-'+sid);if(bd)bd.style.display=bd.style.display==='none'?'block':'none'}
 function _igmAddCalup(sid){var s=_igmSecs.find(x=>x.id===sid);if(!s)return;s.calups.push(_mkCalup());_igmRenderTbody(sid);_igmUpdScore(sid)}
 function _igmRemCalup(sid,cid){var s=_igmSecs.find(x=>x.id===sid);if(!s)return;s.calups=s.calups.filter(x=>x.id!==cid);_igmRenderTbody(sid);_igmUpdScore(sid)}
@@ -12825,8 +12881,8 @@ async function rCfg(el){
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-bio" placeholder="Produs biocid nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-bio\').value.trim();if(v){CFG.biocide_products.push({id:genId(\'bio\'),name:v,manufacturer:\'\',distributor:\'\',in_stock:true,avize:[]});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
-  '<div class="pn" id="cfg-des"><div class="ph"><h3>Coduri Deseuri</h3><span style="font-size:11px;color:var(--txtL);margin-left:8px">Ordinul 1226/2012</span></div><div class="pb">'+
-    '<div class="ib inf" style="margin-bottom:10px">Activeaza/dezactiveaza codurile care apar in modulul Deseuri. Codurile 18 01 08* si 18 01 09 — cantitatile de medicamente de la populatie se raporteaza separat catre DSP conform Instructiunii nr. 6.226/2024 si Deciziei 2014/955/UE.</div>'+
+  '<div class="pn" id="cfg-des"><div class="ph"><h3>Coduri Deseuri</h3><span style="font-size:11px;color:var(--txtL);margin-left:8px">'+COUNTRY.regulations.wasteOrderFull+'</span></div><div class="pb">'+
+    '<div class="ib inf" style="margin-bottom:10px">Activeaza/dezactiveaza codurile care apar in modulul Deseuri. Codurile 18 01 08* si 18 01 09 — cantitatile de medicamente de la populatie se raporteaza separat catre '+COUNTRY.authorities.publicHealthDir+' conform Instructiunii nr. 6.226/2024 si Deciziei 2014/955/UE.</div>'+
     '<table class="dt"><thead><tr><th style="width:50px">Activ</th><th style="min-width:90px">Cod</th><th>Denumire</th><th style="min-width:100px">Categorie</th><th style="min-width:60px">Tip</th><th style="min-width:50px">&#215;</th></tr></thead>'+
     '<tbody>'+CFG.waste_codes.map((w,i)=>{
       var catBg=w.category==='periculos'?'#D32F2F':w.category==='reciclabil'?'#2E7D32':'#1565C0';
@@ -12837,7 +12893,7 @@ async function rCfg(el){
       '<td>'+(w.standard?'<span style="font-size:12px">'+w.name+'</span>':'<input value="'+w.name+'" onchange="CFG.waste_codes['+i+'].name=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px;width:100%;font-size:12px">')+'</td>'+
       '<td>'+(w.standard?'<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;background:'+catBg+'">'+catLabel+'</span>':'<select onchange="CFG.waste_codes['+i+'].category=this.value;CFG.waste_codes['+i+'].dangerous=this.value===\'periculos\'" style="border:1px solid var(--brd);border-radius:4px;padding:4px;font-size:12px"><option value="periculos"'+(w.category==='periculos'?' selected':'')+'>Periculos</option><option value="nepericulos"'+(w.category==='nepericulos'?' selected':'')+'>Nepericulos</option><option value="reciclabil"'+(w.category==='reciclabil'?' selected':'')+'>Reciclabil</option></select>')+'</td>'+
       '<td>'+(w.standard?'<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:10px;background:var(--navy);color:#fff">Standard</span>':'<span style="font-size:10px;color:var(--txtL)">Custom</span>')+'</td>'+
-      '<td class="act">'+(w.standard?'':'<button onclick="CFG.waste_codes.splice('+i+',1);saveCfg();render()" title="Sterge">&#128465;</button>')+'</td></tr>'}).join('')+'</tbody></table>'+
+      '<td class="act">'+(w.standard?'':'<button onclick="CFG.waste_codes.splice('+i+',1);saveCfg();render()" title="'+T('btn_delete')+'">&#128465;</button>')+'</td></tr>'}).join('')+'</tbody></table>'+
     '<div class="fr" style="margin-top:10px;gap:6px;flex-wrap:wrap;align-items:flex-end">'+
       '<div class="fg" style="min-width:100px;max-width:120px"><label style="font-size:11px">Cod</label><input id="new-wc-code" placeholder="ex: 18 01 99" style="border:1px solid var(--brd);border-radius:4px;padding:5px;font-size:12px;width:100%"></div>'+
       '<div class="fg" style="flex:1;min-width:200px"><label style="font-size:11px">Denumire</label><input id="new-wc-name" placeholder="Denumire cod deseu" style="border:1px solid var(--brd);border-radius:4px;padding:5px;font-size:12px;width:100%"></div>'+
@@ -13024,8 +13080,8 @@ function addSection(kind){
   saveCfg();render();
 }
 async function fullReset(){
-  if(!confirm('Sigur vrei sa stergi TOATE datele? Actiunea este ireversibila!'))return;
-  if(!confirm('Confirma din nou — TOATE datele vor fi pierdute definitiv!'))return;
+  if(!confirm(CFG.lang==='en'?'Really delete ALL data? This action is IRREVERSIBLE!':'Sigur vrei sa stergi TOATE datele? Actiunea este ireversibila!'))return;
+  if(!confirm(CFG.lang==='en'?'Confirm again — ALL data will be lost permanently!':'Confirma din nou — TOATE datele vor fi pierdute definitiv!'))return;
   const dbs=await indexedDB.databases?.()??[];
   indexedDB.deleteDatabase(DB);
   localStorage.removeItem('cpiaam_had_data');
@@ -14484,6 +14540,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.42',date:'2026-04-17',notes:'ARHITECTURA: Country config — referinte legale RO (60 refs Ord. 1101, Ord. 1226, INSP, ANMCS, DSP) centralizate in src/js/country/ro.js\nARHITECTURA: Pregatire fork international — forkul schimba doar country/ro.js → country/eu.js, restul codului agnostic\ni18n: 5 butoane title traducere EN (Edit/Delete) in atp, uvcheck, audituri, config_page\ni18n: 9 dialoguri confirmare traducere EN (sterge, reset all, import backup, etc.)\ni18n: Mesaje toast traducere EN (Saved!/Deleted!/Backup saved/Application installed)'},
   {version:'12.41',date:'2026-04-17',notes:'NOU: Import HelicsWin.Net .mdb direct in modulul PPS — parse nativ ECDC in 15ms\nNOU: Schema ECDC-PPS-IR-v1.0 — pacienti + secții + HAI + antibiograma + AMU cu ATC canonic\nNOU: Detectie automata markere ECDC Table II.6 (MRSA, C3G-NS, CAR-NS)\nNOU: Modal detalii ECDC cu HAI pe situri, top antibiotice, indicatii, rezistente\nNOU: Backup automat pps store inainte de primul import IR\nNOU: Lookup table complet HelicsWin (319 ATC codes, indicatii, diagnostice, rute) extras din ReferencePPS.mdb'},
   {version:'12.40',date:'2026-04-17',notes:'NOU: Statistici Spital — sectiune Ambulatoriu cu total consultatii lunar (pentru raportare DSP)\nNOU: Ambulatoriu — defalcat per cabinet (colapsabil)\nFIX: Detalii per sectie — afiseaza doar sectii si compartimente (nu cabinete, farmacie, etc.)'},
   {version:'12.39',date:'2026-04-16',notes:'UX: Statistici Spital — indicatori calculati mutati deasupra tabelului\nFIX: KPI cards stilizate corect\nFIX: Calcul deseuri kg corect'},
@@ -15120,7 +15177,7 @@ function _updateInstallBtn(){var b=document.getElementById('btn-pwa-install');if
   b.style.display=_pwaInstallPrompt?'':'none';
 }
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();_pwaInstallPrompt=e;_updateInstallBtn();});
-window.addEventListener('appinstalled',function(){_pwaInstallPrompt=null;_updateInstallBtn();showToast('Aplicatia a fost instalata cu succes!');});
+window.addEventListener('appinstalled',function(){_pwaInstallPrompt=null;_updateInstallBtn();showToast(CFG&&CFG.lang==='en'?'Application installed successfully!':'Aplicatia a fost instalata cu succes!');});
 function installPWA(){
   if(_pwaInstallPrompt){_pwaInstallPrompt.prompt();_pwaInstallPrompt.userChoice.then(function(r){if(r.outcome==='accepted'){_pwaInstallPrompt=null;_updateInstallBtn();}});}
 }
@@ -15167,7 +15224,7 @@ async function expAll(){const d={};for(const s of ST){if(s==='config')continue;d
       _lastBackupName=fh.name;const wr=await fh.createWritable();await wr.write(blob);await wr.close();
     }catch(e){if(e.name==='AbortError')return;saveAs(blob,fname)}
   }else{saveAs(blob,fname)}
-  logActivity('Backup exportat');showToast('Backup salvat cu succes!')}
+  logActivity('Backup exportat');showToast(CFG.lang==='en'?'Backup saved successfully!':'Backup salvat cu succes!')}
 // ═══ MIGRARE DATE INTRE VERSIUNI ═══
 function migrateBackupData(d){
   const fromVer=d.version||'1.0';
@@ -15203,14 +15260,14 @@ function migrateBackupData(d){
   return d;
 }
 
-function impAll(){if(!confirm('Importul inlocuieste datele existente. Continua?'))return;
+function impAll(){if(!confirm(CFG.lang==='en'?'Import will replace existing data. Continue?':'Importul inlocuieste datele existente. Continua?'))return;
   const inp=document.createElement('input');inp.type='file';inp.accept='.json';
   inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;
     try{let d=JSON.parse(await f.text());
     // Afiseaza info versiune
     const fromVer=d.version||'necunoscuta';
     if(fromVer!==APP_VERSION){
-      if(!confirm('Backup-ul este din versiunea '+fromVer+' (actuala: v'+APP_VERSION+').\nDatele vor fi migrate automat.\n\nContinua?'))return;
+      if(!confirm(CFG.lang==='en'?'Backup is from version '+fromVer+' (current: v'+APP_VERSION+').\nData will be migrated automatically.\n\nContinue?':'Backup-ul este din versiunea '+fromVer+' (actuala: v'+APP_VERSION+').\nDatele vor fi migrate automat.\n\nContinua?'))return;
     }
     // Aplica migrarile de campuri
     d=migrateBackupData(d);

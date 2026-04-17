@@ -1,9 +1,11 @@
 {
-  "version": "12.40",
+  "version": "12.41",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Statistici Spital — Ambulatoriu cu total consultatii lunar (pentru DSP)",
-    "NOU: Ambulatoriu — defalcat per cabinet (colapsabil)",
-    "FIX: Detalii per sectie — doar sectii si compartimente"
+    "NOU: Import HelicsWin.Net .mdb direct in modulul PPS (ECDC-PPS-IR-v1.0)",
+    "NOU: Parsare ECDC nativa — 71 pacienti + HAI pe situri + antibiograma + AMU cu ATC canonic in 15ms",
+    "NOU: Detectie automata markere ECDC Table II.6 — MRSA, C3G-NS, CAR-NS",
+    "NOU: Modal detalii ECDC — HAI pe situri, top antibiotice, indicatii, rezistente",
+    "NOU: Backup automat pps store inainte de primul import IR"
   ]
 }

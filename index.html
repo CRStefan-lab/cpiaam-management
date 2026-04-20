@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.43</title>
+<title>CPIAAM Management v12.44</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1964,7 +1964,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.43';
+const APP_VERSION='12.44';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -3017,8 +3017,11 @@ const PT={dashboard:'Dashboard',iaam:'IAAM / Anchete Epidemiologice',autocontrol
   documente:'Documente / Autorizatii',termene:'Raportari / Termene',multian:'Analiza Comparativa Multi-An',
   rapoarte:'Generare Rapoarte',config:'Configurare Sistem',ajutor:'Ajutor / FAQ',changelog:'Istoric Versiuni',about:'Despre',terms:'Termeni si Conditii'};
 
-function nav(p){A.page=p;document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('a',n.dataset.p===p));
-  if(p==='calendar')_calTab='calendar';
+function nav(p,opts){A.page=p;document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('a',n.dataset.p===p));
+  // Calendar tab override: nav('calendar', {calTab:'termene'}) preserves custom tab
+  if(p==='calendar'){_calTab=(opts&&opts.calTab)||'calendar'}
+  // Highlight target: nav(page, {highlightId:42}) scrolls to + flashes element after render
+  if(opts&&opts.highlightId!=null)window._navHighlight={page:p,id:opts.highlightId};
   document.getElementById('pt').textContent=getPageTitle(p);closeSidebar();dch();render()}
 function dch(){Object.values(A.charts).forEach(c=>{try{c.destroy()}catch(e){}});A.charts={}}
 function render(){renderPage(A.page)}
@@ -3309,7 +3312,7 @@ async function rDash(el){
   // Urgent items: expired docs + overdue deadlines
   const urgentItems=[];
   docs.forEach(d=>{if(!d.date_expiry)return;if(new Date(d.date_expiry)<new Date())urgentItems.push({icon:'⚫',text:(isEN?'Expired: ':'Expirat: ')+d.name,link:'documente'})});
-  dls.forEach(d=>{if(!d.due_date||d.status==='trimis')return;if(new Date(d.due_date)<new Date())urgentItems.push({icon:'⚫',text:(isEN?'Overdue: ':'Depasit: ')+d.name,link:'termene'})});
+  dls.forEach(d=>{if(!d.due_date)return;if(d.status==='trimis'||d.status==='finalizat')return;if(new Date(d.due_date)<new Date())urgentItems.push({icon:'⚫',text:(isEN?'Overdue: ':'Depasit: ')+d.name,link:'termene',_dlId:d.id})});
 
   let h='<div class="print-header"></div>';
   // CONFIG BAR
@@ -3332,7 +3335,10 @@ async function rDash(el){
   if(urgentItems.length>0){
     h+='<div class="dash-urgent"><div class="dash-urgent-icon">&#9888;&#65039;</div><div class="dash-urgent-list">'+
       '<strong>'+T('cal_urgent_title')+'</strong><br>'+
-      urgentItems.map(u=>u.icon+' '+u.text+' <a onclick="nav(\''+u.link+'\');return false">'+(isEN?'View':'Deschide')+'</a>').join('<br>')+
+      urgentItems.map(u=>{
+        var navCall=u._dlId!=null?'_calNavToEvent(\''+u.link+'\','+u._dlId+')':'nav(\''+u.link+'\')';
+        return u.icon+' '+u.text+' <a onclick="'+navCall+';return false">'+(isEN?'View':'Deschide')+'</a>';
+      }).join('<br>')+
     '</div></div>'}
   // 4. KPI cards
   h+='<div class="dash-section'+(_dw.kpi===false?' hidden':'')+'" data-dw="kpi"><div class="kg">'+
@@ -9179,47 +9185,209 @@ function deadlineStatus(d){
   if(diff<=30)return{cls:'bdg-a',text:diff+' zile',icon:'&#128993;'};
   return{cls:'bdg-g',text:diff+' zile',icon:'&#128994;'};
 }
-var _termFilters={search:'',dest:'',status:''};
+var _termFilters={search:'',dest:'',status:'active'};  // default: show only non-finalized
+// Group expanded state: { parentName: true/false }
+var _termExpanded=window._termExpanded||{};window._termExpanded=_termExpanded;
 async function rTerm(el){
+  const isEN=CFG.lang==='en';
   const allData=(await ga('deadlines')).sort((a,b)=>{if(!a.due_date)return 1;if(!b.due_date)return-1;return new Date(a.due_date)-new Date(b.due_date)});
   const tf=_termFilters;
-  const data=allData.filter(d=>{
+
+  // Filter predicate (used for both templates and instances)
+  function matchesFilters(d){
     if(tf.dest){const q=tf.dest.toLowerCase();if(!(d.recipient||'').toLowerCase().includes(q))return false}
-    if(tf.status&&d.status!==tf.status)return false;
+    // Status filter: 'active' means neinceput+in_lucru (pending work), '' means all, specific value = exact match
+    if(tf.status==='active'){if(d.status==='finalizat'||d.status==='trimis')return false}
+    else if(tf.status&&d.status!==tf.status)return false;
     if(tf.search){const q=tf.search.toLowerCase();
       const fields=[d.name||'',d.recipient||'',d.due_date||'',d.observations||''];
       if(!fields.some(x=>x.toLowerCase().includes(q)))return false}
     return true;
+  }
+
+  // Split: templates (parents), instances (children with _parentName), standalone (no parent)
+  const templates=allData.filter(d=>d._isTemplate);
+  const instancesByParent={};
+  const standalone=[];
+  allData.forEach(d=>{
+    if(d._isTemplate)return;
+    if(d._parentName){
+      if(!instancesByParent[d._parentName])instancesByParent[d._parentName]=[];
+      instancesByParent[d._parentName].push(d);
+    } else {
+      standalone.push(d);
+    }
   });
-  const upcoming=allData.filter(d=>{if(!d.due_date||d.status==='trimis')return false;const diff=Math.ceil((new Date(d.due_date)-new Date())/864e5);return diff>=0&&diff<=30}).length;
-  const overdue=allData.filter(d=>{if(!d.due_date||d.status==='trimis')return false;return new Date(d.due_date)<new Date()}).length;
+
+  // KPIs (always from full dataset, not filtered — user wants total picture)
+  const upcoming=allData.filter(d=>{if(!d.due_date||d.status==='trimis'||d.status==='finalizat'||d._isTemplate)return false;const diff=Math.ceil((new Date(d.due_date)-new Date())/864e5);return diff>=0&&diff<=30}).length;
+  const overdue=allData.filter(d=>{if(!d.due_date||d.status==='trimis'||d.status==='finalizat'||d._isTemplate)return false;return new Date(d.due_date)<new Date()}).length;
+  const totalReports=templates.length+standalone.length;
+
   let h='<div class="kg">'+
-    '<div class="kc am"><div class="kl">Urmatoarele 30 Zile</div><div class="kv">'+upcoming+'</div></div>'+
-    '<div class="kc rd"><div class="kl">Depasite</div><div class="kv">'+overdue+'</div></div>'+
-    '<div class="kc bl"><div class="kl">Total Raportari</div><div class="kv">'+allData.length+'</div></div></div>';
+    '<div class="kc am"><div class="kl">'+(isEN?'Next 30 days':'Urmatoarele 30 Zile')+'</div><div class="kv">'+upcoming+'</div></div>'+
+    '<div class="kc rd"><div class="kl">'+(isEN?'Overdue':'Depasite')+'</div><div class="kv">'+overdue+'</div></div>'+
+    '<div class="kc bl"><div class="kl">'+(isEN?'Total Reports':'Total Raportari')+'</div><div class="kv">'+totalReports+'</div><div class="ks">'+templates.length+' '+(isEN?'recurring':'repetitive')+' · '+standalone.length+' '+(isEN?'one-time':'singulare')+'</div></div></div>';
+
   // Filter bar
   h+='<div class="ac-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">'+
-    '<input type="text" placeholder="Cauta..." value="'+esc(tf.search)+'" oninput="_termFilters.search=this.value;render()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px">'+
+    '<input type="text" placeholder="'+(isEN?'Search...':'Cauta...')+'" value="'+esc(tf.search)+'" oninput="_termFilters.search=this.value;render()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px">'+
     '<select onchange="_termFilters.status=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
-      '<option value="">Toate statusurile</option><option value="neinceput"'+(tf.status==='neinceput'?' selected':'')+'>Neinceput</option><option value="in_lucru"'+(tf.status==='in_lucru'?' selected':'')+'>In lucru</option><option value="finalizat"'+(tf.status==='finalizat'?' selected':'')+'>Finalizat</option><option value="trimis"'+(tf.status==='trimis'?' selected':'')+'>Trimis</option></select>'+
-    '<button class="btn bo bsm" onclick="_termFilters={search:\'\',dest:\'\',status:\'\'};render()">Reset</button>'+
+      '<option value="active"'+(tf.status==='active'?' selected':'')+'>'+(isEN?'Only pending (default)':'Doar nefinalizate')+'</option>'+
+      '<option value=""'+(tf.status===''?' selected':'')+'>'+(isEN?'All statuses':'Toate statusurile')+'</option>'+
+      '<option value="neinceput"'+(tf.status==='neinceput'?' selected':'')+'>'+(isEN?'Not started':'Neinceput')+'</option>'+
+      '<option value="in_lucru"'+(tf.status==='in_lucru'?' selected':'')+'>'+(isEN?'In progress':'In lucru')+'</option>'+
+      '<option value="finalizat"'+(tf.status==='finalizat'?' selected':'')+'>'+(isEN?'Completed':'Finalizat')+'</option>'+
+      '<option value="trimis"'+(tf.status==='trimis'?' selected':'')+'>'+(isEN?'Sent':'Trimis')+'</option></select>'+
+    '<button class="btn bo bsm" onclick="_termFilters={search:\'\',dest:\'\',status:\'active\'};render()">Reset</button>'+
+    '<button class="btn bo bsm" onclick="_termExpandAll(true)">'+(isEN?'Expand all':'Extinde tot')+'</button>'+
+    '<button class="btn bo bsm" onclick="_termExpandAll(false)">'+(isEN?'Collapse all':'Restrange tot')+'</button>'+
   '</div>';
-  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px;gap:8px"><button class="btn bp" onclick="editDeadline()">+ Adauga Raportare</button></div>'+
-  '<div class="pn"><div class="pb" style="overflow-x:auto">'+
-  (data.length===0?'<div class="es"><p>Nicio raportare '+(tf.search||tf.status?'gasita cu filtrele selectate':'definita')+'.</p></div>':
-    '<table class="dt"><thead><tr><th>Denumire</th><th>Destinatar</th><th>Frecventa</th><th>Termen</th><th>Status</th><th>Actiuni</th></tr></thead><tbody>'+
-    data.map(d=>{const st=deadlineStatus(d);return '<tr><td><strong>'+esc(d.name)+'</strong></td><td>'+esc(d.recipient||'—')+'</td>'+
-      '<td><span class="bdg bdg-b">'+(d.frequency==='saptamanal'?'Sapt.'+(d.day_of_week!=null?' '+_DL_DAYS[d.day_of_week]:''):d.frequency==='lunar'?'Lunar'+(d.day_of_month?' ('+d.day_of_month+')':''):d.frequency==='trimestrial'?'Trim.':d.frequency==='anual'?'Anual':d.frequency==='singulara'?'O data':'Perioada def.')+'</span>'+(d.active_months&&d.active_months.length?'<div style="font-size:9px;color:var(--txtL)">'+d.active_months.map(function(m){return MO[m-1].slice(0,3)}).join(', ')+'</div>':'')+'</td>'+
-      '<td style="font-size:11px">'+fmtDate(d.due_date)+'</td>'+
-      '<td><select onchange="updateDeadlineStatus('+d.id+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px">'+
-        '<option value="neinceput"'+(d.status==='neinceput'?' selected':'')+'>Neinceput</option>'+
-        '<option value="in_lucru"'+(d.status==='in_lucru'?' selected':'')+'>In lucru</option>'+
-        '<option value="finalizat"'+(d.status==='finalizat'?' selected':'')+'>Finalizat</option>'+
-        '<option value="trimis"'+(d.status==='trimis'?' selected':'')+'>Trimis</option></select></td>'+
-      '<td class="act"><button onclick="editDeadline('+d.id+')">&#9998;</button><button onclick="delRec(\'deadlines\','+d.id+')">&#128465;</button></td></tr>'}).join('')+
-    '</tbody></table>')+
-  '</div></div>';
+
+  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px;gap:8px"><button class="btn bp" onclick="editDeadline()">+ '+(isEN?'Add Report':'Adauga Raportare')+'</button></div>';
+
+  // ── Section: Recurring reports (grouped by template) ──
+  if(templates.length>0){
+    h+='<div class="pn"><div class="ph"><h3>'+(isEN?'Recurring Reports':'Raportari Repetitive')+'</h3></div><div class="pb" style="padding:0">';
+    templates.forEach(t=>{
+      // Filter template by search/recipient (but NOT by status — template itself has no status)
+      if(tf.search||tf.dest){
+        const tCheck=Object.assign({},t,{status:''}); // bypass status filter
+        const sf={search:tf.search,dest:tf.dest,status:''};
+        const origStatus=tf.status;tf.status='';
+        const tm=matchesFilters(t);tf.status=origStatus;
+        if(!tm&&!(instancesByParent[t.name]||[]).some(matchesFilters))return; // hide entirely if no match
+      }
+      const instances=(instancesByParent[t.name]||[]).filter(matchesFilters);
+      const allInstances=instancesByParent[t.name]||[];
+      const done=allInstances.filter(i=>i.status==='finalizat'||i.status==='trimis').length;
+      const pending=allInstances.length-done;
+      const overdueCnt=allInstances.filter(i=>i.status!=='finalizat'&&i.status!=='trimis'&&i.due_date&&new Date(i.due_date)<new Date()).length;
+      const expanded=_termExpanded[t.name]===true;
+      const freqLabel=t.frequency==='saptamanal'?(isEN?'Weekly':'Saptamanal'):t.frequency==='lunar'?(isEN?'Monthly':'Lunar'):t.frequency==='trimestrial'?(isEN?'Quarterly':'Trimestrial'):t.frequency==='anual'?(isEN?'Yearly':'Anual'):t.frequency;
+      const pctDone=allInstances.length?Math.round(done/allInstances.length*100):0;
+      const badgeColor=pctDone===100?'#27AE60':pctDone>=50?'#D4A017':'#C0392B';
+
+      h+='<div id="dl-tpl-'+t.id+'" class="term-group" style="border-bottom:1px solid var(--brd)">'+
+        '<div style="display:flex;align-items:center;padding:10px 14px;gap:12px;cursor:pointer;background:'+(expanded?'var(--bg2,#f8fafc)':'transparent')+'" onclick="_termToggle(\''+esc(t.name).replace(/'/g,"\\'")+'\')">'+
+          '<span style="font-size:14px;transition:transform .2s;transform:rotate('+(expanded?'90':'0')+'deg);display:inline-block;width:14px">&#9654;</span>'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-weight:700;font-size:13px">'+esc(t.name)+'</div>'+
+            '<div style="font-size:11px;color:var(--txtL);margin-top:2px">'+
+              '<span class="bdg bdg-b">'+freqLabel+'</span> '+
+              (t.recipient?'&#128205; '+esc(t.recipient)+' · ':'')+
+              '<span style="color:'+badgeColor+';font-weight:600">'+done+'/'+allInstances.length+' '+(isEN?'done':'finalizate')+'</span>'+
+              (pending>0?' · <span style="color:var(--amber)">'+pending+' '+(isEN?'pending':'pendinte')+'</span>':'')+
+              (overdueCnt>0?' · <span style="color:var(--red);font-weight:600">'+overdueCnt+' '+(isEN?'overdue':'depasite')+'</span>':'')+
+            '</div>'+
+          '</div>'+
+          '<div style="min-width:80px;text-align:right"><div style="font-size:10px;color:var(--txtL)">'+pctDone+'%</div><div style="background:var(--bg);border:1px solid var(--brd);border-radius:4px;width:60px;height:8px;overflow:hidden"><div style="background:'+badgeColor+';width:'+pctDone+'%;height:100%"></div></div></div>'+
+          '<div onclick="event.stopPropagation()" style="display:flex;gap:4px">'+
+            '<button class="btn bo bsm" onclick="editDeadline('+t.id+')" title="'+(isEN?'Edit template':'Editeaza template')+'">&#9998;</button>'+
+            '<button class="btn bo bsm" onclick="if(confirm(\''+(isEN?'Delete template AND all its instances?':'Sterge template + toate instantele?')+'\'))_termDeleteTemplate('+t.id+',\''+esc(t.name).replace(/'/g,"\\'")+'\')" title="'+(isEN?'Delete':'Sterge')+'" style="color:var(--red)">&#128465;</button>'+
+          '</div>'+
+        '</div>';
+      if(expanded){
+        h+='<div style="padding:6px 14px 14px 14px;background:var(--bg2,#f8fafc);overflow-x:auto">';
+        if(instances.length===0){
+          h+='<div style="padding:8px;color:var(--txtL);font-size:11px;font-style:italic">'+
+            (allInstances.length===0?(isEN?'No instances yet. Save template to auto-generate.':'Nicio instanta. Salveaza template-ul pentru generare.'):(isEN?'No instances match current filters.':'Nicio instanta cu filtrele curente.'))+
+          '</div>';
+        } else {
+          h+='<table class="dt" style="font-size:11px"><thead><tr><th>'+(isEN?'Instance':'Instanta')+'</th><th>'+(isEN?'Due date':'Termen')+'</th><th>'+(isEN?'Status':'Status')+'</th><th>'+(isEN?'Actions':'Actiuni')+'</th></tr></thead><tbody>';
+          instances.forEach(d=>{
+            const isOverdue=d.status!=='finalizat'&&d.status!=='trimis'&&d.due_date&&new Date(d.due_date)<new Date();
+            h+='<tr id="dl-row-'+d.id+'"'+(isOverdue?' style="background:#fef2f2"':'')+'><td>'+esc(d.name)+'</td><td>'+fmtDate(d.due_date)+'</td>'+
+              '<td><select onchange="updateDeadlineStatus('+d.id+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px">'+
+                '<option value="neinceput"'+(d.status==='neinceput'?' selected':'')+'>'+(isEN?'Not started':'Neinceput')+'</option>'+
+                '<option value="in_lucru"'+(d.status==='in_lucru'?' selected':'')+'>'+(isEN?'In progress':'In lucru')+'</option>'+
+                '<option value="finalizat"'+(d.status==='finalizat'?' selected':'')+'>'+(isEN?'Completed':'Finalizat')+'</option>'+
+                '<option value="trimis"'+(d.status==='trimis'?' selected':'')+'>'+(isEN?'Sent':'Trimis')+'</option></select></td>'+
+              '<td class="act"><button onclick="editDeadline('+d.id+')">&#9998;</button><button onclick="delRec(\'deadlines\','+d.id+')">&#128465;</button></td></tr>';
+          });
+          h+='</tbody></table>';
+        }
+        h+='</div>';
+      }
+      h+='</div>';
+    });
+    h+='</div></div>';
+  }
+
+  // ── Section: Standalone (one-time) reports ──
+  const standaloneFiltered=standalone.filter(matchesFilters);
+  if(standalone.length>0 || templates.length===0){
+    h+='<div class="pn" style="margin-top:14px"><div class="ph"><h3>'+(isEN?'One-time Reports':'Raportari Singulare')+'</h3></div><div class="pb" style="overflow-x:auto">';
+    if(standaloneFiltered.length===0){
+      h+='<div class="es"><p>'+(tf.search||tf.status?(isEN?'No match with current filters.':'Nicio raportare gasita.'):(isEN?'No one-time reports defined.':'Nicio raportare singulara definita.'))+'</p></div>';
+    } else {
+      h+='<table class="dt"><thead><tr><th>'+(isEN?'Name':'Denumire')+'</th><th>'+(isEN?'Recipient':'Destinatar')+'</th><th>'+(isEN?'Due date':'Termen')+'</th><th>'+(isEN?'Status':'Status')+'</th><th>'+(isEN?'Actions':'Actiuni')+'</th></tr></thead><tbody>';
+      standaloneFiltered.forEach(d=>{
+        const isOverdue=d.status!=='finalizat'&&d.status!=='trimis'&&d.due_date&&new Date(d.due_date)<new Date();
+        h+='<tr id="dl-row-'+d.id+'"'+(isOverdue?' style="background:#fef2f2"':'')+'><td><strong>'+esc(d.name)+'</strong></td><td>'+esc(d.recipient||'—')+'</td>'+
+          '<td style="font-size:11px">'+fmtDate(d.due_date)+'</td>'+
+          '<td><select onchange="updateDeadlineStatus('+d.id+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px">'+
+            '<option value="neinceput"'+(d.status==='neinceput'?' selected':'')+'>'+(isEN?'Not started':'Neinceput')+'</option>'+
+            '<option value="in_lucru"'+(d.status==='in_lucru'?' selected':'')+'>'+(isEN?'In progress':'In lucru')+'</option>'+
+            '<option value="finalizat"'+(d.status==='finalizat'?' selected':'')+'>'+(isEN?'Completed':'Finalizat')+'</option>'+
+            '<option value="trimis"'+(d.status==='trimis'?' selected':'')+'>'+(isEN?'Sent':'Trimis')+'</option></select></td>'+
+          '<td class="act"><button onclick="editDeadline('+d.id+')">&#9998;</button><button onclick="delRec(\'deadlines\','+d.id+')">&#128465;</button></td></tr>';
+      });
+      h+='</tbody></table>';
+    }
+    h+='</div></div>';
+  }
+
   el.innerHTML=h;
+
+  // Scroll + highlight if navigated from calendar popup or dashboard alert
+  setTimeout(()=>_termApplyHighlight(),100);
+}
+
+// Toggle expand/collapse for a template group + auto-expand parent when navigating to instance
+function _termToggle(parentName){
+  _termExpanded[parentName]=!_termExpanded[parentName];
+  render();
+}
+function _termExpandAll(expand){
+  // Populate based on known templates
+  ga('deadlines').then(all=>{
+    all.filter(d=>d._isTemplate).forEach(t=>{_termExpanded[t.name]=expand});
+    render();
+  });
+}
+async function _termDeleteTemplate(tId,tName){
+  const all=await ga('deadlines');
+  for(const d of all){
+    if(d.id===tId||(d._parentName===tName&&!d._isTemplate))await dl('deadlines',d.id);
+  }
+  render();
+}
+
+// Scroll-to + flash highlight when navigated from calendar/dashboard
+async function _termApplyHighlight(){
+  const nh=window._navHighlight;
+  if(!nh||nh.id==null)return;
+  // If this deadline is an instance with a parent, auto-expand the parent first
+  try{
+    const all=await ga('deadlines');
+    const rec=all.find(d=>d.id===nh.id);
+    if(rec&&rec._parentName&&!_termExpanded[rec._parentName]){
+      _termExpanded[rec._parentName]=true;
+      window._navHighlight=nh; // preserve for next render
+      render();
+      return;
+    }
+  }catch(e){}
+
+  const row=document.getElementById('dl-row-'+nh.id);
+  if(row){
+    row.scrollIntoView({behavior:'smooth',block:'center'});
+    const origBg=row.style.background;
+    row.style.transition='background .6s';row.style.background='#FEF3C7';
+    setTimeout(()=>{row.style.background=origBg},1800);
+  }
+  window._navHighlight=null;
 }
 var _DL_DAYS=['Luni','Marti','Miercuri','Joi','Vineri','Sambata','Duminica'];
 function _dlFreqExtra(r){
@@ -9352,8 +9520,11 @@ async function getCalendarEvents(year,month){
   // Deadlines (red dots)
   const dls=await ga('deadlines');
   dls.forEach(d=>{if(!d.due_date)return;const dt=new Date(d.due_date);
-    if(dt.getFullYear()===year&&dt.getMonth()===month)
-      events.push({date:d.due_date,color:'red',label:d.name,type:'deadline',link:'termene'})});
+    if(dt.getFullYear()===year&&dt.getMonth()===month){
+      // Finalized/sent deadlines show green (done), pending show red (urgent)
+      var isDone=(d.status==='finalizat'||d.status==='trimis');
+      events.push({date:d.due_date,color:isDone?'green':'red',label:d.name,type:'deadline',link:'termene',_dlId:d.id,_status:d.status||'neinceput',_recipient:d.recipient||''});
+    }});
   // Document expiry (yellow dots)
   const docs=await ga('documents');
   docs.forEach(d=>{if(!d.date_expiry)return;const dt=new Date(d.date_expiry);
@@ -9488,14 +9659,28 @@ async function calDayClick(dateStr){
     h+='<div class="cal-popup-ev"><div class="dot" style="background:'+(dotColors[ev.color]||'#2563B0')+'"></div>'+
       '<div style="flex:1"><strong>'+ev.label+'</strong><br><span style="font-size:11px;color:var(--txtL)">'+typeLabel+'</span>'+
       (ev.description?'<br><span style="font-size:11px">'+ev.description+'</span>':'')+
-      (ev.link?'<br><a href="#" onclick="event.preventDefault();closeCalPopup();nav(\''+ev.link+'\')" style="font-size:11px;color:var(--blue)">'+(isEN?'Go to module':'Mergi la modul')+' →</a>':'')+
+      (ev.link?'<br><a href="#" onclick="event.preventDefault();_calNavToEvent(\''+ev.link+'\','+(ev._dlId||'null')+')" style="font-size:11px;color:var(--blue)">'+(isEN?'Go to module':'Mergi la modul')+' →</a>':'')+
       (ev.type==='manual'?'<br><button onclick="closeCalPopup();editCalEvent('+ev.id+')" style="font-size:11px;color:var(--blue);background:none;border:none;cursor:pointer;margin-top:4px">&#9998; '+(isEN?'Edit':'Editeaza')+'</button>'+
       '<button onclick="deleteCalEvent('+ev.id+')" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;margin-top:4px;margin-left:8px">'+T('cal_delete')+'</button>':'')+
     '</div></div>'})}
   h+='<div style="text-align:center;padding-top:8px"><button class="btn bp bsm" onclick="closeCalPopup();editCalEvent(null,\''+dateStr+'\')">+ '+T('cal_add_event')+'</button></div></div>';
   pop.innerHTML=h;pop.style.display='block';ov.classList.add('sh');
 }
-function closeCalPopup(){document.getElementById('cal-pop').style.display='none';document.getElementById('cal-pop-ov').classList.remove('sh')}
+function closeCalPopup(){var p=document.getElementById('cal-pop');if(p)p.style.display='none';var o=document.getElementById('cal-pop-ov');if(o)o.classList.remove('sh')}
+
+// Navigate from calendar popup to source module with optional scroll+highlight.
+// link = 'termene' | 'documente' | 'biocide' | ...  dlId = deadline id (number) or null
+function _calNavToEvent(link,dlId){
+  closeCalPopup();
+  if(link==='termene'){
+    // 'termene' is a tab within Calendar page, not a standalone page
+    nav('calendar',{calTab:'termene',highlightId:dlId});
+  } else if(dlId!=null){
+    nav(link,{highlightId:dlId});
+  } else {
+    nav(link);
+  }
+}
 async function editCalEvent(id,prefillDate){
   const isEN=CFG.lang==='en';
   let r={title:'',date:prefillDate||new Date().toISOString().slice(0,10),date_end:'',category:'general',description:'',notes:''};
@@ -14540,6 +14725,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.44',date:'2026-04-20',notes:'FIX: Dashboard — alerte urgente nu mai includ raportari finalizate/trimise\nFIX: Calendar — raportari finalizate apar verzi (gata), pendinte raman rosii\nFIX: Mergi la modul din popup calendar te duce corect la Raportari/Termene\nNOU: Lista Raportari/Termene — grupare dupa raportarea-parinte cu sumar realizate/pendinte/depasite\nNOU: Lista Raportari — filter default „Doar nefinalizate", butoane Expand/Collapse all\nNOU: Click alerta Dashboard sau „Mergi la modul" din Calendar → scroll automat + highlight galben la raportarea exacta\nUX: Raportari repetitive colapsate default — 3 raportari x 52 sapt = 3 randuri, nu 156'},
   {version:'12.43',date:'2026-04-17',notes:'i18n: Pagina Settings (Configurare) traducere completa EN — toate 4 tab-uri, quick-jumps, section headers\ni18n: Form labels Spital — Hospital name, Short name, Department name, PPS Hospital Code, Biocide budget limit\ni18n: Personal / Signatories — Add person, Save Staff, table headers (Name, Title, Role, Sign.)\ni18n: Current user label + info box bilingv'},
   {version:'12.42',date:'2026-04-17',notes:'ARHITECTURA: Country config — referinte legale RO (60 refs Ord. 1101, Ord. 1226, INSP, ANMCS, DSP) centralizate in src/js/country/ro.js\nARHITECTURA: Pregatire fork international — forkul schimba doar country/ro.js → country/eu.js, restul codului agnostic\ni18n: 5 butoane title traducere EN (Edit/Delete) in atp, uvcheck, audituri, config_page\ni18n: 9 dialoguri confirmare traducere EN (sterge, reset all, import backup, etc.)\ni18n: Mesaje toast traducere EN (Saved!/Deleted!/Backup saved/Application installed)'},
   {version:'12.41',date:'2026-04-17',notes:'NOU: Import HelicsWin.Net .mdb direct in modulul PPS — parse nativ ECDC in 15ms\nNOU: Schema ECDC-PPS-IR-v1.0 — pacienti + secții + HAI + antibiograma + AMU cu ATC canonic\nNOU: Detectie automata markere ECDC Table II.6 (MRSA, C3G-NS, CAR-NS)\nNOU: Modal detalii ECDC cu HAI pe situri, top antibiotice, indicatii, rezistente\nNOU: Backup automat pps store inainte de primul import IR\nNOU: Lookup table complet HelicsWin (319 ATC codes, indicatii, diagnostice, rute) extras din ReferencePPS.mdb'},

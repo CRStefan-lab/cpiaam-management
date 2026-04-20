@@ -1,10 +1,13 @@
 {
-  "version": "12.43",
+  "version": "12.44",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "i18n: Pagina Settings (Configurare) traducere completa EN — toate 4 tab-uri, quick-jumps, section headers",
-    "i18n: Form labels Spital — Hospital name, Short name, Department name, PPS Hospital Code, Biocide budget limit",
-    "i18n: Personal / Signatories — Add person, Save Staff, table headers (Name, Title, Role, Sign.)",
-    "i18n: Current user label + info box bilingv"
+    "FIX: Dashboard — alerte urgente nu mai includ raportari finalizate/trimise",
+    "FIX: Calendar — raportari finalizate apar verzi (gata), pendinte raman rosii",
+    "FIX: Mergi la modul din popup calendar te duce corect la Raportari/Termene",
+    "NOU: Lista Raportari/Termene — grupare dupa raportarea-parinte cu sumar realizate/pendinte/depasite",
+    "NOU: Lista Raportari — filter default 'Doar nefinalizate', butoane Expand/Collapse all",
+    "NOU: Click alerta Dashboard sau 'Mergi la modul' din Calendar → scroll automat + highlight galben la raportarea exacta",
+    "UX: Raportari repetitive colapsate default — 3 raportari x 52 sapt = 3 randuri, nu 156"
   ]
 }

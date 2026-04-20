@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.44</title>
+<title>CPIAAM Management v12.47</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1061,7 +1061,14 @@ async function cl(s){const d=await odb();return new Promise((ok,no)=>{const t=d.
 // ═══ ID SYSTEM ═══
 // Generate unique ID with prefix
 var _idCounter=0;
-function genId(prefix){if(typeof _idCounter!=='number'||isNaN(_idCounter))_idCounter=0;return prefix+'_'+Date.now().toString(36)+'_'+(++_idCounter).toString(36)}
+function genId(prefix){
+  // Prefer crypto.randomUUID for cross-device collision-free IDs (sync safety)
+  if(typeof crypto!=='undefined'&&crypto.randomUUID){return prefix+'_'+crypto.randomUUID().replace(/-/g,'').slice(0,16)}
+  // Fallback: timestamp + counter + random (reduces collision vs plain timestamp)
+  if(typeof _idCounter!=='number'||isNaN(_idCounter))_idCounter=0;
+  var rnd=Math.floor(Math.random()*65536).toString(36);
+  return prefix+'_'+Date.now().toString(36)+'_'+(++_idCounter).toString(36)+'_'+rnd;
+}
 
 </script>
 <script>
@@ -1826,9 +1833,10 @@ function showSyncLogDetail(idx){
 // ── User Pill (toolbar) ──
 function getUserInitials(name){
   if(!name)return '?';
-  var words=name.replace(/^(Dr\.|As\.|Prof\.|Ing\.)\s*/i,'').trim().split(/\s+/);
-  if(words.length>=2)return(words[0][0]+words[1][0]).toUpperCase();
-  return words[0].substring(0,2).toUpperCase();
+  var words=name.replace(/^(Dr\.|As\.|Prof\.|Ing\.)\s*/i,'').trim().split(/\s+/).filter(function(w){return w.length>0});
+  if(!words.length)return '?';
+  if(words.length>=2&&words[0][0]&&words[1][0])return(words[0][0]+words[1][0]).toUpperCase();
+  return(words[0].substring(0,2)||'?').toUpperCase();
 }
 function getUserShortName(name){
   if(!name)return '';
@@ -1964,7 +1972,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.44';
+const APP_VERSION='12.47';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -2209,6 +2217,18 @@ async function loadCfg(){
   updateSidebar();
 }
 async function saveCfg(){CFG.id=1;await pt('config',CFG);updateSidebar()}
+// Debounced variant — coalesces multiple rapid calls into 1 DB write (prevents double-click duplicates)
+var _saveCfgTimer=null,_saveCfgPending=null;
+function saveCfgDebounced(){
+  if(_saveCfgTimer)clearTimeout(_saveCfgTimer);
+  return new Promise(function(resolve){
+    _saveCfgPending=resolve;
+    _saveCfgTimer=setTimeout(async function(){
+      _saveCfgTimer=null;var cb=_saveCfgPending;_saveCfgPending=null;
+      try{await saveCfg();if(cb)cb(true)}catch(e){console.warn('saveCfgDebounced:',e);if(cb)cb(false)}
+    },350);
+  });
+}
 
 function getP(role){return CFG.personnel.find(p=>p.role===role)||{name:'—',title:''}}
 function getMgr(){var d=getP('director_medical');return d.name!=='—'?d:getP('manager')}
@@ -3153,10 +3173,10 @@ async function buildNotifications(){
   // Deadlines — auto-generate next recurring if current is overdue
   const terms=await ga('deadlines');
   await autoAdvanceRecurring(terms);
-  terms.forEach(t=>{if(!t.due_date||t.status==='trimis')return;const dl=new Date(t.due_date);const diff=dl-now;const dz=Math.ceil(diff/86400000);
-    if(diff<0)n.push({icon:'⚫',text:(isEN?'Deadline overdue: ':'Termen depasit: ')+t.name,link:'termene',urgent:true});
-    else if(diff<=ms7)n.push({icon:'🔴',text:(isEN?'Deadline in '+dz+' days: ':'Termen in '+dz+' zile: ')+t.name,link:'termene',urgent:true});
-    else if(diff<=ms30)n.push({icon:'🟡',text:(isEN?'Deadline in '+dz+' days: ':'Termen in '+dz+' zile: ')+t.name,link:'termene'})});
+  terms.forEach(t=>{if(!t.due_date||t.status==='trimis'||t.status==='finalizat'||t._isTemplate)return;const dl=new Date(t.due_date);const diff=dl-now;const dz=Math.ceil(diff/86400000);
+    if(diff<0)n.push({icon:'⚫',text:(isEN?'Deadline overdue: ':'Termen depasit: ')+t.name,link:'termene',urgent:true,_dlId:t.id});
+    else if(diff<=ms7)n.push({icon:'🔴',text:(isEN?'Deadline in '+dz+' days: ':'Termen in '+dz+' zile: ')+t.name,link:'termene',urgent:true,_dlId:t.id});
+    else if(diff<=ms30)n.push({icon:'🟡',text:(isEN?'Deadline in '+dz+' days: ':'Termen in '+dz+' zile: ')+t.name,link:'termene',_dlId:t.id})});
   // SPC focar alerts
   if(A._spcData&&A._dashChartData){const spc=A._spcData,ibm=A._dashChartData.ibm;
     ibm.forEach((v,i)=>{if(v>spc.ucl){const msg=T('spc_focar_alert').replace('{m}',MO[i]).replace('{v}',v).replace('{u}',spc.ucl);
@@ -3216,7 +3236,8 @@ function toggleNotif(){
       var ago=ni._time?_timeAgo(ni._time):'';
       h+='<div class="notif-item" onclick="showSyncDetails('+idx+');toggleNotif()"><span class="ni-icon">'+ni.icon+'</span> '+ni.text+(ago?' <span style="font-size:10px;color:var(--txtL)">('+ago+')</span>':'')+'<span class="ni-link">'+(isEN?'Details':'Detalii')+' &#8594;</span></div>';
     } else {
-      h+='<div class="notif-item" onclick="nav(\''+ni.link+'\');toggleNotif()"><span class="ni-icon">'+ni.icon+'</span> '+ni.text+'<span class="ni-link">'+(isEN?'Open':'Deschide')+' &#8594;</span></div>';
+      var notifNav=ni._dlId!=null?'_calNavToEvent(\''+ni.link+'\','+ni._dlId+')':'nav(\''+ni.link+'\')';
+      h+='<div class="notif-item" onclick="'+notifNav+';toggleNotif()"><span class="ni-icon">'+ni.icon+'</span> '+ni.text+'<span class="ni-link">'+(isEN?'Open':'Deschide')+' &#8594;</span></div>';
     }
   })}
   dd.innerHTML=h}
@@ -3272,12 +3293,12 @@ async function rDash(el){
     pDe=(await ga('deseuri')).filter(r=>r.year===y-1),pBi=(await ga('biocide')).filter(r=>r.year===y-1);
   const docs=await ga('documents'),dls=await ga('deadlines');
   const conf=au.filter(p=>p.result==='conform').length,totP=au.length,
-    totD=de.reduce((s,r)=>s+CFG.waste_codes.filter(w=>w.active!==false).reduce((a,w)=>a+(+r[w.id]||0),0),0),
+    totD=de.reduce((s,r)=>s+(CFG.waste_codes||[]).filter(w=>w.active!==false).reduce((a,w)=>a+(+r[w.id]||0),0),0),
     consBio=bi.filter(b=>b.type==='iesire').reduce((s,b)=>s+(+b.value_lei||0),0);
   const wb=getTotalWeightedBeds(y);
   // Previous year KPI values
   const pIaC=pIa.length,pAuC=pAu.length,pConf=pAu.filter(p=>p.result==='conform').length,
-    pTotD=pDe.reduce((s,r)=>s+CFG.waste_codes.filter(w=>w.active!==false).reduce((a,w)=>a+(+r[w.id]||0),0),0),
+    pTotD=pDe.reduce((s,r)=>s+(CFG.waste_codes||[]).filter(w=>w.active!==false).reduce((a,w)=>a+(+r[w.id]||0),0),0),
     pConsBio=pBi.filter(b=>b.type==='iesire').reduce((s,b)=>s+(+b.value_lei||0),0);
   // Trend helper: returns HTML for trend arrow. lessIsBetter=true means decrease is good
   function kpiTrend(cur,prev,lessIsBetter,prevHasData){
@@ -3299,13 +3320,13 @@ async function rDash(el){
   const docsValid=docs.filter(d=>{if(!d.date_expiry)return true;return new Date(d.date_expiry)>=new Date()}).length;
   const docsExpSoon=docs.filter(d=>{if(!d.date_expiry)return false;const diff=Math.ceil((new Date(d.date_expiry)-new Date())/864e5);return diff>=0&&diff<=30}).length;
   const docsExpired=docs.filter(d=>d.date_expiry&&new Date(d.date_expiry)<new Date()).length;
-  const dlsUp=dls.filter(d=>{if(!d.due_date||d.status==='trimis')return false;const diff=Math.ceil((new Date(d.due_date)-new Date())/864e5);return diff>=0&&diff<=30}).length;
+  const dlsUp=dls.filter(d=>{if(!d.due_date||d.status==='trimis'||d.status==='finalizat'||d._isTemplate)return false;const diff=Math.ceil((new Date(d.due_date)-new Date())/864e5);return diff>=0&&diff<=30}).length;
   // Sparkline data: IAAM per month
   const ibm=Array(12).fill(0);ia.forEach(r=>{if(r.month>=1&&r.month<=12)ibm[r.month-1]++});
   // Sparkline data: autocontrol neconf per month
   const ncm=Array(12).fill(0);au.filter(p=>p.result==='neconform').forEach(r=>{if(r.month>=1&&r.month<=12)ncm[r.month-1]++});
   // Sparkline data: deseuri per month
-  const dbm=Array(12).fill(0);de.forEach(r=>{if(r.month>=1&&r.month<=12)dbm[r.month-1]+=CFG.waste_codes.filter(w=>w.active!==false).reduce((a,w)=>a+(+r[w.id]||0),0)});
+  const dbm=Array(12).fill(0);de.forEach(r=>{if(r.month>=1&&r.month<=12)dbm[r.month-1]+=(CFG.waste_codes||[]).filter(w=>w.active!==false).reduce((a,w)=>a+(+r[w.id]||0),0)});
   const bbm=Array(12).fill(0);bi.filter(b=>b.type==='iesire').forEach(r=>{if(r.month>=1&&r.month<=12)bbm[r.month-1]+=(+r.value_lei||0)});
 
   const isEN=CFG.lang==='en';
@@ -8170,8 +8191,8 @@ function matchAtbName(listName,labName){
 
 // ── FORMAT 2: CSV tabelar (o linie per antibiotic) ──
 function previewLabCSV(txt){
-  const lines=txt.split('\n').filter(l=>l.trim());
-  if(lines.length<2){document.getElementById('lab-preview').innerHTML='<div class="ib wrn">Fisier gol sau prea putin date.</div>';return}
+  const lines=(txt||'').split('\n').filter(l=>l.trim());
+  if(lines.length<2||!lines[0]){document.getElementById('lab-preview').innerHTML='<div class="ib wrn">Fisier gol sau prea putin date.</div>';return}
   const sep=lines[0].includes('\t')?'\t':(lines[0].includes(';')?';':',');
   const header=lines[0].split(sep).map(c=>c.replace(/^["']|["']$/g,'').trim());
   const rows=lines.slice(1).map(l=>l.split(sep).map(c=>c.replace(/^["']|["']$/g,'').trim())).filter(r=>r.length>=5);
@@ -9314,6 +9335,37 @@ async function rTerm(el){
     h+='</div></div>';
   }
 
+  // ── Section: Orphan instances (parent template was deleted) ──
+  const templateNames=new Set(templates.map(t=>t.name));
+  const orphansByParent={};
+  Object.keys(instancesByParent).forEach(pn=>{
+    if(!templateNames.has(pn))orphansByParent[pn]=instancesByParent[pn];
+  });
+  const orphanParentNames=Object.keys(orphansByParent);
+  if(orphanParentNames.length>0){
+    const totalOrphans=orphanParentNames.reduce((s,pn)=>s+orphansByParent[pn].length,0);
+    h+='<div class="pn" style="margin-top:14px;border-color:var(--amber)"><div class="ph" style="background:var(--bgAmber,#FFFBEB)"><h3 style="color:var(--amber,#D4A017)">⚠️ '+
+      (isEN?'Orphan Instances':'Raportari orfane')+' ('+totalOrphans+')</h3></div><div class="pb">'+
+      '<div class="ib wrn" style="margin-bottom:10px">'+
+        (isEN?'These instances have no parent template (template was deleted or renamed). Recreate the template to group them, or delete them all.':'Aceste instante nu au template-parinte (template-ul a fost sters sau redenumit). Recreeaza template-ul pentru a le grupa, sau sterge-le pe toate.')+
+      '</div>';
+    orphanParentNames.forEach(pn=>{
+      const insts=orphansByParent[pn];
+      const done=insts.filter(i=>i.status==='finalizat'||i.status==='trimis').length;
+      const sampleRecipient=insts[0]&&insts[0].recipient||'—';
+      h+='<div style="border:1px solid var(--amber,#D4A017);border-radius:6px;padding:10px;margin-bottom:8px;background:var(--bgAmber,#FFFBEB)">'+
+        '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
+          '<div style="flex:1;min-width:200px"><strong>'+esc(pn)+'</strong>'+
+            ' <span style="font-size:11px;color:var(--txtL)">'+insts.length+' '+(isEN?'instances':'instante')+' · '+done+' '+(isEN?'done':'finalizate')+'</span>'+
+            '<div style="font-size:10px;color:var(--txtL)">'+(isEN?'Sample recipient':'Destinatar')+': '+esc(sampleRecipient)+'</div>'+
+          '</div>'+
+          '<button class="btn bo bsm" onclick="_termRestoreOrphanTemplate(\''+esc(pn).replace(/'/g,"\\'")+'\',\''+esc(sampleRecipient).replace(/'/g,"\\'")+'\')">'+(isEN?'Recreate template':'Recreeaza template')+'</button>'+
+          '<button class="btn bd bsm" onclick="_termDeleteOrphans(\''+esc(pn).replace(/'/g,"\\'")+'\')">'+(isEN?'Delete all':'Sterge toate')+'</button>'+
+        '</div></div>';
+    });
+    h+='</div></div>';
+  }
+
   // ── Section: Standalone (one-time) reports ──
   const standaloneFiltered=standalone.filter(matchesFilters);
   if(standalone.length>0 || templates.length===0){
@@ -9360,6 +9412,31 @@ async function _termDeleteTemplate(tId,tName){
   const all=await ga('deadlines');
   for(const d of all){
     if(d.id===tId||(d._parentName===tName&&!d._isTemplate))await dl('deadlines',d.id);
+  }
+  render();
+}
+
+// Orphan recovery: recreate missing parent template from orphan instances
+async function _termRestoreOrphanTemplate(parentName,recipient){
+  const isEN=CFG.lang==='en';
+  // Infer frequency from instances (check names like "— S15 2026" for weekly, month name for monthly)
+  const all=await ga('deadlines');
+  const insts=all.filter(d=>d._parentName===parentName&&!d._isTemplate);
+  if(!insts.length){alert(isEN?'No orphan instances found.':'Nicio instanta orfana.');return}
+  // Guess frequency from name pattern
+  var freq='singulara';
+  if(insts.some(i=>/— S\d+ /.test(i.name||'')))freq='saptamanal';
+  else if(insts.some(i=>/— (Ianuarie|Februarie|Martie|Aprilie|Mai|Iunie|Iulie|August|Septembrie|Octombrie|Noiembrie|Decembrie) /.test(i.name||'')))freq='lunar';
+  if(!confirm((isEN?'Recreate parent template ':'Recreez template-ul ')+'"'+parentName+'"'+(isEN?' with frequency ':' cu frecventa ')+freq+'?'))return;
+  await pt('deadlines',{_isTemplate:true,name:parentName,recipient:recipient||'',frequency:freq,day_of_week:0,active_months:[],status:'neinceput'});
+  render();
+}
+async function _termDeleteOrphans(parentName){
+  const isEN=CFG.lang==='en';
+  if(!confirm((isEN?'Delete all orphan instances of ':'Sterg toate instantele orfane ale "')+parentName+'"?'))return;
+  const all=await ga('deadlines');
+  for(const d of all){
+    if(d._parentName===parentName&&!d._isTemplate)await dl('deadlines',d.id);
   }
   render();
 }
@@ -9725,7 +9802,7 @@ async function renderDashCalendar(){
   const todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   const allDls=await ga('deadlines'),allDocs=await ga('documents'),allEvts=await ga('events'),allTr=await ga('trainings'),allAud=await ga('audits');
   var allUpcoming=[];
-  allDls.forEach(d=>{if(!d.due_date||d.status==='trimis')return;var dt=new Date(d.due_date+'T00:00:00');if(dt>=todayStart)allUpcoming.push({date:d.due_date,color:'red',label:d.name,link:'calendar'})});
+  allDls.forEach(d=>{if(!d.due_date||d.status==='trimis'||d.status==='finalizat'||d._isTemplate)return;var dt=new Date(d.due_date+'T00:00:00');if(dt>=todayStart)allUpcoming.push({date:d.due_date,color:'red',label:d.name,link:'termene',_dlId:d.id})});
   allDocs.forEach(d=>{if(!d.date_expiry)return;var dt=new Date(d.date_expiry+'T00:00:00');if(dt>=todayStart)allUpcoming.push({date:d.date_expiry,color:'yellow',label:d.name,link:'documente'})});
   allEvts.forEach(e=>{if(!e.date)return;var dt=new Date(e.date+'T00:00:00');if(dt>=todayStart)allUpcoming.push({date:e.date,color:'blue',label:e.title,link:'calendar'})});
   allTr.forEach(t=>{if(!t.date)return;var dt=new Date(t.date+'T00:00:00');if(dt>=todayStart)allUpcoming.push({date:t.date,color:'green',label:t.topic||'Instruire',link:'instruire'})});
@@ -9766,7 +9843,8 @@ async function renderDashCalendar(){
       }
       var d3=new Date(ev.date);var dayStr=d3.getDate()+' '+mNames[d3.getMonth()];
       var isToday=ev.date===todayStr;
-      h+='<div class="dash-up-item" onclick="nav(\''+ev.link+'\')" style="'+(isToday?'font-weight:600':'')+'">'+
+      var dashNav=ev._dlId!=null?'_calNavToEvent(\''+ev.link+'\','+ev._dlId+')':'nav(\''+ev.link+'\')';
+      h+='<div class="dash-up-item" onclick="'+dashNav+'" style="'+(isToday?'font-weight:600':'')+'">'+
         '<div class="cal-dot '+ev.color+'" style="width:8px;height:8px;border-radius:50%;flex-shrink:0" title="'+(dotTitles[ev.color]||'')+'"></div>'+
         '<span style="color:var(--txtL);min-width:50px">'+dayStr+'</span>'+
         '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ev.label+'</span></div>';
@@ -12424,15 +12502,16 @@ async function genRaportAnualWord(){
   // 8. Obiective SMART (conditional — doar daca exista date)
   if(objectives&&objectives.length>0){
     children.push(wPB());children.push(wH1('8. Obiective SMART IPC'));children.push(wSp(40));
-    var achieved=objectives.filter(function(o){return o.status==='achieved'||o.progress>=100}).length;
-    var partial=objectives.filter(function(o){return o.progress>=50&&o.progress<100&&o.status!=='achieved'}).length;
+    const _obC=classifyObjectives(objectives);
+    var achieved=_obC.achieved;
+    var partial=_obC.partial;
     const W8=[3500,1200,1200,1200,1926];
     children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W8,rows:[wTblHead(['Obiectiv','Tinta','Realizat','Status','Termen'],W8),
       ...objectives.map(function(o,i){
         var nm=o.name||o.title||'Obiectiv '+(i+1);
         var tinta=o.target||'—';
         var realizat=(o.progress||0)+'%';
-        var st=o.status==='achieved'||o.progress>=100?'✓ Realizat':o.progress>=50?'⚠ Partial':'✗ Nerealizat';
+        var st=isObjectiveAchieved(o)?'✓ Realizat':isObjectivePartial(o)?'⚠ Partial':'✗ Nerealizat';
         return wTblRow([nm,tinta,realizat,st,o.deadline||'—'],W8,i%2===1)}),
       wTblRow([{text:achieved+' realizate din '+objectives.length+' total',bold:true},'','','',''],W8)]}));
     addRecs(children,AN.obiective,'8.1. Recomandari Obiective');
@@ -14725,6 +14804,9 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.47',date:'2026-04-20',notes:'AI: Prompturi rescrise complet — rol „medic epidemiolog senior 15+ ani", audienta (Manager/Director/ANMCS), cadru structurat (constatari → analiza cauzala → recomandari prioritizate → indicatori monitorizare), ton formal-clinic\nAI: Benchmarks adaugate per tip raport — ECDC PPS (HAI 5.5-7.1%, AMU 30-35%), INSP (MRSA ~50%, CAR-NS Klebsiella ~40%), ESAC-Net DDD ~360/1000 zile-pac, OMS AWaRe ≥60%, ANMCS autocontrol >95%\nAI: Reguli anti-halucinatie — „nu inventa date, daca sunt insuficiente spune explicit"\nAI: Prompturi bilingve (RO/EN) complete\nUX: Progres in 3 pasi la generare AI (1/3 Colectez → 2/3 Apelez AI → 3/3 Generez Word)'},
+  {version:'12.46',date:'2026-04-20',notes:'STABILITATE: Audit bug-uri + 10 fix-uri defensive in tot codul\nFIX: fp() procent cu divizor 0/negativ/invalid → „—" (nu „Infinity %")\nFIX: Dashboard — crash evitat la primul render daca CFG.waste_codes lipseste\nFIX: getUserInitials — tolerant la nume gol/whitespace\nFIX: Import CSV laborator — nu mai da crash pe fisier gol\nNOU: Raportari/Termene — sectiune „Raportari orfane" cu optiuni Recreeaza / Sterge toate\nNOU: Delete template — cascade automat + dialog confirmare\nFIX: Obiective SMART — logica unificata (analysis + Word rapoarte) prin helpers comuni\nIMBUNATATIRE: genId() foloseste crypto.randomUUID — zero risc ID collision la sync\nNOU: saveCfgDebounced — wrapper utilitar anti double-click (disponibil)'},
+  {version:'12.45',date:'2026-04-20',notes:'FIX: Dashboard — sectiunea Evenimente nu mai arata raportari finalizate (acelasi bug in 3 locuri: evenimente mini-calendar, KPI 30 zile, bell notifications)\nFIX: Excludere automata template-uri (_isTemplate) din liste de evenimente — doar instantele raman vizibile\nNOU: Click notificare bell cu dlId → scroll + highlight la raportarea exacta (ca din Dashboard alerta)'},
   {version:'12.44',date:'2026-04-20',notes:'FIX: Dashboard — alerte urgente nu mai includ raportari finalizate/trimise\nFIX: Calendar — raportari finalizate apar verzi (gata), pendinte raman rosii\nFIX: Mergi la modul din popup calendar te duce corect la Raportari/Termene\nNOU: Lista Raportari/Termene — grupare dupa raportarea-parinte cu sumar realizate/pendinte/depasite\nNOU: Lista Raportari — filter default „Doar nefinalizate", butoane Expand/Collapse all\nNOU: Click alerta Dashboard sau „Mergi la modul" din Calendar → scroll automat + highlight galben la raportarea exacta\nUX: Raportari repetitive colapsate default — 3 raportari x 52 sapt = 3 randuri, nu 156'},
   {version:'12.43',date:'2026-04-17',notes:'i18n: Pagina Settings (Configurare) traducere completa EN — toate 4 tab-uri, quick-jumps, section headers\ni18n: Form labels Spital — Hospital name, Short name, Department name, PPS Hospital Code, Biocide budget limit\ni18n: Personal / Signatories — Add person, Save Staff, table headers (Name, Title, Role, Sign.)\ni18n: Current user label + info box bilingv'},
   {version:'12.42',date:'2026-04-17',notes:'ARHITECTURA: Country config — referinte legale RO (60 refs Ord. 1101, Ord. 1226, INSP, ANMCS, DSP) centralizate in src/js/country/ro.js\nARHITECTURA: Pregatire fork international — forkul schimba doar country/ro.js → country/eu.js, restul codului agnostic\ni18n: 5 butoane title traducere EN (Edit/Delete) in atp, uvcheck, audituri, config_page\ni18n: 9 dialoguri confirmare traducere EN (sterge, reset all, import backup, etc.)\ni18n: Mesaje toast traducere EN (Saved!/Deleted!/Backup saved/Application installed)'},
@@ -14928,13 +15010,70 @@ function anonymizeForAI(data){
 // ═══════════════════════════════════════════════════════════════
 function buildAIPrompt(type,safeData){
   const lang=CFG.lang==='en'?'English':'Romanian';
-  const base='Esti expert in controlul infectiilor asociate asistentei medicale (IAAM) si epidemiologie spitaliceasca. Analizeaza urmatoarele date din spitalul "'+CFG.hospital_name+'" pentru anul '+A.year+'. Raspunde in '+lang+'. Structureaza raspunsul cu paragrafe clare, fara liste prea lungi.';
-  if(type==='annual')return base+'\n\nDate complete (IAAM + Autocontrol + Deseuri + Biocide):\n'+JSON.stringify(safeData,null,0)+'\n\nGenereaza: 1) Evaluare generala a activitatii CPIAAM, 2) Puncte forte identificate, 3) Probleme si riscuri, 4) Recomandari prioritizate pentru anul urmator, 5) Concluzii. Maximum 600 cuvinte.';
-  if(type==='iaam')return base+'\n\nDate IAAM (infectii asociate asistentei medicale):\n'+JSON.stringify(safeData.iaam||[],null,0)+'\nSectii: '+JSON.stringify(safeData.sections||[])+'\n\nAnalizeaza: distributie pe sectii, spectru etiologic, rata MDR, origini, tendinte. Identifica sectiile cu risc crescut si propune masuri specifice. Maximum 400 cuvinte.';
-  if(type==='auto')return base+'\n\nDate autocontrol microbiologic:\n'+JSON.stringify(safeData.autocontrol||[],null,0)+'\n\nAnalizeaza: rata conformitate pe tipuri de probe si sectii, neconformitati frecvente, tendinte. Propune masuri corective. Maximum 400 cuvinte.';
-  if(type==='deseuri')return base+'\n\nDate deseuri medicale:\n'+JSON.stringify(safeData.deseuri||[],null,0)+'\n\nAnalizeaza: evolutie lunara, indicator kg/om-zi, categorii predominante. Propune optimizari. Maximum 300 cuvinte.';
-  if(type==='atb')return base+'\n\nDate consum antibiotice DDD/100 zile-pat:\n'+JSON.stringify(safeData,null,0)+'\n\nAnalizeaza: clasificare AWaRe (tinta OMS >=60% Access), top substante, tendinte. Propune masuri de stewardship. Maximum 400 cuvinte.';
-  return base+'\n\nDate:\n'+JSON.stringify(safeData,null,0)+'\n\nGenereaza o analiza concisa. Maximum 300 cuvinte.';
+  const isEN=lang==='English';
+  // ── Role + audience + tone + framework (shared base) ──
+  const base = isEN
+    ? 'ROLE: You are a senior hospital epidemiologist with 15+ years of experience in infection prevention and control (IPC), working at a tertiary acute care hospital. You follow ECDC PPS methodology and WHO guidelines.\n\n'
+      + 'AUDIENCE: This report is for the Hospital Manager, Medical Director, and the Quality/Accreditation Committee. Not for public distribution.\n\n'
+      + 'CONTEXT: Hospital "'+CFG.hospital_name+'" — reporting year '+A.year+'.\n\n'
+      + 'TONE: Formal, clinical, objective. No alarmism. State findings as facts, frame recommendations as prioritized actions.\n\n'
+      + 'FRAMEWORK: Structure your analysis as (1) Key findings from data, (2) Root cause analysis where relevant, (3) Prioritized recommendations (high-impact first, with effort estimate), (4) Indicators to monitor going forward.\n\n'
+      + 'RULES: Do NOT invent data. If data are insufficient for a conclusion, say so explicitly. Use rates/proportions where relevant (per 1000 patient-days, %). Respond in '+lang+'.'
+    : 'ROL: Esti medic epidemiolog senior cu peste 15 ani experienta in controlul infectiilor asociate asistentei medicale (IAAM / IPC), intr-un spital tertiar de acuti. Urmezi metodologia ECDC PPS si ghidurile OMS.\n\n'
+      + 'AUDIENTA: Raportul e destinat Managerului Spitalului, Directorului Medical si Comitetului de Calitate / Acreditare ANMCS. Nu distributie publica.\n\n'
+      + 'CONTEXT: Spital "'+CFG.hospital_name+'" — anul raportat '+A.year+'.\n\n'
+      + 'TON: Formal, clinic, obiectiv. Evita alarmism. Prezinta rezultatele ca fapte, incadreaza recomandarile ca actiuni prioritizate.\n\n'
+      + 'CADRU: Structureaza analiza astfel: (1) Constatari cheie din date, (2) Analiza cauzala unde e relevanta, (3) Recomandari prioritizate (mare impact primul, cu estimare efort), (4) Indicatori de monitorizat ulterior.\n\n'
+      + 'REGULI: NU inventa date. Daca datele sunt insuficiente pentru o concluzie, spune explicit. Foloseste rate / proportii (la 1000 zile-pac., %). Raspunde in '+lang+'.';
+
+  const footer = isEN
+    ? '\n\nOUTPUT: Plain text with clear paragraphs (no markdown headers, no bullet lists over 5 items). End with a 2-3 sentence executive summary.'
+    : '\n\nFORMAT: Text simplu cu paragrafe clare (fara titluri markdown, fara liste mai lungi de 5 elemente). Termina cu un rezumat executiv de 2-3 propozitii.';
+
+  if(type==='annual'){
+    const bench = isEN
+      ? '\n\nBENCHMARKS (ECDC PPS acute care hospitals): HAI prevalence ~5.5-7.1%, antimicrobial use prevalence ~30-35%, Access antibiotic share ≥60% (WHO target).'
+      : '\n\nREPERE ECDC (spitale de acuti, PPS): prevalenta IAAM ~5.5-7.1%, prevalenta AMU ~30-35%, cota antibiotice Access ≥60% (tinta OMS).';
+    return base+'\n\nDATA (IAAM + Autocontrol + Deseuri + Biocide):\n'+JSON.stringify(safeData,null,0)
+      +bench+footer+'\n\n'+(isEN?'LIMIT: 600 words max.':'LIMITA: maxim 600 cuvinte.');
+  }
+  if(type==='iaam'){
+    const bench = isEN
+      ? '\n\nBENCHMARKS: MDR share of HAI in EU ~30-40%, MRSA prevalence in S.aureus varies 5-40% by country. For Romania: INSP reports MRSA ~50%, 3GC-NS Enterobacterales ~60%, CAR-NS Klebsiella ~40% (recent years).'
+      : '\n\nREPERE: cota MDR din IAAM in UE ~30-40%; MRSA in S.aureus variaza 5-40% intre tari. In Romania (date INSP recente): MRSA ~50%, 3GC-NS Enterobacterales ~60%, CAR-NS Klebsiella ~40%.';
+    return base+'\n\nDATA (IAAM):\n'+JSON.stringify(safeData.iaam||[],null,0)+'\nSections: '+JSON.stringify(safeData.sections||[])
+      +bench+footer+'\n\n'+(isEN
+        ? 'FOCUS: Identify high-risk sections, analyze etiological spectrum, MDR rate, infection origins, temporal trends. Propose ward-specific interventions.\nLIMIT: 400 words.'
+        : 'FOCUS: Identifica sectiile cu risc crescut, analizeaza spectrul etiologic, rata MDR, originile, tendintele. Propune interventii specifice pe sectii.\nLIMITA: 400 cuvinte.');
+  }
+  if(type==='auto'){
+    const bench = isEN
+      ? '\n\nBENCHMARKS: Overall conformity target >95% (ANMCS accreditation). Environmental surfaces typically 90-97%, hand hygiene samples may drop to 70-85% under poor technique.'
+      : '\n\nREPERE: conformitate globala tinta >95% (acreditare ANMCS). Suprafete de mediu de obicei 90-97%; probe maini personal scad uneori la 70-85% cu tehnica incorecta.';
+    return base+'\n\nDATA (autocontrol microbiologic):\n'+JSON.stringify(safeData.autocontrol||[],null,0)
+      +bench+footer+'\n\n'+(isEN
+        ? 'FOCUS: Conformity rate per probe type and ward, recurrent non-conformities, trends. Propose specific corrective actions (training, biocide rotation, procedure change).\nLIMIT: 400 words.'
+        : 'FOCUS: Rata conformitate per tip proba si sectie, neconformitati recurente, tendinte. Propune actiuni corective specifice (instruire, rotatie biocide, schimbare procedura).\nLIMITA: 400 cuvinte.');
+  }
+  if(type==='deseuri'){
+    const bench = isEN
+      ? '\n\nBENCHMARKS: Hazardous medical waste (code 18 01 03*) ~0.5-1.5 kg per patient-day in typical acute care; significant deviations signal segregation issues (over-classification = cost waste, under-classification = safety/regulatory risk).'
+      : '\n\nREPERE: deseuri medicale periculoase (18 01 03*) ~0,5-1,5 kg/zi-pac in spital acuti tipic. Devieri mari semnaleaza probleme de segregare (supra-clasificare = cost inutil; sub-clasificare = risc biologic / legal).';
+    return base+'\n\nDATA (deseuri medicale):\n'+JSON.stringify(safeData.deseuri||[],null,0)
+      +bench+footer+'\n\n'+(isEN
+        ? 'FOCUS: Monthly evolution, kg/patient-day indicator, dominant categories, segregation quality. Propose optimizations aligned with Ord. 1226/2012.\nLIMIT: 300 words.'
+        : 'FOCUS: Evolutie lunara, indicator kg/zi-pac, categorii dominante, calitate segregare. Propune optimizari aliniate cu OMS 1226/2012.\nLIMITA: 300 cuvinte.');
+  }
+  if(type==='atb'){
+    const bench = isEN
+      ? '\n\nBENCHMARKS: WHO AWaRe target ≥60% Access. ESAC-Net EU hospital mean DDD/1000 patient-days ~360. Reserve class should remain <5% in general acute care.'
+      : '\n\nREPERE: tinta OMS AWaRe ≥60% Access. Media UE (ESAC-Net) in spital acuti ~360 DDD/1000 zile-pac. Clasa Reserve ar trebui <5% in acuti generali.';
+    return base+'\n\nDATA (consum antibiotice):\n'+JSON.stringify(safeData,null,0)
+      +bench+footer+'\n\n'+(isEN
+        ? 'FOCUS: AWaRe distribution vs WHO target, top prescribed substances, trends, potential stewardship gaps (Reserve overuse, Watch creep). Propose stewardship interventions.\nLIMIT: 400 words.'
+        : 'FOCUS: Distributie AWaRe vs tinta OMS, top substante, tendinte, eventuale deficiente de stewardship (abuz Reserve, crestere Watch). Propune interventii de stewardship.\nLIMITA: 400 cuvinte.');
+  }
+  return base+'\n\nDATA:\n'+JSON.stringify(safeData,null,0)+footer+'\n\n'+(isEN?'LIMIT: 300 words.':'LIMITA: 300 cuvinte.');
 }
 function wAISection(aiText){
   const children=[];
@@ -14952,10 +15091,13 @@ async function callAIForReport(type,data){
 }
 async function genRaportAnualWordAI(){
   if(!await checkIncompleteIaam())return;
-  showGen(T('ai_generating'));
+  var _aiEN=CFG.lang==='en';
+  showGen(_aiEN?'1/3 Collecting data...':'1/3 Colectez datele...');
   try{
     const y=A.year,data=await collectAllData(y);
+    showGen(_aiEN?'2/3 Calling AI for analysis (may take 10-30s)...':'2/3 Apelez AI pentru analiza (10-30s)...');
     let aiText='';try{aiText=await callAIForReport('annual',data)}catch(e){console.error('AI error:',e);showToast(T('ai_error_fallback'));aiText=''}
+    showGen(_aiEN?'3/3 Generating Word document...':'3/3 Generez documentul Word...');
     const{ia,au,de,bi}=data;const AN=runAllAnalysis(data);const conf=au.filter(p=>p.result==='conform').length;
     const totD=de.reduce((s,r)=>s+CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0),0);
     const consBio=bi.filter(b=>b.type==='iesire').reduce((s,b)=>s+(+b.value_lei||0),0);
@@ -14992,10 +15134,13 @@ async function genRaportAnualWordAI(){
 }
 async function genAnalizaIAAMWordAI(){
   if(!await checkIncompleteIaam())return;
-  showGen(T('ai_generating'));
+  var _aiEN=CFG.lang==='en';
+  showGen(_aiEN?'1/3 Collecting data...':'1/3 Colectez datele...');
   try{
     const y=A.year,data=await collectAllData(y);const{ia}=data;const AN=runAllAnalysis(data);
+    showGen(_aiEN?'2/3 Calling AI for analysis (may take 10-30s)...':'2/3 Apelez AI pentru analiza (10-30s)...');
     let aiText='';try{aiText=await callAIForReport('iaam',data)}catch(e){console.error('AI error:',e);showToast(T('ai_error_fallback'));aiText=''}
+    showGen(_aiEN?'3/3 Generating Word document...':'3/3 Generez documentul Word...');
     const children=[...wCover('Analiza IAAM + AI','Infectii Asociate Asistentei Medicale — '+y,WC.blue)];
     children.push(wH1('1. Situatia Generala',WC.blue));children.push(wSp(40));addNarrative(children,AN.iaam);
     if(ia.length>0){children.push(wSp(80));children.push(wH2('2. Lista Cazurilor',WC.blue));children.push(wSp(40));
@@ -15010,10 +15155,13 @@ async function genAnalizaIAAMWordAI(){
   }catch(e){console.error(e);alert('Eroare: '+e.message)}finally{hideGen()}
 }
 async function genAnalizaAutoWordAI(){
-  showGen(T('ai_generating'));
+  var _aiEN=CFG.lang==='en';
+  showGen(_aiEN?'1/3 Collecting data...':'1/3 Colectez datele...');
   try{
     const y=A.year,data=await collectAllData(y);const{au}=data;const AN=runAllAnalysis(data);
+    showGen(_aiEN?'2/3 Calling AI for analysis (may take 10-30s)...':'2/3 Apelez AI pentru analiza (10-30s)...');
     let aiText='';try{aiText=await callAIForReport('auto',data)}catch(e){console.error('AI error:',e);showToast(T('ai_error_fallback'));aiText=''}
+    showGen(_aiEN?'3/3 Generating Word document...':'3/3 Generez documentul Word...');
     const conf=au.filter(p=>p.result==='conform').length;
     const children=[...wCover('Analiza Autocontrol + AI',CFG.cpiaam_name+' — '+y,WC.teal)];
     children.push(wH1('1. Situatia Generala',WC.teal));children.push(wSp(40));addNarrative(children,AN.auto);children.push(wSp(60));
@@ -15026,10 +15174,13 @@ async function genAnalizaAutoWordAI(){
   }catch(e){console.error(e);alert('Eroare: '+e.message)}finally{hideGen()}
 }
 async function genAnalizaDesWordAI(){
-  showGen(T('ai_generating'));
+  var _aiEN=CFG.lang==='en';
+  showGen(_aiEN?'1/3 Collecting data...':'1/3 Colectez datele...');
   try{
     const y=A.year,data=await collectAllData(y);const{de}=data;const AN=runAllAnalysis(data);
+    showGen(_aiEN?'2/3 Calling AI for analysis (may take 10-30s)...':'2/3 Apelez AI pentru analiza (10-30s)...');
     let aiText='';try{aiText=await callAIForReport('deseuri',data)}catch(e){console.error('AI error:',e);showToast(T('ai_error_fallback'));aiText=''}
+    showGen(_aiEN?'3/3 Generating Word document...':'3/3 Generez documentul Word...');
     const children=[...wCover('Analiza Deseuri + AI',CFG.cpiaam_name+' — '+y,WC.amber)];
     children.push(wH1('1. Situatia Generala',WC.amber));children.push(wSp(40));addNarrative(children,AN.deseuri);children.push(wSp(60));
     const WD=[2400];MO.forEach(()=>WD.push(480));WD.push(826);const byMD={};de.forEach(r=>{byMD[r.month]=r});
@@ -15041,12 +15192,15 @@ async function genAnalizaDesWordAI(){
   }catch(e){console.error(e);alert('Eroare: '+e.message)}finally{hideGen()}
 }
 async function genConsumATBWordAI(){
-  showGen(T('ai_generating'));
+  var _aiEN=CFG.lang==='en';
+  showGen(_aiEN?'1/3 Collecting data...':'1/3 Colectez datele...');
   try{
     const y=A.year;
     const atbData=(await ga('atb_consum')).filter(r=>r.year===y);
     const safeATB={consumuri:atbData.map(r=>({month:r.month,substance:r.substance_name||r.substance,atc:r.atc_code,aware:r.aware_class,section:rSec(r.section),quantity_g:r.quantity_g,ddd_value:r.ddd_value,route:r.route})),sections:CFG.sections.map(s=>({name:s.name,beds:s.beds})),year:y};
+    showGen(_aiEN?'2/3 Calling AI for analysis (may take 10-30s)...':'2/3 Apelez AI pentru analiza (10-30s)...');
     let aiText='';try{aiText=await callAIForReport('atb',safeATB)}catch(e){console.error('AI error:',e);showToast(T('ai_error_fallback'));aiText=''}
+    showGen(_aiEN?'3/3 Generating Word document...':'3/3 Generez documentul Word...');
     hideGen();
     await genConsumATBWord(aiText);
   }catch(e){console.error(e);alert('Eroare: '+e.message);hideGen()}
@@ -15336,12 +15490,25 @@ function analyzeATB(atb,deseuri){
 }
 
 // ═══ Analiza Obiective SMART ═══
+// Shared objective classification — used by analysis, dashboard, rapoarte Word generators
+// Single source of truth: achieved = status='achieved' OR progress>=100 (inclusive)
+// partial = NOT achieved AND progress>=50 AND progress<100
+// unmet = NOT achieved AND progress<50 (or 0)
+function isObjectiveAchieved(o){return o&&(o.status==='achieved'||(+o.progress||0)>=100)}
+function isObjectivePartial(o){if(!o||isObjectiveAchieved(o))return false;var p=+o.progress||0;return p>=50&&p<100}
+function classifyObjectives(objectives){
+  const arr=objectives||[];
+  const achieved=arr.filter(isObjectiveAchieved).length;
+  const partial=arr.filter(isObjectivePartial).length;
+  const unmet=arr.length-achieved-partial;
+  return{total:arr.length,achieved,partial,unmet};
+}
+
 function analyzeObiective(objectives){
   const R={narrative:[],alerts:[],recommendations:[],insights:[]};
   if(!objectives||!objectives.length){R.narrative.push('Nu au fost definite obiective SMART IPC in '+A.year+'.');R.recommendations.push('Definirea obiectivelor SMART pentru anul urmator.');return R}
-  const atinse=objectives.filter(o=>o.status==='achieved'||o.progress>=100).length;
-  const partial=objectives.filter(o=>o.status!=='achieved'&&o.progress>0&&o.progress<100).length;
-  const neatinse=objectives.length-atinse-partial;
+  const c=classifyObjectives(objectives);
+  const atinse=c.achieved,partial=c.partial,neatinse=c.unmet;
   R.narrative.push('Obiective SMART '+A.year+': '+objectives.length+' definite. '+atinse+' atinse, '+partial+' partial realizate, '+neatinse+' neatinse.');
   if(atinse===objectives.length)R.insights.push('Toate obiectivele SMART au fost atinse.');
   else if(neatinse>0)R.alerts.push({level:'amber',text:neatinse+' obiective neatinse.'});

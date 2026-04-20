@@ -1,13 +1,11 @@
 {
-  "version": "12.44",
+  "version": "12.47",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX: Dashboard — alerte urgente nu mai includ raportari finalizate/trimise",
-    "FIX: Calendar — raportari finalizate apar verzi (gata), pendinte raman rosii",
-    "FIX: Mergi la modul din popup calendar te duce corect la Raportari/Termene",
-    "NOU: Lista Raportari/Termene — grupare dupa raportarea-parinte cu sumar realizate/pendinte/depasite",
-    "NOU: Lista Raportari — filter default 'Doar nefinalizate', butoane Expand/Collapse all",
-    "NOU: Click alerta Dashboard sau 'Mergi la modul' din Calendar → scroll automat + highlight galben la raportarea exacta",
-    "UX: Raportari repetitive colapsate default — 3 raportari x 52 sapt = 3 randuri, nu 156"
+    "AI: Prompturi rescrise complet — rol epidemiolog senior + audienta (Manager/Director/ANMCS) + cadru structurat (constatari/cauze/recomandari/indicatori) + ton formal-clinic",
+    "AI: Repere benchmark adaugate — ECDC PPS (HAI 5.5-7.1%, AMU 30-35%), INSP (MRSA ~50%, CAR-NS Klebsiella ~40%), ESAC-Net (DDD ~360/1000 zile-pac.), OMS AWaRe ≥60%",
+    "AI: Reguli anti-inventie date — „daca datele sunt insuficiente, spune explicit, nu inventa"",
+    "AI: Bilingv complet — prompturi adaptate RO/EN",
+    "UX: Progres in 3 pasi la generare AI (Colectez date → Apelez AI → Generez Word)"
   ]
 }

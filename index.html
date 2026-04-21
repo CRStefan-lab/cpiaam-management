@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.51</title>
+<title>CPIAAM Management v12.52</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1993,7 +1993,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.51';
+const APP_VERSION='12.52';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6221,6 +6221,11 @@ async function sDes(month,field,value){
 
 // ═══════════════════════════════════════════════════════════════
 var _bioFilters={search:'',type:'',month:''};
+// v12.52: per-product expand state (default collapsed)
+var _bioExpanded={};
+function bioToggleProd(k){_bioExpanded[k]=!_bioExpanded[k];render()}
+function bioExpandAll(){document.querySelectorAll('[data-bio-key]').forEach(function(n){_bioExpanded[n.dataset.bioKey]=true});render()}
+function bioCollapseAll(){_bioExpanded={};render()}
 var BIO_PRODUCT_TYPES=[
   {id:'TP1',name:'Igiena umana',desc:'Sapunuri, geluri de dus, produse de igiena'},
   {id:'TP2',name:'Dezinfectante suprafete',desc:'Dezinfectante suprafete, pavimente, mobilier'},
@@ -6230,7 +6235,7 @@ var BIO_PRODUCT_TYPES=[
   {id:'TP22',name:'Fluide imbalsam.',desc:'Fluide de imbalsamare si taxidermie'}
 ];
 async function rBio(el){
-  const allData=(await ga('biocide')).filter(r=>r.year===A.year).sort((a,b)=>{const an=a.product_id?rBioProd(a.product_id):a.product_name||'';const bn=b.product_id?rBioProd(b.product_id):b.product_name||'';return an.localeCompare(bn)});
+  const allData=(await ga('biocide')).filter(r=>r.year===A.year);
   const bf=_bioFilters;
   const data=allData.filter(r=>{
     if(bf.type&&r.type!==bf.type)return false;
@@ -6240,6 +6245,7 @@ async function rBio(el){
       if(!pName.toLowerCase().includes(q)&&!(r.lot||'').toLowerCase().includes(q))return false}
     return true;
   });
+  // KPI-urile de sus folosesc allData (an intreg), nu datele filtrate — sumarul ramane stabil
   const si=allData.filter(b=>b.type==='stoc_initial').reduce((s,b)=>s+(+b.value_lei||0),0);
   const intr=allData.filter(b=>b.type==='intrare').reduce((s,b)=>s+(+b.value_lei||0),0);
   const ies=allData.filter(b=>b.type==='iesire').reduce((s,b)=>s+(+b.value_lei||0),0);
@@ -6257,30 +6263,81 @@ async function rBio(el){
       '<option value="">Toate lunile</option>'+MO.map((m,i)=>'<option value="'+(i+1)+'"'+(bf.month===(i+1)+''?' selected':'')+'>'+m+'</option>').join('')+'</select>'+
     '<button class="btn bo bsm" onclick="_bioFilters={search:\'\',type:\'\',month:\'\'};render()">Reset</button>'+
   '</div>';
-  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn bp" onclick="editBio()">+ Inregistrare</button></div>'+
-  '<div class="pn"><div class="pb" style="overflow-x:auto">'+
-  (data.length===0?'<div class="es"><p>Nicio inregistrare biocide'+(bf.search||bf.type||bf.month?' cu filtrele selectate':'')+'.</p></div>':
-    '<table class="dt"><thead><tr><th>#</th><th>Produs</th><th>TP</th><th>UM</th><th>Tip</th><th>Luna</th><th style="text-align:right">Cant.</th><th style="text-align:right">Valoare</th><th>Docs</th><th>Aviz</th><th>Actiuni</th></tr></thead><tbody>'+
-    data.map((r,i)=>{
-      // Find aviz expiry for this product
-      var avizTd='<td style="font-size:11px;white-space:nowrap">—</td>';
-      var prod=(CFG.biocide_products||[]).find(p=>p.id===r.product_id);
-      if(prod&&prod.avize&&prod.avize.length>0){
-        var latest=prod.avize.reduce((a,b)=>((b.date_expiry||'')>(a.date_expiry||'')?b:a),prod.avize[0]);
-        if(latest.date_expiry){
-          var exp=new Date(latest.date_expiry);var now=new Date();var soon=new Date(Date.now()+30*86400000);
-          var cls=exp<now?'color:var(--red);font-weight:700':exp<soon?'color:#D97706;font-weight:600':'color:var(--teal)';
-          avizTd='<td style="font-size:11px;white-space:nowrap;'+cls+'" title="'+(latest.number||'')+'">'+(exp<now?'&#9888; ':'')+(exp<soon&&exp>=now?'&#9203; ':'')+fmtDate(latest.date_expiry)+'</td>';
-        } else {avizTd='<td style="font-size:11px;color:var(--txtL)">Nr: '+(latest.number||'—')+'</td>'}
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
+    '<div style="display:flex;gap:6px">'+
+      '<button class="btn bo bsm" onclick="bioExpandAll()">Extinde tot</button>'+
+      '<button class="btn bo bsm" onclick="bioCollapseAll()">Restrange tot</button>'+
+    '</div>'+
+    '<button class="btn bp" onclick="editBio()">+ Inregistrare</button>'+
+  '</div>';
+  // Grupeaza pe produs
+  const groups={};
+  data.forEach(function(r){
+    const key=r.product_id||('name:'+(r.product_name||'—'));
+    if(!groups[key])groups[key]={pid:r.product_id||null,pname:r.product_id?rBioProd(r.product_id):(r.product_name||'—'),rows:[]};
+    groups[key].rows.push(r);
+  });
+  const groupKeys=Object.keys(groups).sort(function(a,b){return groups[a].pname.localeCompare(groups[b].pname)});
+  if(groupKeys.length===0){
+    h+='<div class="pn"><div class="pb"><div class="es"><p>Nicio inregistrare biocide'+(bf.search||bf.type||bf.month?' cu filtrele selectate':'')+'.</p></div></div></div>';
+    el.innerHTML=h;return;
+  }
+  // Cand exista filtre active, extinde automat toate grupurile ca userul sa vada imediat rezultatele
+  const forceExpand=!!(bf.search||bf.type||bf.month);
+  h+='<div class="pn"><div class="pb">';
+  const now=new Date();const soon=new Date(Date.now()+30*86400000);
+  groupKeys.forEach(function(k){
+    const g=groups[k];const rows=g.rows;
+    const gSi=rows.filter(function(r){return r.type==='stoc_initial'}).reduce(function(s,r){return s+(+r.value_lei||0)},0);
+    const gIn=rows.filter(function(r){return r.type==='intrare'}).reduce(function(s,r){return s+(+r.value_lei||0)},0);
+    const gOut=rows.filter(function(r){return r.type==='iesire'}).reduce(function(s,r){return s+(+r.value_lei||0)},0);
+    const gFinal=gSi+gIn-gOut;
+    const tp=rows[0].product_type||'';const um=rows[0].unit||'';
+    // Aviz din CFG.biocide_products
+    let avizBadge='';
+    const prod=(CFG.biocide_products||[]).find(function(p){return p.id===g.pid});
+    if(prod&&prod.avize&&prod.avize.length>0){
+      const latest=prod.avize.reduce(function(a,b){return(b.date_expiry||'')>(a.date_expiry||'')?b:a},prod.avize[0]);
+      const nr=latest.number||latest.nr||'';
+      if(latest.date_expiry){
+        const exp=new Date(latest.date_expiry);
+        const cls=exp<now?'color:var(--red);font-weight:700':exp<soon?'color:#D97706;font-weight:600':'color:var(--teal)';
+        avizBadge='<span style="font-size:11px;'+cls+'" title="Nr: '+esc(nr)+'">Aviz: '+(exp<now?'&#9888; ':'')+(exp<soon&&exp>=now?'&#9203; ':'')+fmtDate(latest.date_expiry)+'</span>';
+      } else if(nr){
+        avizBadge='<span style="font-size:11px;color:var(--txtL)">Aviz: '+esc(nr)+'</span>';
       }
-      return '<tr><td>'+(i+1)+'</td><td><strong>'+(r.product_id?rBioProd(r.product_id):r.product_name||'—')+'</strong></td><td style="font-size:11px">'+(r.product_type||'')+'</td><td>'+(r.unit||'')+'</td>'+
-      '<td><span class="bdg '+(r.type==='intrare'?'bdg-g':r.type==='iesire'?'bdg-a':'bdg-b')+'">'+(r.type==='stoc_initial'?'Stoc initial':r.type==='intrare'?'Intrare':'Iesire')+'</span></td>'+
-      '<td>'+(r.month?MO[r.month-1]:'')+'</td><td style="text-align:right">'+fn(r.quantity)+'</td><td style="text-align:right">'+fn(Math.round((r.value_lei||0)*100)/100)+'</td>'+
-      '<td style="white-space:nowrap;font-size:14px">'+bioAttIcons(r)+'</td>'+
-      avizTd+
-      '<td class="act"><button onclick="editBio('+r.id+')">&#9998;</button><button onclick="delRec(\'biocide\','+r.id+')">&#128465;</button></td></tr>'}).join('')+
-    '</tbody></table>')+
-  '</div></div>';
+    }
+    const expanded=forceExpand||!!_bioExpanded[k];
+    h+='<div data-bio-key="'+esc(k)+'" style="border:1px solid var(--brd);border-radius:8px;margin-bottom:8px;background:var(--card)">';
+    h+='<div onclick="bioToggleProd(this.parentElement.dataset.bioKey)" style="cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
+    h+='<span style="font-size:14px;color:var(--navy);width:14px;display:inline-block">'+(expanded?'&#9660;':'&#9654;')+'</span>';
+    h+='<strong style="flex:1;min-width:180px">'+esc(g.pname)+'</strong>';
+    if(tp)h+='<span class="bdg bdg-b" style="font-size:10px">'+esc(tp)+'</span>';
+    if(um)h+='<span style="font-size:11px;color:var(--txtL)">UM: '+esc(um)+'</span>';
+    if(avizBadge)h+=avizBadge;
+    h+='<span style="font-size:11px;color:var(--txtL)">'+rows.length+' miscari</span>';
+    h+='<span style="font-size:11px;color:#059669">Intrari: '+fn(Math.round(gIn))+' lei</span>';
+    h+='<span style="font-size:11px;color:#DC2626">Consum: '+fn(Math.round(gOut))+' lei</span>';
+    h+='<span style="font-size:11px;font-weight:700">Stoc: '+fn(Math.round(gFinal))+' lei</span>';
+    h+='</div>';
+    if(expanded){
+      h+='<div style="padding:0 12px 12px 12px;overflow-x:auto">';
+      h+='<table class="dt" style="margin:0"><thead><tr><th>#</th><th>Luna</th><th>Tip</th><th>Lot</th><th style="text-align:right">Cant.</th><th style="text-align:right">Valoare</th><th>Docs</th><th>Actiuni</th></tr></thead><tbody>';
+      const sortedRows=rows.slice().sort(function(a,b){return(+a.month||0)-(+b.month||0)});
+      sortedRows.forEach(function(r,i){
+        h+='<tr><td>'+(i+1)+'</td><td>'+(r.month?MO[r.month-1]:'')+'</td>'+
+          '<td><span class="bdg '+(r.type==='intrare'?'bdg-g':r.type==='iesire'?'bdg-a':'bdg-b')+'">'+(r.type==='stoc_initial'?'Stoc initial':r.type==='intrare'?'Intrare':'Iesire')+'</span></td>'+
+          '<td style="font-size:11px">'+esc(r.lot||'')+'</td>'+
+          '<td style="text-align:right">'+fn(r.quantity)+'</td>'+
+          '<td style="text-align:right">'+fn(Math.round((r.value_lei||0)*100)/100)+'</td>'+
+          '<td style="white-space:nowrap;font-size:14px">'+bioAttIcons(r)+'</td>'+
+          '<td class="act"><button onclick="editBio('+r.id+')">&#9998;</button><button onclick="delRec(\'biocide\','+r.id+')">&#128465;</button></td></tr>';
+      });
+      h+='</tbody></table></div>';
+    }
+    h+='</div>';
+  });
+  h+='</div></div>';
   el.innerHTML=h;
 }
 var _editBioRec=null;
@@ -14836,6 +14893,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.52',date:'2026-04-21',notes:'UX: Biocide — lista grupata pe produs (pattern Calendar > Raportari). La nivel produs: avizul cu status culoare (expirat/expira curand/valabil), TP, UM, nr. miscari si sumar lei (intrari/consum/stoc final). Click pe produs → expand cu tabel miscari lunare (Luna, Tip, Lot, Cant., Valoare, Docs, Actiuni). Butoane Extinde tot / Restrange tot. Filtrele existente (cautare, tip, luna) raman si auto-extind grupurile care matchuiesc.'},
   {version:'12.51',date:'2026-04-21',notes:'FIX: Dialog „Deschide fisier" → optiunea „Combina datele" — acum reutilizeaza _importFromHandle si importa corect si sectii/biocide/probe noi din fisier + remapeaza ID-urile (anterior inregistrarile aveau referinte orfane dupa merge, iar config-ul din fisier era ignorat).\nPROTECTIE: Optiunea „Schimba fisierul" — valideaza JSON-ul nou in memorie INAINTE de cl(s) care sterge baza locala. Daca fisierul e corupt, schimbarea se anuleaza si datele locale raman intacte.\nUX: syncReadFile — daca alegi acelasi fisier la care esti deja conectat (isSameEntry), sari dialogul si fa direct _importFromHandle (merge). Elimina confuzia „ce vrei sa faci cu X.json cand esti conectat la X.json".'},
   {version:'12.50',date:'2026-04-21',notes:'PROTECTIE: Avertisment la inchiderea browserului daca datele inca se salveaza in fisier — previne fisiere .crswap orfane si date pierdute in tranzit cand inchizi prea repede dupa introducerea datelor. Debounce-ul de 2 sec pentru syncWrite + durata writ-ului efectiv sunt acum urmarite (_syncTimer si _syncWriting); beforeunload handler emite confirmare browser daca oricare e activ.'},
   {version:'12.49',date:'2026-04-21',notes:'FIX CRITIC: Sincronizare — merge initial la deschiderea aplicatiei. Pana acum, daca colegul salva date pe alt PC, acestea se importau doar la urmatoarea modificare a fisierului. Acum se importa imediat ce deschizi aplicatia (fix bug init.js — restoreFileHandle pornea doar polling-ul, nu si merge-ul din fisier).\nFIX: Service Worker — eroare cosmetica „body stream already read" in consola. Nu afecta functionalitatea (update-urile mergeau prin checkForUpdate din init.js), dar umpla consola la fiecare refresh. Fix: clone corect Response-urile inainte de comparatie.'},

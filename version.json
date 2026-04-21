@@ -1,9 +1,7 @@
 {
-  "version": "12.51",
+  "version": "12.52",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX: Combina datele (dialog Deschide fisier) — acum importa corect si sectii/biocide/probe noi din fisier si remapeaza ID-urile, nu doar inregistrarile. Anterior inregistrarile aveau referinte orfane dupa merge.",
-    "PROTECTIE: Schimba fisierul — valideaza JSON-ul nou INAINTE de a sterge baza locala. Daca fisierul e corupt, schimbarea se anuleaza si datele locale raman intacte.",
-    "UX: Daca alegi acelasi fisier la care esti deja conectat, aplicatia sare peste dialogul Deschide fisier si face direct resincronizare (fara confuzia \"ce vrei sa faci cu X.json cand esti conectat la X.json\")."
+    "UX: Biocide — lista grupata pe produs (model Calendar > Raportari). La nivel de produs vezi avizul, numarul de miscari si sumar lei (intrari/consum/stoc). Click pe produs → expand cu tabel miscari lunare. Butoane Extinde tot / Restrange tot. Cand aplici un filtru, grupurile se extind automat."
   ]
 }

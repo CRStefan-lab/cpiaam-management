@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.53</title>
+<title>CPIAAM Management v12.54</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1346,6 +1346,9 @@ async function saveFileLocation(){
 async function saveFileLocationCfg(v){
   CFG.file_location=v;await saveCfg();updateSyncIndicator();render()}
 var _syncWriting=false;
+// v12.54: throttle flag — prevents toast spam if error persists (syncWrite fires every 2s
+// after any edit via _syncDebounce). Reset on successful write so a future error shows again.
+var _syncWriteErrorShown=false;
 async function syncWrite(){
   if(!_fileHandle)return;
   _syncWriting=true;
@@ -1356,7 +1359,17 @@ async function syncWrite(){
     await wr.close();
     // Update timestamp so poll doesn't trigger on our own write
     try{var f=await _fileHandle.getFile();_lastSyncRead=f.lastModified;_lastSyncSize=f.size}catch(e){}
-  }catch(e){console.warn('Sync write failed:',e)}
+    // Write succeeded — reset error flag so a new error will surface via toast
+    _syncWriteErrorShown=false;
+  }catch(e){
+    console.warn('Sync write failed:',e);
+    // v12.54: visible toast on first failure. Silent on repeats until a successful write resets the flag.
+    if(!_syncWriteErrorShown){
+      _syncWriteErrorShown=true;
+      var _eIsEN=CFG.lang==='en';
+      showToast((_eIsEN?'\u26A0 Could not save to file: ':'\u26A0 Nu s-a putut salva in fisier: ')+(e.message||e.name||(_eIsEN?'unknown error':'eroare necunoscuta')));
+    }
+  }
   finally{_syncWriting=false}
 }
 // v12.50: warn user if they try to close browser while a sync write is pending/in-progress
@@ -1993,7 +2006,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.53';
+const APP_VERSION='12.54';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -14902,6 +14915,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.54',date:'2026-04-21',notes:'PROTECTIE: Detectie proactiva erori salvare in fisier. Cand syncWrite esueaza (permission pierdut, OneDrive/GDrive blocheaza fisierul, permisiune revocata), vezi imediat un toast „Nu s-a putut salva in fisier: <motiv>" in loc sa taci in consola. Complement la v12.50 (avertisment la inchidere) — preventie proactiva + detectie reactiva. Throttle inteligent via _syncWriteErrorShown: toast o singura data, reset cand o salvare reuseste (evita spam daca eroarea persista la fiecare 2s).'},
   {version:'12.53',date:'2026-04-21',notes:'DOC: Ajutor — sectiune noua „Recuperarea versiunilor anterioare (Google Drive / OneDrive)" cu pasi concreti (Gestioneaza versiunile, limite 30 zile / 100 versiuni Google, 500 / 25 OneDrive, recomandare „Pastreaza definitiv" pentru versiuni importante, download si Combina datele in aplicatie).\nDOC: FAQ — intrebare noua „Cum recuperez datele dintr-o versiune anterioara?" (RO + EN).'},
   {version:'12.52',date:'2026-04-21',notes:'UX: Biocide — lista grupata pe produs (pattern Calendar > Raportari). La nivel produs: avizul cu status culoare (expirat/expira curand/valabil), TP, UM, nr. miscari si sumar lei (intrari/consum/stoc final). Click pe produs → expand cu tabel miscari lunare (Luna, Tip, Lot, Cant., Valoare, Docs, Actiuni). Butoane Extinde tot / Restrange tot. Filtrele existente (cautare, tip, luna) raman si auto-extind grupurile care matchuiesc.'},
   {version:'12.51',date:'2026-04-21',notes:'FIX: Dialog „Deschide fisier" → optiunea „Combina datele" — acum reutilizeaza _importFromHandle si importa corect si sectii/biocide/probe noi din fisier + remapeaza ID-urile (anterior inregistrarile aveau referinte orfane dupa merge, iar config-ul din fisier era ignorat).\nPROTECTIE: Optiunea „Schimba fisierul" — valideaza JSON-ul nou in memorie INAINTE de cl(s) care sterge baza locala. Daca fisierul e corupt, schimbarea se anuleaza si datele locale raman intacte.\nUX: syncReadFile — daca alegi acelasi fisier la care esti deja conectat (isSameEntry), sari dialogul si fa direct _importFromHandle (merge). Elimina confuzia „ce vrei sa faci cu X.json cand esti conectat la X.json".'},

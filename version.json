@@ -1,8 +1,7 @@
 {
-  "version": "12.53",
+  "version": "12.54",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "DOC: Ajutor / FAQ — sectiune noua „Recuperarea versiunilor anterioare (Google Drive / OneDrive)" cu pasi concreti: gestioneaza versiunile, limite (30 zile / 100 versiuni Google, 500 / 25 OneDrive), recomandarea „Pastreaza definitiv" pentru versiuni importante, download + Combina datele in aplicatie.",
-    "DOC: FAQ — intrebare noua „Cum recuperez datele dintr-o versiune anterioara?" (RO + EN)."
+    "PROTECTIE: Detectie proactiva erori salvare in fisier. Cand salvarea automata esueaza (permission pierdut, OneDrive/GDrive blocat, fisier mutat), vezi imediat un mesaj vizibil in loc sa taci pana a doua zi. Complement la v12.50 — impreuna previn pierderea datelor in tranzit. Throttle inteligent: toast-ul apare o singura data, revine doar dupa ce o salvare reuseste."
   ]
 }

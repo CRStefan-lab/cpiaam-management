@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.47</title>
+<title>CPIAAM Management v12.48</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1972,7 +1972,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.47';
+const APP_VERSION='12.48';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -4981,7 +4981,7 @@ var _autoTab='prezentare'; // main tab: 'prezentare','planificare','probe'
 var _autoPopup=null; // {ptId,secId} for cell popup
 var _autoSort={col:'date',dir:'desc'}; // probe table sort
 var _autoPage=0; // probe table pagination
-var _autoProbeFilters={sec:'',type:'',result:'',dateFrom:'',dateTo:''}; // probe filters
+var _autoProbeFilters={sec:'',type:'',result:'',dsp:'',dateFrom:'',dateTo:''}; // probe filters
 var _autoSummaryOpen=false;
 var _autoChartOpen=false;
 var AC_PAGE_SIZE=50;
@@ -5450,6 +5450,11 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
   h+='<div class="fg"><label>'+(isEN?'Section':'Sectie')+'</label><select onchange="_autoProbeFilters.sec=this.value;_autoPage=0;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+secOpts(_autoProbeFilters.sec)+'</select></div>';
   h+='<div class="fg"><label>'+(isEN?'Sample Type':'Tip Proba')+'</label><select onchange="_autoProbeFilters.type=this.value;_autoPage=0;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+optsId(CFG.probe_types,_autoProbeFilters.type)+'</select></div>';
   h+='<div class="fg"><label>'+(isEN?'Result':'Rezultat')+'</label><select onchange="_autoProbeFilters.result=this.value;_autoPage=0;render()"><option value="">'+(isEN?'All':'Toate')+'</option><option value="conform"'+ (_autoProbeFilters.result==='conform'?' selected':'')+'>Conforme</option><option value="neconform"'+(_autoProbeFilters.result==='neconform'?' selected':'')+'>Neconforme</option></select></div>';
+  h+='<div class="fg"><label>DSP</label><select onchange="_autoProbeFilters.dsp=this.value;_autoPage=0;render()">'+
+    '<option value="">'+(isEN?'All (with and without DSP)':'Toate (cu si fara DSP)')+'</option>'+
+    '<option value="yes"'+(_autoProbeFilters.dsp==='yes'?' selected':'')+'>'+(isEN?'Only with DSP':'Doar cu DSP')+'</option>'+
+    '<option value="no"'+(_autoProbeFilters.dsp==='no'?' selected':'')+'>'+(isEN?'Only without DSP':'Doar fara DSP')+'</option>'+
+  '</select></div>';
   h+='<div class="fg"><label>'+(isEN?'From':'De la')+'</label><input type="date" value="'+(_autoProbeFilters.dateFrom||'')+'" onchange="_autoProbeFilters.dateFrom=this.value;_autoPage=0;render()"></div>';
   h+='<div class="fg"><label>'+(isEN?'To':'Pana la')+'</label><input type="date" value="'+(_autoProbeFilters.dateTo||'')+'" onchange="_autoProbeFilters.dateTo=this.value;_autoPage=0;render()"></div>';
   h+='</div>';
@@ -5464,6 +5469,8 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
   if(_autoProbeFilters.sec)filtered=filtered.filter(r=>r.section===_autoProbeFilters.sec);
   if(_autoProbeFilters.type)filtered=filtered.filter(r=>r.probe_type===_autoProbeFilters.type);
   if(_autoProbeFilters.result)filtered=filtered.filter(r=>r.result===_autoProbeFilters.result);
+  if(_autoProbeFilters.dsp==='yes')filtered=filtered.filter(r=>r.dsp_parallel===true);
+  else if(_autoProbeFilters.dsp==='no')filtered=filtered.filter(r=>!r.dsp_parallel);
   if(_autoProbeFilters.dateFrom)filtered=filtered.filter(r=>r.date&&r.date>=_autoProbeFilters.dateFrom);
   if(_autoProbeFilters.dateTo)filtered=filtered.filter(r=>r.date&&r.date<=_autoProbeFilters.dateTo);
 
@@ -5477,6 +5484,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
     else if(sc==='result'){va=a.result;vb=b.result}
     else if(sc==='reg'){va=a.reg_number||'';vb=b.reg_number||''}
     else if(sc==='organism'){va=a.organism||'';vb=b.organism||''}
+    else if(sc==='dsp'){va=a.dsp_parallel?1:0;vb=b.dsp_parallel?1:0}
     else{va=a.date||'';vb=b.date||''}
     return va<vb?-sd:va>vb?sd:0;
   });
@@ -5498,6 +5506,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
       '<th class="ac-sortable" onclick="setAutoSort(\'type\')">'+(isEN?'Sample Type':'Tip Proba')+sortArr('type')+'</th>'+
       '<th class="ac-sortable" onclick="setAutoSort(\'section\')">'+(isEN?'Section':'Sectie')+sortArr('section')+'</th>'+
       '<th class="ac-sortable" onclick="setAutoSort(\'result\')">'+(isEN?'Result':'Rezultat')+sortArr('result')+'</th>'+
+      '<th class="ac-sortable" onclick="setAutoSort(\'dsp\')">DSP'+sortArr('dsp')+'</th>'+
       '<th class="ac-sortable" onclick="setAutoSort(\'organism\')">'+(isEN?'Sample details':'Detalii proba')+sortArr('organism')+'</th>'+
       '<th>'+(isEN?'Actions':'Actiuni')+'</th>'+
     '</tr></thead><tbody>';
@@ -5509,6 +5518,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
         '<td>'+rProbe(r.probe_type)+'</td>'+
         '<td>'+rSec(r.section)+'</td>'+
         '<td>'+(r.result==='conform'?'<span class="bdg bdg-g">Conform</span>':'<span class="bdg bdg-r">Neconform</span>')+'</td>'+
+        '<td>'+(r.dsp_parallel?'<span class="bdg bdg-b" title="Proba prelucrata si cu DSP in paralel">&#10003; DSP</span>':'<span style="color:var(--txtL)">—</span>')+'</td>'+
         '<td style="font-size:11px">'+(r.organism?(r.organism+(r.ufc_count?' ('+r.ufc_count+' UFC)':'')):(r.details||r.notes||'—'))+(r.details&&r.organism?'<br><span style="color:var(--txtL)">'+esc(r.details)+'</span>':'')+'</td>'+
         '<td class="act"><button onclick="editAuto('+r.id+')">&#9998;</button><button onclick="delRec(\'autocontrol\','+r.id+')">&#128465;</button></td></tr>';
     });
@@ -5592,9 +5602,10 @@ async function saveAuto(id){
 async function saveAutoAndNew(){
   const rec=await _collectAutoRec(null);if(!rec)return;
   await pt('autocontrol',rec);logActivity('Adaugat proba autocontrol — '+rSec(rec.section));
-  const keep={probe_type:rec.probe_type,section:rec.section,date:rec.date,quarter:rec.quarter,month:rec.month};
+  // Keep ALL common fields so user introduces series of similar probes fast (typical: all with DSP in a quarter)
+  const keep={probe_type:rec.probe_type,section:rec.section,date:rec.date,quarter:rec.quarter,month:rec.month,dsp_parallel:rec.dsp_parallel};
   closeM();render();
-  setTimeout(()=>{editAuto(null);setTimeout(()=>{const mc=document.getElementById('mdc');if(!mc)return;const s=(id,val)=>{const el=mc.querySelector('#'+id);if(el)el.value=val};s('f-auto-tp',keep.probe_type);s('f-auto-sec',keep.section);s('f-auto-dt',keep.date);s('f-auto-q',keep.quarter);s('f-auto-mo',keep.month)},100)},100);
+  setTimeout(()=>{editAuto(null);setTimeout(()=>{const mc=document.getElementById('mdc');if(!mc)return;const s=(id,val)=>{const el=mc.querySelector('#'+id);if(el)el.value=val};s('f-auto-tp',keep.probe_type);s('f-auto-sec',keep.section);s('f-auto-dt',keep.date);s('f-auto-q',keep.quarter);s('f-auto-mo',keep.month);s('f-auto-dsp',String(!!keep.dsp_parallel))},100)},100);
 }
 function expAutoCSV(){ga('autocontrol').then(d=>{const rows=d.filter(r=>r.year===A.year);if(!rows.length){alert('Nimic de exportat.');return}
   const csv='\uFEFF'+'Trimestru,Luna,Data,Tip Proba,Sectie,Rezultat,Germen,UFC,Detalii,DSP,Obs\n'+rows.map(r=>r.quarter+','+r.month+',"'+(r.date||'')+'","'+rProbe(r.probe_type)+'","'+rSec(r.section)+'",'+r.result+',"'+(r.organism||'')+'","'+(r.ufc_count||'')+'","'+(r.details||'')+'",'+( r.dsp_parallel?'Da':'Nu')+',"'+(r.notes||'')+'"').join('\n');
@@ -14804,6 +14815,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.48',date:'2026-04-20',notes:'NOU: Autocontrol — coloana DSP in tabel cu badge „✓ DSP" (vezi instant care probe au fost prelucrate si cu DSP)\nNOU: Autocontrol — filtru DSP in bara de filtre: „Toate (cu si fara DSP)" / „Doar cu DSP" / „Doar fara DSP"\nIMBUNATATIRE: Autocontrol — butonul „Salveaza + Noua" pastreaza acum si flag-ul DSP intre probe consecutive (util pentru serii trimestriale cu DSP)\nIMBUNATATIRE: Autocontrol — coloana DSP sortabila (grupeaza probele cu/fara)'},
   {version:'12.47',date:'2026-04-20',notes:'AI: Prompturi rescrise complet — rol „medic epidemiolog senior 15+ ani", audienta (Manager/Director/ANMCS), cadru structurat (constatari → analiza cauzala → recomandari prioritizate → indicatori monitorizare), ton formal-clinic\nAI: Benchmarks adaugate per tip raport — ECDC PPS (HAI 5.5-7.1%, AMU 30-35%), INSP (MRSA ~50%, CAR-NS Klebsiella ~40%), ESAC-Net DDD ~360/1000 zile-pac, OMS AWaRe ≥60%, ANMCS autocontrol >95%\nAI: Reguli anti-halucinatie — „nu inventa date, daca sunt insuficiente spune explicit"\nAI: Prompturi bilingve (RO/EN) complete\nUX: Progres in 3 pasi la generare AI (1/3 Colectez → 2/3 Apelez AI → 3/3 Generez Word)'},
   {version:'12.46',date:'2026-04-20',notes:'STABILITATE: Audit bug-uri + 10 fix-uri defensive in tot codul\nFIX: fp() procent cu divizor 0/negativ/invalid → „—" (nu „Infinity %")\nFIX: Dashboard — crash evitat la primul render daca CFG.waste_codes lipseste\nFIX: getUserInitials — tolerant la nume gol/whitespace\nFIX: Import CSV laborator — nu mai da crash pe fisier gol\nNOU: Raportari/Termene — sectiune „Raportari orfane" cu optiuni Recreeaza / Sterge toate\nNOU: Delete template — cascade automat + dialog confirmare\nFIX: Obiective SMART — logica unificata (analysis + Word rapoarte) prin helpers comuni\nIMBUNATATIRE: genId() foloseste crypto.randomUUID — zero risc ID collision la sync\nNOU: saveCfgDebounced — wrapper utilitar anti double-click (disponibil)'},
   {version:'12.45',date:'2026-04-20',notes:'FIX: Dashboard — sectiunea Evenimente nu mai arata raportari finalizate (acelasi bug in 3 locuri: evenimente mini-calendar, KPI 30 zile, bell notifications)\nFIX: Excludere automata template-uri (_isTemplate) din liste de evenimente — doar instantele raman vizibile\nNOU: Click notificare bell cu dlId → scroll + highlight la raportarea exacta (ca din Dashboard alerta)'},

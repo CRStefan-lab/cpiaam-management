@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.48</title>
+<title>CPIAAM Management v12.49</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1972,7 +1972,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.48';
+const APP_VERSION='12.49';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -14815,6 +14815,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.49',date:'2026-04-21',notes:'FIX CRITIC: Sincronizare — merge initial la deschiderea aplicatiei. Pana acum, daca colegul salva date pe alt PC, acestea se importau doar la urmatoarea modificare a fisierului. Acum se importa imediat ce deschizi aplicatia (fix bug init.js — restoreFileHandle pornea doar polling-ul, nu si merge-ul din fisier).'},
   {version:'12.48',date:'2026-04-20',notes:'NOU: Autocontrol — coloana DSP in tabel cu badge „✓ DSP" (vezi instant care probe au fost prelucrate si cu DSP)\nNOU: Autocontrol — filtru DSP in bara de filtre: „Toate (cu si fara DSP)" / „Doar cu DSP" / „Doar fara DSP"\nIMBUNATATIRE: Autocontrol — butonul „Salveaza + Noua" pastreaza acum si flag-ul DSP intre probe consecutive (util pentru serii trimestriale cu DSP)\nIMBUNATATIRE: Autocontrol — coloana DSP sortabila (grupeaza probele cu/fara)'},
   {version:'12.47',date:'2026-04-20',notes:'AI: Prompturi rescrise complet — rol „medic epidemiolog senior 15+ ani", audienta (Manager/Director/ANMCS), cadru structurat (constatari → analiza cauzala → recomandari prioritizate → indicatori monitorizare), ton formal-clinic\nAI: Benchmarks adaugate per tip raport — ECDC PPS (HAI 5.5-7.1%, AMU 30-35%), INSP (MRSA ~50%, CAR-NS Klebsiella ~40%), ESAC-Net DDD ~360/1000 zile-pac, OMS AWaRe ≥60%, ANMCS autocontrol >95%\nAI: Reguli anti-halucinatie — „nu inventa date, daca sunt insuficiente spune explicit"\nAI: Prompturi bilingve (RO/EN) complete\nUX: Progres in 3 pasi la generare AI (1/3 Colectez → 2/3 Apelez AI → 3/3 Generez Word)'},
   {version:'12.46',date:'2026-04-20',notes:'STABILITATE: Audit bug-uri + 10 fix-uri defensive in tot codul\nFIX: fp() procent cu divizor 0/negativ/invalid → „—" (nu „Infinity %")\nFIX: Dashboard — crash evitat la primul render daca CFG.waste_codes lipseste\nFIX: getUserInitials — tolerant la nume gol/whitespace\nFIX: Import CSV laborator — nu mai da crash pe fisier gol\nNOU: Raportari/Termene — sectiune „Raportari orfane" cu optiuni Recreeaza / Sterge toate\nNOU: Delete template — cascade automat + dialog confirmare\nFIX: Obiective SMART — logica unificata (analysis + Word rapoarte) prin helpers comuni\nIMBUNATATIRE: genId() foloseste crypto.randomUUID — zero risc ID collision la sync\nNOU: saveCfgDebounced — wrapper utilitar anti double-click (disponibil)'},
@@ -15881,7 +15882,15 @@ function showUpgradeNotice(fromVer){
     await checkUpgradeBackup();
     render();
     // Restore file handles from IndexedDB (persists across refresh/close)
-    restoreFileHandle().then(()=>{updateSyncIndicator();if(_fileHandle)startSyncPoll()});
+    // v12.49 fix: also run initial merge — otherwise new data written by other PCs
+    // since last poll seed is missed until file changes again.
+    restoreFileHandle().then(async ()=>{
+      updateSyncIndicator();
+      if(_fileHandle){
+        try{await _importFromHandle(_fileHandle,true)}catch(e){console.warn('Startup merge failed:',e)}
+        startSyncPoll();
+      }
+    });
     restoreAttDirHandle();
     _migrateDeseuriToHA().catch(function(){});
     setTimeout(buildNotifications,3000);

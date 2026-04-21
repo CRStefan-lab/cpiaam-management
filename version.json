@@ -1,10 +1,7 @@
 {
-  "version": "12.48",
+  "version": "12.49",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU: Autocontrol — coloana DSP in tabel cu badge „✓ DSP" (vezi care probe au fost prelucrate si cu DSP)",
-    "NOU: Autocontrol — filtru DSP in bara de filtre: „Toate (cu si fara DSP)" / „Doar cu DSP" / „Doar fara DSP"",
-    "IMBUNATATIRE: Autocontrol — butonul „Salveaza + Noua" pastreaza acum si flag-ul DSP intre probe consecutive (util pentru serii trimestriale cu DSP)",
-    "IMBUNATATIRE: Autocontrol — sortabil dupa coloana DSP (grupeaza probele cu/fara)"
+    "FIX CRITIC: Sincronizare — merge initial la deschiderea aplicatiei. Pana acum daca colegul salva date pe alt PC, acestea se importau doar la urmatoarea modificare a fisierului. Acum se importa imediat ce deschizi aplicatia."
   ]
 }

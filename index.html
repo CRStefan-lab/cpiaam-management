@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.52</title>
+<title>CPIAAM Management v12.53</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1993,7 +1993,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.52';
+const APP_VERSION='12.53';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -13896,7 +13896,8 @@ function rAjutor(el){
     ['How do I switch day/night mode?','Click the sun/moon icon in the top toolbar.'],
     ['How do I hide a dashboard widget?','Use the visibility checkboxes above the widgets to show/hide components.'],
     ['Where can I find expiring documents?','On the Dashboard you see a KPI with valid/expired documents. In the Documents module, each has a colored indicator: green >30 days, yellow ≤30 days, red ≤7 days, black expired.'],
-    ['Can I use the app offline?','Yes! The app works 100% offline. Data is stored locally in IndexedDB. The only feature that requires internet is the AI analysis (optional).']
+    ['Can I use the app offline?','Yes! The app works 100% offline. Data is stored locally in IndexedDB. The only feature that requires internet is the AI analysis (optional).'],
+    ['How can I recover data from an earlier version?','Both Google Drive and OneDrive keep an automatic history of the sync JSON file. <strong>Google Drive</strong>: right-click the file → File information → Manage versions (kept for <strong>30 days OR up to 100 versions</strong>). <strong>OneDrive</strong>: right-click → Version history (up to 500 versions Business / 25 Personal). <strong>Tip</strong>: on important versions click the 3 dots → <strong>"Keep forever"</strong> so they are not auto-deleted. To restore: click Download on the version you want, then in the app: Settings → Sync → Open file → choose the downloaded JSON → <strong>Merge data</strong>.']
   ]:[
     ['Cum adaug o sectie noua?','Mergi la Configurare > Sectii > Click "Adauga sectie". Completeaza numele si numarul de paturi.'],
     ['Cum generez un raport Word?','Mergi la Generare Rapoarte, alege tipul de raport dorit si click pe butonul de generare. Documentul se descarca automat.'],
@@ -13909,7 +13910,8 @@ function rAjutor(el){
     ['Cum schimb modul zi/noapte?','Click pe iconita soare/luna din toolbar-ul de sus.'],
     ['Cum ascund un widget de pe dashboard?','Foloseste checkbox-urile de vizibilitate de deasupra widget-urilor pentru a ascunde/afisa componente.'],
     ['Unde gasesc documentele care expira?','Pe Dashboard vezi un KPI cu documentele valabile/expirate. In modulul Documente, fiecare are indicator colorat: verde >30 zile, galben ≤30 zile, rosu ≤7 zile, negru expirat.'],
-    ['Pot folosi aplicatia offline?','Da! Aplicatia functioneaza 100% offline. Datele sunt stocate local in IndexedDB. Singura functionalitate care necesita internet este analiza AI (optionala).']
+    ['Pot folosi aplicatia offline?','Da! Aplicatia functioneaza 100% offline. Datele sunt stocate local in IndexedDB. Singura functionalitate care necesita internet este analiza AI (optionala).'],
+    ['Cum recuperez datele dintr-o versiune anterioara?','Atat Google Drive cat si OneDrive pastreaza automat istoricul fisierului de sincronizare JSON. <strong>Google Drive</strong>: click dreapta pe fisier → Informatii despre fisier → Gestioneaza versiunile (pastrate <strong>30 zile SAU max 100 versiuni</strong>). <strong>OneDrive</strong>: click dreapta → Istoric versiuni (pana la 500 versiuni Business / 25 Personal). <strong>Recomandare</strong>: la versiunile importante (ex: sfarsit de luna / trimestru / an) da click pe cele 3 puncte langa versiune si alege <strong>„Pastreaza definitiv"</strong> ca sa nu fie sterse automat. Pentru recuperare: click Descarca pe versiunea dorita, apoi in aplicatie: Configurare → Sincronizare → Deschide fisier → alege JSON-ul descarcat → <strong>Combina datele</strong>.']
   ];
   const shortcuts=isEN?[
     ['Quick backup','Button "Save Backup" in sidebar'],
@@ -13939,6 +13941,13 @@ function rAjutor(el){
     '<div class="ghid-state ghid-state-green"><div><strong>&#128994; '+(isEN?'Synced — file in OneDrive / Google Drive':'Sincronizat — fisier in OneDrive / Google Drive')+'</strong>'+
       '<p style="font-size:12px;line-height:1.5;margin:4px 0">'+(isEN?'Data is automatically saved to a cloud file. Accessible from any computer, fully protected.':'Datele se salveaza automat intr-un fisier in cloud. Accesibil de pe orice calculator, protejat complet.')+'</p>'+
       '<span class="ghid-tag ghid-tag-green">'+(isEN?'Optimal. Work from anywhere, data is safe.':'Optim. Lucrezi de oriunde, datele sunt in siguranta.')+'</span></div></div>'+
+
+    '<h4 style="font-size:13px;color:var(--navy);margin:16px 0 10px">'+(isEN?'Recovering earlier versions (Google Drive / OneDrive)':'Recuperarea versiunilor anterioare (Google Drive / OneDrive)')+'</h4>'+
+    '<div class="ib inf" style="margin-bottom:10px;font-size:12px;line-height:1.6"><strong>'+(isEN?'Good news:':'Vestea buna:')+'</strong> '+(isEN?'if you sync via OneDrive or Google Drive, the service keeps an automatic version history. You can recover any previous state of the file.':'daca sincronizezi prin OneDrive sau Google Drive, serviciul pastreaza automat un istoric al versiunilor. Poti recupera orice stare anterioara a fisierului.')+'</div>'+
+    '<p style="font-size:12px;line-height:1.6;margin:6px 0"><strong>Google Drive:</strong> '+(isEN?'right-click on the JSON file → <em>File information → Manage versions</em>. Google keeps temporary versions for <strong>30 days OR up to 100 versions</strong> (whichever comes first).':'click dreapta pe fisierul JSON → <em>Informatii despre fisier → Gestioneaza versiunile</em>. Google pastreaza versiuni temporare <strong>30 zile SAU max 100 versiuni</strong> (cea care vine prima).')+'</p>'+
+    '<p style="font-size:12px;line-height:1.6;margin:6px 0"><strong>OneDrive:</strong> '+(isEN?'right-click the file → <em>Version history</em>. Keeps up to <strong>500 versions (Business) or 25 (Personal)</strong>.':'click dreapta pe fisier → <em>Istoric versiuni</em>. Pastreaza pana la <strong>500 versiuni (Business) sau 25 (Personal)</strong>.')+'</p>'+
+    '<div class="ghid-warning" style="margin:10px 0">&#9888;&#65039; <strong>'+(isEN?'Important recommendation:':'Recomandare importanta:')+'</strong> '+(isEN?'on versions you consider important (e.g. end of month / quarter / year reports), click the 3 dots next to the version and choose <strong>"Keep forever"</strong>. Otherwise they can be automatically deleted after 30 days or when the version limit is exceeded.':'la versiunile pe care le consideri importante (ex: rapoarte sfarsit de luna / trimestru / an), da click pe cele 3 puncte langa versiune si alege <strong>„Pastreaza definitiv"</strong>. Altfel pot fi sterse automat dupa 30 zile sau cand se depaseste limita de versiuni.')+'</div>'+
+    '<p style="font-size:12px;line-height:1.6;margin:6px 0"><strong>'+(isEN?'To restore:':'Pentru recuperare:')+'</strong> '+(isEN?'click the 3 dots on the desired version → <em>Download</em>. Then in the app: <em>Settings → Sync → Open file</em> → pick the downloaded JSON → choose <strong>"Merge data"</strong> (preserves local records, adds/updates from the file) or <strong>"Switch file"</strong> if you want to replace entirely.':'click cele 3 puncte pe versiunea dorita → <em>Descarca</em>. Apoi in aplicatie: <em>Configurare → Sincronizare → Deschide fisier</em> → alege JSON-ul descarcat → selecteaza <strong>„Combina datele"</strong> (pastreaza inregistrarile locale, adauga/actualizeaza din fisier) sau <strong>„Schimba fisierul"</strong> daca vrei sa inlocuiesti complet.')+'</p>'+
 
     '<h4 style="font-size:13px;color:var(--navy);margin:16px 0 10px">'+(isEN?'Live data file vs. manual backup — what\'s the difference?':'Fisier de date live vs. backup manual — care e diferenta?')+'</h4>'+
     '<div class="ghid-diff">'+
@@ -14893,6 +14902,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.53',date:'2026-04-21',notes:'DOC: Ajutor — sectiune noua „Recuperarea versiunilor anterioare (Google Drive / OneDrive)" cu pasi concreti (Gestioneaza versiunile, limite 30 zile / 100 versiuni Google, 500 / 25 OneDrive, recomandare „Pastreaza definitiv" pentru versiuni importante, download si Combina datele in aplicatie).\nDOC: FAQ — intrebare noua „Cum recuperez datele dintr-o versiune anterioara?" (RO + EN).'},
   {version:'12.52',date:'2026-04-21',notes:'UX: Biocide — lista grupata pe produs (pattern Calendar > Raportari). La nivel produs: avizul cu status culoare (expirat/expira curand/valabil), TP, UM, nr. miscari si sumar lei (intrari/consum/stoc final). Click pe produs → expand cu tabel miscari lunare (Luna, Tip, Lot, Cant., Valoare, Docs, Actiuni). Butoane Extinde tot / Restrange tot. Filtrele existente (cautare, tip, luna) raman si auto-extind grupurile care matchuiesc.'},
   {version:'12.51',date:'2026-04-21',notes:'FIX: Dialog „Deschide fisier" → optiunea „Combina datele" — acum reutilizeaza _importFromHandle si importa corect si sectii/biocide/probe noi din fisier + remapeaza ID-urile (anterior inregistrarile aveau referinte orfane dupa merge, iar config-ul din fisier era ignorat).\nPROTECTIE: Optiunea „Schimba fisierul" — valideaza JSON-ul nou in memorie INAINTE de cl(s) care sterge baza locala. Daca fisierul e corupt, schimbarea se anuleaza si datele locale raman intacte.\nUX: syncReadFile — daca alegi acelasi fisier la care esti deja conectat (isSameEntry), sari dialogul si fa direct _importFromHandle (merge). Elimina confuzia „ce vrei sa faci cu X.json cand esti conectat la X.json".'},
   {version:'12.50',date:'2026-04-21',notes:'PROTECTIE: Avertisment la inchiderea browserului daca datele inca se salveaza in fisier — previne fisiere .crswap orfane si date pierdute in tranzit cand inchizi prea repede dupa introducerea datelor. Debounce-ul de 2 sec pentru syncWrite + durata writ-ului efectiv sunt acum urmarite (_syncTimer si _syncWriting); beforeunload handler emite confirmare browser daca oricare e activ.'},

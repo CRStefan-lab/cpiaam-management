@@ -1,7 +1,8 @@
 {
-  "version": "12.52",
+  "version": "12.53",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "UX: Biocide — lista grupata pe produs (model Calendar > Raportari). La nivel de produs vezi avizul, numarul de miscari si sumar lei (intrari/consum/stoc). Click pe produs → expand cu tabel miscari lunare. Butoane Extinde tot / Restrange tot. Cand aplici un filtru, grupurile se extind automat."
+    "DOC: Ajutor / FAQ — sectiune noua „Recuperarea versiunilor anterioare (Google Drive / OneDrive)" cu pasi concreti: gestioneaza versiunile, limite (30 zile / 100 versiuni Google, 500 / 25 OneDrive), recomandarea „Pastreaza definitiv" pentru versiuni importante, download + Combina datele in aplicatie.",
+    "DOC: FAQ — intrebare noua „Cum recuperez datele dintr-o versiune anterioara?" (RO + EN)."
   ]
 }

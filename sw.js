@@ -1,5 +1,5 @@
-// CPIAAM Service Worker — v12.49
-const CACHE_NAME = 'cpiaam-v12.49';
+// CPIAAM Service Worker — v12.51
+const CACHE_NAME = 'cpiaam-v12.51';
 const CDN_CACHE = 'cpiaam-cdn-v1';
 
 // CDN resources — cached permanently (versions pinned)
@@ -49,14 +49,18 @@ self.addEventListener('fetch', event => {
   if (url.origin === self.location.origin) {
     event.respondWith(
       caches.match(event.request).then(cached => {
+        // Clone cached BEFORE returning it — the original stream gets consumed by the page
+        const cachedCompare = cached ? cached.clone() : null;
         const fetchPromise = fetch(event.request).then(resp => {
           if (resp.ok) {
-            const clone = resp.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            // Two independent clones: one for cache.put, one for text() comparison
+            const putClone = resp.clone();
+            const compareClone = resp.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, putClone));
             // Notify page if index.html was updated
-            if (event.request.url.includes('index.html') && cached) {
-              cached.text().then(oldText => {
-                clone.clone().text().then(newText => {
+            if (event.request.url.includes('index.html') && cachedCompare) {
+              cachedCompare.text().then(oldText => {
+                compareClone.text().then(newText => {
                   if (oldText !== newText) {
                     self.clients.matchAll().then(clients => {
                       clients.forEach(c => c.postMessage({ type: 'UPDATE_AVAILABLE' }));

@@ -1,7 +1,11 @@
 {
-  "version": "12.74",
+  "version": "12.75",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "UX Configurare — formularul „Adauga categorie IPC" aparea sub tabelul cu 30+ categorii, astfel user-ul nu vedea nimic la click si avea impresia ca butonul e blocat. Fix: formularul e acum mutat DEASUPRA tabelului (vizibil instant langa buton), cu border evidentiat (2px teal) si titlu clar. Plus: la click se face smooth-scroll catre formular + focus automat pe primul input."
+    "FOUNDATION — Infrastructura pentru rapoarte profesionale (nicio schimbare vizibila pana la v12.76).",
+    "NOU: benchmarks.js — baza de date de referinte publice (INSP, ECDC, WHO AWaRe, ESAC-Net, ANMCS, Ord. 1101) cu 20+ benchmark-uri pentru IAAM, PPS, ATB, Autocontrol, Deseuri, Audituri. Plus glosar ~45 abrevieri (IPC, germeni, infectii, dispozitive, ATB, metodologie, organizatii, sectii).",
+    "NOU: Helpers Word in rapoarte.js — wChartImage (Chart.js→PNG→ImageRun in docx), wSparkline (Unicode ▁▂▃▄▅▆▇█), wKpiCard, wBenchmarkPanel, wCorrelationInsight, wDataRecommendation, wExecutiveSummary, wAbbreviationsGlossary.",
+    "NOU: Rich analysis in analysis.js — analyzeIAAMRich, analyzeAutocontrolRich, findCorrelations (cross-module: IAAM×Autocontrol, IAAM×Audituri, MDR×ATB), rankFailingAuditItems. Return bogat cu kpis/trends/benchmarks/insights pentru grafice + narrative.",
+    "Urmeaza v12.76 cu primul raport transformat (Raport Anual complet, cu 6-8 grafice embedded, benchmarks inline, corelatii, recomandari data-driven)."
   ]
 }

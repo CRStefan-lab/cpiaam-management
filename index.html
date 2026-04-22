@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.74</title>
+<title>CPIAAM Management v12.75</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2034,6 +2034,144 @@ if (typeof window !== 'undefined') window.COUNTRY = COUNTRY;
 </script>
 <script>
 // ═════════════════════════════════════════════════════════════
+// CPIAAM — Benchmarks Database (referinte publice pentru interpretare)
+// Surse: INSP, ECDC, WHO AWaRe, ESAC-Net, ANMCS, Ord. 1101/2016
+// ═════════════════════════════════════════════════════════════
+// Structura: { category: { key: {value, unit, source, comparator, interpret?} } }
+//   comparator: 'max' (user value sub/peste prag dorit este max), 'min' (min), 'near' (10% in jur)
+
+var BENCHMARKS={
+  iaam:{
+    rate_per_1000:{value:3.5,unit:'‰',source:'INSP 2024 — mediana spitale municipale',comparator:'max',
+      interpret:function(v){return v<=2?'foarte bine':v<=3.5?'sub mediana':v<=5?'usor peste mediana':'ridicat'}},
+    mdr_percent:{value:30,unit:'%',source:'INSP — prag maxim MDR/total IAAM',comparator:'max'},
+    mrsa_percent:{value:50,unit:'%',source:'INSP 2024 — prevalenta MRSA nationala',comparator:'max'},
+    car_ns_kpn_percent:{value:40,unit:'%',source:'INSP 2024 — Klebsiella carbapenem-NS'},
+    focare_per_year:{value:2,unit:'focare/an',source:'INSP — prag alerta spital municipal',comparator:'max'}
+  },
+  pps:{
+    hai_prevalence:{value:6.5,unit:'%',source:'ECDC PPS 2022 — Romania',comparator:'max'},
+    amu_prevalence:{value:32.5,unit:'%',source:'ECDC PPS 2022 — UE median',comparator:'max'},
+    documented_indication:{value:80,unit:'%',source:'Ord. 1101/2016 — indicatie documentata in FO',comparator:'min'}
+  },
+  atb:{
+    ddd_per_1000:{value:360,unit:'DDD/1000 pat-zile',source:'ESAC-Net 2023 — UE median'},
+    ddd_per_100:{value:36,unit:'DDD/100 pat-zile',source:'ESAC-Net 2023 — derivat UE'},
+    aware_access:{value:60,unit:'%',source:'WHO AWaRe 2023 — tinta Access',comparator:'min'},
+    aware_watch:{value:30,unit:'%',source:'WHO AWaRe 2023 — max Watch',comparator:'max'},
+    aware_reserve:{value:10,unit:'%',source:'WHO AWaRe 2023 — max Reserve',comparator:'max'},
+    j01d_c3g:{value:9.5,unit:'DDD/100 pat-zile',source:'ESAC-Net 2023 — Cefalosporine gen. III',comparator:'max'}
+  },
+  autocontrol:{
+    overall_conformity:{value:95,unit:'%',source:'ANMCS — tinta conformitate autocontrol',comparator:'min'},
+    hand_hygiene_compliance:{value:80,unit:'%',source:'WHO — hand hygiene compliance target',comparator:'min'},
+    atp_conformity:{value:90,unit:'%',source:'Protocoale interne — conformitate ATP bioluminescenta',comparator:'min'},
+    uv_pass_rate:{value:85,unit:'%',source:'Protocoale interne — rata trecere UV check',comparator:'min'}
+  },
+  deseuri:{
+    kg_per_patient_day:{value:1.5,unit:'kg/om-zi',source:'Medie nationala spitale municipale',comparator:'max',
+      interpret:function(v){return v<=1.0?'foarte eficient':v<=1.5?'in medie':v<=2?'usor peste medie':'ridicat'}},
+    dangerous_percent:{value:75,unit:'%',source:'Proportie tipica periculoase (18 01 03*) in total 18 01'}
+  },
+  audituri:{
+    avg_compliance:{value:80,unit:'%',source:'Prag ANMCS — audituri IPC',comparator:'min'},
+    igm_compliance:{value:75,unit:'%',source:'WHO — hand hygiene audit target',comparator:'min'}
+  }
+};
+
+// ═════════════════════════════════════════════════════════════
+// ABREVIERI — glosar centralizat pentru rapoarte
+// ═════════════════════════════════════════════════════════════
+var ABBREVIATIONS=[
+  // Concepte IPC
+  {abbr:'CPIAAM',full:'Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale',cat:'IPC'},
+  {abbr:'IPC',full:'Infection Prevention and Control (Prevenirea si Controlul Infectiilor)',cat:'IPC'},
+  {abbr:'IAAM',full:'Infectii Asociate Asistentei Medicale',cat:'IPC'},
+  {abbr:'HAI',full:'Healthcare-Associated Infection (echivalent international al IAAM)',cat:'IPC'},
+  {abbr:'PPS',full:'Point Prevalence Survey (Studiu de Prevalenta de Moment)',cat:'IPC'},
+  {abbr:'MDR',full:'Multi-Drug Resistant (germen multirezistent la >=3 clase antibiotice)',cat:'IPC'},
+  {abbr:'HII',full:'High Impact Interventions (interventii cu impact major, APCI/Saving Lives)',cat:'IPC'},
+  // Germeni si rezistente
+  {abbr:'MRSA',full:'Methicillin-Resistant Staphylococcus Aureus (stafilococ auriu meticilino-rezistent)',cat:'Germeni'},
+  {abbr:'CAR-NS',full:'Carbapenem Non-Susceptible (non-susceptibil la carbapeneme)',cat:'Germeni'},
+  {abbr:'ESBL',full:'Extended-Spectrum Beta-Lactamases (beta-lactamaze cu spectru extins)',cat:'Germeni'},
+  {abbr:'C3G',full:'Cephalosporine generatia a III-a (ceftriaxon, ceftazidim, cefotaxim)',cat:'Germeni'},
+  {abbr:'CPE',full:'Carbapenemase-Producing Enterobacteriaceae',cat:'Germeni'},
+  {abbr:'VRE',full:'Vancomycin-Resistant Enterococcus',cat:'Germeni'},
+  // Tipuri de infectii
+  {abbr:'SSI',full:'Surgical Site Infection (Infectia Situsului Chirurgical)',cat:'Infectii'},
+  {abbr:'SST',full:'Skin and Soft Tissue Infection (Infectie de piele si tesut moale)',cat:'Infectii'},
+  {abbr:'ITU / UTI',full:'Infectie Tract Urinar / Urinary Tract Infection',cat:'Infectii'},
+  {abbr:'IAP / VAP',full:'Infectie Asociata Pneumoniei / Ventilator-Associated Pneumonia',cat:'Infectii'},
+  {abbr:'ICD / CDI',full:'Infectie cu Clostridioides difficile / C. difficile Infection',cat:'Infectii'},
+  {abbr:'BSI',full:'Bloodstream Infection (Infectie de flux sanguin)',cat:'Infectii'},
+  // Dispozitive invazive
+  {abbr:'CVP',full:'Cateter Venos Periferic',cat:'Dispozitive'},
+  {abbr:'CVC',full:'Cateter Venos Central',cat:'Dispozitive'},
+  {abbr:'IOT',full:'Intubatie Oro-Traheala',cat:'Dispozitive'},
+  {abbr:'SNG',full:'Sonda Nazo-Gastrica',cat:'Dispozitive'},
+  {abbr:'SUV',full:'Sonda Urinara Vezicala',cat:'Dispozitive'},
+  // Antibiotice si stewardship
+  {abbr:'AMS',full:'Antimicrobial Stewardship (utilizare judicioasa antibiotice)',cat:'ATB'},
+  {abbr:'DDD',full:'Defined Daily Dose (Doza Zilnica Definita — OMS)',cat:'ATB'},
+  {abbr:'AWaRe',full:'Access / Watch / Reserve — clasificare WHO antibiotice',cat:'ATB'},
+  {abbr:'ATC',full:'Anatomical Therapeutic Chemical (cod international medicament)',cat:'ATB'},
+  {abbr:'J01',full:'Clasa ATC antibiotice uz sistemic',cat:'ATB'},
+  // Metodologie autocontrol
+  {abbr:'ATP',full:'Adenozin Trifosfat (bioluminescenta pentru verificare rapida curatenie)',cat:'Metodologie'},
+  {abbr:'RLU',full:'Relative Light Units (unitate masura bioluminescenta ATP)',cat:'Metodologie'},
+  {abbr:'SHA',full:'Solutie Hidroalcoolica (dezinfectant maini)',cat:'Metodologie'},
+  {abbr:'EPP',full:'Echipament Individual de Protectie (halat, manusi, masca, boneta)',cat:'Metodologie'},
+  {abbr:'OD',full:'Observatie Directa',cat:'Metodologie'},
+  {abbr:'FR / SP',full:'Frecare (cu SHA) / Spalare (apa+sapun) — metode igiena maini',cat:'Metodologie'},
+  // Organizatii si reglementari
+  {abbr:'WHO / OMS',full:'World Health Organization / Organizatia Mondiala a Sanatatii',cat:'Organizatii'},
+  {abbr:'ECDC',full:'European Centre for Disease Prevention and Control',cat:'Organizatii'},
+  {abbr:'INSP',full:'Institutul National de Sanatate Publica (Romania)',cat:'Organizatii'},
+  {abbr:'ANMCS',full:'Autoritatea Nationala de Management al Calitatii in Sanatate',cat:'Organizatii'},
+  {abbr:'DSP',full:'Directia de Sanatate Publica (Romania — judetean)',cat:'Organizatii'},
+  {abbr:'MS',full:'Ministerul Sanatatii (Romania)',cat:'Organizatii'},
+  {abbr:'APCI',full:'Agentia Nationala de Autorizare (UK) — Saving Lives HII',cat:'Organizatii'},
+  {abbr:'ESAC-Net',full:'European Surveillance of Antimicrobial Consumption Network (ECDC)',cat:'Organizatii'},
+  // Sectii si spatii clinice
+  {abbr:'BO',full:'Bloc Operator',cat:'Sectii'},
+  {abbr:'ATI',full:'Anestezie si Terapie Intensiva',cat:'Sectii'},
+  {abbr:'UPU / CPU',full:'Unitate Primiri Urgente / Compartiment Primiri Urgente',cat:'Sectii'},
+  {abbr:'RMFB',full:'Recuperare, Medicina Fizica si Balneologie',cat:'Sectii'},
+  {abbr:'OG',full:'Obstetrica-Ginecologie',cat:'Sectii'},
+  {abbr:'NN',full:'Neonatologie',cat:'Sectii'},
+  {abbr:'ORL',full:'Otorinolaringologie',cat:'Sectii'}
+];
+
+// Helper — compare user value cu benchmark, returneaza evaluare
+function bm_compare(category,key,value){
+  var b=(BENCHMARKS[category]||{})[key];
+  if(!b||value==null||isNaN(value))return null;
+  var delta=value-b.value;
+  var pct=b.value!==0?Math.round(delta/b.value*1000)/10:0;
+  var better;
+  if(b.comparator==='max')better=value<=b.value;
+  else if(b.comparator==='min')better=value>=b.value;
+  else better=Math.abs(pct)<=10;
+  var interpret=b.interpret?b.interpret(value):(better?'conform':'peste prag');
+  return{
+    benchmark:b,userValue:value,delta:delta,pctDelta:pct,better:better,interpret:interpret,
+    statusIcon:better?'\u2713':'\u26A0',
+    statusColor:better?'16A34A':'DC2626',
+    deltaArrow:delta>0?'\u25B2':delta<0?'\u25BC':'\u2192',
+    vsText:better?'sub/in limita de referinta':'peste limita de referinta'
+  };
+}
+// Returneaza textul formatat pentru narrative: "vs INSP 3.5‰ (+0.2‰, ±5%)"
+function bm_text(category,key,value){
+  var c=bm_compare(category,key,value);if(!c)return '';
+  var b=c.benchmark;
+  return 'vs '+b.source.split('—')[0].trim()+' '+b.value+b.unit+' ('+(c.delta>=0?'+':'')+c.delta.toFixed(1)+b.unit+', '+(c.pctDelta>=0?'+':'')+c.pctDelta+'%) — '+c.vsText;
+}
+
+</script>
+<script>
+// ═════════════════════════════════════════════════════════════
 // CPIAAM — Config — CFG, loadCfg, saveCfg, ensureConfigIds
 // ═════════════════════════════════════════════════════════════
 
@@ -2052,7 +2190,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.74';
+const APP_VERSION='12.75';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -14027,6 +14165,189 @@ async function genPVCPIAAM(){
   finally{hideGen()}
 }
 
+// ═════════════════════════════════════════════════════════════
+// v12.75 — Helpers pentru rapoarte profesionale (foundation)
+// ═════════════════════════════════════════════════════════════
+
+// wChartImage — randeaza un grafic Chart.js pe canvas ascuns → PNG → ImageRun in docx
+// chartType: 'line'|'bar'|'pie'|'doughnut'|'horizontalBar'
+// data: Chart.js data object
+// opts: {width:550,height:280,chartOptions:{...Chart.js options...}, title:'...', caption:'...'}
+async function wChartImage(chartType,data,opts){
+  opts=opts||{};var width=opts.width||550,height=opts.height||280;var dpi=2; // HiDPI
+  var {ImageRun}=docx;
+  if(typeof Chart==='undefined')return wP('(grafic indisponibil — Chart.js nu e incarcat)',{italic:true,color:WC.gray});
+  var canvas=document.createElement('canvas');
+  canvas.width=width*dpi;canvas.height=height*dpi;
+  canvas.style.cssText='position:absolute;left:-10000px;top:-10000px;width:'+width+'px;height:'+height+'px';
+  document.body.appendChild(canvas);
+  try{
+    // White background for canvas (otherwise transparent → black in some Word viewers)
+    var ctx=canvas.getContext('2d');ctx.fillStyle='#FFFFFF';ctx.fillRect(0,0,canvas.width,canvas.height);
+    var chartType_=chartType==='horizontalBar'?'bar':chartType;
+    var baseOpts={responsive:false,animation:false,devicePixelRatio:dpi,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{size:11}}},title:opts.title?{display:true,text:opts.title,font:{size:13,weight:'bold'}}:{display:false}}};
+    if(chartType==='horizontalBar')baseOpts.indexAxis='y';
+    var chart=new Chart(canvas,{type:chartType_,data:data,options:Object.assign(baseOpts,opts.chartOptions||{})});
+    await new Promise(function(r){setTimeout(r,80)}); // ensure render
+    var dataUrl=canvas.toDataURL('image/png');
+    chart.destroy();
+    var bin=atob(dataUrl.split(',')[1]);
+    var bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+    var para=new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:120,after:60},
+      children:[new ImageRun({data:bytes,transformation:{width:width,height:height}})]});
+    return para;
+  }catch(e){
+    console.warn('wChartImage failed:',e);
+    return wP('(grafic nedisponibil: '+e.message+')',{italic:true,color:WC.gray});
+  }finally{canvas.remove()}
+}
+// wChartCaption — legenda sub grafic
+function wChartCaption(text){return wP([wTR(text,{size:16,italic:true,color:WC.gray})],{align:AlignmentType.CENTER,before:0,after:100})}
+
+// wSparkline — mini-grafic Unicode (8 nivele: ▁▂▃▄▅▆▇█) dintr-o serie numerica
+function wSparkline(series){
+  if(!series||!series.length)return '';
+  var max=Math.max.apply(null,series),min=Math.min.apply(null,series);
+  var chars=['\u2581','\u2582','\u2583','\u2584','\u2585','\u2586','\u2587','\u2588'];
+  var range=max-min;
+  return series.map(function(v){
+    if(range===0)return chars[0];
+    var idx=Math.min(7,Math.max(0,Math.round((v-min)/range*7)));
+    return chars[idx];
+  }).join('');
+}
+
+// wKpiCard — card KPI color-coded (paragraph cu bordura colorata)
+function wKpiCard(label,value,status,subtitle){
+  // status: 'good'|'warn'|'bad'|null
+  var bg=status==='good'?WC.bgGreen:status==='warn'?WC.bgAmber:status==='bad'?'FEE2E2':WC.bgBlue;
+  var border=status==='good'?WC.green:status==='warn'?WC.amber:status==='bad'?WC.red:WC.blue;
+  var txt=status==='good'?'065F46':status==='warn'?'854F0B':status==='bad'?'991B1B':'1E40AF';
+  return new Table({width:{size:9026,type:WidthType.DXA},columnWidths:[9026],rows:[new TableRow({children:[
+    new TableCell({borders:{top:{style:BorderStyle.SINGLE,size:1,color:border},bottom:{style:BorderStyle.SINGLE,size:1,color:border},left:{style:BorderStyle.SINGLE,size:12,color:border},right:{style:BorderStyle.SINGLE,size:1,color:border}},
+      shading:{type:ShadingType.CLEAR,fill:bg},margins:{top:100,bottom:100,left:200,right:140},
+      children:[
+        new Paragraph({children:[wTR(label,{size:18,color:txt,bold:false})]}),
+        new Paragraph({children:[wTR(value,{size:28,color:txt,bold:true})],spacing:{before:40,after:40}}),
+        subtitle?new Paragraph({children:[wTR(subtitle,{size:15,color:txt,italic:true})]}):new Paragraph({children:[]})
+      ]})
+  ]})]});
+}
+
+// wBenchmarkPanel — tabel cu comparatii vs referinte
+// items: [{label, userValue, userUnit, bmKey:{cat,key}, statusText?}]
+function wBenchmarkPanel(items){
+  var rows=[];
+  var W=[3200,1400,1400,1400,1626];
+  rows.push(wTblHead(['Indicator','Valoare unitate','Referinta','Delta','Status'],W));
+  items.forEach(function(it,i){
+    var c=bm_compare(it.bmKey[0],it.bmKey[1],it.userValue);
+    if(!c){
+      rows.push(wTblRow([it.label,String(it.userValue)+' '+(it.userUnit||''),'—','—','—'],W,i%2===1));
+    }else{
+      var b=c.benchmark;
+      var deltaStr=(c.delta>=0?'+':'')+(Math.round(c.delta*100)/100)+b.unit+' ('+(c.pctDelta>=0?'+':'')+c.pctDelta+'%)';
+      rows.push(wTblRow([
+        it.label,
+        String(it.userValue)+' '+(it.userUnit||b.unit),
+        b.value+b.unit+' ('+b.source.split('—')[0].trim()+')',
+        deltaStr,
+        {text:c.statusIcon+' '+c.interpret,bold:true,color:c.statusColor}
+      ],W,i%2===1,!c.better));
+    }
+  });
+  return new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W,rows:rows});
+}
+
+// wCorrelationInsight — box evidentiat cu insight cross-module
+function wCorrelationInsight(title,text,severity){
+  var bg=severity==='high'?'FEE2E2':severity==='medium'?WC.bgAmber:WC.bgBlue;
+  var border=severity==='high'?WC.red:severity==='medium'?WC.amber:WC.blue;
+  var icon=severity==='high'?'\u26A0':severity==='medium'?'\u26A0':'\uD83D\uDCA1';
+  return new Table({width:{size:9026,type:WidthType.DXA},columnWidths:[9026],rows:[new TableRow({children:[
+    new TableCell({borders:{top:{style:BorderStyle.SINGLE,size:1,color:border},bottom:{style:BorderStyle.SINGLE,size:1,color:border},left:{style:BorderStyle.SINGLE,size:16,color:border},right:{style:BorderStyle.SINGLE,size:1,color:border}},
+      shading:{type:ShadingType.CLEAR,fill:bg},margins:{top:100,bottom:100,left:200,right:140},
+      children:[
+        new Paragraph({children:[wTR(icon+' '+title,{size:20,bold:true,color:WC.dark})]}),
+        new Paragraph({children:[wTR(text,{size:18,color:WC.dark})],spacing:{before:40}})
+      ]})
+  ]})]});
+}
+
+// wDataRecommendation — recomandare data-driven targetata
+// target: ex "Sectia Chirurgie" | actions: [string]
+function wDataRecommendation(target,actions){
+  var kids=[new Paragraph({children:[wTR('\u27A4 '+target,{bold:true,size:20,color:WC.navy})],spacing:{before:80,after:40}})];
+  (actions||[]).forEach(function(a,i){
+    kids.push(new Paragraph({children:[wTR((i+1)+'. '+a,{size:18})],indent:{left:360},spacing:{after:40}}));
+  });
+  return kids;
+}
+
+// wExecutiveSummary — prima pagina cu highlights
+// highlights: [{label, value, status, trend?}]
+function wExecutiveSummary(title,subtitle,highlights,intro){
+  var kids=[];
+  kids.push(wP([wTR(title,{bold:true,size:36,color:WC.navy})],{align:AlignmentType.CENTER,before:200,after:60}));
+  if(subtitle)kids.push(wP([wTR(subtitle,{size:22,color:WC.gray,italic:true})],{align:AlignmentType.CENTER,after:200}));
+  if(intro)kids.push(wP(intro,{size:20,after:200}));
+  kids.push(wH2('Indicatori cheie',WC.teal));kids.push(wSp(40));
+  // 2-column grid of KPI cards
+  var W=[4513,4513];
+  var pairs=[];
+  for(var i=0;i<highlights.length;i+=2){
+    pairs.push([highlights[i],highlights[i+1]||null]);
+  }
+  pairs.forEach(function(pair){
+    var cells=pair.map(function(h){
+      if(!h)return new TableCell({borders:{top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}},width:{size:4513,type:WidthType.DXA},children:[new Paragraph({children:[]})]});
+      var bg=h.status==='good'?WC.bgGreen:h.status==='warn'?WC.bgAmber:h.status==='bad'?'FEE2E2':WC.bgBlue;
+      var border=h.status==='good'?WC.green:h.status==='warn'?WC.amber:h.status==='bad'?WC.red:WC.blue;
+      var txt=h.status==='good'?'065F46':h.status==='warn'?'854F0B':h.status==='bad'?'991B1B':'1E40AF';
+      return new TableCell({
+        borders:{top:{style:BorderStyle.SINGLE,size:1,color:border},bottom:{style:BorderStyle.SINGLE,size:1,color:border},left:{style:BorderStyle.SINGLE,size:12,color:border},right:{style:BorderStyle.SINGLE,size:1,color:border}},
+        shading:{type:ShadingType.CLEAR,fill:bg},margins:{top:120,bottom:120,left:200,right:140},width:{size:4513,type:WidthType.DXA},
+        children:[
+          new Paragraph({children:[wTR(h.label,{size:16,color:txt})]}),
+          new Paragraph({children:[wTR(String(h.value),{size:32,color:txt,bold:true})],spacing:{before:40,after:40}}),
+          new Paragraph({children:[wTR((h.trend||'')+(h.subtitle||''),{size:15,color:txt,italic:true})]})
+        ]
+      });
+    });
+    kids.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W,rows:[new TableRow({children:cells})]}));
+    kids.push(wSp(60));
+  });
+  return kids;
+}
+
+// wAbbreviationsGlossary — tabel de abrevieri, organizat pe categorii. Optional filter: array de cat.
+function wAbbreviationsGlossary(filterCats){
+  var kids=[wH1('Glosar Abrevieri',WC.gray),wSp(40)];
+  kids.push(wP('Termenii si abrevierile utilizate in acest raport, conform referintelor internationale (WHO, ECDC) si legislatiei nationale (Ord. 1101/2016, 1761/2021, 1226/2012).',{size:16,italic:true,color:WC.gray}));
+  kids.push(wSp(80));
+  var cats={};ABBREVIATIONS.forEach(function(a){if(!cats[a.cat])cats[a.cat]=[];cats[a.cat].push(a)});
+  var order=['IPC','Germeni','Infectii','Dispozitive','ATB','Metodologie','Organizatii','Sectii'];
+  var W=[1800,7226];
+  order.forEach(function(catName){
+    if(!cats[catName])return;
+    if(filterCats&&filterCats.indexOf(catName)<0)return;
+    kids.push(wH3(catName));
+    var rows=[wTblHead(['Abreviere','Sensul complet'],W)];
+    cats[catName].forEach(function(a,i){
+      rows.push(wTblRow([{text:a.abbr,bold:true},a.full],W,i%2===1));
+    });
+    kids.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W,rows:rows}));
+    kids.push(wSp(40));
+  });
+  return kids;
+}
+
+// Chart.js palette — consistent cu app-ul (navy/teal/amber/red/blue/green)
+var CHART_PALETTE=['#1B3A6B','#0F7B6C','#D4A017','#C0392B','#2563B0','#27AE60','#6D4C41','#5E35B1','#00838F','#EF6C00','#558B2F','#B71C1C','#37474F','#00695C'];
+var CHART_PALETTE_SOFT=['rgba(27,58,107,0.6)','rgba(15,123,108,0.6)','rgba(212,160,23,0.6)','rgba(192,57,43,0.6)','rgba(37,99,176,0.6)','rgba(39,174,96,0.6)'];
+
+
 
 </script>
 <script>
@@ -15979,6 +16300,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.75',date:'2026-04-22',notes:'FOUNDATION rapoarte profesionale — fisier nou benchmarks.js cu 20+ referinte (INSP 3.5‰ IAAM, MDR 30%, MRSA 50%; ECDC PPS 6.5% HAI, AMU 32.5%; WHO AWaRe Access ≥60%/Watch ≤30%/Reserve ≤10%; ESAC-Net 360 DDD/1000 pat-zile; ANMCS 95% autocontrol) + glosar 45 abrevieri (CPIAAM/IAAM/MDR/MRSA/CVP/SSI/DDD/AWaRe/PPS/ECDC/WHO/INSP/BO/ATI/etc.). Helpers Word noi: wChartImage (Chart.js pe canvas ascuns → PNG → ImageRun docx, 550x280 pt A4 portrait), wSparkline (Unicode ▁▂▃▄▅▆▇█), wKpiCard color-coded, wBenchmarkPanel, wCorrelationInsight, wDataRecommendation, wExecutiveSummary, wAbbreviationsGlossary. Rich analysis: analyzeIAAMRich/AutocontrolRich returns {kpis,trends,bySection,byOrganism,benchmarks,insights}, findCorrelations detecteaza cross-module (IAAM×Autocontrol/Audituri, MDR×ATB Watch/Reserve), rankFailingAuditItems top itemi neconformi. Nicio schimbare vizibila — foundation pentru v12.76+.'},
   {version:'12.74',date:'2026-04-22',notes:'UX Configurare — formular „Adauga categorie IPC" aparea sub tabelul cu 30+ categorii, nu se vedea la click → user credea ca butonul e blocat. Fix: formular mutat DEASUPRA tabelului, border evidentiat (teal 2px), titlu „+ Categorie IPC noua". showAddIpcCat face scrollIntoView + focus automat pe primul input (delay 350ms pentru smooth scroll).'},
   {version:'12.73',date:'2026-04-22',notes:'UX Audituri — 3 fix-uri: (1) Eliminate cele 2 butoane „+Audit Nou" duplicate — cardurile de sus sunt punctul unic de intrare, cu mesaj explicativ in empty state. (2) Agregat IPC: box informativ + tooltip per celula explica logica auto-calcul (italic=auto, bold=override). Filtrare: in matrice apar doar tipurile de audit cu date in trimestru. Daca zero audituri, mesaj explicativ in loc de matrice goala. (3) Capete de coloana in matrice cu text complet + wrap (fara „Curatenie si de" trunchiat), sectia sticky la scroll orizontal.'},
   {version:'12.72',date:'2026-04-22',notes:'FIX — Categoriile IPC noi (Governance, Precautiuni izolare, Infrastructura, EPP, Injection Safety, Ambulatoriu, Raspuns focar, Vaccinare, Circuit lenjerie) nu apareau dupa sincronizare cu un fisier dintr-o app mai veche. Sync-ul face Object.assign pe CFG.ipc_categories, stergand adaugirile din migratii. Fix: functia noua ensureStandardIpcCategories() extrasa din loadCfg si apelata si dupa sync (in _importFromHandle). Idempotenta — adauga doar ce lipseste. Categoriile apar imediat dupa refresh.'},
@@ -16717,6 +17039,129 @@ function analyzeObiective(objectives){
   objectives.forEach(o=>{const nm=o.name||o.title||'Obiectiv';const pr=o.progress||0;R.narrative.push('- '+nm+': '+pr+'% realizat'+(o.status==='achieved'?' (ATINS)':'')+'.')});
   R.recommendations.push('Redefinirea obiectivelor neatinse si stabilirea celor noi pentru '+(A.year+1)+'.');
   return R;
+}
+
+// ═════════════════════════════════════════════════════════════
+// v12.75 — Rich analysis v2 — date pentru grafice + benchmarks + corelatii + top issues
+// ═════════════════════════════════════════════════════════════
+
+// monthlyTrend — returneaza array[12] cu valori per luna (0-based, 0=Ianuarie)
+function monthlyTrend(recs,getMonthFn,aggregateFn){
+  var s=[0,0,0,0,0,0,0,0,0,0,0,0];
+  (recs||[]).forEach(function(r){
+    var m=getMonthFn(r);if(!m||m<1||m>12)return;
+    s[m-1]+=aggregateFn?aggregateFn(r):1;
+  });
+  return s;
+}
+function _getM(r){return r.month||(r.date?(new Date(r.date).getMonth()+1):null)}
+
+// topByField — ranking top N items dupa field
+function topByField(recs,getKey,getVal,N){
+  var agg={};(recs||[]).forEach(function(r){
+    var k=getKey(r);if(!k)return;
+    agg[k]=(agg[k]||0)+(getVal?getVal(r):1);
+  });
+  var arr=Object.keys(agg).map(function(k){return{key:k,val:agg[k]}}).sort(function(a,b){return b.val-a.val});
+  return N?arr.slice(0,N):arr;
+}
+
+// IAAM rich — date pentru toate graficele + benchmarks + insights
+function analyzeIAAMRich(data,totalOmZile){
+  var ia=data.ia||[],prevIa=data.pIa||[];
+  var R={kpis:{},trends:{},bySection:[],byOrganism:[],byOrigin:[],byInfType:[],benchmarks:[],riskFactors:[],insights:[]};
+  R.kpis.total=ia.length;
+  R.kpis.prevTotal=prevIa.length;
+  R.kpis.yoyDelta=ia.length-prevIa.length;
+  R.kpis.mdr=ia.filter(function(r){return r.mdr}).length;
+  R.kpis.mdrPct=ia.length?Math.round(R.kpis.mdr/ia.length*1000)/10:0;
+  R.kpis.rate=totalOmZile>0?(ia.length/totalOmZile*1000):null;
+  R.trends.monthly=monthlyTrend(ia,_getM);
+  R.trends.prevMonthly=monthlyTrend(prevIa,_getM);
+  R.trends.monthlyMdr=monthlyTrend(ia,_getM,function(r){return r.mdr?1:0});
+  R.bySection=topByField(ia,function(r){return rSec(r.section)});
+  R.byOrganism=topByField(ia,function(r){return r.organism});
+  R.byInfType=topByField(ia,function(r){return typeof rInf==='function'?rInf(r.infection_type):r.infection_type});
+  R.byOrigin=topByField(ia,function(r){return r.origin||'Nespecificat'});
+  var rfAgg={};ia.forEach(function(r){(r.risk_factors||r.factors||[]).forEach(function(f){var n=typeof f==='string'?f:(f.name||f.id);if(!n)return;rfAgg[n]=(rfAgg[n]||0)+1})});
+  R.riskFactors=Object.keys(rfAgg).map(function(k){return{name:k,count:rfAgg[k],pct:ia.length?Math.round(rfAgg[k]/ia.length*100):0}}).sort(function(a,b){return b.count-a.count}).slice(0,10);
+  if(R.kpis.rate!=null)R.benchmarks.push({label:'Rata IAAM /1000 zile-pacient',userValue:Math.round(R.kpis.rate*100)/100,userUnit:'\u2030',bmKey:['iaam','rate_per_1000']});
+  R.benchmarks.push({label:'% MDR din total IAAM',userValue:R.kpis.mdrPct,userUnit:'%',bmKey:['iaam','mdr_percent']});
+  if(R.kpis.yoyDelta>2)R.insights.push({sev:'high',title:'Crestere semnificativa YoY',text:'Numarul cazurilor IAAM a crescut cu '+R.kpis.yoyDelta+' fata de anul anterior ('+prevIa.length+' \u2192 '+ia.length+'). Evaluati daca reflecta imbunatatirea depistarii active sau deteriorarea conditiilor.'});
+  if(R.kpis.mdrPct>50)R.insights.push({sev:'high',title:'MDR dominant',text:R.kpis.mdrPct+'% din cazurile IAAM implica germeni multirezistenti — prioritar Antibiotic Stewardship + screening la internare.'});
+  if(R.bySection[0]&&R.bySection[0].val>=Math.max(1,ia.length*0.5))R.insights.push({sev:'medium',title:'Concentrare pe o sectie',text:R.bySection[0].val+'/'+ia.length+' cazuri in '+R.bySection[0].key+' — focar potential sau risc operational local.'});
+  return R;
+}
+
+// Autocontrol rich
+function analyzeAutocontrolRich(data){
+  var au=data.au||[],prevAu=data.pAu||[];var atp=data.atp||[],uv=data.uv||[];
+  var R={kpis:{},trends:{},byType:[],bySection:[],benchmarks:[],insights:[]};
+  var conf=au.filter(function(p){return p.result==='conform'}).length;
+  R.kpis.total=au.length;R.kpis.conform=conf;R.kpis.confPct=au.length?Math.round(conf/au.length*1000)/10:0;
+  R.kpis.prevTotal=prevAu.length;var prevConf=prevAu.filter(function(p){return p.result==='conform'}).length;
+  R.kpis.prevConfPct=prevAu.length?Math.round(prevConf/prevAu.length*1000)/10:null;
+  R.kpis.yoyConfDelta=R.kpis.prevConfPct!=null?Math.round((R.kpis.confPct-R.kpis.prevConfPct)*10)/10:null;
+  R.kpis.atpTotal=atp.length;
+  R.kpis.atpConf=atp.filter(function(r){return typeof atpResult==='function'&&atpResult(r.rlu_value,r.surface_type)==='conform'}).length;
+  R.kpis.atpPct=atp.length?Math.round(R.kpis.atpConf/atp.length*1000)/10:null;
+  R.kpis.uvTotal=uv.length;R.kpis.uvPass=uv.filter(function(r){return r.result==='pass'}).length;
+  R.kpis.uvPct=uv.length?Math.round(R.kpis.uvPass/uv.length*1000)/10:null;
+  R.trends.monthly=monthlyTrend(au,_getM);
+  R.trends.monthlyNc=monthlyTrend(au,_getM,function(r){return r.result==='neconform'?1:0});
+  var byT={};au.forEach(function(r){var n=rProbe(r.probe_type);if(!byT[n])byT[n]={t:0,nc:0};byT[n].t++;if(r.result==='neconform')byT[n].nc++});
+  R.byType=Object.keys(byT).map(function(k){var d=byT[k];return{key:k,total:d.t,nc:d.nc,conf:d.t-d.nc,pct:d.t?Math.round((d.t-d.nc)/d.t*1000)/10:0}}).sort(function(a,b){return b.total-a.total});
+  var byS={};au.forEach(function(r){var n=rSec(r.section);if(!byS[n])byS[n]={t:0,nc:0};byS[n].t++;if(r.result==='neconform')byS[n].nc++});
+  R.bySection=Object.keys(byS).map(function(k){var d=byS[k];return{key:k,total:d.t,nc:d.nc,pct:d.t?Math.round((d.t-d.nc)/d.t*1000)/10:0}}).sort(function(a,b){return b.nc-a.nc});
+  R.benchmarks.push({label:'Conformitate autocontrol microbiologic',userValue:R.kpis.confPct,userUnit:'%',bmKey:['autocontrol','overall_conformity']});
+  if(R.kpis.atpPct!=null)R.benchmarks.push({label:'Conformitate ATP',userValue:R.kpis.atpPct,userUnit:'%',bmKey:['autocontrol','atp_conformity']});
+  if(R.kpis.uvPct!=null)R.benchmarks.push({label:'Rata trecere UV',userValue:R.kpis.uvPct,userUnit:'%',bmKey:['autocontrol','uv_pass_rate']});
+  R.bySection.slice(0,3).filter(function(s){return s.pct<80&&s.total>=3}).forEach(function(s){
+    R.insights.push({sev:s.pct<70?'high':'medium',title:'Sectie problematica: '+s.key,text:'Conformitate '+s.pct+'% ('+s.nc+' neconforme din '+s.total+'). Necesita re-evaluare procese curatenie/dezinfectie si eventual re-instruire personal.'});
+  });
+  if(R.kpis.yoyConfDelta!=null&&R.kpis.yoyConfDelta<-3)R.insights.push({sev:'medium',title:'Deteriorare vs anul anterior',text:'Conformitate scazuta cu '+Math.abs(R.kpis.yoyConfDelta)+' pp fata de anul anterior — evaluati cauzele.'});
+  return R;
+}
+
+// Cross-module correlations
+function findCorrelations(data){
+  var insights=[];
+  var ia=data.ia||[],au=data.au||[],audits=data.audits||[],atb=data.atb||[];
+  var iaSec={};ia.forEach(function(r){iaSec[r.section]=(iaSec[r.section]||0)+1});
+  var auSec={};au.forEach(function(r){if(!auSec[r.section])auSec[r.section]={t:0,c:0};auSec[r.section].t++;if(r.result==='conform')auSec[r.section].c++});
+  var overlapping=[];
+  Object.keys(iaSec).forEach(function(secId){
+    if(iaSec[secId]>=1&&auSec[secId]&&auSec[secId].t>=3){
+      var pct=Math.round(auSec[secId].c/auSec[secId].t*100);
+      if(pct<80)overlapping.push({sec:rSec(secId),iaam:iaSec[secId],autoConf:pct});
+    }
+  });
+  if(overlapping.length>0){insights.push({sev:'high',title:'Corelatie IAAM \u00D7 Autocontrol',text:'Sectiile cu IAAM activ si autocontrol sub 80% conformitate: '+overlapping.map(function(o){return o.sec+' ('+o.iaam+' IAAM, '+o.autoConf+'% autocontrol)'}).join('; ')+'. Investigare prioritara — posibil deficit procese curatenie/dezinfectie.'})}
+  var iaM=monthlyTrend(ia,_getM);var auNcM=monthlyTrend(au,_getM,function(r){return r.result==='neconform'?1:0});
+  var coincidence=[];for(var i=0;i<12;i++){if(iaM[i]>=2&&auNcM[i]>=3)coincidence.push(i+1)}
+  if(coincidence.length>=1){insights.push({sev:'medium',title:'Suprapunere temporala IAAM \u00D7 Neconformitati',text:'Luna '+coincidence.map(function(m){return MO[m-1]}).join(', ')+' — varf IAAM si varf neconformitati autocontrol. Verificati cauze comune (rulaj personal, deficit biocide).'})}
+  var mdr=ia.filter(function(r){return r.mdr}).length;
+  var totalDdd=atb.reduce(function(s,r){return s+(+r.ddd||0)},0);
+  var watchReserve=atb.filter(function(r){return r.aware==='Watch'||r.aware==='Reserve'}).reduce(function(s,r){return s+(+r.ddd||0)},0);
+  var wrPct=totalDdd>0?Math.round(watchReserve/totalDdd*100):0;
+  if(mdr>=3&&wrPct>=50)insights.push({sev:'high',title:'Corelatie MDR \u00D7 Consum antibiotice',text:mdr+' cazuri MDR + consum Watch+Reserve '+wrPct+'% din total DDD — presiune de selectie ridicata. Prioritar: Antibiotic Stewardship cu restrictie J01D si documentare indicatie.'});
+  var audSec={};audits.forEach(function(a){var s=a.section||'';if(!s)return;if(!audSec[s])audSec[s]={sum:0,n:0};audSec[s].sum+=(+a.compliance_pct||0);audSec[s].n++});
+  var probSec=[];Object.keys(audSec).forEach(function(s){var avg=audSec[s].n?Math.round(audSec[s].sum/audSec[s].n):0;if(avg<75&&iaSec[s])probSec.push({sec:rSec(s),avgAudit:avg,iaam:iaSec[s]})});
+  if(probSec.length>0)insights.push({sev:'medium',title:'Corelatie Audituri IPC \u00D7 IAAM',text:'Sectii cu audituri IPC sub 75% si IAAM activ: '+probSec.map(function(p){return p.sec+' ('+p.avgAudit+'% audit, '+p.iaam+' IAAM)'}).join('; ')+'. Sugereaza necesitatea interventiei IPC tinta.'});
+  return insights;
+}
+
+// Rank top failing audit items
+function rankFailingAuditItems(audits,topN){
+  var agg={};(audits||[]).forEach(function(a){
+    (a.items||[]).forEach(function(it){
+      var k=it.text_ro||it.text||it.id||'?';
+      if(!agg[k])agg[k]={nc:0,total:0};
+      if(it.result==='C'||it.result==='NC')agg[k].total++;
+      if(it.result==='NC')agg[k].nc++;
+    });
+  });
+  return Object.keys(agg).map(function(k){return{item:k,nc:agg[k].nc,total:agg[k].total,pct:agg[k].total?Math.round(agg[k].nc/agg[k].total*100):0}}).filter(function(x){return x.total>=2&&x.nc>0}).sort(function(a,b){return b.pct-a.pct}).slice(0,topN||10);
 }
 
 

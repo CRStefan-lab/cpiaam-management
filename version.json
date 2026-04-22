@@ -1,7 +1,7 @@
 {
-  "version": "12.72",
+  "version": "12.74",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX — Categoriile IPC noi adaugate in v12.62-v12.69 (Governance IPC, Precautiuni izolare, Infrastructura IPC, EPP, Injection Safety, Ambulatoriu IPC, Raspuns focar, Vaccinare personal, Circuit lenjerie) nu apareau la sincronizare cu un fisier dintr-o app mai veche. Cauza: sync-ul suprascria CFG.ipc_categories cu lista veche din fisier. Fix: functia ensureStandardIpcCategories() apelata si dupa sync pentru a re-adauga orice categorie standard lipsa."
+    "UX Configurare — formularul „Adauga categorie IPC" aparea sub tabelul cu 30+ categorii, astfel user-ul nu vedea nimic la click si avea impresia ca butonul e blocat. Fix: formularul e acum mutat DEASUPRA tabelului (vizibil instant langa buton), cu border evidentiat (2px teal) si titlu clar. Plus: la click se face smooth-scroll catre formular + focus automat pe primul input."
   ]
 }

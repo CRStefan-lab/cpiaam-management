@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.76</title>
+<title>CPIAAM Management v12.77</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2190,7 +2190,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.76';
+const APP_VERSION='12.77';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6631,22 +6631,62 @@ async function rBio(el){
       avizPanel+='</table>';
     }
     avizPanel+='</div></details>';
-    // v12.76 — Balanta vizuala cu iconite si spatii rasfirate
+    // v12.77 — Balanta compacta (dropdown) + Stoc Actual vizibil in header
     const umLabel=esc(um||'');
-    const balanceRow='<div style="padding:14px 18px;display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:10px;align-items:center;background:linear-gradient(to bottom,var(--card),var(--bg));border-top:1px solid var(--brd)">'+
-      // Stoc Initial
-      '<div style="text-align:center"><div style="font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--txtL)">STOC INITIAL</div><div style="font-size:18px;font-weight:700;color:var(--navy);margin:4px 0">'+fn(gSiQ)+' <span style="font-size:11px;color:var(--txtL);font-weight:normal">'+umLabel+'</span></div><div style="font-size:10px;color:var(--txtL)">'+fn(Math.round(gSi))+' lei</div></div>'+
-      '<span style="font-size:20px;color:var(--txtL);font-weight:300">+</span>'+
-      // Intrari
-      '<div style="text-align:center"><div style="font-size:9px;font-weight:700;letter-spacing:.5px;color:#059669">INTRARI</div><div style="font-size:18px;font-weight:700;color:#059669;margin:4px 0">'+fn(gInQ)+' <span style="font-size:11px;color:var(--txtL);font-weight:normal">'+umLabel+'</span></div><div style="font-size:10px;color:var(--txtL)">'+fn(Math.round(gIn))+' lei</div></div>'+
-      '<span style="font-size:20px;color:var(--txtL);font-weight:300">\u2212</span>'+
-      // Iesiri
-      '<div style="text-align:center"><div style="font-size:9px;font-weight:700;letter-spacing:.5px;color:#DC2626">IESIRI</div><div style="font-size:18px;font-weight:700;color:#DC2626;margin:4px 0">'+fn(gOutQ)+' <span style="font-size:11px;color:var(--txtL);font-weight:normal">'+umLabel+'</span></div><div style="font-size:10px;color:var(--txtL)">'+fn(Math.round(gOut))+' lei</div></div>'+
-      '<span style="font-size:20px;color:var(--txtL);font-weight:300">=</span>'+
-      // Stoc Actual (highlight)
-      '<div style="text-align:center;padding:8px 10px;border-radius:8px;background:var(--bgBlue,#EFF6FF);border:1px solid var(--blue,#2563B0)"><div style="font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--navy)">STOC ACTUAL</div><div style="font-size:22px;font-weight:700;color:var(--navy);margin:4px 0">'+fn(gFinalQ)+' <span style="font-size:12px;color:var(--navy);font-weight:normal">'+umLabel+'</span></div><div style="font-size:10px;color:var(--navy)">'+fn(Math.round(gFinal))+' lei</div></div>'+
-    '</div>';
-    // Header
+    var balancePanel='<details style="border-bottom:1px solid var(--brd);background:var(--bg)">'+
+      '<summary style="cursor:pointer;padding:8px 14px;display:flex;align-items:center;gap:10px;font-size:11px;list-style:none;user-select:none">'+
+        '<span style="font-size:13px">\uD83D\uDCCA</span>'+
+        '<strong style="color:var(--navy)">Balanta detaliata</strong>'+
+        '<span style="flex:1;font-size:11px;color:var(--txtL)">Stoc initial '+fn(gSiQ)+' + Intrari '+fn(gInQ)+' \u2212 Iesiri '+fn(gOutQ)+' = '+fn(gFinalQ)+' '+umLabel+'</span>'+
+        '<span style="font-size:10px;color:var(--txtL)">\u25BE detalii</span>'+
+      '</summary>'+
+      '<div style="padding:10px 14px;display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:8px;align-items:center;background:var(--card);border-top:1px solid var(--brd)">'+
+        '<div style="text-align:center"><div style="font-size:9px;font-weight:700;letter-spacing:.4px;color:var(--txtL)">STOC INITIAL</div><div style="font-size:15px;font-weight:700;color:var(--navy);margin:2px 0">'+fn(gSiQ)+' <span style="font-size:10px;color:var(--txtL);font-weight:normal">'+umLabel+'</span></div><div style="font-size:10px;color:var(--txtL)">'+fn(Math.round(gSi))+' lei</div></div>'+
+        '<span style="font-size:16px;color:var(--txtL);font-weight:300">+</span>'+
+        '<div style="text-align:center"><div style="font-size:9px;font-weight:700;letter-spacing:.4px;color:#059669">INTRARI</div><div style="font-size:15px;font-weight:700;color:#059669;margin:2px 0">'+fn(gInQ)+' <span style="font-size:10px;color:var(--txtL);font-weight:normal">'+umLabel+'</span></div><div style="font-size:10px;color:var(--txtL)">'+fn(Math.round(gIn))+' lei</div></div>'+
+        '<span style="font-size:16px;color:var(--txtL);font-weight:300">\u2212</span>'+
+        '<div style="text-align:center"><div style="font-size:9px;font-weight:700;letter-spacing:.4px;color:#DC2626">IESIRI</div><div style="font-size:15px;font-weight:700;color:#DC2626;margin:2px 0">'+fn(gOutQ)+' <span style="font-size:10px;color:var(--txtL);font-weight:normal">'+umLabel+'</span></div><div style="font-size:10px;color:var(--txtL)">'+fn(Math.round(gOut))+' lei</div></div>'+
+        '<span style="font-size:16px;color:var(--txtL);font-weight:300">=</span>'+
+        '<div style="text-align:center;padding:6px 8px;border-radius:6px;background:var(--bgBlue,#EFF6FF);border:1px solid var(--blue,#2563B0)"><div style="font-size:9px;font-weight:700;letter-spacing:.4px;color:var(--navy)">STOC ACTUAL</div><div style="font-size:17px;font-weight:700;color:var(--navy);margin:2px 0">'+fn(gFinalQ)+' <span style="font-size:11px;color:var(--navy);font-weight:normal">'+umLabel+'</span></div><div style="font-size:10px;color:var(--navy)">'+fn(Math.round(gFinal))+' lei</div></div>'+
+      '</div>'+
+    '</details>';
+    // v12.77 — Documente produs: agregare atasamente din toate inregistrarile (Aviz, Fisa tehnica, SDS, Alte)
+    var docsAgg={};BIO_ATT_TYPES.forEach(function(t){docsAgg[t.key]=[]});
+    rows.forEach(function(r){
+      BIO_ATT_TYPES.forEach(function(t){
+        var files=_getBioAttFiles(r,t.key);
+        files.forEach(function(f,fi){docsAgg[t.key].push({file:f,recId:r.id,fi:fi,month:r.month,type:r.type})});
+      });
+    });
+    var totalDocs=0;BIO_ATT_TYPES.forEach(function(t){totalDocs+=docsAgg[t.key].length});
+    var docsPanel='';
+    if(totalDocs>0){
+      var docSummary=BIO_ATT_TYPES.filter(function(t){return docsAgg[t.key].length>0}).map(function(t){return '<span style="color:'+t.color+';font-weight:600">'+t.icon+' '+t.label+' ('+docsAgg[t.key].length+')</span>'}).join(' · ');
+      docsPanel='<details style="border-bottom:1px solid var(--brd);background:var(--bg)">'+
+        '<summary style="cursor:pointer;padding:8px 14px;display:flex;align-items:center;gap:10px;font-size:11px;list-style:none;user-select:none">'+
+          '<span style="font-size:13px">\uD83D\uDCCE</span>'+
+          '<strong style="color:var(--navy)">Documente produs</strong>'+
+          '<span style="flex:1;font-size:11px">'+docSummary+'</span>'+
+          '<span style="font-size:10px;color:var(--txtL)">\u25BE gestioneaza</span>'+
+        '</summary>'+
+        '<div style="padding:8px 14px;background:var(--card);border-top:1px solid var(--brd);font-size:11px">';
+      BIO_ATT_TYPES.forEach(function(t){
+        var items=docsAgg[t.key];if(items.length===0)return;
+        docsPanel+='<div style="margin-bottom:8px;padding:6px 8px;border-left:3px solid '+t.color+';background:'+t.bg+';border-radius:4px">'+
+          '<div style="font-weight:600;color:'+t.color+';margin-bottom:4px">'+t.icon+' '+t.label+' ('+items.length+')</div>';
+        items.forEach(function(it){
+          var src=(it.type==='intrare'?'Intrare ':it.type==='iesire'?'Iesire ':'Stoc initial ')+(it.month?MO[it.month-1]:'');
+          docsPanel+='<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px">'+
+            '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(it.file.name)+'">'+esc(it.file.name)+' <span style="color:var(--txtL);font-size:10px">('+src+')</span></span>'+
+            '<button onclick="editBio('+it.recId+')" title="Deschide inregistrare" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px">&#9998;</button>'+
+            '</div>';
+        });
+        docsPanel+='</div>';
+      });
+      docsPanel+='<div style="font-size:10px;color:var(--txtL);font-style:italic;margin-top:6px">Click pe creion pentru a edita inregistrarea si manipula fisierul (view/download/replace/delete).</div>'+
+        '</div></details>';
+    }
+    // Header cu Stoc Actual compact
     h+='<div data-bio-key="'+esc(k)+'" style="border:1px solid var(--brd);border-radius:10px;margin-bottom:12px;background:var(--card);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)">';
     h+='<div onclick="bioToggleProd(this.parentElement.dataset.bioKey)" style="cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:12px;background:linear-gradient(to right,var(--navy),var(--teal));color:#fff">';
     h+='<span style="font-size:14px;width:14px;display:inline-block">'+(expanded?'&#9660;':'&#9654;')+'</span>';
@@ -6654,14 +6694,18 @@ async function rBio(el){
     if(tp)h+='<span style="font-size:10px;padding:2px 8px;background:rgba(255,255,255,.2);border-radius:10px;color:#fff;font-weight:600">'+esc(tp)+'</span>';
     if(um)h+='<span style="font-size:11px;color:rgba(255,255,255,.85)">UM: '+esc(um)+'</span>';
     h+='<span style="font-size:11px;color:rgba(255,255,255,.85);padding:2px 10px;background:rgba(255,255,255,.15);border-radius:10px">'+rows.length+' miscari</span>';
+    // v12.77 — Stoc Actual compact in header (langa nr miscari)
+    h+='<span style="font-size:12px;color:#fff;padding:3px 12px;background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);border-radius:10px;font-weight:600">Stoc: '+fn(gFinalQ)+' '+umLabel+'</span>';
     h+='</div>';
     h+=avizPanel;
-    h+=balanceRow;
+    if(docsPanel)h+=docsPanel;
+    h+=balancePanel;
     // In collapse doar tabelul de miscari
     if(expanded){
       h+='<div style="padding:10px 14px;overflow-x:auto;border-top:1px solid var(--brd)">';
       h+='<div style="font-size:11px;color:var(--txtL);margin-bottom:6px;font-weight:600">MISCARI LUNARE</div>';
-      h+='<table class="dt" style="margin:0"><thead><tr><th>#</th><th>Luna</th><th>Tip</th><th>Lot</th><th style="text-align:right">Cant.</th><th style="text-align:right">Valoare</th><th>Docs</th><th>Actiuni</th></tr></thead><tbody>';
+      // v12.77: coloana Docs eliminata din tabel (agregata in dropdown „Documente produs" de sus)
+      h+='<table class="dt" style="margin:0"><thead><tr><th>#</th><th>Luna</th><th>Tip</th><th>Lot</th><th style="text-align:right">Cant.</th><th style="text-align:right">Valoare</th><th>Actiuni</th></tr></thead><tbody>';
       const sortedRows=rows.slice().sort(function(a,b){return(+a.month||0)-(+b.month||0)});
       sortedRows.forEach(function(r,i){
         h+='<tr><td>'+(i+1)+'</td><td>'+(r.month?MO[r.month-1]:'')+'</td>'+
@@ -6669,8 +6713,7 @@ async function rBio(el){
           '<td style="font-size:11px">'+esc(r.lot||'')+'</td>'+
           '<td style="text-align:right">'+fn(r.quantity)+'</td>'+
           '<td style="text-align:right">'+fn(Math.round((r.value_lei||0)*100)/100)+'</td>'+
-          '<td style="white-space:nowrap;font-size:14px">'+bioAttIcons(r)+'</td>'+
-          '<td class="act"><button onclick="editBio('+r.id+')">&#9998;</button><button onclick="delRec(\'biocide\','+r.id+')">&#128465;</button></td></tr>';
+          '<td class="act"><button onclick="editBio('+r.id+')" title="Editare (inclusiv documente)">&#9998;</button><button onclick="delRec(\'biocide\','+r.id+')">&#128465;</button></td></tr>';
       });
       h+='</tbody></table></div>';
     }
@@ -16327,6 +16370,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.77',date:'2026-04-22',notes:'UX Biocide — 3 schimbari vizuale: (1) Balanta compacta ca DROPDOWN, cu Stoc Actual vizibil compact in header (langa nr miscari) in capsula alba. Reducere vertical space ~70%. (2) NOU dropdown „Documente produs" — agrega aviz/fisa tehnica/SDS/alte din toate miscarile produsului, cu sursa (Intrare Mar, Iesire Apr). Click pe creion → deschide inregistrarea pentru manipulare fisiere. (3) Coloana „Docs" eliminata din tabelul MISCARI LUNARE — redundanta cu noul dropdown agregat.'},
   {version:'12.76',date:'2026-04-22',notes:'UX Biocide — refresh vizual card produs: Avize devin DROPDOWN compact (summary inline cu status Valabil/Expira/Expirat + Nr Aviz + count pt avize vechi) cand e inchis; tabel editabil la expand (reduce vertical space ~60%). Header cu gradient navy→teal, badges TP/UM stilizate, nr miscari in capsula. Balanta re-proiectata grid 7 coloane (Stoc Initial + Intrari − Iesiri = Stoc Actual) cu font 18-22px, Stoc Actual in card albastru cu border distinct. Shadow subtil pe cards. INFRA — build.js valideaza version.json la build.'},
   {version:'12.75',date:'2026-04-22',notes:'FOUNDATION rapoarte profesionale — fisier nou benchmarks.js cu 20+ referinte (INSP 3.5‰ IAAM, MDR 30%, MRSA 50%; ECDC PPS 6.5% HAI, AMU 32.5%; WHO AWaRe Access ≥60%/Watch ≤30%/Reserve ≤10%; ESAC-Net 360 DDD/1000 pat-zile; ANMCS 95% autocontrol) + glosar 45 abrevieri (CPIAAM/IAAM/MDR/MRSA/CVP/SSI/DDD/AWaRe/PPS/ECDC/WHO/INSP/BO/ATI/etc.). Helpers Word noi: wChartImage (Chart.js pe canvas ascuns → PNG → ImageRun docx, 550x280 pt A4 portrait), wSparkline (Unicode ▁▂▃▄▅▆▇█), wKpiCard color-coded, wBenchmarkPanel, wCorrelationInsight, wDataRecommendation, wExecutiveSummary, wAbbreviationsGlossary. Rich analysis: analyzeIAAMRich/AutocontrolRich returns {kpis,trends,bySection,byOrganism,benchmarks,insights}, findCorrelations detecteaza cross-module (IAAM×Autocontrol/Audituri, MDR×ATB Watch/Reserve), rankFailingAuditItems top itemi neconformi. Nicio schimbare vizibila — foundation pentru v12.76+.'},
   {version:'12.74',date:'2026-04-22',notes:'UX Configurare — formular „Adauga categorie IPC" aparea sub tabelul cu 30+ categorii, nu se vedea la click → user credea ca butonul e blocat. Fix: formular mutat DEASUPRA tabelului, border evidentiat (teal 2px), titlu „+ Categorie IPC noua". showAddIpcCat face scrollIntoView + focus automat pe primul input (delay 350ms pentru smooth scroll).'},

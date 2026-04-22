@@ -1,7 +1,8 @@
 {
-  "version": "12.67",
+  "version": "12.70",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "TEXT — Banner „Printeaza fisa goala" de pe pagina Audituri: reformulat mai scurt si mai sobru: „Pentru audituri pe teren (observatie directa). Consemneaza pe hartie in timpul observatiei, apoi introdu datele in acest formular." (fara fraza anterioara care suna nepotrivit)."
+    "FIX Fise goale Word audit — toate 3 tabele (generic / dotare / custom) ieseau din marginea paginii A4 portrait (total DXA depasea 9638 usable). Latimi recalculate sa incape exact: total 9638 DXA pe fiecare.",
+    "UX — Scos coloana „Referinta" din fisa goala generic audit. Motivatie: ordinele legale se modifica in timp, nu are sens sa fie imprimate pe hartie (se gasesc oricand in aplicatie in itemul insasi, dar pe hartie doar o data). Tabelul are acum doar Nr / Element / C / NC / N/A / Observatie. Legenda C/NC/NA adaugata deasupra tabelului."
   ]
 }

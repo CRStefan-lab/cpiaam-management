@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.67</title>
+<title>CPIAAM Management v12.70</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2049,7 +2049,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.67';
+const APP_VERSION='12.70';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -2308,6 +2308,11 @@ async function loadCfg(){
   // v12.65: Vaccinare Personal (doar audit operational, fara stocare date personale — GDPR-safe)
   if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>c.audit_type==='vaccinare_personal')){
     CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Vaccinare personal (verificare)',name_en:'Personnel vaccination (audit)',color:'#558B2F',source_module:'audit',audit_type:'vaccinare_personal',standard:true,active:true});
+    _comorbAdded=true;
+  }
+  // v12.69: Circuit Lenjerie (din Chestionar Control Asepsie — topic distinct)
+  if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>c.audit_type==='circuit_lenjerie')){
+    CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Circuit lenjerie',name_en:'Linen circuit',color:'#6D4C41',source_module:'audit',audit_type:'circuit_lenjerie',standard:true,active:true});
     _comorbAdded=true;
   }
   // Migrate: add HII (High Impact Interventions) audit categories if missing
@@ -10329,6 +10334,34 @@ async function renderDashCalendar(){
 // Special: Dotare Puncte Igiena, Agregat IPC
 // ═════════════════════════════════════════════════════════════
 
+// v12.68 — Checklist Cunoastere si Conformitate Proces Igiena Mainilor
+// (complement la WHO 5 Moments observational; inspirat din checklist-ul intern CPIAAM)
+// Partea 1: Structura (existenta resurse + cunoastere teoretica) | 2: Proces (observatie directa) | 3: Rezultat
+const IGM_KNOWLEDGE=[
+  // Part 1 — Structura procesului
+  {id:'k1_1a',part:'structura',partLabel:'1. Structura procesului',text_ro:'Exista planificat cursul de instruire in planul de spalare a mainilor',ref:'Plan SM'},
+  {id:'k1_1b',part:'structura',partLabel:'1. Structura procesului',text_ro:'Exista dovada instruirii persoanei auditate cu privire la spalarea mainilor',ref:'PV instruire'},
+  {id:'k1_1c',part:'structura',partLabel:'1. Structura procesului',text_ro:'Persoana auditata are acces la dispenserul cu sapun',ref:''},
+  {id:'k1_1d',part:'structura',partLabel:'1. Structura procesului',text_ro:'Cunoaste la cat timp se completeaza cu sapun fiecare dozator',ref:''},
+  {id:'k1_1e',part:'structura',partLabel:'1. Structura procesului',text_ro:'Are acces la prosoape de hartie',ref:''},
+  {id:'k1_1f',part:'structura',partLabel:'1. Structura procesului',text_ro:'Utilizeaza afisul de la fiecare chiuveta in timpul manevrei de spalare',ref:'Afis WHO'},
+  {id:'k1_2',part:'structura',partLabel:'1. Structura procesului',text_ro:'Cunoaste termenul de valabilitate dupa deschidere al antisepticului utilizat',ref:''},
+  {id:'k1_3',part:'structura',partLabel:'1. Structura procesului',text_ro:'Cunoaste frecventa schimbarii flaconului cu dezinfectant',ref:''},
+  // Part 2 — Proces (observatie directa)
+  {id:'k2_1',part:'proces',partLabel:'2. Proces (observatie directa)',text_ro:'Mainile sunt fara bijuterii (inele, bratari)',ref:'OD'},
+  {id:'k2_2',part:'proces',partLabel:'2. Proces (observatie directa)',text_ro:'Unghiile sunt taiate scurt',ref:'OD'},
+  {id:'k2_3',part:'proces',partLabel:'2. Proces (observatie directa)',text_ro:'Unghiile fara lac / oja',ref:'OD'},
+  {id:'k2_4',part:'proces',partLabel:'2. Proces (observatie directa)',text_ro:'Respecta timpul de spalare igienica (20-30 sec)',ref:'OD'},
+  {id:'k2_5',part:'proces',partLabel:'2. Proces (observatie directa)',text_ro:'Respecta toate cele 11 etape de spalare (umectare, sapun, palma/palma, palma/dos, intre degete, degete intrepatrunse, police, degete in palma, clatire, stergere prosop, inchidere robinet cu prosop)',ref:'WHO 11 etape'},
+  {id:'k2_6a',part:'proces',partLabel:'2. Proces (observatie directa)',text_ro:'Respecta cele 8 etape de dezinfectie cu SHA (mana curata, doza SHA, palma/palma, palma/dos, intre degete, intrepatrunse, police, degete in palma)',ref:'WHO 8 etape'},
+  {id:'k2_6b',part:'proces',partLabel:'2. Proces (observatie directa)',text_ro:'NU clateste mana dupa dezinfectia cu SHA',ref:'OD'},
+  {id:'k2_6c',part:'proces',partLabel:'2. Proces (observatie directa)',text_ro:'NU sterge mana dupa dezinfectia cu SHA',ref:'OD'},
+  {id:'k2_7',part:'proces',partLabel:'2. Proces (observatie directa)',text_ro:'Cunoaste cand se imbraca manusile (4 situatii: ingrijire pacient, manevre invazive, acelasi pacient dupa manevre multiple, intre 2 pacienti)',ref:''},
+  // Part 3 — Rezultat
+  {id:'k3_1',part:'rezultat',partLabel:'3. Rezultat',text_ro:'Cunoaste planul de spalare a mainilor (enumera minim 1 activitate din plan)',ref:'Plan SM'},
+  {id:'k3_2',part:'rezultat',partLabel:'3. Rezultat',text_ro:'Cunoaste cand se spala mainile (5 momente OMS)',ref:'WHO 5 Moments'}
+];
+
 // ═══ WHO 5 MOMENTS ═══
 const WHO_MOM=[
   {id:'m1',n:'1',label_ro:'Inainte de contactul cu pacientul',label_en:'Before patient contact',cl:'m1c',bg:'#E3F2FD',border:'#1565C0'},
@@ -10348,6 +10381,14 @@ const NCC_MOM={
 // ═══ PREDEFINED AUDIT ITEMS ═══
 const AUDIT_ITEMS={
   curatenie:[
+    // v12.69 — detalii adaugate din Chestionar Control Asepsie
+    {text_ro:'Mopuri plate utilizate la suprafete de max. 30 mp, schimbate intre incaperi si in functie de zona de risc',text_en:'Flat mops used for max 30 sqm areas, changed between rooms and per risk zone',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Mopurile se colecteaza in saci galbeni dupa fiecare etapa si se transporta la spalatorie',text_en:'Mops collected in yellow bags after each stage and transported to laundry',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Lavete impaturite corect (pe jumatate, in forma „S") pentru utilizare eficienta pe suprafata manii',text_en:'Cleaning cloths folded correctly (half, "S" shape) for effective hand-sized surface use',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Ustensile de curatenie dedicate zonei de risc, individualizate prin cod de culori',text_en:'Cleaning tools dedicated to risk zone, individualized by color code',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Periuta WC pastrata in solutie dezinfectanta intre utilizari',text_en:'WC brush kept in disinfectant solution between uses',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Dezinfectia sifonului de pardoseala cu solutie corespunzatoare',text_en:'Floor drain disinfection with appropriate solution',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Aparate frigorifice — termometre si grafice de temperatura completate la zi, stare igienica corespunzatoare',text_en:'Refrigeration equipment — thermometers and temperature charts up to date, adequate hygienic condition',ref:COUNTRY.regulations.mainOrder},
     {text_ro:'Pardoseala — curatenie generala si dezinfectie',text_en:'Floor — general cleaning and disinfection',ref:COUNTRY.regulations.mainOrder},
     {text_ro:'Suprafete de lucru (mese, blaturi)',text_en:'Work surfaces (tables, countertops)',ref:COUNTRY.regulations.mainOrder},
     {text_ro:'Paturi — cadru metalic + tablie',text_en:'Beds — metal frame + headboard',ref:COUNTRY.regulations.mainOrder},
@@ -10381,6 +10422,8 @@ const AUDIT_ITEMS={
     {text_ro:'Parametrii ciclului sunt inregistrati si verificati',text_en:'Cycle parameters are recorded and verified',ref:COUNTRY.regulations.mainOrder,section:'A'},
     {text_ro:'Materialele sterile sunt depozitate corect',text_en:'Sterile materials are stored correctly',ref:COUNTRY.regulations.mainOrder,section:'A'},
     {text_ro:'Termenul de valabilitate a sterilizarii este respectat',text_en:'Sterilization expiry date is respected',ref:COUNTRY.regulations.mainOrder,section:'A'},
+    // v12.69 — adaugat din Chestionar Control Asepsie
+    {text_ro:'Lampile UV — registru de evidenta zilnica a numarului total de ore de functionare, completat la zi',text_en:'UV lamps — daily log of total operating hours, up to date',ref:COUNTRY.regulations.mainOrder,section:'A'},
     // Section B: Reprocesare instrumente
     {text_ro:'Decontaminarea instrumentelor se face imediat dupa utilizare',text_en:'Instrument decontamination is done immediately after use',ref:COUNTRY.regulations.mainOrder,section:'B'},
     {text_ro:'Curatarea si spalarea instrumentelor respecta protocolul',text_en:'Instrument cleaning and washing follows protocol',ref:COUNTRY.regulations.mainOrder,section:'B'},
@@ -10436,7 +10479,9 @@ const AUDIT_ITEMS={
     {text_ro:'Tehnica corecta dezbracare EPP (doffing) — pasul CRITIC pentru prevenirea contaminarii',text_en:'Correct PPE doffing technique — CRITICAL step for contamination prevention',ref:'CDC'},
     {text_ro:'EPP contaminat aruncat la cod 18 01 03* (deseuri infectioase) — nu amestecat',text_en:'Contaminated PPE disposed as 18 01 03* (infectious waste) — not mixed',ref:COUNTRY.regulations.wasteOrder},
     {text_ro:'Instruire personal pe utilizarea EPP documentata (semestrial sau la schimbare protocoale)',text_en:'Staff training on PPE use documented (semi-annually or on protocol changes)',ref:'WHO IPC Component 3'},
-    {text_ro:'Stoc minim EPP pe sectii pentru pregatire criza / pandemie',text_en:'Minimum PPE stock on wards for crisis / pandemic preparedness',ref:'WHO IPC Component 8'}
+    {text_ro:'Stoc minim EPP pe sectii pentru pregatire criza / pandemie',text_en:'Minimum PPE stock on wards for crisis / pandemic preparedness',ref:'WHO IPC Component 8'},
+    // v12.69 — adaugat din Chestionar Control Asepsie
+    {text_ro:'Echipament specific servirea mesei (costum galben / halat unica folosinta + manusi + boneta + masca)',text_en:'Meal service specific equipment (yellow suit / single-use gown + gloves + cap + mask)',ref:COUNTRY.regulations.mainOrder}
   ],
   // v12.63: Audit Injection Safety & Sharps (WHO major focus area)
   injection_safety:[
@@ -10456,6 +10501,16 @@ const AUDIT_ITEMS={
     {text_ro:'Triaj IPC la prezentare — simptome respiratorii, MDR suspect, plagi deschise',text_en:'IPC triage at presentation — respiratory symptoms, MDR suspect, open wounds',ref:'CDC / ECDC'},
     {text_ro:'Informare pacient cu instructiuni post-procedura scrise (ingrijire plaga, semne infectie)',text_en:'Patient information with written post-procedure instructions (wound care, infection signs)',ref:'ANMCS'},
     {text_ro:'Registru proceduri minim invazive + incidente IPC ambulatorii',text_en:'Minimally invasive procedures registry + outpatient IPC incidents',ref:COUNTRY.regulations.mainOrder}
+  ],
+  // v12.69: Audit Circuit Lenjerie — topic distinct din Chestionar Control Asepsie
+  circuit_lenjerie:[
+    {text_ro:'Colectarea lenjeriei murdare in saci impermeabili, respectand codul de culori',text_en:'Dirty linen collection in impermeable bags, respecting color code',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'EPP adecvat pentru manipulare lenjerie murdara (manusi nesterile + sort)',text_en:'Appropriate PPE for dirty linen handling (non-sterile gloves + apron)',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Transportul lenjeriei murdare la spalatorie in saci impermeabili, pe circuit separat (murdar)',text_en:'Dirty linen transport to laundry in impermeable bags, on separate (dirty) circuit',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Receptionarea lenjeriei curate in saci curati, pe circuit separat (curat)',text_en:'Clean linen receipt in clean bags, on separate (clean) circuit',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Depozitarea lenjeriei curate in dulapuri igienizate, pe rafturi, sub cheie',text_en:'Clean linen storage in hygienized cabinets, on shelves, locked',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Manipularea la patul pacientului cu igiena mainilor anterioara si cu EPP adecvat',text_en:'Bedside handling with prior hand hygiene and appropriate PPE',ref:'WHO IPC'},
+    {text_ro:'Registru evidenta circuit lenjerie (cantitate, date, receptii)',text_en:'Linen circuit registry (quantity, dates, receipts)',ref:COUNTRY.regulations.mainOrder}
   ],
   // v12.65: Audit Vaccinare Personal (approach B — verificare operationala, FARA stocare date personale)
   // WHO IPC Component 3+5. Orice date vaccinale personale ale angajatilor ramân în registrul HR/Medicina Muncii,
@@ -10489,7 +10544,9 @@ const AUDIT_ITEMS={
     {text_ro:'Echipament dedicat pacientului (stetoscop, termometru) sau dezinfectat intre pacienti',text_en:'Dedicated equipment (stethoscope, thermometer) or disinfected between patients',ref:COUNTRY.regulations.mainOrder},
     {text_ro:'Transport pacient izolat cu notificare prealabila a serviciilor destinatare (radiologie, bloc operator)',text_en:'Isolated patient transport with advance notification of receiving services (radiology, OR)',ref:'CDC'},
     {text_ro:'Ridicare precautiuni doar pe criterii medicale documentate (culturi negative, vindecare)',text_en:'Lifting precautions only on documented medical criteria (negative cultures, resolution)',ref:COUNTRY.regulations.mainOrder},
-    {text_ro:'Personal instruit in managementul precautiilor de izolare, cu dovada scrisa',text_en:'Staff trained in isolation precautions management, with written evidence',ref:'WHO IPC Component 3'}
+    {text_ro:'Personal instruit in managementul precautiilor de izolare, cu dovada scrisa',text_en:'Staff trained in isolation precautions management, with written evidence',ref:'WHO IPC Component 3'},
+    // v12.69 — adaugat din Chestionar Control Asepsie
+    {text_ro:'Triaj epidemiologic zilnic al personalului (simptome respiratorii, febra) consemnat in registru',text_en:'Daily epidemiological triage of personnel (respiratory symptoms, fever) documented in registry',ref:COUNTRY.regulations.mainOrder}
   ],
   deseuri:[
     {text_ro:'Separarea deseurilor la sursa — containere distincte pe categorii',text_en:'Waste segregation at source — distinct containers per category',ref:COUNTRY.regulations.wasteOrder},
@@ -10825,7 +10882,32 @@ async function _renderIgmAudit(el,id){
         '</div>'+
       '</div>';
       h+='<div class="aud-sbody" id="igm-bd-'+sec.id+'" style="display:block">';
-      h+='<div style="font-size:11px;color:var(--txtL);margin-bottom:8px">1 rand = 1 persoana observata. Bifati DA/NU pentru fiecare moment OMS aplicabil.</div>';
+      // v12.68 — Checklist Cunoastere si Conformitate Proces (grupate pe parti)
+      if(!sec.knowledge)sec.knowledge={};
+      h+='<details style="margin-bottom:14px;border:1px solid var(--brd);border-radius:6px;overflow:hidden"><summary style="padding:8px 12px;cursor:pointer;background:var(--bg);font-size:12px;font-weight:600;color:var(--navy)">&#128218; Checklist Cunoastere si Conformitate Proces ('+_igmKnowledgeScore(sec).done+'/'+IGM_KNOWLEDGE.length+' evaluate)</summary>';
+      h+='<div style="padding:10px 12px;font-size:11px">';
+      h+='<div style="color:var(--txtL);margin-bottom:8px">Evalueaza structura procesului, cunoasterea teoretica si observatia directa. Per sectie (agregat). Pentru fiecare item: <strong>C</strong>=Conform, <strong>NC</strong>=Neconform, <strong>NA</strong>=Neaplicabil.</div>';
+      var lastPart='';
+      IGM_KNOWLEDGE.forEach(function(k){
+        if(k.partLabel!==lastPart){
+          lastPart=k.partLabel;
+          h+='<div style="margin-top:8px;padding:4px 8px;background:var(--navy);color:#fff;font-size:11px;font-weight:600;border-radius:4px">'+esc(k.partLabel)+'</div>';
+        }
+        var val=sec.knowledge[k.id]||'';
+        h+='<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--brd)">'+
+          '<div style="flex:1;font-size:11px">'+esc(k.text_ro)+(k.ref?'<span style="font-size:9px;color:var(--txtL);margin-left:6px">['+esc(k.ref)+']</span>':'')+'</div>'+
+          '<div style="display:flex;gap:3px">'+
+            '<span class="aud-gen-btn'+(val==='C'?' c-on':'')+'" onclick="_igmSetKnow(\''+sec.id+'\',\''+k.id+'\',\'C\')" style="cursor:pointer">C</span>'+
+            '<span class="aud-gen-btn'+(val==='NC'?' nc-on':'')+'" onclick="_igmSetKnow(\''+sec.id+'\',\''+k.id+'\',\'NC\')" style="cursor:pointer">NC</span>'+
+            '<span class="aud-gen-btn'+(val==='NA'?' na-on':'')+'" onclick="_igmSetKnow(\''+sec.id+'\',\''+k.id+'\',\'NA\')" style="cursor:pointer">NA</span>'+
+          '</div>'+
+        '</div>';
+      });
+      var ks=_igmKnowledgeScore(sec);
+      h+='<div style="margin-top:10px;padding:8px;background:var(--bg);border-radius:4px;font-size:12px"><strong>Scor cunoastere: </strong>'+(ks.evaluable>0?Math.round(ks.conform/ks.evaluable*100)+'% ('+ks.conform+'/'+ks.evaluable+' conforme, '+ks.na+' N/A)':'—')+'</div>';
+      h+='</div></details>';
+      // Observatie directa (existing)
+      h+='<div style="font-size:11px;color:var(--txtL);margin-bottom:8px">&#128065; <strong>Observatie directa — WHO 5 Momente</strong> · 1 rand = 1 persoana observata · Bifati DA/NU pentru fiecare moment OMS aplicabil.</div>';
       h+='<div style="overflow-x:auto"><table class="aud-tbl"><thead><tr><th style="text-align:left;min-width:120px">'+T('aud_igm_cat_prof')+'</th>';
       WHO_MOM.forEach(m=>{
         h+='<th style="background:'+m.bg+';border-bottom:2px solid '+m.border+';min-width:80px"><div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span class="'+m.cl+'">'+m.n+'</span><span style="font-size:9px;color:'+m.border+'">M'+m.n+'</span></div></th>';
@@ -10876,8 +10958,25 @@ function _igmAddSec(){
   var secId=sel.value;var secName=rSec(secId);
   if(_igmSecs.find(s=>s.id===secId)){alert('Sectia este deja adaugata.');return}
   var calups=[];for(var i=0;i<10;i++)calups.push(_mkCalup());
-  _igmSecs.push({id:secId,name:secName,calups:calups});
+  _igmSecs.push({id:secId,name:secName,calups:calups,knowledge:{}});
   render();
+}
+// v12.68: Checklist cunoastere — set valoare + calcul scor per sectie
+function _igmSetKnow(sid,itemId,val){
+  var s=_igmSecs.find(function(x){return x.id===sid});if(!s)return;
+  if(!s.knowledge)s.knowledge={};
+  // Toggle: click pe aceeasi valoare o sterge
+  if(s.knowledge[itemId]===val){delete s.knowledge[itemId]}else{s.knowledge[itemId]=val}
+  render();
+}
+function _igmKnowledgeScore(sec){
+  if(!sec||!sec.knowledge)return{done:0,evaluable:0,conform:0,na:0};
+  var done=0,conform=0,na=0;
+  IGM_KNOWLEDGE.forEach(function(k){
+    var v=sec.knowledge[k.id];
+    if(v){done++;if(v==='C')conform++;else if(v==='NA')na++}
+  });
+  return{done:done,evaluable:done-na,conform:conform,na:na};
 }
 function _igmRemSec(sid){if(!confirm(CFG.lang==='en'?'Remove section from audit?':'Eliminati sectia din audit?'))return;_igmSecs=_igmSecs.filter(s=>s.id!==sid);render()}
 function _igmTogSec(sid){var bd=document.getElementById('igm-bd-'+sid);if(bd)bd.style.display=bd.style.display==='none'?'block':'none'}
@@ -11719,12 +11818,14 @@ async function genAuditBlankForm(ipcCatId){
     var catName=_audCatName(ipcCatId);
     var at=_audCatAuditType(ipcCatId);
     var items=AUDIT_ITEMS[at]||HII_ITEMS[at]||[];
-    var tW=[500,4000,1200,800,800,800,2000];
-    var headCells=[T('aud_nr_crt'),T('aud_element'),T('aud_referinta'),'C','NC','N/A',T('aud_nota')];
+    // v12.70: scos coloana Referinta (ordinele se modifica in timp — inutil pe hartie) si
+    // latimi reduse ca tabelul sa incapa in A4 portrait (usable ~9638 DXA = 11906 - 2*1134).
+    var tW=[500,5400,700,700,700,1638]; // total = 9638 DXA
+    var headCells=[T('aud_nr_crt'),T('aud_element'),'C','NC','N/A',T('aud_nota')];
     var rows=[wTblHead(headCells,tW)];
     items.forEach((it,i)=>{
       var txt=(CFG.lang==='en')?(it.text_en||it.text_ro):it.text_ro;
-      rows.push(wTblRow([i+1,txt,it.ref||'','','','',''],tW,i%2===1));
+      rows.push(wTblRow([i+1,txt,'','','',''],tW,i%2===1));
     });
     var children=[
       ...wCover('FISA AUDIT\n'+catName,CFG.hospital_name+' — C.P.I.A.A.M.',WC.navy),
@@ -11734,7 +11835,8 @@ async function genAuditBlankForm(ipcCatId){
       wP('Auditor: _______________'),
       wSp(100),
       wH1('CHECKLIST AUDIT'),
-      new Table({rows:rows,width:{size:11000,type:WidthType.DXA}}),
+      wP('Legenda: C = Conform  |  NC = Neconform  |  N/A = Neaplicabil',{size:16,italics:true}),
+      new Table({rows:rows,width:{size:9638,type:WidthType.DXA}}),
       wSp(100),
       wH2('REZULTAT'),
       wP('Total itemi evaluati: ______'),
@@ -11759,7 +11861,8 @@ async function genDotareBlankForm(){
   try{
     var {Table,WidthType}=docx;
     var items=AUDIT_ITEMS.dotare_igiena||[];
-    var tW=[500,5000,1000,1000,1000,1000,2000];
+    // v12.70: latimi reduse pentru A4 portrait (total = 9638 DXA)
+    var tW=[500,4300,700,700,700,700,2038]; // = 9638
     var headCells=['Nr','Element','P','F','C','A','Obs.'];
     var rows=[wTblHead(headCells,tW)];
     items.forEach(function(it,i){
@@ -11775,7 +11878,7 @@ async function genDotareBlankForm(){
       wSp(100),
       wH1('CHECKLIST DOTARE'),
       wP('Legenda: P = Prezent  |  F = Functional  |  C = Curat  |  A = Accesibil. Bifati fiecare coloana aplicabila pentru elementul verificat.',{size:16,italics:true}),
-      new Table({rows:rows,width:{size:11500,type:WidthType.DXA}}),
+      new Table({rows:rows,width:{size:9638,type:WidthType.DXA}}),
       wSp(100),
       wH2('OBSERVATII'),wP('_______________________________________________'),
       wH2('RECOMANDARI'),wP('_______________________________________________'),
@@ -11792,7 +11895,8 @@ async function genCustomBlankForm(){
   showGen('Se genereaza fisa goala Audit personalizat...');
   try{
     var {Table,WidthType}=docx;
-    var tW=[500,6500,1000,1000,1000,2000];
+    // v12.70: latimi reduse pentru A4 portrait (total = 9638 DXA)
+    var tW=[500,5400,700,700,700,1638]; // = 9638
     var headCells=['Nr','Element de verificat','C','NC','N/A','Observatie'];
     var rows=[wTblHead(headCells,tW)];
     for(var i=0;i<20;i++){
@@ -11808,7 +11912,7 @@ async function genCustomBlankForm(){
       wSp(100),
       wH1('CHECKLIST'),
       wP('Legenda: C = Conform  |  NC = Neconform  |  N/A = Neaplicabil.',{size:16,italics:true}),
-      new Table({rows:rows,width:{size:12000,type:WidthType.DXA}}),
+      new Table({rows:rows,width:{size:9638,type:WidthType.DXA}}),
       wSp(100),
       wH2('OBSERVATII'),wP('_______________________________________________'),
       wH2('RECOMANDARI'),wP('_______________________________________________'),
@@ -11825,7 +11929,7 @@ async function genCustomBlankForm(){
 async function genIgmBlankForm(){
   showGen('Se genereaza fisa goala Igiena Mainilor...');
   try{
-    var {Table,WidthType}=docx;
+    var {Table,TableRow,TableCell,WidthType,ShadingType}=docx;
     // v12.57: orientare landscape + headers scurte M1..M5 (fara truncarea "Dupa contactul c...") + legenda completa deasupra tabelului
     var momHeaders=['Cat. prof.'].concat(WHO_MOM.map(function(m){return 'M'+m.n})).concat(['Obs.']);
     var tW=[2000].concat(WHO_MOM.map(function(){return 2000})).concat([2000]);
@@ -11843,15 +11947,35 @@ async function genIgmBlankForm(){
       wP('Auditor: _______________'),
       wP('Durata sesiune: ______ min   Tip audit: _______________'),
       wSp(100),
-      wH1('TABEL OBSERVATII IGIENA MAINILOR'),
+      wH1('PARTEA A — CHECKLIST CUNOASTERE SI CONFORMITATE PROCES'),
+      wP('Evalueaza structura procesului, cunoasterea teoretica si observatia directa. Marcati pentru fiecare item: C (Conform) / NC (Neconform) / NA (Neaplicabil).',{size:18,italics:true}),
+      (function(){
+        // v12.68: checklist cunoastere per parti (Structura / Proces / Rezultat)
+        var kW=[500,7500,700,700,700,3900];
+        var kRows=[wTblHead(['Nr.','Criteriu','C','NC','NA','Observatii / Sursa'],kW)];
+        var lastPart='';var idx=0;
+        IGM_KNOWLEDGE.forEach(function(k){
+          if(k.partLabel!==lastPart){
+            lastPart=k.partLabel;
+            // header de parte
+            kRows.push(new TableRow({children:[new TableCell({borders:BRDS,width:{size:14000,type:WidthType.DXA},columnSpan:6,shading:{type:ShadingType.CLEAR,fill:'E0E7FF'},margins:MARG,children:[wP(k.partLabel,{bold:true,size:18,color:WC.navy})]})]}));
+          }
+          idx++;
+          kRows.push(wTblRow([String(idx),k.text_ro,'','','',k.ref||''],kW,idx%2===0));
+        });
+        return new Table({rows:kRows,width:{size:14000,type:WidthType.DXA}});
+      })(),
+      wSp(100),
+      wH1('PARTEA B — TABEL OBSERVATII WHO 5 MOMENTE'),
       wP('Mod de completare: 1 rand = 1 profesionist observat. Pentru fiecare moment OMS aplicabil, inregistrati DA/NU si metoda (FR/SP). La NU bifati M daca s-au folosit manusi.',{size:18,italics:true}),
       wP(momLegend,{size:16,italics:true}),
       wP('Legenda observatii: DA = igiena efectuata  |  NU = igiena neefectuata  |  FR = frecare cu solutie hidroalcoolica (SHA)  |  SP = spalare cu apa si sapun  |  M = manusi',{size:16}),
       new Table({rows:rows,width:{size:14000,type:WidthType.DXA}}),
       wSp(100),
       wH2('REZULTAT'),
-      wP('Total oportunitati: ______  Conforme (DA): ______  Neconforme (NU): ______'),
-      wP('Rata conformitate: ______%'),
+      wP('Partea A — Scor cunoastere: ______ / '+IGM_KNOWLEDGE.length+' ( ______% )'),
+      wP('Partea B — Total oportunitati: ______  Conforme (DA): ______  Neconforme (NU): ______'),
+      wP('Partea B — Rata conformitate: ______%'),
       wSp(100),
       wH2('OBSERVATII'),wP('_______________________________________________'),
       ...wSigBlock()
@@ -15791,6 +15915,9 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.70',date:'2026-04-22',notes:'FIX Fise goale Word audit — toate 3 tabele (genAuditBlankForm / genDotareBlankForm / genCustomBlankForm) ieseau din marginea paginii A4 portrait (total DXA depasea 9638 usable = 11906 - 2*1134 margini). Latimi recalculate sa incape exact: generic 500+5400+700+700+700+1638=9638; dotare 500+4300+700+700+700+700+2038=9638; custom 500+5400+700+700+700+1638=9638. Si scos coloana „Referinta" din genAuditBlankForm (la solicitarea userului — ordinele se modifica in timp, tabelul pe hartie ramane utilizabil). Adaugata legenda C/NC/NA deasupra tabelului.'},
+  {version:'12.69',date:'2026-04-22',notes:'Audituri — integrate detaliile UTILE din Chestionar Control Asepsie la auditurile existente (fara duplicare): curatenie +7 itemi (mopuri plate 30mp, lavete S, ustensile cod culori, periuta WC solutie, sifon pardoseala, frigorifice); sterilizare +1 (registru UV); epp_ipc +1 (echipament servirea mesei); precautiuni_izolare +1 (triaj epidemiologic zilnic). Plus audit NOU „Circuit Lenjerie" (7 itemi) — topic distinct. Total nou: 10 itemi extinsi + 7 itemi audit nou = 17 itemi aditionali.'},
+  {version:'12.68',date:'2026-04-22',notes:'NOU Audituri IGM — integrat Checklist Cunoastere (19 itemi, 3 parti — Structura/Proces/Rezultat) in acelasi audit cu Observatia WHO 5 Momente, per sectie. Scor separat cunoastere vs. scor observatie. Inspirat din „Check list igiena mainilor" CPIAAM intern. Helperi noi: _igmSetKnow, _igmKnowledgeScore. Fisa goala Word extinsa cu PARTEA A (checklist grupat pe parti, tabel cu coloane C/NC/NA) + PARTEA B (WHO 5 momente existent).'},
   {version:'12.67',date:'2026-04-22',notes:'TEXT — Banner „Printeaza fisa goala" pe Audituri: reformulat scurt si sobru, fara fraza care suna nepotrivit.'},
   {version:'12.66',date:'2026-04-22',notes:'Rapoarte — extindere Microbiologic + ATP + UV in TOATE rapoartele (v12.59 avea doar in Analiza Autocontrol dedicata). Raport Anual: sectiunea 2 rescrisa cu sumar 3 metode + sub-sectiuni 2.1/2.2/2.3 + recomandari per metoda lipsa. Raport Trimestrial: sectiunea 3 include tabel sumar 3 metode filtrat pe luni trimestru + detaliu microbiologic. PV Sedinta: sectiunea 2 cu prezentare per metoda + concluzii includ ATP/UV conditional. Concluziile finale mentioneaza toate metodele cand exista date.'},
   {version:'12.65',date:'2026-04-22',notes:'NOU Audituri — Vaccinare Personal (Faza 3 #9 — abordarea GDPR-safe). 7 itemi care verifica EXISTENTA sistemului: registru HR separat, consimtamant GDPR Art. 9, acoperire HBV >90%, campanie gripa anuala, oferirea vaccinarii la angajare, procedura post-expunere (BBP), registru accidente expunere. NU se stocheaza date individuale vaccinale in aplicatie — raman in registrul HR/Medicina Muncii. Auditul verifica DOAR ca sistemul functioneaza.'},

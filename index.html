@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.54</title>
+<title>CPIAAM Management v12.61</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1287,9 +1287,22 @@ async function _syncAfterReconnect(){
   var localData=await ga('iaam');var localAuto=await ga('autocontrol');
   var hasLocalData=localData.length>0||localAuto.length>0;
   if(hasLocalData){
-    // Are date locale — citeste JSON cu merge INTAI, apoi scrie
-    try{await _importFromHandle(_fileHandle,true)}catch(e){console.warn('Merge read failed:',e)}
-    await syncWrite();updateSyncIndicator();
+    // v12.56 DATA PROTECTION: only write back if merge succeeded. Previously, a silent
+    // merge failure (JSON parse error from half-downloaded GDrive file, permission glitch)
+    // would still trigger syncWrite, overwriting cloud data with our stale local DB.
+    var _mergeOk=false;
+    try{
+      await _importFromHandle(_fileHandle,true);
+      _mergeOk=true;
+    }catch(e){
+      console.warn('Merge read failed:',e);
+      var _mrIsEN=CFG.lang==='en';
+      showToast(_mrIsEN?'\u26A0 Merge failed — not writing to protect remote data':'\u26A0 Citirea fisierului a esuat — nu scriu in fisier pentru a proteja datele de pe cloud');
+    }
+    if(_mergeOk){
+      await syncWrite();
+    }
+    updateSyncIndicator();
   } else {
     // DB gol — import simplu (prima deschidere pe acest calculator)
     try{await _importFromHandle(_fileHandle,true)}catch(e){
@@ -1353,6 +1366,30 @@ async function syncWrite(){
   if(!_fileHandle)return;
   _syncWriting=true;
   try{
+    // v12.56 DATA PROTECTION — pre-write consistency check.
+    // Before overwriting the file with local DB, verify the file on disk hasn't changed
+    // externally since our last known read (e.g. GDrive/OneDrive brought a newer version
+    // from the cloud). If it did, merge the new content FIRST so we don't clobber another
+    // PC's changes. If we can't even read the file to check, abort the write — it's safer
+    // to lose one local write than to overwrite cloud data with stale info.
+    try{
+      var _preFile=await _fileHandle.getFile();
+      var _hadBaseline=_lastSyncRead>0||_lastSyncSize>0;
+      var _fileChangedExternally=_hadBaseline&&(_preFile.lastModified>_lastSyncRead||_preFile.size!==_lastSyncSize);
+      if(_fileChangedExternally){
+        console.info('[CPIAAM Sync] Pre-write merge: file changed externally (mod '+_preFile.lastModified+' vs '+_lastSyncRead+', size '+_preFile.size+' vs '+_lastSyncSize+')');
+        await _importFromHandle(_fileHandle,true);
+      }
+    }catch(preErr){
+      console.warn('[CPIAAM Sync] Pre-write check failed — aborting write to protect data:',preErr);
+      if(!_syncWriteErrorShown){
+        _syncWriteErrorShown=true;
+        var _paIsEN=CFG.lang==='en';
+        showToast(_paIsEN?'\u26A0 Cannot verify file state — write aborted to protect data':'\u26A0 Nu pot verifica starea fisierului — scriere anulata pentru a proteja datele');
+      }
+      _syncWriting=false;
+      return;
+    }
     var d={};for(var s of ST){if(s==='config')continue;d[s]=await gaAll(s)}
     var wr=await _fileHandle.createWritable();
     await wr.write(JSON.stringify({version:APP_VERSION,exported:new Date().toISOString(),exportedBy:getCurrentUser(),config:CFG,...d},null,2));
@@ -1600,6 +1637,8 @@ function _smartMergeCfg(local,remote){
 async function _importFromHandle(fh,skipReload,mode){
   // mode: 'merge' (default, poll/reconnect) or 'replace' (switch file)
   const file=await fh.getFile();const text=await file.text();const d=JSON.parse(text);
+  // v12.56: remember file state at read time so syncWrite can detect external changes (GDrive/OneDrive downloaded newer)
+  var _ifhLastMod=file.lastModified;var _ifhSize=file.size;
   if(d.config){const cfg=_extractCfg(d.config);if(cfg){
     if(mode==='replace'){
       // Replace config entirely from new file; keep only who's using THIS PC
@@ -1688,6 +1727,10 @@ async function _importFromHandle(fh,skipReload,mode){
     // Write merged data back
     await cl(s);for(var i=0;i<merged.length;i++)await pt(s,merged[i],true);
   }
+  // v12.56: seed pre-write baseline so subsequent syncWrite can detect if the file was
+  // updated externally between our read and our write. Without this, writes could clobber
+  // fresh cloud data (GDrive finishes downloading mid-session, write overwrites it).
+  _lastSyncRead=_ifhLastMod;_lastSyncSize=_ifhSize;
   if(skipReload){
     if(report.added||report.updated||report.deleted){showMergePopup(report)}
     else{showToast(CFG.lang==='en'?'Sync OK — no changes':'Sincronizare OK — fara modificari')}
@@ -2006,7 +2049,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.54';
+const APP_VERSION='12.61';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -2758,9 +2801,9 @@ ro:{
   aud_conform:'Conform (DA)',aud_neconform:'Neconform (NU)',aud_na:'N/A',aud_scor:'Scor conformitate',
   aud_masuri_corective:'Masuri corective',aud_termen:'Termen',aud_responsabil:'Responsabil',
   aud_subtip:'Subtip audit',aud_planificat:'Planificat',aud_inopinat:'Inopinat',aud_tematic:'Tematic',
-  aud_durata:'Durata (min)',aud_nr_calupuri:'Nr. calupuri',
+  aud_durata:'Durata (min)',aud_nr_calupuri:'Nr. observatii',
   aud_igm_moment:'Moment',aud_igm_fr:'Frecare (FR)',aud_igm_sp:'Spalare (SP)',aud_igm_manusi:'Manusi',
-  aud_igm_calup:'Calup observatie',aud_igm_adauga_sec:'+ Adauga sectie',aud_igm_adauga_calup:'+ Calup',
+  aud_igm_calup:'Observatie (1 persoana)',aud_igm_adauga_sec:'+ Adauga sectie',aud_igm_adauga_calup:'+ Observatie',
   aud_igm_cat_prof:'Categorie profesionala',aud_igm_m1:'Inainte de contactul cu pacientul',
   aud_igm_m2:'Inainte de procedura aseptica',aud_igm_m3:'Dupa riscul la expunere',
   aud_igm_m4:'Dupa contactul cu pacientul',aud_igm_m5:'Dupa contactul cu mediul pacientului',
@@ -2924,9 +2967,9 @@ en:{
   aud_conform:'Compliant (YES)',aud_neconform:'Non-compliant (NO)',aud_na:'N/A',aud_scor:'Compliance score',
   aud_masuri_corective:'Corrective measures',aud_termen:'Deadline',aud_responsabil:'Responsible',
   aud_subtip:'Audit subtype',aud_planificat:'Planned',aud_inopinat:'Unannounced',aud_tematic:'Thematic',
-  aud_durata:'Duration (min)',aud_nr_calupuri:'No. of calups',
+  aud_durata:'Duration (min)',aud_nr_calupuri:'No. of observations',
   aud_igm_moment:'Moment',aud_igm_fr:'Rubbing (HR)',aud_igm_sp:'Washing (HW)',aud_igm_manusi:'Gloves',
-  aud_igm_calup:'Observation calup',aud_igm_adauga_sec:'+ Add section',aud_igm_adauga_calup:'+ Calup',
+  aud_igm_calup:'Observation (1 person)',aud_igm_adauga_sec:'+ Add section',aud_igm_adauga_calup:'+ Observation',
   aud_igm_cat_prof:'Professional category',aud_igm_m1:'Before patient contact',
   aud_igm_m2:'Before aseptic procedure',aud_igm_m3:'After exposure risk',
   aud_igm_m4:'After patient contact',aud_igm_m5:'After contact with patient environment',
@@ -6239,6 +6282,15 @@ var _bioExpanded={};
 function bioToggleProd(k){_bioExpanded[k]=!_bioExpanded[k];render()}
 function bioExpandAll(){document.querySelectorAll('[data-bio-key]').forEach(function(n){_bioExpanded[n.dataset.bioKey]=true});render()}
 function bioCollapseAll(){_bioExpanded={};render()}
+// v12.55: add blank aviz slot for a product — editable inline in the product card
+function bioAddAviz(pid){
+  if(!pid)return;
+  var prod=(CFG.biocide_products||[]).find(function(p){return p.id===pid});
+  if(!prod){alert('Produs nedetectat');return}
+  if(!prod.avize)prod.avize=[];
+  prod.avize.push({nr:'',date_issued:'',date_expiry:''});
+  saveCfg();render();
+}
 var BIO_PRODUCT_TYPES=[
   {id:'TP1',name:'Igiena umana',desc:'Sapunuri, geluri de dus, produse de igiena'},
   {id:'TP2',name:'Dezinfectante suprafete',desc:'Dezinfectante suprafete, pavimente, mobilier'},
@@ -6281,7 +6333,10 @@ async function rBio(el){
       '<button class="btn bo bsm" onclick="bioExpandAll()">Extinde tot</button>'+
       '<button class="btn bo bsm" onclick="bioCollapseAll()">Restrange tot</button>'+
     '</div>'+
-    '<button class="btn bp" onclick="editBio()">+ Inregistrare</button>'+
+    '<div style="display:flex;gap:6px">'+
+      '<button class="btn bo" onclick="importBiocideBalanceExcel()" title="Import balanta stocuri XLSX">&#128202; Import Excel</button>'+
+      '<button class="btn bp" onclick="editBio()">+ Inregistrare</button>'+
+    '</div>'+
   '</div>';
   // Grupeaza pe produs
   const groups={};
@@ -6301,40 +6356,74 @@ async function rBio(el){
   const now=new Date();const soon=new Date(Date.now()+30*86400000);
   groupKeys.forEach(function(k){
     const g=groups[k];const rows=g.rows;
+    // Cantitati
+    const gSiQ=rows.filter(function(r){return r.type==='stoc_initial'}).reduce(function(s,r){return s+(+r.quantity||0)},0);
+    const gInQ=rows.filter(function(r){return r.type==='intrare'}).reduce(function(s,r){return s+(+r.quantity||0)},0);
+    const gOutQ=rows.filter(function(r){return r.type==='iesire'}).reduce(function(s,r){return s+(+r.quantity||0)},0);
+    const gFinalQ=gSiQ+gInQ-gOutQ;
+    // Valori
     const gSi=rows.filter(function(r){return r.type==='stoc_initial'}).reduce(function(s,r){return s+(+r.value_lei||0)},0);
     const gIn=rows.filter(function(r){return r.type==='intrare'}).reduce(function(s,r){return s+(+r.value_lei||0)},0);
     const gOut=rows.filter(function(r){return r.type==='iesire'}).reduce(function(s,r){return s+(+r.value_lei||0)},0);
     const gFinal=gSi+gIn-gOut;
     const tp=rows[0].product_type||'';const um=rows[0].unit||'';
-    // Aviz din CFG.biocide_products
-    let avizBadge='';
-    const prod=(CFG.biocide_products||[]).find(function(p){return p.id===g.pid});
-    if(prod&&prod.avize&&prod.avize.length>0){
-      const latest=prod.avize.reduce(function(a,b){return(b.date_expiry||'')>(a.date_expiry||'')?b:a},prod.avize[0]);
-      const nr=latest.number||latest.nr||'';
-      if(latest.date_expiry){
-        const exp=new Date(latest.date_expiry);
-        const cls=exp<now?'color:var(--red);font-weight:700':exp<soon?'color:#D97706;font-weight:600':'color:var(--teal)';
-        avizBadge='<span style="font-size:11px;'+cls+'" title="Nr: '+esc(nr)+'">Aviz: '+(exp<now?'&#9888; ':'')+(exp<soon&&exp>=now?'&#9203; ':'')+fmtDate(latest.date_expiry)+'</span>';
-      } else if(nr){
-        avizBadge='<span style="font-size:11px;color:var(--txtL)">Aviz: '+esc(nr)+'</span>';
-      }
-    }
     const expanded=forceExpand||!!_bioExpanded[k];
-    h+='<div data-bio-key="'+esc(k)+'" style="border:1px solid var(--brd);border-radius:8px;margin-bottom:8px;background:var(--card)">';
-    h+='<div onclick="bioToggleProd(this.parentElement.dataset.bioKey)" style="cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
+    const pidx=g.pid?(CFG.biocide_products||[]).findIndex(function(p){return p.id===g.pid}):-1;
+    const prod=pidx>=0?CFG.biocide_products[pidx]:null;
+    // v12.55 — Aviz panel editabil inline, intotdeauna vizibil
+    let avizPanel='<div style="padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--brd);font-size:11px">';
+    avizPanel+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><strong style="color:var(--navy)">&#128203; Avize produs</strong>';
+    if(g.pid)avizPanel+='<button class="btn bo bsm" style="padding:1px 8px;font-size:10px" onclick="bioAddAviz(\''+String(g.pid).replace(/'/g,"\\'")+'\')">+ Aviz</button>';
+    else avizPanel+='<span style="font-size:10px;color:var(--txtL)">(produs fara id — editeaza inregistrarea ca sa asociezi un produs)</span>';
+    avizPanel+='</div>';
+    if(!prod||!prod.avize||prod.avize.length===0){
+      avizPanel+='<div style="color:var(--txtL);font-style:italic">Niciun aviz inregistrat'+(prod?' — adauga prin butonul „+ Aviz"':'')+'</div>';
+    } else {
+      avizPanel+='<table style="width:100%;border-collapse:collapse;font-size:11px">'+
+        '<tr style="color:var(--txtL);font-size:10px"><th style="text-align:left;padding:2px 4px">Nr. Aviz</th><th style="text-align:left;padding:2px 4px">Emitere</th><th style="text-align:left;padding:2px 4px">Expirare</th><th style="text-align:left;padding:2px 4px">Status</th><th style="width:24px"></th></tr>';
+      prod.avize.forEach(function(a,ai){
+        var stat='—';
+        if(a.date_expiry){var exp=new Date(a.date_expiry);
+          stat=exp<now?'<span style="color:var(--red);font-weight:700">&#9888; Expirat</span>':exp<soon?'<span style="color:#D97706;font-weight:700">&#9203; Expira curand</span>':'<span style="color:#059669">&#10004; Valabil</span>';
+        }
+        avizPanel+='<tr>'+
+          '<td style="padding:2px 4px"><input value="'+esc(a.nr||a.number||'')+'" placeholder="Nr." onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].nr=this.value;saveCfg()" style="width:100px;padding:2px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
+          '<td style="padding:2px 4px"><input type="date" value="'+(a.date_issued||'')+'" onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].date_issued=this.value;saveCfg();render()" style="padding:2px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
+          '<td style="padding:2px 4px"><input type="date" value="'+(a.date_expiry||'')+'" onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].date_expiry=this.value;saveCfg();render()" style="padding:2px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
+          '<td style="padding:2px 4px">'+stat+'</td>'+
+          '<td style="padding:2px 4px"><button onclick="if(confirm(\'Stergi acest aviz?\')){CFG.biocide_products['+pidx+'].avize.splice('+ai+',1);saveCfg();render()}" title="Sterge aviz" style="background:none;border:none;cursor:pointer;color:var(--red)">&#128465;</button></td>'+
+          '</tr>';
+      });
+      avizPanel+='</table>';
+    }
+    avizPanel+='</div>';
+    // v12.55 — Balanta clara cu formula: SI + Intrari - Iesiri = Stoc Final (cantitati + valori)
+    const umLabel=esc(um||'');
+    const balanceRow='<div style="padding:10px 14px;background:linear-gradient(to right,var(--card),var(--bg));display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-around;font-size:12px">'+
+      '<div style="text-align:center"><div style="color:var(--txtL);font-size:10px;font-weight:600">STOC INITIAL</div><div><strong>'+fn(gSiQ)+'</strong> '+umLabel+'</div><div style="color:var(--txtL);font-size:10px">'+fn(Math.round(gSi))+' lei</div></div>'+
+      '<span style="color:var(--txtL);font-size:18px;font-weight:700">+</span>'+
+      '<div style="text-align:center"><div style="color:#059669;font-size:10px;font-weight:600">INTRARI</div><div><strong style="color:#059669">'+fn(gInQ)+'</strong> '+umLabel+'</div><div style="color:var(--txtL);font-size:10px">'+fn(Math.round(gIn))+' lei</div></div>'+
+      '<span style="color:var(--txtL);font-size:18px;font-weight:700">&minus;</span>'+
+      '<div style="text-align:center"><div style="color:#DC2626;font-size:10px;font-weight:600">IESIRI</div><div><strong style="color:#DC2626">'+fn(gOutQ)+'</strong> '+umLabel+'</div><div style="color:var(--txtL);font-size:10px">'+fn(Math.round(gOut))+' lei</div></div>'+
+      '<span style="color:var(--txtL);font-size:18px;font-weight:700">=</span>'+
+      '<div style="text-align:center"><div style="color:var(--navy);font-size:10px;font-weight:700">STOC ACTUAL</div><div><strong style="color:var(--navy);font-size:14px">'+fn(gFinalQ)+'</strong> '+umLabel+'</div><div style="color:var(--txtL);font-size:10px">'+fn(Math.round(gFinal))+' lei</div></div>'+
+    '</div>';
+    // Header — doar toggle + nume + TP + UM + nr miscari (sumar mutat in balanta dedicata)
+    h+='<div data-bio-key="'+esc(k)+'" style="border:1px solid var(--brd);border-radius:8px;margin-bottom:10px;background:var(--card);overflow:hidden">';
+    h+='<div onclick="bioToggleProd(this.parentElement.dataset.bioKey)" style="cursor:pointer;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--brd);background:var(--card)">';
     h+='<span style="font-size:14px;color:var(--navy);width:14px;display:inline-block">'+(expanded?'&#9660;':'&#9654;')+'</span>';
-    h+='<strong style="flex:1;min-width:180px">'+esc(g.pname)+'</strong>';
+    h+='<strong style="flex:1;font-size:13px">'+esc(g.pname)+'</strong>';
     if(tp)h+='<span class="bdg bdg-b" style="font-size:10px">'+esc(tp)+'</span>';
     if(um)h+='<span style="font-size:11px;color:var(--txtL)">UM: '+esc(um)+'</span>';
-    if(avizBadge)h+=avizBadge;
     h+='<span style="font-size:11px;color:var(--txtL)">'+rows.length+' miscari</span>';
-    h+='<span style="font-size:11px;color:#059669">Intrari: '+fn(Math.round(gIn))+' lei</span>';
-    h+='<span style="font-size:11px;color:#DC2626">Consum: '+fn(Math.round(gOut))+' lei</span>';
-    h+='<span style="font-size:11px;font-weight:700">Stoc: '+fn(Math.round(gFinal))+' lei</span>';
     h+='</div>';
+    // Intotdeauna vizibile: avize + balanta (nu sunt in collapse)
+    h+=avizPanel;
+    h+=balanceRow;
+    // In collapse doar tabelul de miscari
     if(expanded){
-      h+='<div style="padding:0 12px 12px 12px;overflow-x:auto">';
+      h+='<div style="padding:10px 14px;overflow-x:auto;border-top:1px solid var(--brd)">';
+      h+='<div style="font-size:11px;color:var(--txtL);margin-bottom:6px;font-weight:600">MISCARI LUNARE</div>';
       h+='<table class="dt" style="margin:0"><thead><tr><th>#</th><th>Luna</th><th>Tip</th><th>Lot</th><th style="text-align:right">Cant.</th><th style="text-align:right">Valoare</th><th>Docs</th><th>Actiuni</th></tr></thead><tbody>';
       const sortedRows=rows.slice().sort(function(a,b){return(+a.month||0)-(+b.month||0)});
       sortedRows.forEach(function(r,i){
@@ -6661,6 +6750,226 @@ function getBioExpiredAvize(){
     });
   });
   return results;
+}
+
+// ═════════════════════════════════════════════════════════════
+// v12.61 — Import Excel Balanta de Stocuri (Romanian pharmacy/accounting format)
+// ═════════════════════════════════════════════════════════════
+// Suporta formatul uzual: header cu "Balanta stocuri", "Data inceput/sfarsit",
+// grupuri de coloane Initial|Intrari|Iesiri|Final cu sub-headers Cantitate/Valoare.
+// Agregheaza rowurile cu acelasi nume (multi-lot devine o singura inregistrare per tip).
+var _bioImportData=null;
+async function importBiocideBalanceExcel(){
+  if(typeof XLSX==='undefined'){alert('Biblioteca XLSX nu este disponibila (offline?).');return}
+  var inp=document.createElement('input');
+  inp.type='file';inp.accept='.xlsx,.xls,.xlsm';
+  inp.onchange=async function(){
+    var f=inp.files[0];if(!f)return;
+    try{
+      showGen&&showGen('Se citeste fisierul Excel...');
+      var ab=await f.arrayBuffer();
+      var wb=XLSX.read(ab);
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+      var parsed=_parseBioBalanceXlsx(rows);
+      hideGen&&hideGen();
+      if(!parsed||!parsed.products.length){
+        alert('Format nerecunoscut. Fisierul trebuie sa fie o balanta de stocuri cu coloane:\n - Id, Cod, Nume produs\n - Grupuri Initial / Intrari / Iesiri / Final\n - Sub-headers Cantitate + Valoare');
+        return;
+      }
+      _bioImportData=parsed;
+      _showBioImportPreview();
+    }catch(e){hideGen&&hideGen();alert('Eroare citire Excel: '+e.message);console.error(e)}
+  };
+  inp.click();
+}
+function _parseBioBalanceXlsx(rows){
+  // Gaseste randul cu sub-headers care contine "Cantitate" si "Valoare" in multiple coloane
+  var headerIdx=-1;
+  for(var i=0;i<Math.min(rows.length,30);i++){
+    var r=rows[i]||[];var cnt=0,vals=0;
+    r.forEach(function(c){var h=String(c||'').toLowerCase().trim();if(h==='cantitate')cnt++;else if(h==='valoare')vals++});
+    if(cnt>=2&&vals>=2){headerIdx=i;break}
+  }
+  if(headerIdx<0)return null;
+  var sub=rows[headerIdx]||[];
+  var grp=rows[headerIdx-1]||[];
+  // Mapare coloane fixe (pot varia; identificam prin sub-headers)
+  var colId=-1,colCod=-1,colNume=-1,colPret=-1;
+  sub.forEach(function(h,ci){
+    var hh=String(h||'').toLowerCase().trim();
+    if((hh==='id'||hh==='id produs'||hh==='cod intern')&&colId<0)colId=ci;
+    else if((hh==='cod'||hh==='cod produs')&&colCod<0)colCod=ci;
+    else if((hh==='nume'||hh==='denumire'||hh==='denumire produs'||hh==='produs')&&colNume<0)colNume=ci;
+    else if((hh==='pret'||hh==='pret unitar')&&colPret<0)colPret=ci;
+  });
+  if(colNume<0)return null;
+  if(colId<0)colId=colNume; // fallback — foloseste numele ca id
+  // Identifica perechi Cantitate/Valoare per grup (Initial/Intrari/Iesiri/Final)
+  // grp[i] contine "Initial"/"Intrari"/etc la pozitia de start a grupului; sub[i] are Cantitate/Valoare.
+  var typeCols={};var currentType=null;
+  for(var ci=0;ci<Math.max(sub.length,grp.length);ci++){
+    var g=String(grp[ci]||'').toLowerCase().trim();
+    if(g.indexOf('initial')>=0||g.indexOf('sold initial')>=0||g.indexOf('stoc initial')>=0)currentType='initial';
+    else if(g.indexOf('intrari')>=0||g.indexOf('intrare')>=0)currentType='intrari';
+    else if(g.indexOf('iesiri')>=0||g.indexOf('iesire')>=0||g.indexOf('consum')>=0)currentType='iesiri';
+    else if(g.indexOf('final')>=0)currentType='final';
+    var s=String(sub[ci]||'').toLowerCase().trim();
+    if(currentType&&s==='cantitate'&&typeCols[currentType]===undefined)typeCols[currentType]={q:ci,v:-1};
+    if(currentType&&s==='valoare'&&typeCols[currentType]&&typeCols[currentType].v<0)typeCols[currentType].v=ci;
+  }
+  // Extrage perioada din metadata (primele randuri)
+  var periodStart='',periodEnd='',year=new Date().getFullYear(),mStart=1,mEnd=12;
+  for(var i=0;i<headerIdx;i++){
+    var txt=(rows[i]||[]).join(' ');
+    var mSt=txt.match(/Data\s+inceput:?\s*(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})/i);
+    if(mSt){periodStart=mSt[0];mStart=+mSt[2]||1;year=+mSt[3]||year;if(year<100)year+=2000}
+    var mEn=txt.match(/Data\s+sfarsit:?\s*(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})/i);
+    if(mEn){periodEnd=mEn[0];mEnd=+mEn[2]||12}
+  }
+  // Parseaza randurile produs
+  var agg={};
+  for(var i=headerIdx+1;i<rows.length;i++){
+    var r=rows[i]||[];
+    var numeStr=String(r[colNume]||'').trim();
+    var idStr=String(r[colId]||'').trim();
+    if(!numeStr)continue;
+    var numeLow=numeStr.toLowerCase();
+    if(numeLow==='total'||numeLow.indexOf('total general')>=0||idStr.toLowerCase()==='total')continue;
+    // Extrage qty/val pentru fiecare tip
+    function getNum(ci){if(ci<0)return 0;var v=r[ci];if(v===undefined||v===null||v==='')return 0;return parseFloat(String(v).replace(/\s/g,'').replace(',','.'))||0}
+    var ini={q:typeCols.initial?getNum(typeCols.initial.q):0,v:typeCols.initial?getNum(typeCols.initial.v):0};
+    var intr={q:typeCols.intrari?getNum(typeCols.intrari.q):0,v:typeCols.intrari?getNum(typeCols.intrari.v):0};
+    var ies={q:typeCols.iesiri?getNum(typeCols.iesiri.q):0,v:typeCols.iesiri?getNum(typeCols.iesiri.v):0};
+    // Skip rows fara nicio miscare si fara stoc
+    if(ini.q===0&&intr.q===0&&ies.q===0)continue;
+    // Agregat pe nume produs (insensibil la majuscule/spatii)
+    var key=numeStr.trim().toUpperCase().replace(/\s+/g,' ');
+    if(!agg[key]){
+      agg[key]={nume:numeStr,cod:String(r[colCod]||'').trim(),ext_id:idStr,
+        initial:{q:0,v:0},intrari:{q:0,v:0},iesiri:{q:0,v:0}};
+    }
+    agg[key].initial.q+=ini.q;agg[key].initial.v+=ini.v;
+    agg[key].intrari.q+=intr.q;agg[key].intrari.v+=intr.v;
+    agg[key].iesiri.q+=ies.q;agg[key].iesiri.v+=ies.v;
+  }
+  var products=Object.keys(agg).map(function(k){return agg[k]}).sort(function(a,b){return a.nume.localeCompare(b.nume)});
+  return {period:{start:periodStart,end:periodEnd,year:year,monthStart:mStart,monthEnd:mEnd},products:products};
+}
+// Ghicireste Product Type (TP) dupa cuvinte cheie in nume
+function _guessBioTp(name){
+  var n=(name||'').toLowerCase();
+  if(/sapun|sapun lichid|gel.*maini|alcool sanitar|aniosgel|dermobacter|antisept/.test(n))return 'TP1';
+  if(/rodent|raticid/.test(n))return 'TP14';
+  if(/insect/.test(n))return 'TP18';
+  if(/dezinf.*alim|alim.*dezinf|steril\s*c/.test(n))return 'TP4';
+  return 'TP2'; // default: dezinfectant suprafete
+}
+function _guessBioUnit(name){
+  var n=(name||'').toLowerCase();
+  if(/tablet|comprimat/.test(n))return 'tablete';
+  if(/flacon|bidon|sticla/.test(n))return 'flacon';
+  if(/servetel/.test(n))return 'cutie';
+  if(/ml|litru|\bl\b/.test(n))return 'flacon';
+  return 'buc';
+}
+function _matchBioProduct(nume){
+  var norm=nume.trim().toUpperCase().replace(/\s+/g,' ');
+  var p=(CFG.biocide_products||[]).find(function(x){return String(x.name||'').trim().toUpperCase().replace(/\s+/g,' ')===norm});
+  return p||null;
+}
+function _showBioImportPreview(){
+  if(!_bioImportData)return;
+  var d=_bioImportData;var p=d.period;
+  var monthOpts=function(sel){return MO.map(function(m,i){return '<option value="'+(i+1)+'"'+(sel===i+1?' selected':'')+'>'+m+'</option>'}).join('')};
+  var h='<div style="font-size:13px">';
+  h+='<div class="ib inf" style="margin-bottom:12px"><strong>Perioada detectata:</strong> '+esc(p.start||'—')+' → '+esc(p.end||'—')+' (an '+p.year+')<br>'+
+    '<strong>'+d.products.length+' produse</strong> agregate din fisier.</div>';
+  // Optiuni import
+  h+='<div class="pn"><div class="pb">';
+  h+='<div class="fr"><div class="fg"><label>An</label><input type="number" id="bimp-year" value="'+p.year+'" min="2000" max="2099" style="padding:4px 8px;border:1px solid var(--brd);border-radius:4px"></div>';
+  h+='<div class="fg"><label>Luna pentru Stoc Initial</label><select id="bimp-m-ini" style="padding:4px 8px;border:1px solid var(--brd);border-radius:4px">'+monthOpts(p.monthStart)+'</select></div>';
+  h+='<div class="fg"><label>Luna pentru Intrari</label><select id="bimp-m-int" style="padding:4px 8px;border:1px solid var(--brd);border-radius:4px">'+monthOpts(p.monthEnd)+'</select></div>';
+  h+='<div class="fg"><label>Luna pentru Iesiri (consum)</label><select id="bimp-m-ies" style="padding:4px 8px;border:1px solid var(--brd);border-radius:4px">'+monthOpts(p.monthEnd)+'</select></div>';
+  h+='</div></div></div>';
+  h+='<div class="ib wrn" style="margin:10px 0;font-size:12px"><strong>&#9888; Atentie:</strong> inregistrarile existente pentru aceeasi perioada nu sunt inlocuite — se adauga in plus. Daca ai introdus deja manual date pentru aceasta perioada, sterge-le intai sau anuleaza acest import.</div>';
+  // Preview produse
+  h+='<div style="overflow-x:auto;max-height:50vh;overflow-y:auto;border:1px solid var(--brd);border-radius:6px">';
+  h+='<table class="dt" style="margin:0;font-size:11px"><thead style="position:sticky;top:0;background:var(--navy);color:#fff"><tr><th>Import</th><th>Nume</th><th>Status</th><th>TP</th><th>UM</th><th style="text-align:right">Initial Q</th><th style="text-align:right">Initial V</th><th style="text-align:right">Intrari Q</th><th style="text-align:right">Intrari V</th><th style="text-align:right">Iesiri Q</th><th style="text-align:right">Iesiri V</th></tr></thead><tbody>';
+  d.products.forEach(function(prd,i){
+    var match=_matchBioProduct(prd.nume);
+    var tp=match?(match.product_type||_guessBioTp(prd.nume)):_guessBioTp(prd.nume);
+    var um=match?(match.unit||_guessBioUnit(prd.nume)):_guessBioUnit(prd.nume);
+    var status=match?'<span style="color:#059669">&#10004; exista</span>':'<span style="color:#D97706">+ nou</span>';
+    h+='<tr>'+
+      '<td style="text-align:center"><input type="checkbox" id="bimp-ck-'+i+'" checked></td>'+
+      '<td><strong>'+esc(prd.nume)+'</strong><br><span style="font-size:9px;color:var(--txtL)">cod: '+esc(prd.cod||'—')+' | id: '+esc(prd.ext_id||'—')+'</span></td>'+
+      '<td>'+status+'</td>'+
+      '<td><input type="text" id="bimp-tp-'+i+'" value="'+esc(tp)+'" style="width:45px;padding:2px 4px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
+      '<td><input type="text" id="bimp-um-'+i+'" value="'+esc(um)+'" style="width:60px;padding:2px 4px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
+      '<td style="text-align:right">'+fn(prd.initial.q)+'</td><td style="text-align:right">'+fn(Math.round(prd.initial.v*100)/100)+'</td>'+
+      '<td style="text-align:right">'+fn(prd.intrari.q)+'</td><td style="text-align:right">'+fn(Math.round(prd.intrari.v*100)/100)+'</td>'+
+      '<td style="text-align:right">'+fn(prd.iesiri.q)+'</td><td style="text-align:right">'+fn(Math.round(prd.iesiri.v*100)/100)+'</td>'+
+    '</tr>';
+  });
+  h+='</tbody></table></div>';
+  // Totaluri
+  var sumIniQ=d.products.reduce(function(s,p){return s+p.initial.q},0);
+  var sumIniV=d.products.reduce(function(s,p){return s+p.initial.v},0);
+  var sumIntQ=d.products.reduce(function(s,p){return s+p.intrari.q},0);
+  var sumIntV=d.products.reduce(function(s,p){return s+p.intrari.v},0);
+  var sumIesQ=d.products.reduce(function(s,p){return s+p.iesiri.q},0);
+  var sumIesV=d.products.reduce(function(s,p){return s+p.iesiri.v},0);
+  h+='<div style="margin-top:10px;padding:8px;background:var(--bg);border-radius:6px;font-size:12px">'+
+    '<strong>Totaluri:</strong> Initial: '+fn(sumIniQ)+' um / '+fn(Math.round(sumIniV))+' lei | '+
+    'Intrari: '+fn(sumIntQ)+' um / '+fn(Math.round(sumIntV))+' lei | '+
+    'Iesiri: '+fn(sumIesQ)+' um / '+fn(Math.round(sumIesV))+' lei</div>';
+  h+='</div>';
+  openM('Import Balanta Biocide — Previzualizare',h,
+    '<button class="btn bp" onclick="_doBioImport()">&#10004; Importa</button>'+
+    '<button class="btn bo" onclick="_bioImportData=null;closeM()">Anuleaza</button>');
+}
+async function _doBioImport(){
+  if(!_bioImportData){closeM();return}
+  var d=_bioImportData;
+  var year=parseInt(document.getElementById('bimp-year').value)||d.period.year;
+  var mIni=parseInt(document.getElementById('bimp-m-ini').value)||d.period.monthStart;
+  var mInt=parseInt(document.getElementById('bimp-m-int').value)||d.period.monthEnd;
+  var mIes=parseInt(document.getElementById('bimp-m-ies').value)||d.period.monthEnd;
+  var added=0,newProds=0;
+  if(!CFG.biocide_products)CFG.biocide_products=[];
+  for(var i=0;i<d.products.length;i++){
+    var ck=document.getElementById('bimp-ck-'+i);
+    if(!ck||!ck.checked)continue;
+    var p=d.products[i];
+    var tp=(document.getElementById('bimp-tp-'+i).value||'TP2').trim().toUpperCase();
+    var um=(document.getElementById('bimp-um-'+i).value||'buc').trim();
+    // Match sau creeaza produs
+    var match=_matchBioProduct(p.nume);
+    var pid;
+    if(match){pid=match.id;if(!match.product_type)match.product_type=tp;if(!match.unit)match.unit=um}
+    else{
+      pid=(typeof genId==='function'?genId('bp'):'bp_'+Date.now()+'_'+i);
+      CFG.biocide_products.push({id:pid,name:p.nume,product_type:tp,unit:um,code:p.cod,avize:[]});
+      newProds++;
+    }
+    // Creeaza inregistrari biocide
+    if(p.initial.q>0||p.initial.v>0){
+      await pt('biocide',{id:(typeof genId==='function'?genId('bio'):'bio_'+Date.now()+'_i'+i),year:year,month:mIni,type:'stoc_initial',product_id:pid,product_type:tp,unit:um,quantity:p.initial.q,value_lei:p.initial.v,lot:'',_createdBy:getCurrentUser?getCurrentUser():'',notes:'Import Excel balanta '+(d.period.start||'')+'→'+(d.period.end||'')});added++;
+    }
+    if(p.intrari.q>0||p.intrari.v>0){
+      await pt('biocide',{id:(typeof genId==='function'?genId('bio'):'bio_'+Date.now()+'_in'+i),year:year,month:mInt,type:'intrare',product_id:pid,product_type:tp,unit:um,quantity:p.intrari.q,value_lei:p.intrari.v,lot:'',_createdBy:getCurrentUser?getCurrentUser():'',notes:'Import Excel balanta '+(d.period.start||'')+'→'+(d.period.end||'')});added++;
+    }
+    if(p.iesiri.q>0||p.iesiri.v>0){
+      await pt('biocide',{id:(typeof genId==='function'?genId('bio'):'bio_'+Date.now()+'_ie'+i),year:year,month:mIes,type:'iesire',product_id:pid,product_type:tp,unit:um,quantity:p.iesiri.q,value_lei:p.iesiri.v,lot:'',_createdBy:getCurrentUser?getCurrentUser():'',notes:'Import Excel balanta '+(d.period.start||'')+'→'+(d.period.end||'')});added++;
+    }
+  }
+  if(newProds>0)await saveCfg();
+  _bioImportData=null;
+  closeM();
+  showToast('Import reusit: '+added+' inregistrari'+(newProds>0?' ('+newProds+' produse noi adaugate in CFG)':''));
+  if(typeof logActivity==='function')logActivity('Import Excel balanta biocide: +'+added+' inregistrari, '+newProds+' produse noi');
+  render();
 }
 
 
@@ -10172,6 +10481,21 @@ var _customItems=[];
 var _customEditId=null;
 
 // ═══ HELPERS ═══
+// v12.58: banner „Printeaza fisa goala" (reutilizat pe toate tipurile de audit)
+// Motivatie (feedback user): auditurile pe teren (observatie directa) pierd contextul daca nu sunt
+// notate pe hartie pe moment — uiti pe ce sectie ce ai vazut. Banner vizibil in capatul paginii +
+// subnota explicativa + buton clar.
+function _fisaGoalBanner(onclickCode){
+  var isEN=CFG.lang==='en';
+  return '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
+    '<div style="font-size:22px">&#128196;</div>'+
+    '<div style="flex:1;min-width:200px">'+
+      '<div style="font-size:13px;font-weight:600;color:#854F0B">'+(isEN?'Print blank audit sheet':'Printeaza fisa de audit goala')+'</div>'+
+      '<div style="font-size:11px;color:#78350F;line-height:1.4">'+(isEN?'For field audits (direct observation). Write on paper as you go — prevents forgetting which ward/finding you saw. Later, enter the data in this form.':'Pentru audituri pe teren (observatie directa). Consemneaza pe hartie cat observi — previne sa uiti pe ce sectie ce ai vazut. Apoi introdu datele in acest formular.')+'</div>'+
+    '</div>'+
+    '<button class="btn bp bsm" onclick="'+onclickCode+'" style="flex-shrink:0">&#128424; '+(isEN?'Print blank form':'Printeaza fisa goala')+'</button>'+
+  '</div>';
+}
 function _audCatName(catId){
   var c=ipcCatById(catId);if(!c)return catId||'—';
   return (CFG.lang==='en')?(c.name_en||c.name_ro):c.name_ro;
@@ -10340,6 +10664,9 @@ async function _renderIgmAudit(el,id){
     '<h3 style="margin:0;color:var(--navy)">'+T('aud_igm_m1').split(' ')[0]+' '+T('pt_audituri')+' — '+T('aud_igm_calup')+'</h3>'+
   '</div>';
 
+  // v12.58: banner „Printeaza fisa goala" in capul paginii
+  h+=_fisaGoalBanner('genIgmBlankForm()');
+
   // Metadata card
   h+='<div class="pn"><div class="ph"><h3>Date identificare audit</h3></div><div class="pb">'+
     '<div class="fr">'+
@@ -10369,14 +10696,14 @@ async function _renderIgmAudit(el,id){
       var scBdg=sc.pct!=null?'<span class="bdg '+(sc.pct>=80?'bdg-g':sc.pct>=50?'bdg-a':'bdg-r')+'">'+sc.pct+'% ('+sc.da+'/'+sc.tot+')</span>':'<span style="font-size:11px;color:var(--txtL)">fara date</span>';
       h+='<div class="aud-scard" id="igm-sec-'+sec.id+'">';
       h+='<div class="aud-shdr" onclick="_igmTogSec(\''+sec.id+'\')">'+
-        '<div><h4 style="margin:0;display:inline">'+esc(sec.name)+'</h4> <span style="font-size:11px;color:var(--txtL)">('+sec.calups.length+' calupuri)</span></div>'+
+        '<div><h4 style="margin:0;display:inline">'+esc(sec.name)+'</h4> <span style="font-size:11px;color:var(--txtL)">('+sec.calups.length+' observatii)</span></div>'+
         '<div style="display:flex;align-items:center;gap:8px">'+
           '<span id="igm-sc-'+sec.id+'">'+scBdg+'</span>'+
           '<button class="btn bo bsm" onclick="event.stopPropagation();_igmRemSec(\''+sec.id+'\')" style="padding:2px 8px;font-size:14px">&#215;</button>'+
         '</div>'+
       '</div>';
       h+='<div class="aud-sbody" id="igm-bd-'+sec.id+'" style="display:block">';
-      h+='<div style="font-size:11px;color:var(--txtL);margin-bottom:8px">Un calup = o persoana observata. Bifati DA/NU pentru fiecare moment OMS aplicabil.</div>';
+      h+='<div style="font-size:11px;color:var(--txtL);margin-bottom:8px">1 rand = 1 persoana observata. Bifati DA/NU pentru fiecare moment OMS aplicabil.</div>';
       h+='<div style="overflow-x:auto"><table class="aud-tbl"><thead><tr><th style="text-align:left;min-width:120px">'+T('aud_igm_cat_prof')+'</th>';
       WHO_MOM.forEach(m=>{
         h+='<th style="background:'+m.bg+';border-bottom:2px solid '+m.border+';min-width:80px"><div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span class="'+m.cl+'">'+m.n+'</span><span style="font-size:9px;color:'+m.border+'">M'+m.n+'</span></div></th>';
@@ -10389,11 +10716,10 @@ async function _renderIgmAudit(el,id){
     });
   }
 
-  // Actions
+  // Actions (v12.58: buton fisa goala mutat in banner-ul din capul paginii)
   h+='<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
     '<button class="btn bp" onclick="_saveIgmAudit()" style="background:#16A34A;border-color:#16A34A">Salveaza audit</button>'+
     '<button class="btn bo" onclick="_backToList()">Anuleaza</button>'+
-    '<button class="btn bo bsm" onclick="genIgmBlankForm()" style="margin-left:auto">'+T('aud_fisa_goala')+'</button>'+
   '</div>';
 
   el.innerHTML=h;
@@ -10420,7 +10746,7 @@ function _igmRowHTML(sec,c){
       '</div><div id="sub-'+pref+'">'+subHtml+'</div></div></td>';
   }).join('');
   return '<tr id="igm-r-'+c.id+'"><td><select style="font-size:11px;padding:3px;border:1px solid var(--brd);border-radius:4px;max-width:120px" onchange="_igmSetCat(\''+sec.id+'\',\''+c.id+'\',this.value)">'+catOpts+'</select></td>'+mc+
-    '<td><button style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--txtL)" onclick="_igmRemCalup(\''+sec.id+'\',\''+c.id+'\')" title="Sterge calup">&#215;</button></td></tr>';
+    '<td><button style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--txtL)" onclick="_igmRemCalup(\''+sec.id+'\',\''+c.id+'\')" title="Sterge observatie">&#215;</button></td></tr>';
 }
 
 function _igmAddSec(){
@@ -10538,6 +10864,9 @@ async function _renderGenericAudit(el,id){
     '<h3 style="margin:0;color:'+_audCatColor(_genEditCatId)+'">'+esc(catName)+'</h3>'+
   '</div>';
 
+  // v12.58: banner „Printeaza fisa goala" in capul paginii
+  h+=_fisaGoalBanner("genAuditBlankForm('"+_genEditCatId+"')");
+
   // Metadata
   h+='<div class="pn"><div class="ph"><h3>Date identificare</h3></div><div class="pb">'+
     '<div class="fr">'+
@@ -10566,11 +10895,10 @@ async function _renderGenericAudit(el,id){
     '<div class="fg"><label>'+T('aud_responsabil')+'</label><input id="f-gen-resp" value="'+(r.measure_responsible||'')+'"></div></div>'+
   '</div></div>';
 
-  // Actions
+  // Actions (v12.58: buton fisa goala mutat in banner-ul din capul paginii)
   h+='<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
     '<button class="btn bp" onclick="_saveGenericAudit()" style="background:#16A34A;border-color:#16A34A">Salveaza audit</button>'+
     '<button class="btn bo" onclick="_backToList()">Anuleaza</button>'+
-    '<button class="btn bo bsm" onclick="genAuditBlankForm(\''+_genEditCatId+'\')" style="margin-left:auto">'+T('aud_fisa_goala')+'</button>'+
   '</div>';
 
   el.innerHTML=h;
@@ -10658,6 +10986,9 @@ async function _renderDotareAudit(el,id){
     '<button class="btn bo bsm" onclick="_backToList()">&#8592; '+T('aud_inapoi')+'</button>'+
     '<h3 style="margin:0;color:'+_audCatColor(catId)+'">'+esc(_audCatName(catId))+'</h3>'+
   '</div>';
+
+  // v12.58: banner „Printeaza fisa goala" in capul paginii
+  h+=_fisaGoalBanner('genDotareBlankForm()');
 
   h+='<div class="pn"><div class="ph"><h3>Date identificare</h3></div><div class="pb">'+
     '<div class="fr">'+
@@ -10849,6 +11180,9 @@ async function _renderCustomAudit(el,id){
     '<button class="btn bo bsm" onclick="_backToList()">&#8592; '+T('aud_inapoi')+'</button>'+
     '<h3 style="margin:0;color:var(--navy)">'+T('aud_custom')+'</h3>'+
   '</div>';
+
+  // v12.58: banner „Printeaza fisa goala" in capul paginii
+  h+=_fisaGoalBanner('genCustomBlankForm()');
 
   h+='<div class="pn"><div class="ph"><h3>Date identificare</h3></div><div class="pb">'+
     '<div class="fr">'+
@@ -11269,17 +11603,88 @@ async function genAuditBlankForm(ipcCatId){
   finally{hideGen()}
 }
 
+// v12.58: fisa goala „Dotare Puncte Igiena" — lista echipamente cu coloane Prezent/Functional/Curat/Accesibil
+async function genDotareBlankForm(){
+  showGen('Se genereaza fisa goala Dotare...');
+  try{
+    var {Table,WidthType}=docx;
+    var items=AUDIT_ITEMS.dotare_igiena||[];
+    var tW=[500,5000,1000,1000,1000,1000,2000];
+    var headCells=['Nr','Element','P','F','C','A','Obs.'];
+    var rows=[wTblHead(headCells,tW)];
+    items.forEach(function(it,i){
+      var txt=(CFG.lang==='en')?(it.text_en||it.text_ro):it.text_ro;
+      rows.push(wTblRow([i+1,txt,'','','','',''],tW,i%2===1));
+    });
+    var children=[
+      ...wCover('FISA AUDIT\nDotare Puncte Igiena',CFG.hospital_name+' — C.P.I.A.A.M.',WC.navy),
+      wH1('DATE IDENTIFICARE'),
+      wP('Data auditului: _______________'),
+      wP('Sectia / Punctul de igiena verificat: _______________'),
+      wP('Auditor: _______________'),
+      wSp(100),
+      wH1('CHECKLIST DOTARE'),
+      wP('Legenda: P = Prezent  |  F = Functional  |  C = Curat  |  A = Accesibil. Bifati fiecare coloana aplicabila pentru elementul verificat.',{size:16,italics:true}),
+      new Table({rows:rows,width:{size:11500,type:WidthType.DXA}}),
+      wSp(100),
+      wH2('OBSERVATII'),wP('_______________________________________________'),
+      wH2('RECOMANDARI'),wP('_______________________________________________'),
+      ...wSigBlock()
+    ];
+    var doc=makeDoc(children,'Fisa Audit Dotare Puncte Igiena','FisaDotare');
+    await saveDocx(doc,'Fisa_Audit_Dotare.docx');
+  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  finally{hideGen()}
+}
+
+// v12.58: fisa goala „Audit personalizat" — tabel gol cu 20 randuri pentru items scrise de mana
+async function genCustomBlankForm(){
+  showGen('Se genereaza fisa goala Audit personalizat...');
+  try{
+    var {Table,WidthType}=docx;
+    var tW=[500,6500,1000,1000,1000,2000];
+    var headCells=['Nr','Element de verificat','C','NC','N/A','Observatie'];
+    var rows=[wTblHead(headCells,tW)];
+    for(var i=0;i<20;i++){
+      rows.push(wTblRow([i+1,'','','','',''],tW,i%2===1));
+    }
+    var children=[
+      ...wCover('FISA AUDIT PERSONALIZAT',CFG.hospital_name+' — C.P.I.A.A.M.',WC.navy),
+      wH1('DATE IDENTIFICARE'),
+      wP('Data auditului: _______________'),
+      wP('Sectia: _______________'),
+      wP('Auditor: _______________'),
+      wP('Subiect / Tema audit: _______________________________________________'),
+      wSp(100),
+      wH1('CHECKLIST'),
+      wP('Legenda: C = Conform  |  NC = Neconform  |  N/A = Neaplicabil.',{size:16,italics:true}),
+      new Table({rows:rows,width:{size:12000,type:WidthType.DXA}}),
+      wSp(100),
+      wH2('OBSERVATII'),wP('_______________________________________________'),
+      wH2('RECOMANDARI'),wP('_______________________________________________'),
+      wH2('MASURI CORECTIVE'),wP('_______________________________________________'),
+      wP('Termen: _______________  Responsabil: _______________'),
+      ...wSigBlock()
+    ];
+    var doc=makeDoc(children,'Fisa Audit Personalizat','FisaCustom');
+    await saveDocx(doc,'Fisa_Audit_Personalizat.docx');
+  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  finally{hideGen()}
+}
+
 async function genIgmBlankForm(){
   showGen('Se genereaza fisa goala Igiena Mainilor...');
   try{
     var {Table,WidthType}=docx;
-    var momHeaders=['Cat. prof.'].concat(WHO_MOM.map(m=>'M'+m.n+' — '+_momLabel(m).substring(0,20))).concat(['Obs']);
-    var tW=[1500].concat(WHO_MOM.map(()=>1600)).concat([1500]);
+    // v12.57: orientare landscape + headers scurte M1..M5 (fara truncarea "Dupa contactul c...") + legenda completa deasupra tabelului
+    var momHeaders=['Cat. prof.'].concat(WHO_MOM.map(function(m){return 'M'+m.n})).concat(['Obs.']);
+    var tW=[2000].concat(WHO_MOM.map(function(){return 2000})).concat([2000]);
     var rows=[wTblHead(momHeaders,tW)];
     for(var i=0;i<15;i++){
-      var cells=[''].concat(WHO_MOM.map(()=>'')).concat(['']);
+      var cells=[''].concat(WHO_MOM.map(function(){return ''})).concat(['']);
       rows.push(wTblRow(cells,tW,i%2===1));
     }
+    var momLegend='Momente OMS: '+WHO_MOM.map(function(m){return 'M'+m.n+' — '+_momLabel(m)}).join('  |  ');
     var children=[
       ...wCover('FISA AUDIT IGIENA MAINILOR\nWHO 5 Momente',CFG.hospital_name+' — C.P.I.A.A.M.',WC.navy),
       wH1('DATE IDENTIFICARE'),
@@ -11288,9 +11693,11 @@ async function genIgmBlankForm(){
       wP('Auditor: _______________'),
       wP('Durata sesiune: ______ min   Tip audit: _______________'),
       wSp(100),
-      wH1('CALUPURI OBSERVATIE'),
-      wP('DA = igiena mainilor efectuata  |  NU = igiena mainilor neefectuata  |  FR = frecare (SHA)  |  SP = spalare  |  M = manusi',{size:16}),
-      new Table({rows:rows,width:{size:11000,type:WidthType.DXA}}),
+      wH1('TABEL OBSERVATII IGIENA MAINILOR'),
+      wP('Mod de completare: 1 rand = 1 profesionist observat. Pentru fiecare moment OMS aplicabil, inregistrati DA/NU si metoda (FR/SP). La NU bifati M daca s-au folosit manusi.',{size:18,italics:true}),
+      wP(momLegend,{size:16,italics:true}),
+      wP('Legenda observatii: DA = igiena efectuata  |  NU = igiena neefectuata  |  FR = frecare cu solutie hidroalcoolica (SHA)  |  SP = spalare cu apa si sapun  |  M = manusi',{size:16}),
+      new Table({rows:rows,width:{size:14000,type:WidthType.DXA}}),
       wSp(100),
       wH2('REZULTAT'),
       wP('Total oportunitati: ______  Conforme (DA): ______  Neconforme (NU): ______'),
@@ -11299,7 +11706,7 @@ async function genIgmBlankForm(){
       wH2('OBSERVATII'),wP('_______________________________________________'),
       ...wSigBlock()
     ];
-    var doc=makeDoc(children,'Fisa Audit Igiena Mainilor','FisaIgm');
+    var doc=makeDoc(children,'Fisa Audit Igiena Mainilor','FisaIgm',{landscape:true});
     await saveDocx(doc,'Fisa_Audit_Igiena_Mainilor.docx');
   }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
   finally{hideGen()}
@@ -12090,11 +12497,11 @@ async function rRap(el){
   const aiBtn=(fn)=>hasAI?'<button class="btn bo bsm" onclick="'+fn+'" style="margin-left:6px" title="'+T('ai_report_btn')+'">&#129302; '+T('ai_report_btn')+'</button>':'<button class="btn bo bsm" disabled style="margin-left:6px;opacity:.4" title="'+T('ai_not_configured')+'">&#129302; AI</button>';
   el.innerHTML='<div class="ib inf">Rapoartele sunt generate local, format Word (.docx) profesionist — cover, tabele, KPI, semnaturi configurabile.</div>'+
   '<div class="rg">'+
-    '<div class="rc"><h3>Raport Anual CPIAAM</h3><p>Raport complet: IAAM + Autocontrol + Deseuri + Biocide + ATB + Audituri + Instruire.</p>'+
+    '<div class="rc"><h3>Raport Anual CPIAAM</h3><p><strong>Document tehnic detaliat</strong>: analize, tabele, indicatori. Include IAAM + Autocontrol + Deseuri + Biocide + ATB + Audituri + Instruire + Obiective. Pentru arhivare, ANMCS, DSP.</p>'+
       '<div class="bg"><button class="btn bp" onclick="genRaportAnualWord()">Word Anual</button>'+aiBtn('genRaportAnualWordAI()')+'</div></div>'+
-    '<div class="rc"><h3>Rapoarte Trimestriale</h3><p>Raport complet trimestrial: IAAM + Autocontrol + Deseuri + Biocide + ATB + Audituri + Instruire + comparatie T anterior.</p>'+
+    '<div class="rc"><h3>Rapoarte Trimestriale</h3><p><strong>Document tehnic trimestrial</strong>: 10 sectiuni + comparatie cu trimestrul anterior.</p>'+
       '<div class="bg"><button class="btn bp" onclick="genTrimestrial(1)">T1</button><button class="btn bp" onclick="genTrimestrial(2)">T2</button><button class="btn bp" onclick="genTrimestrial(3)">T3</button><button class="btn bp" onclick="genTrimestrial(4)">T4</button></div></div>'+
-    '<div class="rc"><h3>PV Sedinta CPIAAM</h3><p>Proces-verbal anual complet cu ordine de zi, date, masuri, semnaturi.</p>'+
+    '<div class="rc"><h3>PV Sedinta CPIAAM</h3><p><strong>Act oficial al comitetului</strong> (diferit de Raport): ordine de zi, tabel participanti cu semnaturi, rezumate scurte cu trimitere la Raport ca anexa, <strong>tabel decizii cu Responsabil si Termen</strong>, semnaturi. Conform Ord. 1101/2016 — Comitetul de Prevenire IAAM.</p>'+
       '<button class="btn bp" onclick="genPVCPIAAM()">PV Anual</button></div>'+
     '<div class="rc"><h3>Analiza IAAM</h3><p>Analiza detaliata: sectii, germeni, origine, MDR.</p>'+
       '<div class="bg"><button class="btn bp" onclick="genAnalizaIAAMWord()">Word</button>'+aiBtn('genAnalizaIAAMWordAI()')+'<button class="btn bs" onclick="genRegistruIAAMExcel()" style="margin-left:6px">'+T('rap_registru_iaam_excel')+'</button></div></div>'+
@@ -12154,10 +12561,14 @@ function wFooter(docName){
     alignment:AlignmentType.CENTER,border:{top:{style:BorderStyle.SINGLE,size:1,color:WC.gray,space:4}}})
   ]})}
 
-function makeDoc(children,title,docName){return new Document({
-  styles:{default:{document:{run:{font:'Arial',size:20}}},paragraphStyles:[{id:'Heading1',name:'Heading 1',basedOn:'Normal',next:'Normal',quickFormat:true,run:{size:32,bold:true,font:'Arial'},paragraph:{spacing:{before:240,after:240}}}]},
-  numbering:{config:[{reference:'bullets',levels:[{level:0,format:LevelFormat.BULLET,text:'\u2022',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:720,hanging:360}}}}]}]},
-  sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1134,right:1134,bottom:1134,left:1134}}},headers:{default:wHeader(title)},footers:{default:wFooter(docName)},children}]})}
+function makeDoc(children,title,docName,opts){
+  // v12.57: opts.landscape=true flips dimensions for wide tables (ex: fisa observatie OMS 5 momente)
+  var landscape=opts&&opts.landscape;
+  var pageSize=landscape?{width:16838,height:11906,orientation:'landscape'}:{width:11906,height:16838};
+  return new Document({
+    styles:{default:{document:{run:{font:'Arial',size:20}}},paragraphStyles:[{id:'Heading1',name:'Heading 1',basedOn:'Normal',next:'Normal',quickFormat:true,run:{size:32,bold:true,font:'Arial'},paragraph:{spacing:{before:240,after:240}}}]},
+    numbering:{config:[{reference:'bullets',levels:[{level:0,format:LevelFormat.BULLET,text:'\u2022',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:720,hanging:360}}}}]}]},
+    sections:[{properties:{page:{size:pageSize,margin:{top:1134,right:1134,bottom:1134,left:1134}}},headers:{default:wHeader(title)},footers:{default:wFooter(docName)},children}]})}
 
 var _docDirHandle=null;
 async function saveDocx(doc,filename){showGen('Se genereaza '+filename+'...');
@@ -12683,22 +13094,96 @@ async function genRegistruIAAMExcel(){
   hideGen();
 }
 
-// ── Analiza Autocontrol ──
+// ── Analiza Autocontrol (v12.59: extins cu ATP si UV Check) ──
 async function genAnalizaAutoWord(){
-  showGen('Se genereaza analiza autocontrol...');const y=A.year,data=await collectAllData(y);const{au}=data;const AN=runAllAnalysis(data);const c=au.filter(p=>p.result==='conform').length;
-  const children=[...wCover('Analiza Autocontrol','Autocontrol Microbiologic — '+y,WC.teal)];
-  children.push(wH1('1. Volumul Activitatii',WC.teal));children.push(wSp(40));
+  showGen('Se genereaza analiza autocontrol...');
+  const y=A.year;
+  const data=await collectAllData(y);
+  const{au}=data;
+  // v12.59: inclusi ATP + UV check pe langa probe microbiologice
+  const atp=(await ga('atp')).filter(function(r){return r.year===y});
+  const uv=(await ga('uvcheck')).filter(function(r){return r.year===y});
+  const AN=runAllAnalysis(data);
+  const c=au.filter(function(p){return p.result==='conform'}).length;
+  const atpC=atp.filter(function(r){return atpResult(r.rlu_value,r.surface_type)==='conform'}).length;
+  const uvP=uv.filter(function(r){return r.result==='pass'}).length;
+  const children=[...wCover('Analiza Autocontrol','Microbiologic + ATP + UV — '+y,WC.teal)];
+
+  // 1. Sumar general (toate cele 3 tipuri)
+  children.push(wH1('1. Sumar General — Toate Tipurile de Autocontrol',WC.teal));children.push(wSp(40));
+  var WS=[3800,1100,1100,1100,2226];
+  children.push(new Table({width:{size:9326,type:WidthType.DXA},columnWidths:WS,rows:[
+    wTblHead(['Tip autocontrol','Total','Conforme','Neconf.','Conformitate'],WS),
+    wTblRow(['Microbiologic',String(au.length),String(c),String(au.length-c),au.length>0?fp(c,au.length):'—'],WS,false,au.length-c>0),
+    wTblRow(['ATP (bioluminescenta)',String(atp.length),String(atpC),String(atp.length-atpC),atp.length>0?fp(atpC,atp.length):'—'],WS,true,atp.length-atpC>0),
+    wTblRow(['UV Check (marker fluorescent)',String(uv.length),String(uvP),String(uv.length-uvP),uv.length>0?fp(uvP,uv.length):'—'],WS,false,uv.length-uvP>0),
+    wTblRow([{text:'TOTAL',bold:true},{text:String(au.length+atp.length+uv.length),bold:true},{text:String(c+atpC+uvP),bold:true},{text:String((au.length-c)+(atp.length-atpC)+(uv.length-uvP)),bold:true},{text:(au.length+atp.length+uv.length)>0?fp(c+atpC+uvP,au.length+atp.length+uv.length):'—',bold:true}],WS)
+  ]}));
+
+  // 2. Autocontrol Microbiologic (structura existenta)
+  children.push(wSp(80));children.push(wH1('2. Autocontrol Microbiologic',WC.teal));children.push(wSp(40));
   var _appCombos=getApplicableCombinations(CFG.probe_types||[],CFG.sections||[]);
   var _totalCombos=(CFG.probe_types||[]).length*(CFG.sections||[]).length;
   if(_appCombos<_totalCombos){children.push(wP('Combinatii monitorizate: '+_appCombos+' din '+_totalCombos+' posibile (conform configurarii probelor aplicabile per sectie).'))}
   addNarrative(children,AN.auto);
-  children.push(wSp(80));children.push(wH2('2. Pe Tipuri de Probe',WC.teal));children.push(wSp(40));
-  const abt={};au.forEach(r=>{const pn=rProbe(r.probe_type);if(!abt[pn])abt[pn]={t:0,nc:0};abt[pn].t++;if(r.result==='neconform')abt[pn].nc++});
-  const W=[3200,1200,1200,1200,2226];children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W,rows:[wTblHead(['Tip proba','Total','Conforme','Neconf.','Conformitate'],W),
-    ...Object.entries(abt).sort((a,b)=>b[1].t-a[1].t).map(([t,d],i)=>wTblRow([t,String(d.t),String(d.t-d.nc),d.nc>0?d.nc:'0',fp(d.t-d.nc,d.t)],W,i%2===1,d.nc>0)),
-    wTblRow([{text:'TOTAL',bold:true},{text:String(au.length),bold:true},{text:String(c),bold:true},{text:String(au.length-c),bold:true},{text:fp(c,au.length),bold:true}],W)]}));
-  children.push(wSp(100));children.push(wH1('Concluzii si Recomandari',WC.teal));children.push(wSp(40));addRecs(children,AN.auto);
-  children.push(...wSigBlock());await saveDocx(makeDoc(children,'Analiza Autocontrol '+y,'Analiza_Autocontrol_'+y),'Analiza_Autocontrol_'+y+'.docx');
+  children.push(wSp(60));children.push(wH2('2.1 Pe Tipuri de Probe',WC.teal));children.push(wSp(40));
+  const abt={};au.forEach(function(r){const pn=rProbe(r.probe_type);if(!abt[pn])abt[pn]={t:0,nc:0};abt[pn].t++;if(r.result==='neconform')abt[pn].nc++});
+  const W=[3200,1200,1200,1200,2226];
+  children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W,rows:[
+    wTblHead(['Tip proba','Total','Conforme','Neconf.','Conformitate'],W),
+    ...Object.entries(abt).sort(function(a,b){return b[1].t-a[1].t}).map(function(e,i){var t=e[0],d=e[1];return wTblRow([t,String(d.t),String(d.t-d.nc),String(d.nc),fp(d.t-d.nc,d.t)],W,i%2===1,d.nc>0)}),
+    wTblRow([{text:'TOTAL',bold:true},{text:String(au.length),bold:true},{text:String(c),bold:true},{text:String(au.length-c),bold:true},{text:fp(c,au.length),bold:true}],W)
+  ]}));
+
+  // 3. ATP (bioluminescenta) — v12.59
+  children.push(wSp(80));children.push(wH1('3. Autocontrol ATP (Bioluminescenta)',WC.teal));children.push(wSp(40));
+  if(atp.length===0){
+    children.push(wP('In anul '+y+' nu au fost efectuate masuratori ATP. ATP (Adenozin Trifosfat) evalueaza reziduurile biologice pe suprafete dupa curatare, masurat in RLU (Relative Light Units). Metoda completeaza autocontrolul microbiologic prin rezultate instant, utile pentru verificare rapida in zone critice (Bloc Operator, ATI, Alimentar).'));
+    children.push(wP('Recomandare: introducerea progresiva a masuratorilor ATP in zonele critice.',{italic:true}));
+  } else {
+    children.push(wP('Metoda ATP cuantifica reziduurile biologice pe suprafete (RLU). Rezultat: conform daca RLU ≤ prag configurat pentru tipul de suprafata.'));
+    var bySurf={};
+    atp.forEach(function(r){var sName=(typeof getAtpSurfaceName==='function')?getAtpSurfaceName(r.surface_type):(r.surface_type||'—');if(!bySurf[sName])bySurf[sName]={t:0,nc:0};bySurf[sName].t++;if(atpResult(r.rlu_value,r.surface_type)==='neconform')bySurf[sName].nc++});
+    children.push(wH2('3.1 Pe Tipuri de Suprafete',WC.teal));
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W,rows:[
+      wTblHead(['Tip suprafata','Total','Conforme','Neconf.','Conformitate'],W),
+      ...Object.entries(bySurf).sort(function(a,b){return b[1].t-a[1].t}).map(function(e,i){var s=e[0],d=e[1];return wTblRow([s,String(d.t),String(d.t-d.nc),String(d.nc),fp(d.t-d.nc,d.t)],W,i%2===1,d.nc>0)}),
+      wTblRow([{text:'TOTAL',bold:true},{text:String(atp.length),bold:true},{text:String(atpC),bold:true},{text:String(atp.length-atpC),bold:true},{text:fp(atpC,atp.length),bold:true}],W)
+    ]}));
+    // Repetitii (daca exista)
+    var withRepeat=atp.filter(function(r){return r.rlu_repeat!=null&&r.rlu_repeat!==''});
+    if(withRepeat.length>0){
+      var repConf=withRepeat.filter(function(r){return atpResult(r.rlu_repeat,r.surface_type)==='conform'}).length;
+      children.push(wSp(40));
+      children.push(wP('Probe cu re-masurare dupa re-curatare: '+withRepeat.length+' ('+repConf+' conforme la repetitie, rata recuperare: '+fp(repConf,withRepeat.length)+')'));
+    }
+  }
+
+  // 4. UV Check — v12.59
+  children.push(wSp(80));children.push(wH1('4. Verificare UV (Eficacitate Curatenie)',WC.teal));children.push(wSp(40));
+  if(uv.length===0){
+    children.push(wP('In anul '+y+' nu au fost efectuate verificari UV. Verificarea UV utilizeaza markeri fluorescenti invizibili care se aplica inainte de curatenie si se inspecteaza ulterior sub lumina UV. Pass = markerul a fost indepartat (curatenie eficace); Fail = marker inca vizibil (curatenie deficitara).'));
+    children.push(wP('Recomandare: introducerea progresiva a verificarilor UV pentru evaluarea calitatii curatarii manuale, in special in zone cu risc (Bloc Operator, saloane post-operatorii).',{italic:true}));
+  } else {
+    children.push(wP('Verificarea UV evalueaza eficacitatea curatarii manuale prin markeri fluorescenti: Pass = marker indepartat, Fail = marker inca vizibil.'));
+    var bySec={};
+    uv.forEach(function(r){var sName=rSec(r.section)||'—';if(!bySec[sName])bySec[sName]={t:0,f:0};bySec[sName].t++;if(r.result==='fail')bySec[sName].f++});
+    children.push(wH2('4.1 Pe Sectii',WC.teal));
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W,rows:[
+      wTblHead(['Sectia','Total','Pass','Fail','Rata trecere'],W),
+      ...Object.entries(bySec).sort(function(a,b){return b[1].t-a[1].t}).map(function(e,i){var s=e[0],d=e[1];return wTblRow([s,String(d.t),String(d.t-d.f),String(d.f),fp(d.t-d.f,d.t)],W,i%2===1,d.f>0)}),
+      wTblRow([{text:'TOTAL',bold:true},{text:String(uv.length),bold:true},{text:String(uvP),bold:true},{text:String(uv.length-uvP),bold:true},{text:fp(uvP,uv.length),bold:true}],W)
+    ]}));
+  }
+
+  // 5. Concluzii si Recomandari
+  children.push(wSp(100));children.push(wH1('5. Concluzii si Recomandari',WC.teal));children.push(wSp(40));
+  addRecs(children,AN.auto);
+  if(atp.length>0)children.push(wP('Autocontrol ATP: conformitate globala '+fp(atpC,atp.length)+'. Mentinerea frecventei actuale pentru validarea eficientei procedurilor de curatare in zonele critice.'));
+  if(uv.length>0)children.push(wP('Verificari UV: rata trecere '+fp(uvP,uv.length)+'. Continuarea testarilor pentru monitorizarea aderarii la protocoale de curatenie.'));
+
+  children.push(...wSigBlock());
+  await saveDocx(makeDoc(children,'Analiza Autocontrol '+y,'Analiza_Autocontrol_'+y),'Analiza_Autocontrol_'+y+'.docx');
 }
 
 // ── Analiza Deseuri ──
@@ -12933,44 +13418,215 @@ async function genTrimestrial(q){
 }
 
 // ── PV Sedinta CPIAAM ──
+// v12.60: PV Sedinta CPIAAM — rescris ca act oficial al comitetului (decizii + responsabili + termene),
+// diferentiat clar de Raportul Anual (care ramane documentul tehnic detaliat).
+// Structura urmeaza Ord. 1101/2016 art. privind Comitetul de Prevenire IAAM + practica standard PV.
 async function genPVCPIAAM(){
-  const y=A.year,ia=(await ga('iaam')).filter(r=>r.year===y),au=(await ga('autocontrol')).filter(r=>r.year===y),
-    de=(await ga('deseuri')).filter(r=>r.year===y),bi=(await ga('biocide')).filter(r=>r.year===y);
-  const conf=au.filter(p=>p.result==='conform').length,mdr=ia.filter(r=>r.mdr).length;
-  const totD=de.reduce((s,r)=>s+CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0),0);
-  const consBio=bi.filter(b=>b.type==='iesire').reduce((s,b)=>s+(+b.value_lei||0),0);
-  const si=bi.filter(b=>b.type==='stoc_initial').reduce((s,b)=>s+(+b.value_lei||0),0);
-  const intr=bi.filter(b=>b.type==='intrare').reduce((s,b)=>s+(+b.value_lei||0),0);
-  const children=[];
-  children.push(wP([wTR(CFG.hospital_name,{bold:true,size:22,color:WC.navy})],{align:AlignmentType.CENTER}));
-  children.push(wP([wTR(CFG.cpiaam_name,{bold:true,size:20,color:WC.navy})],{align:AlignmentType.CENTER}));children.push(wSp(60));
-  children.push(wP([wTR('PROCES-VERBAL',{bold:true,size:32,color:WC.navy})],{align:AlignmentType.CENTER}));
-  children.push(wP([wTR('Sedinta anuala a Comisiei de Prevenire si Control al Infectiilor',{size:22,color:WC.gray})],{align:AlignmentType.CENTER}));
-  children.push(wP([wTR('Anul '+y,{bold:true,size:22,color:WC.navy})],{align:AlignmentType.CENTER}));children.push(wSp(60));
-  children.push(wP([wTR('Nr. PV: .............  |  Data: .............  |  Ora: .............',{size:20,color:WC.gray})]));children.push(wSp(40));
-  children.push(wH2('Participanti'));children.push(wSp(20));
-  CFG.personnel.forEach(p=>{children.push(wBul([wTR(p.name,{bold:true,size:20}),wTR(' — '+p.title,{size:20,color:WC.gray})]))});children.push(wSp(60));
-  children.push(wH1('ORDINEA DE ZI'));children.push(wSp(40));
-  ['Analiza indicatorilor IAAM pentru anul '+y,'Analiza activitatii de autocontrol microbiologic','Analiza managementului deseurilor medicale','Consumul de biocide '+y+' si necesarul pentru '+(y+1),'Masuri si recomandari pentru anul '+(y+1),'Diverse'].forEach(t=>{children.push(wBul(t))});
-  // 1-4 sectiuni cu date sintetice
-  children.push(wPB());children.push(wH1('1. Analiza IAAM — '+y));children.push(wSp(40));
-  children.push(wP('S-au prezentat datele IAAM: '+ia.length+' cazuri confirmate.',{size:20}));
-  children.push(wPB());children.push(wH1('2. Autocontrol — '+y));children.push(wSp(40));
-  children.push(wP('Total probe: '+au.length+'. Conforme: '+conf+' ('+fp(conf,au.length)+'). Neconforme: '+(au.length-conf)+'.',{size:20}));
-  children.push(wPB());children.push(wH1('3. Deseuri — '+y));children.push(wSp(40));
-  children.push(wP('Total deseuri: '+fn(Math.round(totD*100)/100)+' kg.',{size:20}));
-  children.push(wSp(100));children.push(wH1('4. Biocide'));children.push(wSp(40));
-  const WBio=[3500,2763,2763];children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WBio,rows:[wTblHead(['Indicator','Cantitate','Valoare (lei)'],WBio),
-    wTblRow(['Stoc initial','—',fn(Math.round(si))+' lei'],WBio),wTblRow(['Intrari','—',fn(Math.round(intr))+' lei'],WBio,true),
-    wTblRow(['Consum','—',fn(Math.round(consBio))+' lei'],WBio),wTblRow([{text:'Stoc final',bold:true},'—',{text:fn(Math.round(si+intr-consBio))+' lei',bold:true}],WBio,true)]}));
-  // Masuri
-  children.push(wPB());children.push(wH1('5. Masuri si Recomandari'));children.push(wSp(40));
-  ['Mentinerea supravegherii active IAAM.','Continuarea programului de autocontrol trimestrial.','Monitorizarea lunara a deseurilor.','Fundamentarea necesarului de biocide '+(y+1)+'.','Instruirea periodica a personalului.','Auditarea igienei mainilor.'].forEach((m,i)=>{children.push(wBul((i+1)+'. '+m))});
-  // Concluzii
-  children.push(wPB());children.push(wH1('CONCLUZII'));children.push(wSp(40));
-  ['Activitatea '+CFG.cpiaam_name+' s-a desfasurat conform planului anual.','Au fost raportate '+ia.length+' cazuri IAAM.','Autocontrolul ('+au.length+' probe, '+fp(conf,au.length)+' conformitate) confirma eficienta procedurilor.','Managementul deseurilor a functionat fara incidente.','Consumul de biocide ('+fn(Math.round(consBio))+' lei) este proportional.'].forEach((c,i)=>{children.push(wP((i+1)+'. '+c,{size:20,before:40}))});
-  children.push(wSp(120));CFG.personnel.forEach(p=>{children.push(wSp(60));children.push(wP([wTR(p.title,{bold:true,size:18,color:WC.navy})]));children.push(wP(p.name,{size:20}));children.push(wP([wTR('Semnatura: ___________________________',{size:18,color:WC.gray})]))});
-  await saveDocx(makeDoc(children,'PV CPIAAM '+y,'PV_CPIAAM_'+y),'PV_Sedinta_CPIAAM_'+y+'.docx');
+  showGen('Se genereaza PV Sedinta CPIAAM...');
+  try{
+    const y=A.year;
+    const data=await collectAllData(y);
+    const{ia,au,de,bi}=data;
+    const conf=au.filter(function(p){return p.result==='conform'}).length;
+    const mdr=ia.filter(function(r){return r.mdr}).length;
+    const totD=de.reduce(function(s,r){return s+CFG.waste_codes.reduce(function(a,w){return a+(+r[w.id]||0)},0)},0);
+    const consBio=bi.filter(function(b){return b.type==='iesire'}).reduce(function(s,b){return s+(+b.value_lei||0)},0);
+    const si=bi.filter(function(b){return b.type==='stoc_initial'}).reduce(function(s,b){return s+(+b.value_lei||0)},0);
+    const intr=bi.filter(function(b){return b.type==='intrare'}).reduce(function(s,b){return s+(+b.value_lei||0)},0);
+    const coord=getCoord();
+    const mgr=getMgr();
+    const dirMed=getP('director_medical');
+    const asPr=getP('asistent_igiena');
+    const ny=y+1;
+    const children=[];
+
+    // ── HEADER FORMAL ──
+    children.push(wP([wTR((CFG.hospital_name||'SPITAL').toUpperCase(),{bold:true,size:24,color:WC.navy})],{align:AlignmentType.CENTER}));
+    children.push(wP([wTR('Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale (CPIAAM)',{size:20,color:WC.gray})],{align:AlignmentType.CENTER}));
+    children.push(wSp(200));
+    children.push(wP([wTR('PROCES-VERBAL',{bold:true,size:36,color:WC.navy})],{align:AlignmentType.CENTER}));
+    children.push(wP([wTR('al Sedintei Comisiei de Prevenire a Infectiilor Asociate Asistentei Medicale',{size:22,color:WC.dark})],{align:AlignmentType.CENTER}));
+    children.push(wP([wTR('ANALIZA ANUALA — ANUL '+y,{bold:true,size:26,color:WC.dark})],{align:AlignmentType.CENTER}));
+    children.push(wSp(120));
+
+    // Identificare sedinta
+    const WI=[3000,6026];
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WI,rows:[
+      new TableRow({children:[
+        new TableCell({borders:BRDS,width:{size:WI[0],type:WidthType.DXA},margins:MARG,children:[wP([wTR('Nr. / Data PV:',{bold:true,size:18})])]}),
+        new TableCell({borders:BRDS,width:{size:WI[1],type:WidthType.DXA},margins:MARG,children:[wP([wTR('Nr. ___________ din _____._____.'+(y+1),{size:18})])]})
+      ]}),
+      new TableRow({children:[
+        new TableCell({borders:BRDS,width:{size:WI[0],type:WidthType.DXA},margins:MARG,children:[wP([wTR('Loc:',{bold:true,size:18})])]}),
+        new TableCell({borders:BRDS,width:{size:WI[1],type:WidthType.DXA},margins:MARG,children:[wP([wTR('Sala de sedinte, '+(CFG.hospital_name||'Spital'),{size:18})])]})
+      ]}),
+      new TableRow({children:[
+        new TableCell({borders:BRDS,width:{size:WI[0],type:WidthType.DXA},margins:MARG,children:[wP([wTR('Ora:',{bold:true,size:18})])]}),
+        new TableCell({borders:BRDS,width:{size:WI[1],type:WidthType.DXA},margins:MARG,children:[wP([wTR('___________',{size:18})])]})
+      ]}),
+      new TableRow({children:[
+        new TableCell({borders:BRDS,width:{size:WI[0],type:WidthType.DXA},margins:MARG,children:[wP([wTR('Prezidat de:',{bold:true,size:18})])]}),
+        new TableCell({borders:BRDS,width:{size:WI[1],type:WidthType.DXA},margins:MARG,children:[wP([wTR((coord.name||'___________')+' — Coordonator CPIAAM',{size:18})])]})
+      ]}),
+      new TableRow({children:[
+        new TableCell({borders:BRDS,width:{size:WI[0],type:WidthType.DXA},margins:MARG,children:[wP([wTR('Baza legala:',{bold:true,size:18})])]}),
+        new TableCell({borders:BRDS,width:{size:WI[1],type:WidthType.DXA},margins:MARG,children:[wP([wTR(COUNTRY.regulations.mainOrder+'; '+COUNTRY.regulations.wasteOrder+'; Legea nr. 95/2006; ECDC Technical Guidance on HCAI Surveillance',{size:18})])]})
+      ]})
+    ]}));
+    children.push(wSp(120));
+
+    // ── I. ORDINEA DE ZI ──
+    children.push(wH1('I. ORDINEA DE ZI',WC.navy));children.push(wSp(40));
+    [
+      '1. Prezentarea si aprobarea Raportului Anual de Activitate CPIAAM — '+y+' (document atasat — Anexa 2)',
+      '2. Analiza indicatorilor epidemiologici IAAM '+y+': incidenta, distributie pe sectii, spectru etiologic',
+      '3. Prezentarea rezultatelor autocontrolului microbiologic '+y+' — '+au.length+' probe recoltate',
+      '4. Analiza managementului deseurilor medicale '+y+' — '+fn(Math.round(totD*100)/100)+' kg',
+      '5. Analiza consumului si necesarului de biocide — balanta '+y+', necesar '+ny,
+      '6. Stabilirea masurilor de prevenire si recomandarilor prioritare pentru '+ny,
+      '7. Diverse'
+    ].forEach(function(t){children.push(wP(t,{size:20}))});
+    children.push(wSp(80));
+
+    // ── II. LISTA PARTICIPANTILOR ──
+    children.push(wH1('II. LISTA PARTICIPANTILOR',WC.navy));children.push(wSp(40));
+    const WP_=[500,3200,3200,2126];
+    var partRows=[wTblHead(['Nr.','Nume si prenume','Structura / Functie','Semnatura'],WP_)];
+    (CFG.personnel||[]).forEach(function(p,i){
+      var role=(typeof roleName==='function')?roleName(p.role):(p.role||'');
+      var functie=p.title||role||'—';
+      partRows.push(wTblRow([String(i+1),p.name||'—',functie,''],WP_,i%2===1));
+    });
+    // 3 randuri libere pentru membri neinregistrati in aplicatie
+    for(var k=(CFG.personnel||[]).length;k<(CFG.personnel||[]).length+3;k++){
+      partRows.push(wTblRow([String(k+1),'','',''],WP_,k%2===1));
+    }
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WP_,rows:partRows}));
+    children.push(wSp(120));
+
+    // ── III. DESFASURAREA SEDINTEI — rezumate scurte cu referinte la Raport ca anexa ──
+    children.push(wH1('III. DESFASURAREA SEDINTEI',WC.navy));children.push(wSp(40));
+    children.push(wP((coord.name||'Coordonatorul CPIAAM')+' a prezentat rezumatul activitatii CPIAAM in anul '+y+', cu trimitere la Raportul Anual atasat (Anexa 2) pentru detaliile tehnice si analitice.',{size:20}));
+    children.push(wSp(60));
+
+    children.push(wH2('1. Indicatori IAAM '+y,WC.navy));
+    children.push(wP('Cazuri IAAM confirmate: '+ia.length+(ia.length>0?' (din care '+mdr+' cu germeni multirezistenti — '+Math.round(mdr/ia.length*100)+'%)':'')+'. Distributia spatiala si temporala este sporadica, fara focare epidemice identificate.',{size:20}));
+    children.push(wP('(Detalii — Anexa: Analiza IAAM '+y+')',{size:18,italic:true,color:WC.gray}));
+    children.push(wSp(60));
+
+    children.push(wH2('2. Autocontrol microbiologic '+y,WC.navy));
+    children.push(wP('Total probe recoltate: '+au.length+'. Rata de conformitate: '+(au.length>0?fp(conf,au.length):'—')+' ('+conf+' conforme, '+(au.length-conf)+' neconforme). Neconformitatile identificate au avut caracter punctual, fara impact epidemiologic documentat.',{size:20}));
+    children.push(wP('(Detalii — Anexa: Analiza Autocontrol '+y+')',{size:18,italic:true,color:WC.gray}));
+    children.push(wSp(60));
+
+    children.push(wH2('3. Managementul deseurilor medicale '+y,WC.navy));
+    children.push(wP('Cantitate totala: '+fn(Math.round(totD*100)/100)+' kg deseuri medicale (coduri 18 01). Sistemul a functionat conform procedurilor si cerintelor legale, fara incidente sau neconformitati majore raportate.',{size:20}));
+    children.push(wP('(Detalii — Anexa: Analiza Deseuri '+y+')',{size:18,italic:true,color:WC.gray}));
+    children.push(wSp(60));
+
+    children.push(wH2('4. Balanta biocide '+y+' si necesar '+ny,WC.navy));
+    const WBio=[3500,2763,2763];
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WBio,rows:[
+      wTblHead(['Indicator','Valoare (lei)','Observatii'],WBio),
+      wTblRow(['Stoc initial 01.01.'+y,fn(Math.round(si))+' lei','Sold anterior'],WBio),
+      wTblRow(['Intrari '+y,fn(Math.round(intr))+' lei','Achizitii'],WBio,true),
+      wTblRow(['Iesiri '+y+' (consum)',fn(Math.round(consBio))+' lei','Consum efectiv'],WBio),
+      wTblRow([{text:'Stoc final 31.12.'+y,bold:true},{text:fn(Math.round(si+intr-consBio))+' lei',bold:true},{text:'Disponibil pentru '+ny,bold:true}],WBio,true)
+    ]}));
+    children.push(wP('Se recomanda fundamentarea necesarului pentru '+ny+' pe baza consumului '+y+' + 10-15% margine.',{size:18,italic:true}));
+    children.push(wSp(80));
+
+    // ── IV. MASURI SI RECOMANDARI — cheia documentului ──
+    children.push(wPB());
+    children.push(wH1('IV. MASURI SI RECOMANDARI PENTRU '+ny,WC.navy));children.push(wSp(40));
+    children.push(wP('In urma dezbaterilor, Comisia a stabilit in unanimitate urmatoarele masuri prioritare, cu responsabili si termene:',{size:20}));
+    children.push(wSp(40));
+    const WM=[500,4500,2200,1826];
+    var mRows=[wTblHead(['Nr.','Masura / Recomandare','Responsabil','Termen'],WM)];
+    // Masuri default — editabile de utilizator in Word dupa generare
+    var masuri=[
+      ['Mentinerea supravegherii active IAAM conform '+COUNTRY.regulations.mainOrder,'Coordonator CPIAAM','Permanent '+ny],
+      ['Continuarea programului de autocontrol microbiologic trimestrial','CPIAAM + Sefi sectii','Trimestrial '+ny],
+      ['Raportarea lunara a indicatorilor IAAM la '+COUNTRY.authorities.publicHealthDir,'CPIAAM','Lunar '+ny],
+      ['Intensificarea auditurilor de igiena a mainilor in sectiile cu risc','CPIAAM + Sefi sectii','Lunar '+ny],
+      ['Screening la internare pentru pacientii cu antecedente spital ant.','Sefi Chirurgie / Ortopedie / ATI','Permanent '+ny],
+      ['Monitorizarea si gestionarea deseurilor medicale pe coduri 18 01','CPIAAM + Birou Administrativ','Lunar '+ny],
+      ['Fundamentarea si aprobarea necesarului de biocide '+ny,'CPIAAM + Birou Financiar','Trim. I '+ny],
+      ['Actualizarea Planului Anual de Prevenire si Limitare IAAM '+ny,'Coordonator CPIAAM','Ian. '+ny],
+      ['Min. 2 sesiuni de instruire prevenire IAAM pe sectie, cu PV semnat','Sefi sectii / CPIAAM','Semestrial '+ny]
+    ];
+    masuri.forEach(function(m,i){mRows.push(wTblRow([String(i+1),m[0],m[1],m[2]],WM,i%2===1))});
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WM,rows:mRows}));
+    children.push(wSp(60));
+    children.push(wP('Nota: Masurile de mai sus sunt propuneri de baza derivate din practica standard si din contextul activitatii '+y+'. Editati si adaugati in Word conform dezbaterilor specifice sedintei anuale.',{size:16,italic:true,color:WC.gray}));
+    children.push(wSp(100));
+
+    // ── V. DIVERSE ──
+    children.push(wH1('V. DIVERSE',WC.navy));children.push(wSp(40));
+    children.push(wP('La punctul „Diverse" au intervenit cu observatii:',{size:20}));
+    for(var di=0;di<3;di++){
+      children.push(wP('Dr. _______________________________ : __________________________________________________________',{size:18}));
+      children.push(wSp(20));
+    }
+    children.push(wSp(40));
+    children.push(wP('Nu au fost inregistrate alte propuneri fata de cele consemnate. Sedinta s-a incheiat la ora _________.',{size:20}));
+    children.push(wSp(100));
+
+    // ── VI. CONCLUZII ──
+    children.push(wH1('VI. CONCLUZII',WC.navy));children.push(wSp(40));
+    children.push(wP('In urma analizei comprehensive a activitatii CPIAAM pentru anul '+y+', Comisia a retinut:',{size:20}));
+    children.push(wSp(20));
+    var concluzii=[
+      'Rata IAAM '+y+': '+ia.length+' cazuri'+(mdr>0?' din care '+mdr+' cu germeni multirezistenti':'')+'. Distribuit sporadic, fara focare epidemiologice.',
+      'Autocontrolul microbiologic ('+au.length+' probe, '+(au.length>0?fp(conf,au.length):'—')+' conformitate) confirma eficienta procedurilor de curatenie si dezinfectie.',
+      'Managementul deseurilor medicale a functionat conform cerintelor legale ('+fn(Math.round(totD*100)/100)+' kg), fara incidente.',
+      'Consumul de biocide ('+fn(Math.round(consBio))+' lei) este proportional cu activitatea. Stocul final de '+fn(Math.round(si+intr-consBio))+' lei asigura continuitatea in '+ny+'.'
+    ];
+    concluzii.forEach(function(c,i){children.push(wP(String(i+1)+'. '+c,{size:20,before:20}))});
+    children.push(wSp(80));
+    children.push(wP('Prezentul Proces-Verbal a fost intocmit in ___ exemplare originale, semnat de toti membrii Comisiei prezenti, si va fi arhivat la nivelul CPIAAM cu transmiterea unui exemplar la Managerul unitatii si la Consiliul Medical.',{size:18,italic:true}));
+    children.push(wSp(100));
+
+    // ── VII. SEMNATURI structurate pe roluri-cheie ──
+    children.push(wH1('VII. SEMNATURI',WC.navy));children.push(wSp(60));
+    var sigs=[
+      {titlu:'MANAGER SPITAL',persoana:mgr&&mgr.name!=='—'?mgr:null},
+      {titlu:'COORDONATOR CPIAAM',persoana:coord&&coord.name!=='—'?coord:null},
+      {titlu:'DIRECTOR MEDICAL',persoana:dirMed&&dirMed.name!=='—'?dirMed:null},
+      {titlu:'ASISTENT PRINCIPAL CPIAAM',persoana:asPr&&asPr.name!=='—'?asPr:null}
+    ];
+    sigs.forEach(function(s){
+      if(!s.persoana)return;
+      children.push(wP([wTR(s.titlu,{bold:true,size:20,color:WC.navy})]));
+      children.push(wP(s.persoana.name||'__________________________',{size:20}));
+      children.push(wP([wTR('Semnatura: ___________________________',{size:18,color:WC.gray})]));
+      children.push(wSp(60));
+    });
+    children.push(wSp(80));
+
+    // ── VIII. LISTA ANEXELOR ──
+    children.push(wH1('VIII. LISTA ANEXELOR',WC.navy));children.push(wSp(40));
+    const WA=[500,5500,3026];
+    var anxRows=[wTblHead(['Nr.','Denumire anexa','Status'],WA)];
+    var anexe=[
+      ['Lista de prezenta — membrii Comisiei de Monitorizare IAAM','Semnata in original'],
+      ['Raport Anual de Activitate CPIAAM '+y+' (document tehnic detaliat)','Elaborat CPIAAM — '+(coord.name||'Coordonator')],
+      ['Analiza IAAM '+y,'Document intern CPIAAM'],
+      ['Analiza autocontrolului microbiologic '+y+' ('+au.length+' probe)','Document intern CPIAAM'],
+      ['Analiza deseurilor medicale '+y+' ('+fn(Math.round(totD*100)/100)+' kg)','Document intern CPIAAM'],
+      ['Balanta biocide '+y+' si necesar '+ny,'Elaborat CPIAAM + Birou Financiar'],
+      ['Situatia paturilor functionale '+y,'Anexat — DSP'],
+      ['Situatia miscarii bolnavilor '+y,'Statistician spital'],
+      ['PV Comisia Farmacovigilenta '+y,'Document separat — referinta incrucisata']
+    ];
+    anexe.forEach(function(a,i){anxRows.push(wTblRow([String(i+1),a[0],a[1]],WA,i%2===1))});
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WA,rows:anxRows}));
+    children.push(wSp(80));
+    children.push(wP([wTR((CFG.hospital_name||'Spital')+' • '+(CFG.cpiaam_name||'CPIAAM')+' • PV Anual '+y+' • Document intern • Arhivare 5 ani',{size:14,color:WC.gray,italic:true})],{align:AlignmentType.CENTER}));
+
+    await saveDocx(makeDoc(children,'PV Sedinta CPIAAM '+y,'PV_Sedinta_CPIAAM_'+y),'PV_Sedinta_CPIAAM_'+y+'.docx');
+  }catch(e){console.error(e);alert('Eroare generare PV: '+e.message)}
+  finally{hideGen()}
 }
 
 
@@ -13094,11 +13750,12 @@ async function rCfg(el){
 
   '<div class="pn" id="cfg-pers"><div class="ph"><h3>'+(isEN?'Staff / Signatories':'Personal / Semnatari')+'</h3><button class="btn bp bsm" onclick="CFG.personnel.push({id:genId(\'pers\'),name:\'\',title:\'\',role:\'other\',sign:true});saveCfg();render()">+ '+(isEN?'Add person':'Adauga persoana')+'</button></div><div class="pb">'+
     '<div class="ib inf">'+(isEN?'Persons with "Sign" checked appear on generated Word documents.':'Persoanele cu „Semneaza" bifat apar pe documentele Word generate.')+'</div>'+
-    '<table class="dt"><thead><tr><th>'+(isEN?'Name':'Nume')+'</th><th>'+(isEN?'Title / Position':'Titlu / Functie')+'</th><th style="width:120px">'+(isEN?'Role':'Rol')+'</th><th style="width:60px">'+(isEN?'Sign.':'Semn.')+'</th><th style="width:50px">&#215;</th></tr></thead>'+
+    '<table class="dt"><thead><tr><th>'+(isEN?'Name':'Nume')+'</th><th>'+(isEN?'Title / Position':'Titlu / Functie')+'</th><th style="width:210px">'+(isEN?'Role':'Rol')+'</th><th style="width:60px">'+(isEN?'Sign.':'Semn.')+'</th><th style="width:50px">&#215;</th></tr></thead>'+
     '<tbody>'+CFG.personnel.map((p,i)=>'<tr>'+
       '<td><input value="'+p.name+'" onchange="CFG.personnel['+i+'].name=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px"></td>'+
       '<td><input value="'+(p.title||'')+'" onchange="CFG.personnel['+i+'].title=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px"></td>'+
-      '<td><select onchange="CFG.personnel['+i+'].role=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px;width:100%">'+roleOpts(p.role)+'</select></td>'+
+      /* v12.55: explicit padding-right + appearance:auto to guarantee the dropdown caret is visible (column widened to 210px for long labels like "Medic Boli Infectioase") */
+      '<td><select onchange="CFG.personnel['+i+'].role=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px 26px 4px 6px;font-size:11px;width:100%;appearance:auto;-webkit-appearance:auto">'+roleOpts(p.role)+'</select></td>'+
       '<td style="text-align:center"><input type="checkbox" '+(p.sign?'checked':'')+' onchange="CFG.personnel['+i+'].sign=this.checked"></td>'+
       '<td class="act"><button onclick="CFG.personnel.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>').join('')+'</tbody></table>'+
     '<button class="btn bp" onclick="saveCfg();alert(isEN?\'Staff saved!\':\'Personal salvat!\')" style="margin-top:8px">'+(isEN?'Save Staff':'Salveaza Personal')+'</button>'+
@@ -14915,6 +15572,13 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.61',date:'2026-04-22',notes:'NOU Biocide — Import Excel „Balanta stocuri" (format romanesc tipic pentru sisteme de gestiune farmaceutica/contabila). Buton „Import Excel" in bara de actiuni Biocide. Parser: detecteaza automat randul cu sub-headers Cantitate/Valoare + grupurile Initial/Intrari/Iesiri/Final; extrage perioada din metadata („Data inceput/sfarsit"); agreghează rowurile multi-lot pe nume produs. Preview modal: tabel cu toate produsele (status exista/nou), edit inline TP si UM, totaluri globale, checkboxuri selectie, alegere luna tinta per tip miscare. La import: produse noi auto-create in CFG.biocide_products cu TP/UM ghicite din nume (TP1 pentru sapun/gel/alcool/antiseptic, TP2 default, TP4 alimentare, TP14 rodenticide, TP18 insecticide). Functii noi: importBiocideBalanceExcel, _parseBioBalanceXlsx, _guessBioTp, _guessBioUnit, _matchBioProduct, _showBioImportPreview, _doBioImport.'},
+  {version:'12.60',date:'2026-04-22',notes:'REFACTOR major — genPVCPIAAM rescris ca act oficial al comitetului (Ord. 1101/2016 art. Comitetul de Prevenire IAAM), diferentiat clar de Raportul Anual (care ramane document tehnic). Noua structura: Header formal + Identificare (Nr/Data/Loc/Ora/Prezidat/Baza legala) + I. Ordinea de zi + II. Lista participantilor (tabel cu coloana Semnatura) + III. Desfasurarea sedintei (rezumate scurte, cu trimitere la Raport ca Anexa 2) + IV. MASURI SI RECOMANDARI (TABEL cu Nr/Masura/Responsabil/Termen — cheia documentului) + V. Diverse + VI. Concluzii + VII. Semnaturi structurate (Manager/Coordonator/DirectorMed/AsistentPr) + VIII. Lista anexelor. Folosite COUNTRY.regulations si getP(role). Descrierile cardurilor in pagina Rapoarte actualizate pentru diferentiere clara.'},
+  {version:'12.59',date:'2026-04-22',notes:'Rapoarte — genAnalizaAutoWord extins. Include acum toate cele 3 metode de autocontrol (Microbiologic + ATP + UV Check) in locul analizei doar pe probe microbiologice. Structura: (1) Sumar general cu tabel pe metoda, (2) Microbiologic — distributie pe tipuri + concluzii existente, (3) ATP — pe tipuri suprafete + rata recuperare la repetitii, (4) UV — pe sectii cu pass/fail, (5) Concluzii integrate. Cand o metoda lipseste, raportul explica ce face si recomanda introducerea.'},
+  {version:'12.58',date:'2026-04-22',notes:'UX Audituri — Banner „Printeaza fisa de audit goala" vizibil in capul paginii pe toate vederile de audit (igm, generic, dotare, custom). Subnota explicativa: pentru observatie pe teren, consemneaza pe hartie intai — eviti sa uiti pe ce sectie ce ai vazut.\nNOU Audituri — fise goale Word pentru Dotare Puncte Igiena (coloane P/F/C/A) si Audit personalizat (20 randuri libere C/NC/N/A). Acopera acum toate tipurile de audit.\nButonul vechi (bottom, discret) a fost inlocuit cu banner-ul proeminent de sus.'},
+  {version:'12.57',date:'2026-04-22',notes:'FIX Audituri Igiena Mainilor — fisa Word: (1) titlul „CALUPURI OBSERVATIE" inlocuit cu „TABEL OBSERVATII IGIENA MAINILOR"; (2) headers M1..M5 fara prescurtari taiate („M5 — Dupa contactul c") — acum doar codul M1..M5 + legenda completa deasupra tabelului; (3) orientare landscape A4 ca tabelul sa incapa (anterior depasea portrait); (4) in UI „calupuri" inlocuit cu „observatii". RO + EN translations actualizate (aud_igm_calup, aud_igm_adauga_calup).\nINFRA makeDoc: optiune noua {landscape:true} (reutilizabila la viitoare rapoarte cu tabele mari).'},
+  {version:'12.56',date:'2026-04-22',notes:'FIX CRITIC — Protectie date impotriva scrierii peste: (1) _syncAfterReconnect scrie in fisier DOAR daca merge-ul a reusit — anterior un merge esuat silent (GDrive stale, JSON partial) trecea mai departe si syncWrite clobbera cloud-ul cu DB-ul local vechi. (2) syncWrite pre-write check: verifica file.lastModified inainte de a scrie; daca fisierul s-a modificat extern de la ultima citire, face merge intai. (3) syncWrite abort: daca nu poate citi fisierul pentru pre-check, NU scrie (conservator — mai bine o scriere locala ratata decat date cloud sterse). (4) _importFromHandle actualizeaza _lastSyncRead/_lastSyncSize dupa citire, asa incat pre-check are baseline corect pentru toate caile (init.js v12.49, syncAfterReconnect, syncPickFile, _fileActionSwitch).'},
+  {version:'12.55',date:'2026-04-22',notes:'UX Biocide: Avize mutate din collapse in card-ul produsului (intotdeauna vizibile, editabile inline — Nr, Emitere, Expirare cu status colorat). Buton „+ Aviz" per produs. Balanta clara cu formula STOC INITIAL + INTRARI − IESIRI = STOC ACTUAL (cantitati si lei). In collapse raman DOAR miscarile lunare. Confirma intelegerea colegelor ca avizul se inregistreaza o singura data per produs, nu la fiecare intrare/iesire.\nFIX Configurare: Sageata dropdown la Rol personal era ascunsa pentru labels lungi (Coordonator CPIAAM, Medic Boli Infectioase, Responsabil deseuri). Coloana marita la 210px + padding-right dedicat + appearance:auto.'},
   {version:'12.54',date:'2026-04-21',notes:'PROTECTIE: Detectie proactiva erori salvare in fisier. Cand syncWrite esueaza (permission pierdut, OneDrive/GDrive blocheaza fisierul, permisiune revocata), vezi imediat un toast „Nu s-a putut salva in fisier: <motiv>" in loc sa taci in consola. Complement la v12.50 (avertisment la inchidere) — preventie proactiva + detectie reactiva. Throttle inteligent via _syncWriteErrorShown: toast o singura data, reset cand o salvare reuseste (evita spam daca eroarea persista la fiecare 2s).'},
   {version:'12.53',date:'2026-04-21',notes:'DOC: Ajutor — sectiune noua „Recuperarea versiunilor anterioare (Google Drive / OneDrive)" cu pasi concreti (Gestioneaza versiunile, limite 30 zile / 100 versiuni Google, 500 / 25 OneDrive, recomandare „Pastreaza definitiv" pentru versiuni importante, download si Combina datele in aplicatie).\nDOC: FAQ — intrebare noua „Cum recuperez datele dintr-o versiune anterioara?" (RO + EN).'},
   {version:'12.52',date:'2026-04-21',notes:'UX: Biocide — lista grupata pe produs (pattern Calendar > Raportari). La nivel produs: avizul cu status culoare (expirat/expira curand/valabil), TP, UM, nr. miscari si sumar lei (intrari/consum/stoc final). Click pe produs → expand cu tabel miscari lunare (Luna, Tip, Lot, Cant., Valoare, Docs, Actiuni). Butoane Extinde tot / Restrange tot. Filtrele existente (cautare, tip, luna) raman si auto-extind grupurile care matchuiesc.'},

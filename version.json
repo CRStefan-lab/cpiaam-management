@@ -1,7 +1,9 @@
 {
-  "version": "12.54",
+  "version": "12.61",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "PROTECTIE: Detectie proactiva erori salvare in fisier. Cand salvarea automata esueaza (permission pierdut, OneDrive/GDrive blocat, fisier mutat), vezi imediat un mesaj vizibil in loc sa taci pana a doua zi. Complement la v12.50 — impreuna previn pierderea datelor in tranzit. Throttle inteligent: toast-ul apare o singura data, revine doar dupa ce o salvare reuseste."
+    "NOU Biocide — Import Excel balanta de stocuri (format romanesc uzual: Id/Cod/Nume + grupuri Initial/Intrari/Iesiri/Final cu Cantitate si Valoare). Buton nou „Import Excel" langa „+ Inregistrare".",
+    "NOU Biocide — Preview inainte de import: perioada detectata automat din Excel, tabel cu toate produsele (status „exista"/„nou"), edit TP si UM inline, totaluri, selectie per produs (checkbox Import da/nu), alegere luni tinta pentru stoc initial / intrari / iesiri.",
+    "NOU Biocide — Produse noi sunt auto-create in CFG.biocide_products cu TP si UM ghicite din nume (sapun/gel/alcool→TP1, dezinfectant suprafete→TP2, rodenticid→TP14, etc.). Se agregă rowurile multi-lot cu acelasi nume."
   ]
 }

@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.82</title>
+<title>CPIAAM Management v12.83</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2190,7 +2190,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.82';
+const APP_VERSION='12.83';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -3621,6 +3621,16 @@ async function rDash(el){
   const urgentItems=[];
   docs.forEach(d=>{if(!d.date_expiry)return;if(new Date(d.date_expiry)<new Date())urgentItems.push({icon:'⚫',text:(isEN?'Expired: ':'Expirat: ')+d.name,link:'documente'})});
   dls.forEach(d=>{if(!d.due_date)return;if(d.status==='trimis'||d.status==='finalizat')return;if(new Date(d.due_date)<new Date())urgentItems.push({icon:'⚫',text:(isEN?'Overdue: ':'Depasit: ')+d.name,link:'termene',_dlId:d.id})});
+  // v12.83: alerte expirare avize biocide (expirat sau expira in urmatoarele 30 zile)
+  var _now=new Date(),_soon=new Date(Date.now()+30*86400000);
+  (CFG.biocide_products||[]).forEach(function(p){
+    if(!p.avize||!p.avize.length)return;
+    var latest=p.avize.reduce(function(a,b){return(b.date_expiry||'')>(a.date_expiry||'')?b:a},p.avize[0]);
+    if(!latest.date_expiry)return;
+    var exp=new Date(latest.date_expiry);
+    if(exp<_now)urgentItems.push({icon:'🔴',text:(isEN?'Expired biocide approval: ':'Aviz biocid expirat: ')+esc(p.name||'')+' ('+fmtDate(latest.date_expiry)+')',link:'biocide'});
+    else if(exp<_soon)urgentItems.push({icon:'🟠',text:(isEN?'Biocide approval expiring: ':'Aviz biocid expira curand: ')+esc(p.name||'')+' ('+fmtDate(latest.date_expiry)+')',link:'biocide'});
+  });
 
   let h='<div class="print-header"></div>';
   // CONFIG BAR
@@ -6515,9 +6525,23 @@ async function rBio(el){
   const data=allData.filter(r=>{
     if(bf.type&&r.type!==bf.type)return false;
     if(bf.month&&r.month!==+bf.month)return false;
-    if(bf.search){const q=bf.search.toLowerCase();
-      const pName=r.product_id?rBioProd(r.product_id):r.product_name||'';
-      if(!pName.toLowerCase().includes(q)&&!(r.lot||'').toLowerCase().includes(q))return false}
+    if(bf.search){
+      // v12.83: fuzzy search pe nume + cod intern + lot + cod EU TP + producator/distribuitor
+      const q=bf.search.toLowerCase();
+      const prod=r.product_id?(CFG.biocide_products||[]).find(p=>p.id===r.product_id):null;
+      const haystack=[
+        r.product_id?rBioProd(r.product_id):r.product_name||'',
+        prod?(prod.code||''):'',
+        prod?(prod.manufacturer||''):'',
+        prod?(prod.distributor||''):'',
+        prod?(prod.product_type||''):'',
+        r.lot||'',
+        r.product_type||''
+      ].join(' ').toLowerCase();
+      // Multi-term search: each space-separated term must match
+      var terms=q.split(/\s+/).filter(Boolean);
+      if(!terms.every(function(t){return haystack.includes(t)}))return false;
+    }
     return true;
   });
   // KPI-urile de sus folosesc allData (an intreg), nu datele filtrate — sumarul ramane stabil
@@ -6531,7 +6555,7 @@ async function rBio(el){
     '<div class="kc tl"><div class="kl">Stoc Final</div><div class="kv">'+fn(Math.round(si+intr-ies))+' lei</div></div></div>';
   // Filter bar
   h+='<div class="ac-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">'+
-    '<input type="text" placeholder="Cauta produs..." value="'+esc(bf.search)+'" oninput="_bioFilters.search=this.value;render()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px">'+
+    '<input type="text" placeholder="Cauta nume / cod / lot / TP / producator..." value="'+esc(bf.search)+'" oninput="_bioFilters.search=this.value;render()" title="Fuzzy search: se poate cauta dupa mai multi termeni separati cu spatii" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:240px">'+
     '<select onchange="_bioFilters.type=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
       '<option value="">Toate tipurile</option><option value="stoc_initial"'+(bf.type==='stoc_initial'?' selected':'')+'>Stoc initial</option><option value="intrare"'+(bf.type==='intrare'?' selected':'')+'>Intrare</option><option value="iesire"'+(bf.type==='iesire'?' selected':'')+'>Iesire</option></select>'+
     '<select onchange="_bioFilters.month=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
@@ -6776,6 +6800,53 @@ function _renderBioAvizeInDialog(prodId){
   }
   h+='</div>';return h;
 }
+// v12.83 — Dialog rapid creare produs in catalog, din editBio. Dupa salvare, revine la editBio cu produsul preselectat.
+function bioQuickAddProduct(){
+  var tpOpts=BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'">'+t.id+' — '+t.name+'</option>'}).join('');
+  var umList=['buc','flacon','bidon','cutie','tablete','L','mL','kg','g'];
+  var umOpts=umList.map(function(u){return '<option value="'+u+'">'+u+'</option>'}).join('');
+  // Pre-fill from f-prod-custom daca user scrisese acolo ceva
+  var prefilled='';try{var el=document.getElementById('f-prod-custom');if(el&&el.value)prefilled=el.value}catch(e){}
+  var h='<div style="font-size:13px"><p style="font-size:11px;color:var(--txtL);margin-bottom:10px">Creare produs nou in catalog. Dupa salvare te intorci la miscarea curenta cu produsul preselectat.</p>'+
+    '<div class="fr"><div class="fg"><label>Denumire *</label><input id="bqap-name" value="'+esc(prefilled)+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px" placeholder="Ex: ALCHOSEPT"></div></div>'+
+    '<div class="fr" style="margin-top:8px"><div class="fg"><label>Cod intern</label><input id="bqap-code" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px" placeholder="ALCH-001"></div>'+
+    '<div class="fg"><label>TP</label><select id="bqap-tp" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+tpOpts+'</select></div>'+
+    '<div class="fg" style="max-width:120px"><label>UM</label><select id="bqap-um" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+umOpts+'</select></div></div>'+
+    '<div class="fr" style="margin-top:8px"><div class="fg"><label>Producator</label><input id="bqap-mfr" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div>'+
+    '<div class="fg"><label>Distribuitor</label><input id="bqap-dist" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div>'+
+    '<div class="ib inf" style="margin-top:10px;font-size:11px">\uD83D\uDCCE Documentele (Aviz BPR, Fisa tehnica, SDS) le adaugi ulterior din cardul de produs → click <strong>&#9998;</strong> din header.</div>'+
+  '</div>';
+  // Save current editBio record state (qty, val, type, month, lot)
+  _bioRecSnapshot=_editBioRec?JSON.parse(JSON.stringify(_editBioRec)):null;
+  openM('+ Produs nou in catalog',h,
+    '<button class="btn bp" onclick="bioQuickAddProductSave()">Salveaza produs</button>'+
+    '<button class="btn bo" onclick="bioQuickAddProductCancel()">Anuleaza</button>');
+  setTimeout(function(){var el=document.getElementById('bqap-name');if(el)el.focus()},100);
+}
+var _bioRecSnapshot=null;
+async function bioQuickAddProductSave(){
+  var v=function(id){var el=document.getElementById(id);return el?el.value.trim():''};
+  var name=v('bqap-name');if(!name){alert('Numele produsului este obligatoriu.');return}
+  if((CFG.biocide_products||[]).some(function(p){return(p.name||'').toLowerCase()===name.toLowerCase()})){
+    alert('Produsul „'+name+'" exista deja in catalog.');return;
+  }
+  var pid=(typeof genId==='function'?genId('bp'):'bp_'+Date.now());
+  var newProd={id:pid,name:name,code:v('bqap-code'),product_type:v('bqap-tp'),unit:v('bqap-um'),manufacturer:v('bqap-mfr'),distributor:v('bqap-dist'),avize:[],documents:{aviz:[],fisa_tehnica:[],sds:[],alte_doc:[]}};
+  if(!CFG.biocide_products)CFG.biocide_products=[];
+  CFG.biocide_products.push(newProd);
+  await saveCfg();
+  closeM();
+  // Re-open editBio cu record-ul restaurat + produs preselectat
+  var snap=_bioRecSnapshot;_bioRecSnapshot=null;
+  if(snap){snap.product_id=pid;snap.product_name=name;if(!snap.product_type)snap.product_type=newProd.product_type;if(!snap.unit)snap.unit=newProd.unit;_editBioRec=snap}
+  editBio(snap&&snap.id);
+  if(typeof showToast==='function')showToast('Produs „'+name+'" adaugat in catalog');
+}
+function bioQuickAddProductCancel(){
+  closeM();
+  var snap=_bioRecSnapshot;_bioRecSnapshot=null;
+  if(snap){_editBioRec=snap;editBio(snap.id)}
+}
 function bioProdChanged(){
   const sel=document.getElementById('f-prod');if(!sel||!sel.value)return;
   const prod=CFG.biocide_products.find(p=>p.id===sel.value);if(!prod)return;
@@ -6798,7 +6869,12 @@ async function editBio(id){
     (legacyAtt>0?'<div style="margin-top:6px;padding:6px 8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;color:#854F0B"><strong>&#9888; '+legacyAtt+' document(e) legacy pe aceasta miscare.</strong> Ruleaza migrarea din cardul de produs pentru a le muta.</div>':'')+
   '</div>';
   openM(id?'Editare':'Inregistrare Noua',
-    '<div class="fr"><div class="fg"><label>Produs</label><select id="f-prod" onchange="bioProdChanged()"><option value="">— Selecteaza produs —</option>'+prods+'</select><div style="margin-top:4px"><input id="f-prod-custom" placeholder="sau introdu manual un produs nou" value="'+(CFG.biocide_products.find(p=>p.id===(r.product_id||r.product_name))?'':esc(r.product_name||''))+'" style="font-size:11px"></div></div>'+
+    '<div class="fr"><div class="fg"><label>Produs</label>'+
+      '<div style="display:flex;gap:6px;align-items:stretch">'+
+        '<select id="f-prod" onchange="bioProdChanged()" style="flex:1"><option value="">— Selecteaza produs —</option>'+prods+'</select>'+
+        '<button class="btn bo bsm" style="padding:4px 10px;font-size:11px;white-space:nowrap" onclick="bioQuickAddProduct()" title="Creeaza produs nou in catalog">+ Produs nou</button>'+
+      '</div>'+
+      '<div style="margin-top:4px"><input id="f-prod-custom" placeholder="sau introdu manual un produs nou" value="'+(CFG.biocide_products.find(p=>p.id===(r.product_id||r.product_name))?'':esc(r.product_name||''))+'" style="font-size:11px"></div></div>'+
     '<div class="fg"><label>UM</label><input id="f-um" value="'+(r.unit||'')+'" placeholder="buc 0.5L"></div></div>'+
     '<div class="fr3"><div class="fg"><label>Tip</label><select id="f-tp"><option value="stoc_initial" '+(r.type==='stoc_initial'?'selected':'')+'>Stoc initial</option><option value="intrare" '+(r.type==='intrare'?'selected':'')+'>Intrare</option><option value="iesire" '+(r.type==='iesire'?'selected':'')+'>Iesire</option></select></div>'+
     '<div class="fg"><label>Luna</label><select id="f-mo"><option value="">—</option>'+moOpts(r.month)+'</select></div>'+
@@ -6959,7 +7035,9 @@ function bioEditProduct(pid){
     '<div style="margin-bottom:14px"><h4 style="font-size:13px;color:var(--navy);margin:0 0 8px;border-bottom:1px solid var(--brd);padding-bottom:4px">AVIZE BPR <button class="btn bo bsm" style="padding:1px 8px;font-size:10px;margin-left:8px" onclick="bioAddAviz(\''+String(pid).replace(/\x27/g,"\\x27")+'\');bioEditProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')">+ Aviz</button></h4>'+
     avizHtml+'</div>'+
     // DOCUMENTE PRODUS
-    '<div style="margin-bottom:14px"><h4 style="font-size:13px;color:var(--navy);margin:0 0 8px;border-bottom:1px solid var(--brd);padding-bottom:4px">DOCUMENTE PRODUS</h4>'+
+    '<div style="margin-bottom:14px"><h4 style="font-size:13px;color:var(--navy);margin:0 0 8px;border-bottom:1px solid var(--brd);padding-bottom:4px;display:flex;align-items:center;gap:8px">DOCUMENTE PRODUS'+
+      '<button class="btn bo bsm" style="padding:2px 10px;font-size:10px;margin-left:auto" onclick="bioDownloadAllProductDocs(\''+String(pid).replace(/\x27/g,"\\x27")+'\')" title="Descarca toate documentele pentru acest produs">&#11015; Descarca tot</button>'+
+    '</h4>'+
     '<div style="font-size:11px;color:var(--txtL);margin-bottom:8px">Aviz BPR, Fisa tehnica, SDS si alte documente — se ataseaza o singura data pe produs (nu pe fiecare miscare).</div>'+
     docsHtml+'</div>'+
   '</div>';
@@ -7015,6 +7093,24 @@ async function bioDownloadProductDoc(pid,key,fi){
     if(att.on_disk&&att.filename){var f=await attReadFile('biocide',att.filename);saveAs(f,att.name);return}
     if(att.data){var a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
   }catch(e){alert('Eroare download: '+e.message)}
+}
+// v12.83 — Download bulk: toate documentele produs (Aviz+Fisa+SDS+Alte) secvential
+async function bioDownloadAllProductDocs(pid){
+  var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p||!p.documents)return;
+  var all=[];BIO_ATT_TYPES.forEach(function(t){(p.documents[t.key]||[]).forEach(function(f){all.push({file:f,label:t.label})})});
+  if(all.length===0){alert('Nu exista documente pentru acest produs.');return}
+  if(!confirm('Descarci '+all.length+' fisiere pentru „'+(p.name||'produs')+'"? Browserul va cere permisiune pentru descarcari multiple.'))return;
+  for(var i=0;i<all.length;i++){
+    var it=all[i];
+    try{
+      if(it.file.on_disk&&it.file.filename){
+        var f=await attReadFile('biocide',it.file.filename);
+        saveAs(f,'['+it.label+'] '+it.file.name);
+      }else if(it.file.data){var a=document.createElement('a');a.href=it.file.data;a.download='['+it.label+'] '+it.file.name;a.click()}
+      await new Promise(function(ok){setTimeout(ok,250)}); // delay pentru browser
+    }catch(e){console.warn('Download failed:',it.file.name,e)}
+  }
+  if(typeof showToast==='function')showToast(all.length+' fisiere descarcate pentru '+(p.name||'produs'));
 }
 async function bioDeleteProductDoc(pid,key,fi){
   if(!confirm('Stergi documentul?'))return;
@@ -9884,6 +9980,39 @@ async function genConsumATBWord(aiText){
     children.push(wAlertBox(E?'The WHO target of >=60% Access antibiotics is NOT met ('+t.pctAccess.toFixed(1)+'%). Consider antibiotic stewardship interventions.':
       'Tinta OMS de >=60% antibiotice Access NU este atinsa ('+t.pctAccess.toFixed(1)+'%). Se recomanda interventii de stewardship antimicrobian.'));
   }
+  children.push(wSp(80));
+
+  // v12.83: Grafice Chart.js embedded — AWaRe donut + top 10 DDD bar + benchmarks panel
+  try{
+    if(typeof wChartImage==='function'){
+      var accessDdd=t.totalDDD*t.pctAccess/100;
+      var watchDdd=t.totalDDD*t.pctWatch/100;
+      var reserveDdd=t.totalDDD*t.pctReserve/100;
+      var unclDdd=Math.max(0,t.totalDDD-accessDdd-watchDdd-reserveDdd);
+      children.push(wH2(E?'AWaRe Distribution':'Distributie AWaRe'));
+      var awareChart=await wChartImage('doughnut',{labels:['Access','Watch','Reserve','Neclasificat'],
+        datasets:[{data:[accessDdd,watchDdd,reserveDdd,unclDdd],backgroundColor:['#16A34A','#D97706','#DC2626','#94A3B8']}]},
+        {width:500,height:280,title:(E?'DDD Distribution — AWaRe (WHO)':'Distributie DDD pe clasele AWaRe (WHO)')});
+      children.push(awareChart);
+      // Top 10 bar orizontal
+      if(mx.rows.length>0){
+        var top10c=mx.rows.slice(0,10);
+        var topChart=await wChartImage('bar',{labels:top10c.map(function(r){return(r.name||r.atc||'').substring(0,24)}),
+          datasets:[{label:'DDD total',data:top10c.map(function(r){return Math.round(r.totalDDD*10)/10}),backgroundColor:top10c.map(function(r){return r.aw==='Access'?'#16A34A':r.aw==='Watch'?'#D97706':r.aw==='Reserve'?'#DC2626':'#94A3B8'})}]},
+          {width:600,height:320,title:(E?'Top 10 antibiotics by DDD':'Top 10 antibiotice dupa DDD'),chartOptions:{indexAxis:'y',plugins:{legend:{display:false}}}});
+        children.push(topChart);
+      }
+      // Benchmarks inline
+      if(typeof wBenchmarkPanel==='function'){
+        children.push(wSp(40));children.push(wH2(E?'Benchmarks (WHO AWaRe targets)':'Comparatii cu referinte publice'));
+        children.push(wBenchmarkPanel([
+          {label:'% Access din total DDD',userValue:t.pctAccess,userUnit:'%',bmKey:['atb','aware_access']},
+          {label:'% Watch din total DDD',userValue:t.pctWatch,userUnit:'%',bmKey:['atb','aware_watch']},
+          {label:'% Reserve din total DDD',userValue:t.pctReserve,userUnit:'%',bmKey:['atb','aware_reserve']}
+        ]));
+      }
+    }
+  }catch(e){console.warn('Grafice ATB esuate:',e)}
   children.push(wSp(80));
 
   // Top 10 table
@@ -16922,6 +17051,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.83',date:'2026-04-22',notes:'5 imbunatatiri: (A) editBio are buton +Produs nou langa dropdown — bioQuickAddProduct creeaza produs in catalog si revine la miscare cu produsul preselectat. (B) Search biocide fuzzy multi-termen pe nume/cod/lot/TP/producator/distribuitor. (C) Dashboard Urgente afiseaza avize biocide expirate/expira in 30 zile. (D) bioDownloadAllProductDocs — descarcare secventiala a tuturor documentelor unui produs cu prefix tip in filename. (E) genConsumATBWord cu grafice embedded: AWaRe doughnut, top 10 bar orizontal color-coded, benchmarks WHO Access/Watch/Reserve.'},
   {version:'12.82',date:'2026-04-22',notes:'REFACTOR Biocide — documentele (Aviz BPR, Fisa tehnica, SDS, Alte) se gestioneaza O SINGURA DATA la nivel de PRODUS (nu pe fiecare miscare). Stocate in CFG.biocide_products[i].documents[key][]. Editor Produs complet (5 sectiuni): Identificare, Clasificare, Parteneri, Avize BPR tabel editabil, Documente Produs cu 👁 ⬇ 🗑 per fisier. Editor Miscare simplificat: doar Produs/Tip/Luna/Lot/Cantitate/Valoare — fara atasamente. Migratie bioMigrateDocsToProduct cu deduplicare dupa nume fisier. Card view dropdown Documente produs citeste din product.documents prioritar + fallback aggregate din records legacy (badge galben).'},
   {version:'12.81',date:'2026-04-22',notes:'Rapoarte — PV Sedinta CPIAAM cu sectiune GRAFICE SINTEZA (IAAM pe sectii bar orizontal + AWaRe DDD doughnut) inainte de semnaturi. Mentiune Raportul Anual ca Anexa 2 pentru detalii tehnice. Finalizat plan v12.75-v12.81: foundation + 8 rapoarte profesionale cu grafice Chart.js embedded, benchmarks publice, cross-module insights, data-driven recommendations.'},
   {version:'12.80',date:'2026-04-22',notes:'Rapoarte — 3 analize completate cu grafice Chart.js embedded: Analiza IAAM (trend lunar line an curent vs MDR vs anul anterior, distributie sectii bar orizontal, spectru germeni doughnut, origini pie + benchmarks INSP + observatii-cheie), Analiza Deseuri (stacked bar lunar coduri + line kg/om-zi + benchmark national), Raport Trimestrial (IAAM lunar T vs T anterior bar, AWaRe donut DDD, audituri bar orizontal color-coded, deseuri stacked pe coduri). showGen cu progress. Functii noi cu fallback grateful pe erori render grafic.'},

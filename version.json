@@ -1,11 +1,11 @@
 {
-  "version": "12.82",
+  "version": "12.83",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "REFACTOR Biocide - separare clara produs vs miscare: documentele (Aviz BPR, Fisa tehnica, SDS, Alte) se gestioneaza acum O SINGURA DATA la nivel de produs (nu mai duplici la fiecare intrare). Stocate in CFG.biocide_products[i].documents[key][].",
-    "NOU Editor Produs complet (click creion pe header card): 5 sectiuni - Identificare, Clasificare, Parteneri, Avize BPR (tabel editabil), Documente Produs (4 tipuri cu butoane 👁 vizualizare, ⬇ descarcare, 🗑 stergere pentru fiecare fisier).",
-    "Simplificare Editor Miscare: scoase complet sectiunile de atasamente - ramane doar Produs + Tip/Luna/Lot/Cantitate/Valoare. Info box explica unde sunt acum documentele.",
-    "Migratie legacy: daca exista atasamente pe miscari vechi, cardul afiseaza badge galben cu legacy + buton Migreaza la produs. Deduplicare automata dupa numele fisierului.",
-    "Card view dropdown Documente produs - citeste din product.documents (prioritar) sau fallback la aggregate din records legacy (cu badge galben pentru migratie)."
+    "A — Editor Miscare Biocid: buton +Produs nou langa dropdown. Deschide dialog rapid creare in catalog (nume, cod, TP, UM, producator, distribuitor). Dupa salvare revine la miscare cu produsul preselectat si datele din miscare conservate.",
+    "B — Search biocide imbunatatit: fuzzy match multi-termen pe nume + cod intern + lot + TP + producator + distribuitor. Cauta cu spatii (ex: clor TP2) — toate cuvintele trebuie sa se potriveasca.",
+    "C — Dashboard alerte: avize biocide expirate (rosu) sau care expira in 30 zile (portocaliu) apar in sectiunea Urgente. Click duce la modulul Biocide.",
+    "D — Export bulk documente produs: buton Descarca tot in editor produs - download secvential toate fisierele (aviz+fisa+SDS+alte) cu prefix tip in numele fisierului.",
+    "E — Raport Consum Antibiotice cu grafice: AWaRe doughnut, top 10 substante bar orizontal color-coded dupa AWaRe, tabel benchmarks WHO Access/Watch/Reserve."
   ]
 }

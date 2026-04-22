@@ -1,8 +1,7 @@
 {
-  "version": "12.70",
+  "version": "12.72",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX Fise goale Word audit — toate 3 tabele (generic / dotare / custom) ieseau din marginea paginii A4 portrait (total DXA depasea 9638 usable). Latimi recalculate sa incape exact: total 9638 DXA pe fiecare.",
-    "UX — Scos coloana „Referinta" din fisa goala generic audit. Motivatie: ordinele legale se modifica in timp, nu are sens sa fie imprimate pe hartie (se gasesc oricand in aplicatie in itemul insasi, dar pe hartie doar o data). Tabelul are acum doar Nr / Element / C / NC / N/A / Observatie. Legenda C/NC/NA adaugata deasupra tabelului."
+    "FIX — Categoriile IPC noi adaugate in v12.62-v12.69 (Governance IPC, Precautiuni izolare, Infrastructura IPC, EPP, Injection Safety, Ambulatoriu IPC, Raspuns focar, Vaccinare personal, Circuit lenjerie) nu apareau la sincronizare cu un fisier dintr-o app mai veche. Cauza: sync-ul suprascria CFG.ipc_categories cu lista veche din fisier. Fix: functia ensureStandardIpcCategories() apelata si dupa sync pentru a re-adauga orice categorie standard lipsa."
   ]
 }

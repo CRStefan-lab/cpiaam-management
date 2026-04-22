@@ -1,5 +1,5 @@
-// CPIAAM Service Worker — v12.70
-const CACHE_NAME = 'cpiaam-v12.70';
+// CPIAAM Service Worker — v12.72
+const CACHE_NAME = 'cpiaam-v12.72';
 const CDN_CACHE = 'cpiaam-cdn-v1';
 
 // CDN resources — cached permanently (versions pinned)
@@ -33,6 +33,11 @@ self.addEventListener('activate', event => {
 // Fetch — different strategies per resource type
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+
+  // v12.71: version.json → bypass SW (direct network). Manual update-check uses ?t=Date.now()
+  // → cache miss → SW fallback to null cache → respondWith(null) → fetch throws "failed".
+  // Letting browser handle directly avoids this whole class of issues.
+  if (url.pathname.endsWith('/version.json')) return;
 
   // CDN resources → Cache First (never change, pinned versions)
   if (CDN_URLS.some(cdn => event.request.url.startsWith(cdn.split('/').slice(0, 3).join('/')))) {

@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.70</title>
+<title>CPIAAM Management v12.72</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1647,7 +1647,10 @@ async function _importFromHandle(fh,skipReload,mode){
     } else {
       _smartMergeCfg(CFG,cfg);
     }
-    CFG.sync_file_name=fh.name;await saveCfg();
+    CFG.sync_file_name=fh.name;
+    // v12.72: dupa sync, asigura categoriile IPC standard definite in cod (fisierul sync poate fi dintr-o app mai veche)
+    if(typeof ensureStandardIpcCategories==='function')ensureStandardIpcCategories();
+    await saveCfg();
   }}
   // Support old format keys → remap to current store names
   const oldMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
@@ -2049,7 +2052,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.70';
+const APP_VERSION='12.72';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -2348,6 +2351,32 @@ function saveCfgDebounced(){
       try{await saveCfg();if(cb)cb(true)}catch(e){console.warn('saveCfgDebounced:',e);if(cb)cb(false)}
     },350);
   });
+}
+
+// v12.72 — ensures v12.62+ IPC categories are present. Apelata si din sync (_importFromHandle)
+// dupa ce sync-ul suprascrie CFG.ipc_categories cu lista veche dintr-un fisier generat de o app mai veche.
+// Returneaza true daca s-a adaugat ceva (pentru a trigger saveCfg).
+function ensureStandardIpcCategories(){
+  if(!CFG.ipc_categories||!CFG.ipc_categories.length)return false;
+  var changed=false;
+  var needed=[
+    {at:'governance_ipc',ro:'Governance IPC',en:'IPC Governance',color:'#5E35B1'},
+    {at:'precautiuni_izolare',ro:'Precautiuni izolare',en:'Isolation precautions',color:'#C62828'},
+    {at:'infrastructura_ipc',ro:'Infrastructura IPC',en:'IPC Infrastructure',color:'#37474F'},
+    {at:'epp_ipc',ro:'EPP (Echipament Individual de Protectie)',en:'PPE (Personal Protective Equipment)',color:'#00838F'},
+    {at:'injection_safety',ro:'Siguranta injectii si sharps',en:'Injection Safety & Sharps',color:'#EF6C00'},
+    {at:'ambulatoriu_ipc',ro:'Ambulatoriu IPC',en:'Outpatient IPC',color:'#00695C'},
+    {at:'raspuns_focar',ro:'Raspuns la focar',en:'Outbreak response',color:'#B71C1C'},
+    {at:'vaccinare_personal',ro:'Vaccinare personal (verificare)',en:'Personnel vaccination (audit)',color:'#558B2F'},
+    {at:'circuit_lenjerie',ro:'Circuit lenjerie',en:'Linen circuit',color:'#6D4C41'}
+  ];
+  needed.forEach(function(n){
+    if(!CFG.ipc_categories.find(function(c){return c.audit_type===n.at})){
+      CFG.ipc_categories.push({id:genId('ipc'),name_ro:n.ro,name_en:n.en,color:n.color,source_module:'audit',audit_type:n.at,standard:true,active:true});
+      changed=true;
+    }
+  });
+  return changed;
 }
 
 function getP(role){return CFG.personnel.find(p=>p.role===role)||{name:'—',title:''}}
@@ -15915,6 +15944,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.72',date:'2026-04-22',notes:'FIX — Categoriile IPC noi (Governance, Precautiuni izolare, Infrastructura, EPP, Injection Safety, Ambulatoriu, Raspuns focar, Vaccinare, Circuit lenjerie) nu apareau dupa sincronizare cu un fisier dintr-o app mai veche. Sync-ul face Object.assign pe CFG.ipc_categories, stergand adaugirile din migratii. Fix: functia noua ensureStandardIpcCategories() extrasa din loadCfg si apelata si dupa sync (in _importFromHandle). Idempotenta — adauga doar ce lipseste. Categoriile apar imediat dupa refresh.'},
+  {version:'12.71',date:'2026-04-22',notes:'FIX — Verificarea MANUALA de update afisa eronat „Nu s-a putut verifica. Verifica conexiunea la internet." chiar si cand exista internet (auto-update-ul functiona). Cauza: Service Worker intercepta toate cererile same-origin inclusiv version.json; pentru check manual cu ?t=Date.now() URL-ul era unic la fiecare click → cache miss in SW → handler-ul SW ajungea in .catch(()=>cached) care returneaza null → respondWith(null) → fetch throws in pagina. Fix: bypass SW pentru /version.json (sw.js adauga return early la `url.pathname.endsWith(\'/version.json\')`), browser-ul face fetch direct fara interferenta SW. HTTP caching normal respectat (cache:\'no-store\' din caller). Auto-update NU afectat (continua sa functioneze prin direct fetch). Plus: mesajul de eroare include motivul concret (err.message) in loc de text generic.'},
   {version:'12.70',date:'2026-04-22',notes:'FIX Fise goale Word audit — toate 3 tabele (genAuditBlankForm / genDotareBlankForm / genCustomBlankForm) ieseau din marginea paginii A4 portrait (total DXA depasea 9638 usable = 11906 - 2*1134 margini). Latimi recalculate sa incape exact: generic 500+5400+700+700+700+1638=9638; dotare 500+4300+700+700+700+700+2038=9638; custom 500+5400+700+700+700+1638=9638. Si scos coloana „Referinta" din genAuditBlankForm (la solicitarea userului — ordinele se modifica in timp, tabelul pe hartie ramane utilizabil). Adaugata legenda C/NC/NA deasupra tabelului.'},
   {version:'12.69',date:'2026-04-22',notes:'Audituri — integrate detaliile UTILE din Chestionar Control Asepsie la auditurile existente (fara duplicare): curatenie +7 itemi (mopuri plate 30mp, lavete S, ustensile cod culori, periuta WC solutie, sifon pardoseala, frigorifice); sterilizare +1 (registru UV); epp_ipc +1 (echipament servirea mesei); precautiuni_izolare +1 (triaj epidemiologic zilnic). Plus audit NOU „Circuit Lenjerie" (7 itemi) — topic distinct. Total nou: 10 itemi extinsi + 7 itemi audit nou = 17 itemi aditionali.'},
   {version:'12.68',date:'2026-04-22',notes:'NOU Audituri IGM — integrat Checklist Cunoastere (19 itemi, 3 parti — Structura/Proces/Rezultat) in acelasi audit cu Observatia WHO 5 Momente, per sectie. Scor separat cunoastere vs. scor observatie. Inspirat din „Check list igiena mainilor" CPIAAM intern. Helperi noi: _igmSetKnow, _igmKnowledgeScore. Fisa goala Word extinsa cu PARTEA A (checklist grupat pe parti, tabel cu coloane C/NC/NA) + PARTEA B (WHO 5 momente existent).'},
@@ -16918,7 +16949,7 @@ async function checkForUpdateManual(e){
     const d=await r.json();
     if(vCmp(d.version,APP_VERSION)>0){showUpdateBanner(d)}
     else{showToast('\u2713 Aplicatia este la zi (v'+APP_VERSION+')')}
-  }catch(err){showToast('\u26A0 Nu s-a putut verifica. Verifica conexiunea la internet.')}
+  }catch(err){showToast('\u26A0 Nu s-a putut verifica: '+(err.message||err.name||'eroare necunoscuta'))}
   finally{if(btn){btn.disabled=false;btn.textContent='\uD83D\uDD04'}}
 }
 

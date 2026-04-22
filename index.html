@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.83</title>
+<title>CPIAAM Management v12.84</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2190,7 +2190,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.83';
+const APP_VERSION='12.84';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6672,8 +6672,22 @@ async function rBio(el){
         '<div style="text-align:center"><div style="font-size:9px;font-weight:700;letter-spacing:.4px;color:#DC2626">IESIRI</div><div style="font-size:15px;font-weight:700;color:#DC2626;margin:2px 0">'+fn(gOutQ)+' <span style="font-size:10px;color:var(--txtL);font-weight:normal">'+umLabel+'</span></div><div style="font-size:10px;color:var(--txtL)">'+fn(Math.round(gOut))+' lei</div></div>'+
         '<span style="font-size:16px;color:var(--txtL);font-weight:300">=</span>'+
         '<div style="text-align:center;padding:6px 8px;border-radius:6px;background:var(--bgBlue,#EFF6FF);border:1px solid var(--blue,#2563B0)"><div style="font-size:9px;font-weight:700;letter-spacing:.4px;color:var(--navy)">STOC ACTUAL</div><div style="font-size:17px;font-weight:700;color:var(--navy);margin:2px 0">'+fn(gFinalQ)+' <span style="font-size:11px;color:var(--navy);font-weight:normal">'+umLabel+'</span></div><div style="font-size:10px;color:var(--navy)">'+fn(Math.round(gFinal))+' lei</div></div>'+
-      '</div>'+
-    '</details>';
+      '</div>';
+    // v12.84 — Miscari lunare mutate IN dropdown Balanta (era sub produs, separat)
+    const sortedRowsBio=rows.slice().sort(function(a,b){return(+a.month||0)-(+b.month||0)});
+    balancePanel+='<div style="padding:10px 14px;overflow-x:auto;border-top:1px solid var(--brd);background:var(--card)">'+
+      '<div style="font-size:11px;color:var(--txtL);margin-bottom:6px;font-weight:600">MISCARI LUNARE</div>'+
+      '<table class="dt" style="margin:0"><thead><tr><th>#</th><th>Luna</th><th>Tip</th><th>Lot</th><th style="text-align:right">Cant.</th><th style="text-align:right">Valoare</th><th>Actiuni</th></tr></thead><tbody>';
+    if(sortedRowsBio.length===0){balancePanel+='<tr><td colspan="7" style="text-align:center;color:var(--txtL);font-style:italic;padding:12px">Nicio miscare inregistrata</td></tr>'}
+    else sortedRowsBio.forEach(function(r,i){
+      balancePanel+='<tr><td>'+(i+1)+'</td><td>'+(r.month?MO[r.month-1]:'')+'</td>'+
+        '<td><span class="bdg '+(r.type==='intrare'?'bdg-g':r.type==='iesire'?'bdg-a':'bdg-b')+'">'+(r.type==='stoc_initial'?'Stoc initial':r.type==='intrare'?'Intrare':'Iesire')+'</span></td>'+
+        '<td style="font-size:11px">'+esc(r.lot||'')+'</td>'+
+        '<td style="text-align:right">'+fn(r.quantity)+'</td>'+
+        '<td style="text-align:right">'+fn(Math.round((r.value_lei||0)*100)/100)+'</td>'+
+        '<td class="act"><button onclick="editBio('+r.id+')" title="Editare (inclusiv documente)">&#9998;</button><button onclick="delRec(\'biocide\','+r.id+')">&#128465;</button></td></tr>';
+    });
+    balancePanel+='</tbody></table></div></details>';
     // v12.82 — Documente PRODUS (din CFG.biocide_products[i].documents) + fallback agregare records vechi (pentru migratie)
     var docsAgg={};BIO_ATT_TYPES.forEach(function(t){docsAgg[t.key]=[]});
     var totalProdDocs=0;
@@ -6749,25 +6763,12 @@ async function rBio(el){
     // v12.79 — edit pencil pentru proprietati produs (doar daca are product_id)
     if(g.pid)h+='<button onclick="event.stopPropagation();bioEditProduct(\''+String(g.pid).replace(/\x27/g,"\\x27")+'\')" title="Editeaza proprietati produs (nume, TP, UM, producator)" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 10px;border-radius:8px;cursor:pointer;font-size:14px">&#9998;</button>';
     h+='</div>';
-    h+=avizPanel;
-    if(docsPanel)h+=docsPanel;
-    h+=balancePanel;
-    // In collapse doar tabelul de miscari
+    // v12.84 — Panelele (Avize/Documente/Balanta) apar DOAR cand produsul e expandat (▼).
+    // Balanta include in dropdown-ul sau KPI grid + tabel MISCARI LUNARE (mutat din bloc separat).
     if(expanded){
-      h+='<div style="padding:10px 14px;overflow-x:auto;border-top:1px solid var(--brd)">';
-      h+='<div style="font-size:11px;color:var(--txtL);margin-bottom:6px;font-weight:600">MISCARI LUNARE</div>';
-      // v12.77: coloana Docs eliminata din tabel (agregata in dropdown „Documente produs" de sus)
-      h+='<table class="dt" style="margin:0"><thead><tr><th>#</th><th>Luna</th><th>Tip</th><th>Lot</th><th style="text-align:right">Cant.</th><th style="text-align:right">Valoare</th><th>Actiuni</th></tr></thead><tbody>';
-      const sortedRows=rows.slice().sort(function(a,b){return(+a.month||0)-(+b.month||0)});
-      sortedRows.forEach(function(r,i){
-        h+='<tr><td>'+(i+1)+'</td><td>'+(r.month?MO[r.month-1]:'')+'</td>'+
-          '<td><span class="bdg '+(r.type==='intrare'?'bdg-g':r.type==='iesire'?'bdg-a':'bdg-b')+'">'+(r.type==='stoc_initial'?'Stoc initial':r.type==='intrare'?'Intrare':'Iesire')+'</span></td>'+
-          '<td style="font-size:11px">'+esc(r.lot||'')+'</td>'+
-          '<td style="text-align:right">'+fn(r.quantity)+'</td>'+
-          '<td style="text-align:right">'+fn(Math.round((r.value_lei||0)*100)/100)+'</td>'+
-          '<td class="act"><button onclick="editBio('+r.id+')" title="Editare (inclusiv documente)">&#9998;</button><button onclick="delRec(\'biocide\','+r.id+')">&#128465;</button></td></tr>';
-      });
-      h+='</tbody></table></div>';
+      h+=avizPanel;
+      if(docsPanel)h+=docsPanel;
+      h+=balancePanel;
     }
     h+='</div>';
   });
@@ -17051,6 +17052,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.84',date:'2026-04-22',notes:'UX Biocide — card reorganizat ierarhic: click pe produs extinde/colapseaza TOT continutul (Avize + Documente + Balanta); cand produsul e colapsat (▶) ramane doar header-ul cu stocul actual in capsula alba, compact. Miscari lunare mutate IN dropdown-ul Balanta detaliata (KPI grid + tabel miscari apar impreuna cand apesi pe Balanta). Rezultat: densitate vizuala semnificativ mai mare, focus pe ce te intereseaza fara scroll interminabil, 3 nivele de expansion (produs inchis / produs deschis cu 3 dropdown-uri colapsate / dropdown Balanta deschis cu detalii).'},
   {version:'12.83',date:'2026-04-22',notes:'5 imbunatatiri: (A) editBio are buton +Produs nou langa dropdown — bioQuickAddProduct creeaza produs in catalog si revine la miscare cu produsul preselectat. (B) Search biocide fuzzy multi-termen pe nume/cod/lot/TP/producator/distribuitor. (C) Dashboard Urgente afiseaza avize biocide expirate/expira in 30 zile. (D) bioDownloadAllProductDocs — descarcare secventiala a tuturor documentelor unui produs cu prefix tip in filename. (E) genConsumATBWord cu grafice embedded: AWaRe doughnut, top 10 bar orizontal color-coded, benchmarks WHO Access/Watch/Reserve.'},
   {version:'12.82',date:'2026-04-22',notes:'REFACTOR Biocide — documentele (Aviz BPR, Fisa tehnica, SDS, Alte) se gestioneaza O SINGURA DATA la nivel de PRODUS (nu pe fiecare miscare). Stocate in CFG.biocide_products[i].documents[key][]. Editor Produs complet (5 sectiuni): Identificare, Clasificare, Parteneri, Avize BPR tabel editabil, Documente Produs cu 👁 ⬇ 🗑 per fisier. Editor Miscare simplificat: doar Produs/Tip/Luna/Lot/Cantitate/Valoare — fara atasamente. Migratie bioMigrateDocsToProduct cu deduplicare dupa nume fisier. Card view dropdown Documente produs citeste din product.documents prioritar + fallback aggregate din records legacy (badge galben).'},
   {version:'12.81',date:'2026-04-22',notes:'Rapoarte — PV Sedinta CPIAAM cu sectiune GRAFICE SINTEZA (IAAM pe sectii bar orizontal + AWaRe DDD doughnut) inainte de semnaturi. Mentiune Raportul Anual ca Anexa 2 pentru detalii tehnice. Finalizat plan v12.75-v12.81: foundation + 8 rapoarte profesionale cu grafice Chart.js embedded, benchmarks publice, cross-module insights, data-driven recommendations.'},

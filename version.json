@@ -1,11 +1,8 @@
 {
-  "version": "12.83",
+  "version": "12.84",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "A — Editor Miscare Biocid: buton +Produs nou langa dropdown. Deschide dialog rapid creare in catalog (nume, cod, TP, UM, producator, distribuitor). Dupa salvare revine la miscare cu produsul preselectat si datele din miscare conservate.",
-    "B — Search biocide imbunatatit: fuzzy match multi-termen pe nume + cod intern + lot + TP + producator + distribuitor. Cauta cu spatii (ex: clor TP2) — toate cuvintele trebuie sa se potriveasca.",
-    "C — Dashboard alerte: avize biocide expirate (rosu) sau care expira in 30 zile (portocaliu) apar in sectiunea Urgente. Click duce la modulul Biocide.",
-    "D — Export bulk documente produs: buton Descarca tot in editor produs - download secvential toate fisierele (aviz+fisa+SDS+alte) cu prefix tip in numele fisierului.",
-    "E — Raport Consum Antibiotice cu grafice: AWaRe doughnut, top 10 substante bar orizontal color-coded dupa AWaRe, tabel benchmarks WHO Access/Watch/Reserve."
+    "Card Biocide reorganizat: click pe produs extinde/colapseaza TOT continutul (Avize + Documente + Balanta). Cand e inchis ramane doar header-ul cu stocul actual, compact.",
+    "Miscari lunare mutate in dropdown-ul Balanta detaliata: KPI grid (Stoc initial / Intrari / Iesiri / Stoc actual) + tabel miscari apar impreuna cand apesi pe Balanta. Focus pe ce te intereseaza, fara scroll interminabil."
   ]
 }

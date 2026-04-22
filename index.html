@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.61</title>
+<title>CPIAAM Management v12.66</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2049,7 +2049,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.61';
+const APP_VERSION='12.66';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -2182,6 +2182,8 @@ async function loadCfg(){
       {id:genId('ipc'),name_ro:'Sterilizare si reprocesare',name_en:'Sterilization & reprocessing',color:'#00695C',source_module:'audit',audit_type:'sterilizare',standard:true,active:true},
       {id:genId('ipc'),name_ro:'Pregatire preoperatorie',name_en:'Preoperative preparation',color:'#AD1457',source_module:'audit',audit_type:'preoperator',standard:true,active:true},
       {id:genId('ipc'),name_ro:'Gestionare deseuri',name_en:'Waste management',color:'#795548',source_module:'audit',audit_type:'deseuri',standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Governance IPC',name_en:'IPC Governance',color:'#5E35B1',source_module:'audit',audit_type:'governance_ipc',standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Precautiuni izolare',name_en:'Isolation precautions',color:'#C62828',source_module:'audit',audit_type:'precautiuni_izolare',standard:true,active:true},
       {id:genId('ipc'),name_ro:'Supraveghere epidemiologica',name_en:'Epidemiological surveillance',color:'#0D47A1',source_module:'iaam',audit_type:null,standard:true,active:true},
       {id:genId('ipc'),name_ro:'Dispozitive invazive',name_en:'Invasive devices',color:'#B71C1C',source_module:'iaam',audit_type:null,standard:true,active:true},
       {id:genId('ipc'),name_ro:'Infectii chirurgicale',name_en:'Surgical site infections',color:'#4E342E',source_module:'iaam',audit_type:null,standard:true,active:true},
@@ -2270,6 +2272,42 @@ async function loadCfg(){
   // Add Focare epidemice category if missing (needed for Obiective SMART template)
   if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>(c.name_ro||'').indexOf('Focare')>=0)){
     CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Focare epidemice',name_en:'Outbreaks',color:'#D32F2F',source_module:'iaam',audit_type:null,standard:true,active:true});
+    _comorbAdded=true;
+  }
+  // v12.62: Add Governance IPC category (WHO Core Components 1+2+6)
+  if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>c.audit_type==='governance_ipc')){
+    CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Governance IPC',name_en:'IPC Governance',color:'#5E35B1',source_module:'audit',audit_type:'governance_ipc',standard:true,active:true});
+    _comorbAdded=true;
+  }
+  // v12.62: Add Precautiuni Izolare category (justificat de rata MDR in spitale romanesti)
+  if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>c.audit_type==='precautiuni_izolare')){
+    CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Precautiuni izolare',name_en:'Isolation precautions',color:'#C62828',source_module:'audit',audit_type:'precautiuni_izolare',standard:true,active:true});
+    _comorbAdded=true;
+  }
+  // v12.63: Faza 2 — categoriile medium-priority din WHO/ECDC gap analysis
+  if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>c.audit_type==='infrastructura_ipc')){
+    CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Infrastructura IPC',name_en:'IPC Infrastructure',color:'#37474F',source_module:'audit',audit_type:'infrastructura_ipc',standard:true,active:true});
+    _comorbAdded=true;
+  }
+  if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>c.audit_type==='epp_ipc')){
+    CFG.ipc_categories.push({id:genId('ipc'),name_ro:'EPP (Echipament Individual de Protectie)',name_en:'PPE (Personal Protective Equipment)',color:'#00838F',source_module:'audit',audit_type:'epp_ipc',standard:true,active:true});
+    _comorbAdded=true;
+  }
+  if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>c.audit_type==='injection_safety')){
+    CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Siguranta injectii si sharps',name_en:'Injection Safety & Sharps',color:'#EF6C00',source_module:'audit',audit_type:'injection_safety',standard:true,active:true});
+    _comorbAdded=true;
+  }
+  if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>c.audit_type==='ambulatoriu_ipc')){
+    CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Ambulatoriu IPC',name_en:'Outpatient IPC',color:'#00695C',source_module:'audit',audit_type:'ambulatoriu_ipc',standard:true,active:true});
+    _comorbAdded=true;
+  }
+  if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>c.audit_type==='raspuns_focar')){
+    CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Raspuns la focar',name_en:'Outbreak response',color:'#B71C1C',source_module:'audit',audit_type:'raspuns_focar',standard:true,active:true});
+    _comorbAdded=true;
+  }
+  // v12.65: Vaccinare Personal (doar audit operational, fara stocare date personale — GDPR-safe)
+  if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>c.audit_type==='vaccinare_personal')){
+    CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Vaccinare personal (verificare)',name_en:'Personnel vaccination (audit)',color:'#558B2F',source_module:'audit',audit_type:'vaccinare_personal',standard:true,active:true});
     _comorbAdded=true;
   }
   // Migrate: add HII (High Impact Interventions) audit categories if missing
@@ -10369,6 +10407,90 @@ const AUDIT_ITEMS={
     {text_ro:'Cos deseuri cu capac si pedala',text_en:'Waste bin with lid and pedal',ref:''},
     {text_ro:'Afis igiena mainilor (WHO)',text_en:'Hand hygiene poster (WHO)',ref:''}
   ],
+  // v12.62: Audit Governance IPC (WHO IPC Core Component 1+2+6, ANMCS compliance)
+  governance_ipc:[
+    {text_ro:'Comitetul CPIAAM se intruneste trimestrial sau la nevoie, cu PV semnat si arhivat',text_en:'CPIAAM Committee meets quarterly or as needed, with signed and archived minutes',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Plan Anual de Prevenire si Limitare IAAM exista, este avizat de Comitet si actualizat',text_en:'Annual IPC Prevention Plan exists, approved by Committee and up to date',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Coordonator CPIAAM cu fisa postului clara si timp alocat IPC documentat',text_en:'CPIAAM Coordinator with clear job description and documented IPC time',ref:'WHO IPC Core Component 1'},
+    {text_ro:'Ghiduri scrise disponibile pe sectii (igiena, curatenie, precautiuni izolare, invazive)',text_en:'Written guidelines available on wards (hygiene, cleaning, isolation precautions, invasive devices)',ref:'WHO IPC Core Component 2'},
+    {text_ro:'Buget IPC dedicat si urmarit (biocide, consumabile igiena, EPP)',text_en:'Dedicated and tracked IPC budget (biocides, hygiene consumables, PPE)',ref:'WHO IPC Core Component 1'},
+    {text_ro:'Raport Anual CPIAAM aprobat de Comitetul Director si transmis la DSP/autoritatea sanitara',text_en:'Annual CPIAAM Report approved by Board of Directors and submitted to public health authority',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Obiective SMART IPC stabilite pentru anul curent, monitorizate trimestrial cu feedback',text_en:'SMART IPC objectives set for current year, monitored quarterly with feedback',ref:'WHO IPC Core Component 6'}
+  ],
+  // v12.63: Audit Infrastructura IPC (WHO Core Component 8 — Built environment)
+  infrastructura_ipc:[
+    {text_ro:'Saloane izolare aer/contact disponibile in numar adecvat pentru nivelul de activitate',text_en:'Airborne/contact isolation rooms available in adequate number for activity level',ref:'WHO IPC Component 8'},
+    {text_ro:'Rata schimbare aer (ACH) in saloane izolare masurata si documentata periodic',text_en:'Air Changes per Hour (ACH) in isolation rooms measured and documented periodically',ref:'WHO IPC Component 8'},
+    {text_ro:'Apa tehnica (dializa, instrumentar) monitorizata si analizata conform protocol',text_en:'Technical water (dialysis, instruments) monitored and analyzed per protocol',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Spatii depozitare sterile: temperatura, umiditate, curatenie in parametri',text_en:'Sterile storage: temperature, humidity, cleanliness within parameters',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Separare circuite curat/murdar in blocuri operatorii, ATI, sterilizare',text_en:'Clean/dirty circuits separation in OR, ICU, sterilization',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Chiuvete chirurgicale cu capsule microfiltrante (unde risc contaminare apa)',text_en:'Surgical washbasins with microfiltration capsules (where water contamination risk)',ref:'WHO IPC Component 8'},
+    {text_ro:'Dozatoare SHA densitate adecvata — la fiecare pat / punct de ingrijire',text_en:'ABHR dispensers adequate density — at each bed / point of care',ref:'WHO Hand Hygiene'},
+    {text_ro:'Depozit EPP cu stoc minim pentru situatii de criza + acces restrictionat',text_en:'PPE storage with minimum crisis stock + restricted access',ref:'WHO IPC Component 8'}
+  ],
+  // v12.63: Audit PPE — post-COVID focus
+  epp_ipc:[
+    {text_ro:'EPP disponibil la punctele de ingrijire (masca, manusi, halat, boneta)',text_en:'PPE available at points of care (mask, gloves, gown, cap)',ref:'WHO IPC Component 5'},
+    {text_ro:'EPP adecvat riscului — masca FFP2/FFP3 vs chirurgicala, halat impermeabil unde necesar',text_en:'PPE matched to risk — FFP2/FFP3 vs surgical mask, impermeable gown where needed',ref:'ECDC'},
+    {text_ro:'Tehnica corecta imbracare EPP (donning) — ordinea: halat, masca, ochelari, manusi',text_en:'Correct PPE donning technique — order: gown, mask, goggles, gloves',ref:'CDC'},
+    {text_ro:'Tehnica corecta dezbracare EPP (doffing) — pasul CRITIC pentru prevenirea contaminarii',text_en:'Correct PPE doffing technique — CRITICAL step for contamination prevention',ref:'CDC'},
+    {text_ro:'EPP contaminat aruncat la cod 18 01 03* (deseuri infectioase) — nu amestecat',text_en:'Contaminated PPE disposed as 18 01 03* (infectious waste) — not mixed',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Instruire personal pe utilizarea EPP documentata (semestrial sau la schimbare protocoale)',text_en:'Staff training on PPE use documented (semi-annually or on protocol changes)',ref:'WHO IPC Component 3'},
+    {text_ro:'Stoc minim EPP pe sectii pentru pregatire criza / pandemie',text_en:'Minimum PPE stock on wards for crisis / pandemic preparedness',ref:'WHO IPC Component 8'}
+  ],
+  // v12.63: Audit Injection Safety & Sharps (WHO major focus area)
+  injection_safety:[
+    {text_ro:'Seringi si ace de unica folosinta — NU refolosite',text_en:'Single-use syringes and needles — NOT reused',ref:'WHO Safe Injection'},
+    {text_ro:'Tehnica aseptica la pregatirea si administrarea injectiei',text_en:'Aseptic technique at injection preparation and administration',ref:'WHO Safe Injection'},
+    {text_ro:'Flacoane multidoza — etichetate cu data deschiderii si termen de utilizare',text_en:'Multidose vials — labeled with opening date and expiry',ref:'WHO Safe Injection'},
+    {text_ro:'Cutii rigide pentru obiecte ascutite la punctul de ingrijire, max 3/4 pline',text_en:'Rigid sharps containers at point of care, max 3/4 full',ref:COUNTRY.regulations.wasteOrder},
+    {text_ro:'Registru accident de intepare (BBP) + protocol post-expunere cunoscut de personal',text_en:'Needlestick injury registry (BBP) + post-exposure protocol known by staff',ref:'WHO Safe Injection'},
+    {text_ro:'Profilaxie post-expunere disponibila (HBV, HIV) — kit + acces medic 24/7',text_en:'Post-exposure prophylaxis available (HBV, HIV) — kit + 24/7 physician access',ref:'WHO'},
+    {text_ro:'Instruire personal anti-intepare documentata (tehnici, manipulare, eliminare)',text_en:'Needlestick prevention training documented (techniques, handling, disposal)',ref:'WHO IPC Component 3'}
+  ],
+  // v12.63: Audit Ambulatoriu IPC (justificat de volumul Ambulatoriu — Raport 2025: 47 probe)
+  ambulatoriu_ipc:[
+    {text_ro:'Decontaminare suprafete intre pacienti in cabinete consultatie',text_en:'Surface decontamination between patients in consultation rooms',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Instrumente unica folosinta sau pre-sterilizate — trasabilitate documentata',text_en:'Single-use or pre-sterilized instruments — documented traceability',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Separare circuit curat/murdar in cabinete (mai ales dermato, ORL, oftalmologie)',text_en:'Clean/dirty circuit separation in clinics (especially dermato, ENT, ophthalmology)',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Triaj IPC la prezentare — simptome respiratorii, MDR suspect, plagi deschise',text_en:'IPC triage at presentation — respiratory symptoms, MDR suspect, open wounds',ref:'CDC / ECDC'},
+    {text_ro:'Informare pacient cu instructiuni post-procedura scrise (ingrijire plaga, semne infectie)',text_en:'Patient information with written post-procedure instructions (wound care, infection signs)',ref:'ANMCS'},
+    {text_ro:'Registru proceduri minim invazive + incidente IPC ambulatorii',text_en:'Minimally invasive procedures registry + outpatient IPC incidents',ref:COUNTRY.regulations.mainOrder}
+  ],
+  // v12.65: Audit Vaccinare Personal (approach B — verificare operationala, FARA stocare date personale)
+  // WHO IPC Component 3+5. Orice date vaccinale personale ale angajatilor ramân în registrul HR/Medicina Muncii,
+  // aplicatia doar auditează existența sistemului si acoperirea agregată.
+  vaccinare_personal:[
+    {text_ro:'Registru vaccinal personal exista (fizic sau electronic, separat de CPIAAM Manager)',text_en:'Personnel vaccination registry exists (physical or electronic, separate from CPIAAM Manager)',ref:'WHO IPC Component 3'},
+    {text_ro:'Consimtamant GDPR (art. 9) colectat in scris de la fiecare persoana pentru fiecare vaccin inregistrat',text_en:'Written GDPR (art. 9) consent collected from each person for each recorded vaccine',ref:'GDPR Art. 9'},
+    {text_ro:'Acoperire HBV (Hepatita B) personal medical > 90% — confirmata prin registru agregat',text_en:'HBV (Hepatitis B) coverage medical staff > 90% — confirmed via aggregate registry',ref:'WHO'},
+    {text_ro:'Campanie vaccinare gripa sezoniera organizata anual, cu rata de acoperire raportata',text_en:'Seasonal influenza vaccination campaign organized annually, with reported coverage rate',ref:'ECDC / WHO'},
+    {text_ro:'Oferirea vaccinarii la angajare documentata in procedura HR (obligatoriu HBV)',text_en:'Vaccination offered at hiring documented in HR procedure (mandatory HBV)',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Procedura post-expunere accidentala (BBP) disponibila si cunoscuta de personal — kit + medic 24/7',text_en:'Post-exposure accident procedure (BBP) available and known by staff — kit + 24/7 physician',ref:'WHO'},
+    {text_ro:'Registru accidente de expunere la sange/fluide completat lunar, cu raport anual la Medicina Muncii',text_en:'Blood/fluid exposure accident registry completed monthly, with annual report to Occupational Medicine',ref:'WHO'}
+  ],
+  // v12.63: Audit Raspuns Focar (Outbreak Response Readiness)
+  raspuns_focar:[
+    {text_ro:'Procedura scrisa de raspuns la focar este disponibila si actualizata',text_en:'Written outbreak response procedure available and up to date',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Echipa de raspuns rapid desemnata (epidemiolog, microbiolog, manager, sef sectie)',text_en:'Rapid response team designated (epidemiologist, microbiologist, manager, ward head)',ref:'WHO'},
+    {text_ro:'Notificare '+COUNTRY.authorities.publicHealthDir+' in max 24-48h prevazuta in procedura',text_en:'Notification to public health authority within 24-48h per procedure',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Registru focar disponibil + exercitii table-top anuale pentru familiarizare',text_en:'Outbreak registry available + annual table-top exercises for familiarization',ref:'WHO'},
+    {text_ro:'Kit preluare cazuri (EPP, containere probe, formulare raportare) gata accesibil',text_en:'Case handling kit (PPE, sample containers, report forms) readily accessible',ref:'ECDC'},
+    {text_ro:'Pacienti contact identificabili rapid din registrele electronice/pe hartie',text_en:'Contact patients quickly identifiable from electronic/paper registries',ref:'ECDC'},
+    {text_ro:'Lesson learned dupa focare anterioare documentate si comunicate personalului',text_en:'Lessons learned from previous outbreaks documented and communicated to staff',ref:'WHO IPC Component 6'}
+  ],
+  // v12.62: Audit Precautiuni de Izolare (justificat de rata MDR — Raport 2025: 66,7%)
+  precautiuni_izolare:[
+    {text_ro:'Identificare pacient cu precautiuni speciale la internare (triaj MDR, simptomatici)',text_en:'Patient identification with special precautions at admission (MDR screening, symptomatic)',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Semne vizibile la intrarea in salon indicand tipul de precautiuni (contact / picaturi / aer)',text_en:'Visible signs at ward entrance indicating type of precautions (contact / droplet / airborne)',ref:'CDC Isolation Precautions'},
+    {text_ro:'EPP corespunzator disponibil in fata salonului, in cantitate suficienta',text_en:'Appropriate PPE available in front of ward, sufficient quantity',ref:'WHO IPC Component 5'},
+    {text_ro:'Respectarea celor 5 momente OMS la fiecare contact cu pacientul izolat',text_en:'WHO 5 Moments of Hand Hygiene respected at every contact with isolated patient',ref:'WHO Hand Hygiene'},
+    {text_ro:'Tehnica corecta imbracare/dezbracare EPP (donning/doffing)',text_en:'Correct PPE donning/doffing technique',ref:'CDC / ECDC'},
+    {text_ro:'Echipament dedicat pacientului (stetoscop, termometru) sau dezinfectat intre pacienti',text_en:'Dedicated equipment (stethoscope, thermometer) or disinfected between patients',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Transport pacient izolat cu notificare prealabila a serviciilor destinatare (radiologie, bloc operator)',text_en:'Isolated patient transport with advance notification of receiving services (radiology, OR)',ref:'CDC'},
+    {text_ro:'Ridicare precautiuni doar pe criterii medicale documentate (culturi negative, vindecare)',text_en:'Lifting precautions only on documented medical criteria (negative cultures, resolution)',ref:COUNTRY.regulations.mainOrder},
+    {text_ro:'Personal instruit in managementul precautiilor de izolare, cu dovada scrisa',text_en:'Staff trained in isolation precautions management, with written evidence',ref:'WHO IPC Component 3'}
+  ],
   deseuri:[
     {text_ro:'Separarea deseurilor la sursa — containere distincte pe categorii',text_en:'Waste segregation at source — distinct containers per category',ref:COUNTRY.regulations.wasteOrder},
     {text_ro:'Containere etichetate corect (cod culoare + cod deseu)',text_en:'Containers correctly labeled (color code + waste code)',ref:COUNTRY.regulations.wasteOrder},
@@ -11077,6 +11199,8 @@ async function _renderAgregatAudit(el,id){
   if(!_agregatData.matrix)_agregatData.matrix={};
   if(!_agregatData.overrides)_agregatData.overrides={};
   if(!_agregatData.measures)_agregatData.measures=[];
+  // v12.64: Feedback loop — status implementare masuri din T anterior (WHO IPC Component 6)
+  if(!_agregatData.feedback)_agregatData.feedback={};
 
   var h='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'+
     '<button class="btn bo bsm" onclick="_backToList()">&#8592; '+T('aud_inapoi')+'</button>'+
@@ -11121,6 +11245,31 @@ async function _renderAgregatAudit(el,id){
   });
   h+='</tbody></table></div></div>';
 
+  // v12.64: Feedback loop — Status implementare masuri T anterior
+  h+='<div class="pn"><div class="ph"><h3>&#128221; Status implementare masuri T anterior</h3></div><div class="pb">'+
+    '<div class="ib inf" style="font-size:11px;margin-bottom:10px">Pentru fiecare sectie, noteaza ce masuri au fost stabilite in trimestrul anterior si statusul implementarii. Ajuta la urmarirea feedback-ului IPC (WHO Core Component 6 — monitoring, audit & feedback). Sectiuni fara masuri lasa randul gol.</div>'+
+    '<div style="overflow-x:auto"><table class="dt" style="font-size:11px;margin:0">'+
+    '<thead><tr><th style="text-align:left">Sectia</th><th>Actiuni stabilite T anterior</th><th>Status</th><th>Motiv (daca partial/ne-impl.)</th></tr></thead><tbody>';
+  secList.forEach(function(sec){
+    if(!_agregatData.feedback[sec.id])_agregatData.feedback[sec.id]={action:'',status:'',reason:''};
+    var fb=_agregatData.feedback[sec.id];
+    h+='<tr>'+
+      '<td style="text-align:left;font-weight:600;white-space:nowrap">'+esc(sec.name||sec.id)+'</td>'+
+      '<td><input value="'+esc(fb.action||'')+'" onchange="_agregatData.feedback[\''+sec.id+'\'].action=this.value" placeholder="Ex: re-instruire igiena maini, reparatie dozator" style="width:100%;padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
+      '<td><select onchange="_agregatData.feedback[\''+sec.id+'\'].status=this.value" style="padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px;min-width:130px">'+
+        '<option value="">—</option>'+
+        '<option value="implemented"'+(fb.status==='implemented'?' selected':'')+'>&#10004; Implementat</option>'+
+        '<option value="partial"'+(fb.status==='partial'?' selected':'')+'>&#9203; Partial</option>'+
+        '<option value="not_implemented"'+(fb.status==='not_implemented'?' selected':'')+'>&#10060; Ne-implementat</option>'+
+        '<option value="na"'+(fb.status==='na'?' selected':'')+'>N/A</option>'+
+      '</select></td>'+
+      '<td><input value="'+esc(fb.reason||'')+'" onchange="_agregatData.feedback[\''+sec.id+'\'].reason=this.value" placeholder="Opt." style="width:100%;padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
+    '</tr>';
+  });
+  h+='</tbody></table></div>'+
+    '<div style="font-size:10px;color:var(--txtL);margin-top:8px;font-style:italic">Tip: pentru urmatorul trimestru, vezi sectiunile cu status „Ne-implementat" repetat → blocaj organizational ce necesita escalare la Manager.</div>'+
+  '</div></div>';
+
   // Conclusions
   h+='<div class="pn"><div class="ph"><h3>'+T('aud_concluzii')+'</h3></div><div class="pb">'+
     '<textarea id="f-agr-conclusions" rows="3">'+(r.conclusions||'')+'</textarea>'+
@@ -11157,6 +11306,7 @@ async function _saveAgregatAudit(){
     matrix:JSON.parse(JSON.stringify(_agregatData.matrix||{})),
     overrides:JSON.parse(JSON.stringify(_agregatData.overrides||{})),
     measures:JSON.parse(JSON.stringify(_agregatData.measures||[])),
+    feedback:JSON.parse(JSON.stringify(_agregatData.feedback||{})),
     conclusions:v('f-agr-conclusions').trim(),
     compliance_pct:pct,total_items:vals.length,conform_items:vals.filter(v=>v>=80).length,
     created_at:new Date().toISOString()};
@@ -12918,11 +13068,51 @@ async function genRaportAnualWord(){
     children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WS,rows:[wTblHead(['Agent etiologic','Cazuri','%'],WS),...Object.entries(oc).sort((a,b)=>b[1]-a[1]).map(([o,n],i)=>wTblRow([o,String(n),fp(n,ia.length)],WS,i%2===1))]}));}
   addRecs(children,AN.iaam,'1.4. Recomandari IAAM');
 
-  // 2. Autocontrol
-  children.push(wPB());children.push(wH1('2. Autocontrol Microbiologic'));children.push(wSp(40));addNarrative(children,AN.auto);children.push(wSp(60));
+  // 2. Autocontrol (v12.66: Microbiologic + ATP + UV in Raportul Anual)
+  children.push(wPB());children.push(wH1('2. Autocontrol (Microbiologic + ATP + UV)'));children.push(wSp(40));
+  // Fetch ATP + UV pentru anul curent
+  var _rpAtp=(await ga('atp')).filter(function(r){return r.year===y});
+  var _rpUv=(await ga('uvcheck')).filter(function(r){return r.year===y});
+  var _rpAtpC=_rpAtp.filter(function(r){return atpResult(r.rlu_value,r.surface_type)==='conform'}).length;
+  var _rpUvP=_rpUv.filter(function(r){return r.result==='pass'}).length;
+  // 2.0 Sumar general cu toate 3 metodele
+  var WAS=[3800,1100,1100,1100,1326];
+  children.push(new Table({width:{size:8426,type:WidthType.DXA},columnWidths:WAS,rows:[
+    wTblHead(['Metoda autocontrol','Total','Conforme','Neconf.','Conformitate'],WAS),
+    wTblRow(['Microbiologic',String(au.length),String(conf),String(au.length-conf),au.length>0?fp(conf,au.length):'—'],WAS,false,au.length-conf>0),
+    wTblRow(['ATP (bioluminescenta)',String(_rpAtp.length),String(_rpAtpC),String(_rpAtp.length-_rpAtpC),_rpAtp.length>0?fp(_rpAtpC,_rpAtp.length):'—'],WAS,true,_rpAtp.length-_rpAtpC>0),
+    wTblRow(['UV Check (marker fluorescent)',String(_rpUv.length),String(_rpUvP),String(_rpUv.length-_rpUvP),_rpUv.length>0?fp(_rpUvP,_rpUv.length):'—'],WAS,false,_rpUv.length-_rpUvP>0),
+    wTblRow([{text:'TOTAL',bold:true},{text:String(au.length+_rpAtp.length+_rpUv.length),bold:true},{text:String(conf+_rpAtpC+_rpUvP),bold:true},{text:String((au.length-conf)+(_rpAtp.length-_rpAtpC)+(_rpUv.length-_rpUvP)),bold:true},{text:(au.length+_rpAtp.length+_rpUv.length)>0?fp(conf+_rpAtpC+_rpUvP,au.length+_rpAtp.length+_rpUv.length):'—',bold:true}],WAS)
+  ]}));
+  children.push(wSp(60));
+  // 2.1 Microbiologic detaliat
+  children.push(wH2('2.1. Autocontrol Microbiologic'));children.push(wSp(40));
+  addNarrative(children,AN.auto);children.push(wSp(40));
   const abt={};au.forEach(r=>{const pn=rProbe(r.probe_type);if(!abt[pn])abt[pn]={t:0,nc:0};abt[pn].t++;if(r.result==='neconform')abt[pn].nc++});const WA=[3500,1400,1400,1400,1326];
   children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WA,rows:[wTblHead(['Tip proba','Total','Conforme','Neconf.','Conformitate'],WA),...Object.entries(abt).sort((a,b)=>b[1].t-a[1].t).map(([t,d],i)=>wTblRow([t,String(d.t),String(d.t-d.nc),d.nc>0?d.nc:'0',fp(d.t-d.nc,d.t)],WA,i%2===1,d.nc>0)),wTblRow([{text:'TOTAL',bold:true},{text:String(au.length),bold:true},{text:String(conf),bold:true},{text:String(au.length-conf),bold:true},{text:fp(conf,au.length),bold:true}],WA)]}));
-  addRecs(children,AN.auto,'2.2. Recomandari Autocontrol');
+  // 2.2 ATP
+  children.push(wSp(60));children.push(wH2('2.2. Autocontrol ATP (Bioluminescenta)'));children.push(wSp(40));
+  if(_rpAtp.length===0){
+    children.push(wP('Nu au fost efectuate masuratori ATP in '+y+'. Recomandare: introducerea in zonele critice (Bloc Operator, ATI, Alimentar) pentru validare rapida a eficientei curatarii.',{size:20,italics:true}));
+  } else {
+    var _rpBySurf={};_rpAtp.forEach(function(r){var sn2=(typeof getAtpSurfaceName==='function')?getAtpSurfaceName(r.surface_type):(r.surface_type||'—');if(!_rpBySurf[sn2])_rpBySurf[sn2]={t:0,nc:0};_rpBySurf[sn2].t++;if(atpResult(r.rlu_value,r.surface_type)==='neconform')_rpBySurf[sn2].nc++});
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WA,rows:[wTblHead(['Tip suprafata','Total','Conforme','Neconf.','Conformitate'],WA),
+      ...Object.entries(_rpBySurf).sort(function(a,b){return b[1].t-a[1].t}).map(function(e,i){var t=e[0],d=e[1];return wTblRow([t,String(d.t),String(d.t-d.nc),String(d.nc),fp(d.t-d.nc,d.t)],WA,i%2===1,d.nc>0)}),
+      wTblRow([{text:'TOTAL',bold:true},{text:String(_rpAtp.length),bold:true},{text:String(_rpAtpC),bold:true},{text:String(_rpAtp.length-_rpAtpC),bold:true},{text:fp(_rpAtpC,_rpAtp.length),bold:true}],WA)
+    ]}));
+  }
+  // 2.3 UV
+  children.push(wSp(60));children.push(wH2('2.3. Verificare UV (Eficacitate Curatenie)'));children.push(wSp(40));
+  if(_rpUv.length===0){
+    children.push(wP('Nu au fost efectuate verificari UV in '+y+'. Recomandare: evaluarea eficacitatii curatarii manuale prin markeri fluorescenti, in zone cu risc (Bloc Operator, saloane post-operatorii).',{size:20,italics:true}));
+  } else {
+    var _rpBySec={};_rpUv.forEach(function(r){var sName=rSec(r.section)||'—';if(!_rpBySec[sName])_rpBySec[sName]={t:0,f:0};_rpBySec[sName].t++;if(r.result==='fail')_rpBySec[sName].f++});
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WA,rows:[wTblHead(['Sectia','Total','Pass','Fail','Rata trecere'],WA),
+      ...Object.entries(_rpBySec).sort(function(a,b){return b[1].t-a[1].t}).map(function(e,i){var s=e[0],d=e[1];return wTblRow([s,String(d.t),String(d.t-d.f),String(d.f),fp(d.t-d.f,d.t)],WA,i%2===1,d.f>0)}),
+      wTblRow([{text:'TOTAL',bold:true},{text:String(_rpUv.length),bold:true},{text:String(_rpUvP),bold:true},{text:String(_rpUv.length-_rpUvP),bold:true},{text:fp(_rpUvP,_rpUv.length),bold:true}],WA)
+    ]}));
+  }
+  addRecs(children,AN.auto,'2.4. Recomandari Autocontrol');
 
   // 3. Deseuri
   children.push(wPB());children.push(wH1('3. Deseuri Medicale'));children.push(wSp(40));addNarrative(children,AN.deseuri);children.push(wSp(60));
@@ -13034,7 +13224,9 @@ async function genRaportAnualWord(){
   children.push(wPB());children.push(wH1('Concluzii si Recomandari'));children.push(wSp(40));
   var concl=[];
   concl.push('In anul '+y+', '+CFG.cpiaam_name+' a inregistrat '+ia.length+' cazuri IAAM'+(iaamRate!==null?' (rata: '+iaamRate.toFixed(2)+'/1000 zile-pacient)':'')+'.');
-  concl.push('Autocontrolul microbiologic: '+au.length+' probe efectuate, conformitate '+fp(conf,au.length)+'.');
+  concl.push('Autocontrolul microbiologic: '+au.length+' probe efectuate, conformitate '+(au.length>0?fp(conf,au.length):'—')+'.');
+  if(_rpAtp.length>0)concl.push('Autocontrol ATP (bioluminescenta): '+_rpAtp.length+' masuratori, conformitate '+fp(_rpAtpC,_rpAtp.length)+'.');
+  if(_rpUv.length>0)concl.push('Verificari UV (eficacitate curatenie): '+_rpUv.length+' teste, rata trecere '+fp(_rpUvP,_rpUv.length)+'.');
   concl.push('Deseuri medicale: '+fn(Math.round(totD))+' kg total.');
   if(atb&&atb.length>0){var pctA=atb.reduce(function(s,r){return s+(r.aware==='Access'?(+r.ddd||0):0)},0)/Math.max(atb.reduce(function(s,r){return s+(+r.ddd||0)},0),1)*100;
     concl.push('Consum antibiotice: '+(pctA>=60?'Conform tintei OMS ('+pctA.toFixed(1)+'% Access).':'Atentie — '+pctA.toFixed(1)+'% Access, sub tinta OMS de 60%. Se recomanda program de antibiotic stewardship.'));}
@@ -13289,14 +13481,31 @@ async function genTrimestrial(q){
 
   // 3. AUTOCONTROL
   children.push(wPB());children.push(wH1('3. Autocontrol Microbiologic'));children.push(wSp(40));
+  // v12.66: extins Trimestrial cu ATP + UV
+  var _qAtp=(await ga('atp')).filter(function(r){if(r.year!==y)return false;if(!r.date)return false;var m=new Date(r.date).getMonth()+1;return qMonths.includes(m)});
+  var _qUv=(await ga('uvcheck')).filter(function(r){if(r.year!==y)return false;if(!r.date)return false;var m=new Date(r.date).getMonth()+1;return qMonths.includes(m)});
+  var _qAtpC=_qAtp.filter(function(r){return atpResult(r.rlu_value,r.surface_type)==='conform'}).length;
+  var _qUvP=_qUv.filter(function(r){return r.result==='pass'}).length;
+  // Sumar 3 metode
+  var WA=[3500,1400,1400,1400,1326];
+  children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WA,rows:[
+    wTblHead(['Metoda autocontrol','Total','Conforme','Neconf.','Conformitate'],WA),
+    wTblRow(['Microbiologic',String(au.length),String(confAu),String(au.length-confAu),au.length>0?fp(confAu,au.length):'—'],WA,false,au.length-confAu>0),
+    wTblRow(['ATP (bioluminescenta)',String(_qAtp.length),String(_qAtpC),String(_qAtp.length-_qAtpC),_qAtp.length>0?fp(_qAtpC,_qAtp.length):'—'],WA,true,_qAtp.length-_qAtpC>0),
+    wTblRow(['UV Check',String(_qUv.length),String(_qUvP),String(_qUv.length-_qUvP),_qUv.length>0?fp(_qUvP,_qUv.length):'—'],WA,false,_qUv.length-_qUvP>0)
+  ]}));
   if(au.length>0){
+    children.push(wSp(60));
+    children.push(wH2('3.1. Microbiologic — pe tipuri de probe'));children.push(wSp(40));
     var abt={};au.forEach(function(r){var pn=rProbe(r.probe_type);if(!abt[pn])abt[pn]={t:0,nc:0};abt[pn].t++;if(r.result==='neconform')abt[pn].nc++});
-    var WA=[3500,1400,1400,1400,1326];
     children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WA,rows:[wTblHead(['Tip proba','Total','Conforme','Neconf.','Conformitate'],WA),
       ...Object.entries(abt).sort(function(a,b){return b[1].t-a[1].t}).map(function(e,i){var t=e[0],d=e[1];return wTblRow([t,String(d.t),String(d.t-d.nc),d.nc>0?String(d.nc):'0',fp(d.t-d.nc,d.t)],WA,i%2===1,d.nc>0)}),
       wTblRow([{text:'TOTAL',bold:true},{text:String(au.length),bold:true},{text:String(confAu),bold:true},{text:String(au.length-confAu),bold:true},{text:fp(confAu,au.length),bold:true}],WA)]}));
   } else {
-    children.push(wP('Nu au fost efectuate probe de autocontrol in trimestrul '+qLabels[q]+'.',{size:20,italics:true}));
+    children.push(wP('Nu au fost efectuate probe microbiologice in trimestrul '+qLabels[q]+'.',{size:20,italics:true}));
+  }
+  if(_qAtp.length===0&&_qUv.length===0){
+    children.push(wSp(40));children.push(wP('ATP si UV Check — fara inregistrari in acest trimestru.',{size:18,italics:true,color:WC.gray}));
   }
 
   // 4. DESEURI
@@ -13408,6 +13617,8 @@ async function genTrimestrial(q){
   concl.push('In trimestrul '+qLabels[q]+' '+y+' au fost inregistrate '+ia.length+' cazuri IAAM'+(iaamRate!==null?' (rata: '+iaamRate.toFixed(2)+'/1000 zile-pacient)':'')+(hasPrev?(ia.length>prevIa.length?', in crestere fata de trimestrul anterior.':ia.length<prevIa.length?', in scadere fata de trimestrul anterior.':'.'):'.'));
   var confPct=au.length>0?Math.round(confAu/au.length*100):0;
   concl.push('Autocontrol microbiologic: '+au.length+' probe, conformitate '+confPct+'%'+(confPct>=90?' — buna.':confPct>=70?' — satisfacatoare.':' — necesita atentie.'));
+  if(_qAtp.length>0)concl.push('Autocontrol ATP: '+_qAtp.length+' masuratori, conformitate '+fp(_qAtpC,_qAtp.length)+'.');
+  if(_qUv.length>0)concl.push('Verificari UV: '+_qUv.length+' teste, rata trecere '+fp(_qUvP,_qUv.length)+'.');
   if(totDes>0)concl.push('Deseuri medicale: '+fn(Math.round(totDes))+' kg total.');
   if(atb.length>0){var pctA=totalDDD>0?(access/totalDDD*100):0;concl.push('Antibiotice: '+(pctA>=60?'Conform tintei OMS ('+pctA.toFixed(1)+'% Access).':'Sub tinta OMS — '+pctA.toFixed(1)+'% Access. Se recomanda antibiotic stewardship.'));}
   concl.push('Recomandari: mentinerea supravegherii active, continuarea auditurilor IPC, instruirea periodica a personalului.');
@@ -13514,8 +13725,16 @@ async function genPVCPIAAM(){
     children.push(wP('(Detalii — Anexa: Analiza IAAM '+y+')',{size:18,italic:true,color:WC.gray}));
     children.push(wSp(60));
 
-    children.push(wH2('2. Autocontrol microbiologic '+y,WC.navy));
-    children.push(wP('Total probe recoltate: '+au.length+'. Rata de conformitate: '+(au.length>0?fp(conf,au.length):'—')+' ('+conf+' conforme, '+(au.length-conf)+' neconforme). Neconformitatile identificate au avut caracter punctual, fara impact epidemiologic documentat.',{size:20}));
+    children.push(wH2('2. Autocontrol (Microbiologic + ATP + UV) '+y,WC.navy));
+    // v12.66: include si ATP + UV
+    var _pvAtp=(await ga('atp')).filter(function(r){return r.year===y});
+    var _pvUv=(await ga('uvcheck')).filter(function(r){return r.year===y});
+    var _pvAtpC=_pvAtp.filter(function(r){return atpResult(r.rlu_value,r.surface_type)==='conform'}).length;
+    var _pvUvP=_pvUv.filter(function(r){return r.result==='pass'}).length;
+    children.push(wP('Microbiologic: '+au.length+' probe recoltate, conformitate '+(au.length>0?fp(conf,au.length):'—')+' ('+conf+' conforme / '+(au.length-conf)+' neconforme). Neconformitatile au avut caracter punctual, fara impact epidemiologic documentat.',{size:20}));
+    if(_pvAtp.length>0)children.push(wP('ATP (bioluminescenta): '+_pvAtp.length+' masuratori, conformitate '+fp(_pvAtpC,_pvAtp.length)+'.',{size:20}));
+    if(_pvUv.length>0)children.push(wP('Verificari UV (eficacitate curatenie): '+_pvUv.length+' teste, rata trecere '+fp(_pvUvP,_pvUv.length)+'.',{size:20}));
+    if(_pvAtp.length===0&&_pvUv.length===0)children.push(wP('ATP si UV Check — nu au fost efectuate in '+y+' (a se avea in vedere pentru '+ny+').',{size:18,italic:true,color:WC.gray}));
     children.push(wP('(Detalii — Anexa: Analiza Autocontrol '+y+')',{size:18,italic:true,color:WC.gray}));
     children.push(wSp(60));
 
@@ -13578,7 +13797,7 @@ async function genPVCPIAAM(){
     children.push(wSp(20));
     var concluzii=[
       'Rata IAAM '+y+': '+ia.length+' cazuri'+(mdr>0?' din care '+mdr+' cu germeni multirezistenti':'')+'. Distribuit sporadic, fara focare epidemiologice.',
-      'Autocontrolul microbiologic ('+au.length+' probe, '+(au.length>0?fp(conf,au.length):'—')+' conformitate) confirma eficienta procedurilor de curatenie si dezinfectie.',
+      'Autocontrolul microbiologic ('+au.length+' probe, '+(au.length>0?fp(conf,au.length):'—')+' conformitate) confirma eficienta procedurilor de curatenie si dezinfectie.'+(_pvAtp.length>0?' ATP: '+_pvAtp.length+' masuratori ('+fp(_pvAtpC,_pvAtp.length)+').':'')+(_pvUv.length>0?' UV: '+_pvUv.length+' teste ('+fp(_pvUvP,_pvUv.length)+' trecere).':''),
       'Managementul deseurilor medicale a functionat conform cerintelor legale ('+fn(Math.round(totD*100)/100)+' kg), fara incidente.',
       'Consumul de biocide ('+fn(Math.round(consBio))+' lei) este proportional cu activitatea. Stocul final de '+fn(Math.round(si+intr-consBio))+' lei asigura continuitatea in '+ny+'.'
     ];
@@ -15572,6 +15791,11 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.66',date:'2026-04-22',notes:'Rapoarte — extindere Microbiologic + ATP + UV in TOATE rapoartele (v12.59 avea doar in Analiza Autocontrol dedicata). Raport Anual: sectiunea 2 rescrisa cu sumar 3 metode + sub-sectiuni 2.1/2.2/2.3 + recomandari per metoda lipsa. Raport Trimestrial: sectiunea 3 include tabel sumar 3 metode filtrat pe luni trimestru + detaliu microbiologic. PV Sedinta: sectiunea 2 cu prezentare per metoda + concluzii includ ATP/UV conditional. Concluziile finale mentioneaza toate metodele cand exista date.'},
+  {version:'12.65',date:'2026-04-22',notes:'NOU Audituri — Vaccinare Personal (Faza 3 #9 — abordarea GDPR-safe). 7 itemi care verifica EXISTENTA sistemului: registru HR separat, consimtamant GDPR Art. 9, acoperire HBV >90%, campanie gripa anuala, oferirea vaccinarii la angajare, procedura post-expunere (BBP), registru accidente expunere. NU se stocheaza date individuale vaccinale in aplicatie — raman in registrul HR/Medicina Muncii. Auditul verifica DOAR ca sistemul functioneaza.'},
+  {version:'12.64',date:'2026-04-22',notes:'NOU Audituri — Agregat IPC: feedback loop (Faza 3 #8 din gap analysis WHO). Sectiune noua intre Matrice si Concluzii: „Status implementare masuri T anterior" cu tabel (Sectia | Actiune | Status dropdown | Motiv). Storage: _agregatData.feedback[secId]. Persistat la salvare in rec.feedback. WHO IPC Core Component 6 (monitoring, audit & feedback). Ajuta la urmarirea blocajelor organizationale repetate intre trimestre.'},
+  {version:'12.63',date:'2026-04-22',notes:'NOU Audituri — Faza 2 din gap analysis WHO/ECDC: 5 tipuri noi cu 35 itemi, acoperind:\n(3) Infrastructura IPC (8 itemi — WHO Core Component 8)\n(4) EPP / Echipament protectie (7 itemi — post-COVID focus)\n(5) Siguranta injectii si sharps (7 itemi — WHO major focus)\n(6) Ambulatoriu IPC (6 itemi — volumul ambulatoriu in spitale municipale)\n(7) Raspuns focar (7 itemi — outbreak response readiness)\nToate cu migratii automate in loadCfg. Total sistem: 16 + 2 (v12.62) + 5 = ~23 audit types.'},
+  {version:'12.62',date:'2026-04-22',notes:'NOU Audituri — 2 tipuri noi derivate din gap analysis WHO IPC Core Components (docs/AUDIT_GAP_ANALYSIS_WHO_ECDC.md):\n(1) GOVERNANCE IPC (7 itemi) — WHO Core Components 1+2+6 — Comitet CPIAAM, Plan Anual, fisa post Coordonator, ghiduri, buget, Raport Anual, Obiective SMART.\n(2) PRECAUTIUNI IZOLARE (9 itemi) — CDC/ECDC/WHO — identificare MDR, semne vizibile, EPP, 5 momente, donning/doffing, echipament dedicat, transport, ridicare precautiuni, instruire.\nAdaugate in AUDIT_ITEMS (audituri.js) si CFG.ipc_categories (config.js) cu culori distincte (indigo Governance, rosu inchis Precautiuni). Migratie automata la loadCfg — categoriile apar la urmatoarea deschidere.'},
   {version:'12.61',date:'2026-04-22',notes:'NOU Biocide — Import Excel „Balanta stocuri" (format romanesc tipic pentru sisteme de gestiune farmaceutica/contabila). Buton „Import Excel" in bara de actiuni Biocide. Parser: detecteaza automat randul cu sub-headers Cantitate/Valoare + grupurile Initial/Intrari/Iesiri/Final; extrage perioada din metadata („Data inceput/sfarsit"); agreghează rowurile multi-lot pe nume produs. Preview modal: tabel cu toate produsele (status exista/nou), edit inline TP si UM, totaluri globale, checkboxuri selectie, alegere luna tinta per tip miscare. La import: produse noi auto-create in CFG.biocide_products cu TP/UM ghicite din nume (TP1 pentru sapun/gel/alcool/antiseptic, TP2 default, TP4 alimentare, TP14 rodenticide, TP18 insecticide). Functii noi: importBiocideBalanceExcel, _parseBioBalanceXlsx, _guessBioTp, _guessBioUnit, _matchBioProduct, _showBioImportPreview, _doBioImport.'},
   {version:'12.60',date:'2026-04-22',notes:'REFACTOR major — genPVCPIAAM rescris ca act oficial al comitetului (Ord. 1101/2016 art. Comitetul de Prevenire IAAM), diferentiat clar de Raportul Anual (care ramane document tehnic). Noua structura: Header formal + Identificare (Nr/Data/Loc/Ora/Prezidat/Baza legala) + I. Ordinea de zi + II. Lista participantilor (tabel cu coloana Semnatura) + III. Desfasurarea sedintei (rezumate scurte, cu trimitere la Raport ca Anexa 2) + IV. MASURI SI RECOMANDARI (TABEL cu Nr/Masura/Responsabil/Termen — cheia documentului) + V. Diverse + VI. Concluzii + VII. Semnaturi structurate (Manager/Coordonator/DirectorMed/AsistentPr) + VIII. Lista anexelor. Folosite COUNTRY.regulations si getP(role). Descrierile cardurilor in pagina Rapoarte actualizate pentru diferentiere clara.'},
   {version:'12.59',date:'2026-04-22',notes:'Rapoarte — genAnalizaAutoWord extins. Include acum toate cele 3 metode de autocontrol (Microbiologic + ATP + UV Check) in locul analizei doar pe probe microbiologice. Structura: (1) Sumar general cu tabel pe metoda, (2) Microbiologic — distributie pe tipuri + concluzii existente, (3) ATP — pe tipuri suprafete + rata recuperare la repetitii, (4) UV — pe sectii cu pass/fail, (5) Concluzii integrate. Cand o metoda lipseste, raportul explica ce face si recomanda introducerea.'},

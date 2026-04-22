@@ -1,9 +1,11 @@
 {
-  "version": "12.61",
+  "version": "12.66",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU Biocide — Import Excel balanta de stocuri (format romanesc uzual: Id/Cod/Nume + grupuri Initial/Intrari/Iesiri/Final cu Cantitate si Valoare). Buton nou „Import Excel" langa „+ Inregistrare".",
-    "NOU Biocide — Preview inainte de import: perioada detectata automat din Excel, tabel cu toate produsele (status „exista"/„nou"), edit TP si UM inline, totaluri, selectie per produs (checkbox Import da/nu), alegere luni tinta pentru stoc initial / intrari / iesiri.",
-    "NOU Biocide — Produse noi sunt auto-create in CFG.biocide_products cu TP si UM ghicite din nume (sapun/gel/alcool→TP1, dezinfectant suprafete→TP2, rodenticid→TP14, etc.). Se agregă rowurile multi-lot cu acelasi nume."
+    "Rapoarte — EXTINDERE COMPLETA a autocontrolului cu ATP + UV Check in TOATE rapoartele (nu doar Analiza Autocontrol dedicata):",
+    "(1) Raport Anual — sectiunea 2 redenumita „Autocontrol (Microbiologic + ATP + UV)". Sumar in tabel cu 3 metode + sub-sectiuni 2.1/2.2/2.3. Daca lipseste ATP sau UV, raportul explica si recomanda.",
+    "(2) Raport Trimestrial — sectiunea 3 include tabel sumar 3 metode pentru trimestru + detaliu microbiologic. Filtrare ATP/UV pe lunile trimestrului curent.",
+    "(3) PV Sedinta CPIAAM — sectiunea 2 redenumita cu mentiune ATP + UV; include fraze per metoda in prezentare si conditional in concluzii.",
+    "Concluziile finale ale rapoartelor anual si trimestrial mentioneaza ATP + UV cand exista date."
   ]
 }

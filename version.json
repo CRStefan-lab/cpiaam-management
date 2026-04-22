@@ -1,9 +1,8 @@
 {
-  "version": "12.79",
+  "version": "12.81",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "UX Biocide — In dropdown-ul Documente produs fiecare fisier are acum butoane dedicate: ochi (vizualizare in tab nou) si sageata jos (descarcare). Nu mai trebuie sa deschizi inregistrarea pentru a citi/descarca un aviz sau fisa tehnica.",
-    "UX Biocide — Creion editare produs adaugat direct pe header-ul cardului (langa Stoc si Miscari). Deschide un dialog rapid pentru modificare denumire, cod, TP, UM, producator, distribuitor. Schimbarile se propaga la toate inregistrarile.",
-    "Functii noi: bioViewAttByRec, bioDownloadAttByRec (standalone, citesc direct recordul dupa id), bioEditProduct, bioSaveProduct (editor proprietati produs)."
+    "Rapoarte — PV Sedinta CPIAAM: adaugata sectiunea GRAFICE SINTEZA inainte de semnaturi, cu distributie IAAM pe sectii (bar orizontal top 6) si AWaRe DDD doughnut. Mentiune explicita ca detaliile sunt in Raportul Anual atasat ca Anexa 2.",
+    "Finalizare serie rapoarte profesionale: plan v12.75-v12.81 complet livrat (foundation + Raport Anual + Trimestrial + 4 Analize individuale + PV). Toate 8 rapoarte ofera acum grafice Chart.js embedded, benchmarks INSP/ECDC/WHO/ANMCS, insight-uri cross-module, recomandari data-driven si glosar abrevieri."
   ]
 }

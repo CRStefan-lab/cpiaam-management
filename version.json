@@ -1,11 +1,8 @@
 {
-  "version": "12.75",
+  "version": "12.76",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FOUNDATION — Infrastructura pentru rapoarte profesionale (nicio schimbare vizibila pana la v12.76).",
-    "NOU: benchmarks.js — baza de date de referinte publice (INSP, ECDC, WHO AWaRe, ESAC-Net, ANMCS, Ord. 1101) cu 20+ benchmark-uri pentru IAAM, PPS, ATB, Autocontrol, Deseuri, Audituri. Plus glosar ~45 abrevieri (IPC, germeni, infectii, dispozitive, ATB, metodologie, organizatii, sectii).",
-    "NOU: Helpers Word in rapoarte.js — wChartImage (Chart.js→PNG→ImageRun in docx), wSparkline (Unicode ▁▂▃▄▅▆▇█), wKpiCard, wBenchmarkPanel, wCorrelationInsight, wDataRecommendation, wExecutiveSummary, wAbbreviationsGlossary.",
-    "NOU: Rich analysis in analysis.js — analyzeIAAMRich, analyzeAutocontrolRich, findCorrelations (cross-module: IAAM×Autocontrol, IAAM×Audituri, MDR×ATB), rankFailingAuditItems. Return bogat cu kpis/trends/benchmarks/insights pentru grafice + narrative.",
-    "Urmeaza v12.76 cu primul raport transformat (Raport Anual complet, cu 6-8 grafice embedded, benchmarks inline, corelatii, recomandari data-driven)."
+    "UX Biocide — refresh vizual card produs: (1) Avize ca DROPDOWN compact, cu status vizibil langa titlu (Valabil/Expira/Expirat + Nr) cand e inchis, tabel editabil cand e deschis. Reduce vertical space cu ~60%. (2) Header cu gradient navy-teal, badges TP/UM/nr miscari in stil consistent. (3) Balanta re-proiectata: 4 blocuri + operatori +/−/=, STOC ACTUAL evidentiat in card albastru cu border, cantitati in font 18-22px. (4) Shadow subtil pe card-uri. Look profesional, mai curat.",
+    "INFRA — build.js valideaza version.json la fiecare build, blocheaza daca e JSON invalid (previne bug-uri viitoare ca quote mismatch)."
   ]
 }

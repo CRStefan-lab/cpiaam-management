@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.81</title>
+<title>CPIAAM Management v12.82</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2190,7 +2190,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.81';
+const APP_VERSION='12.82';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6650,43 +6650,68 @@ async function rBio(el){
         '<div style="text-align:center;padding:6px 8px;border-radius:6px;background:var(--bgBlue,#EFF6FF);border:1px solid var(--blue,#2563B0)"><div style="font-size:9px;font-weight:700;letter-spacing:.4px;color:var(--navy)">STOC ACTUAL</div><div style="font-size:17px;font-weight:700;color:var(--navy);margin:2px 0">'+fn(gFinalQ)+' <span style="font-size:11px;color:var(--navy);font-weight:normal">'+umLabel+'</span></div><div style="font-size:10px;color:var(--navy)">'+fn(Math.round(gFinal))+' lei</div></div>'+
       '</div>'+
     '</details>';
-    // v12.77 — Documente produs: agregare atasamente din toate inregistrarile (Aviz, Fisa tehnica, SDS, Alte)
+    // v12.82 — Documente PRODUS (din CFG.biocide_products[i].documents) + fallback agregare records vechi (pentru migratie)
     var docsAgg={};BIO_ATT_TYPES.forEach(function(t){docsAgg[t.key]=[]});
-    rows.forEach(function(r){
+    var totalProdDocs=0;
+    if(prod&&prod.documents){
       BIO_ATT_TYPES.forEach(function(t){
-        var files=_getBioAttFiles(r,t.key);
-        files.forEach(function(f,fi){docsAgg[t.key].push({file:f,recId:r.id,fi:fi,month:r.month,type:r.type})});
+        (prod.documents[t.key]||[]).forEach(function(f,fi){docsAgg[t.key].push({file:f,src:'product',fi:fi,pid:prod.id,key:t.key})});
       });
-    });
+      BIO_ATT_TYPES.forEach(function(t){totalProdDocs+=(prod.documents[t.key]||[]).length});
+    }
+    // Legacy atasamente pe records — afisate DOAR daca produsul nu are inca documente produs (migratie pending)
+    var legacyCount=0;
+    rows.forEach(function(r){BIO_ATT_TYPES.forEach(function(t){legacyCount+=(_getBioAttFiles(r,t.key)||[]).length})});
+    if(totalProdDocs===0&&legacyCount>0){
+      rows.forEach(function(r){
+        BIO_ATT_TYPES.forEach(function(t){
+          var files=_getBioAttFiles(r,t.key);
+          files.forEach(function(f,fi){docsAgg[t.key].push({file:f,src:'record',recId:r.id,fi:fi,key:t.key,month:r.month,type:r.type})});
+        });
+      });
+    }
     var totalDocs=0;BIO_ATT_TYPES.forEach(function(t){totalDocs+=docsAgg[t.key].length});
     var docsPanel='';
-    if(totalDocs>0){
-      var docSummary=BIO_ATT_TYPES.filter(function(t){return docsAgg[t.key].length>0}).map(function(t){return '<span style="color:'+t.color+';font-weight:600">'+t.icon+' '+t.label+' ('+docsAgg[t.key].length+')</span>'}).join(' · ');
+    if(totalDocs>0||prod){
+      var docSummary=BIO_ATT_TYPES.map(function(t){var c=docsAgg[t.key].length;return '<span style="color:'+t.color+';font-weight:600">'+t.icon+' '+t.label+' ('+c+')</span>'}).join(' \u00B7 ');
+      var migHint=totalProdDocs===0&&legacyCount>0?'<span style="font-size:10px;color:#D97706;margin-left:8px">\u26A0 legacy — ruleaza migratie</span>':'';
       docsPanel='<details style="border-bottom:1px solid var(--brd);background:var(--bg)">'+
         '<summary style="cursor:pointer;padding:8px 14px;display:flex;align-items:center;gap:10px;font-size:11px;list-style:none;user-select:none">'+
           '<span style="font-size:13px">\uD83D\uDCCE</span>'+
           '<strong style="color:var(--navy)">Documente produs</strong>'+
-          '<span style="flex:1;font-size:11px">'+docSummary+'</span>'+
+          '<span style="flex:1;font-size:11px">'+docSummary+migHint+'</span>'+
           '<span style="font-size:10px;color:var(--txtL)">\u25BE gestioneaza</span>'+
         '</summary>'+
         '<div style="padding:8px 14px;background:var(--card);border-top:1px solid var(--brd);font-size:11px">';
       BIO_ATT_TYPES.forEach(function(t){
-        var items=docsAgg[t.key];if(items.length===0)return;
+        var items=docsAgg[t.key];
         docsPanel+='<div style="margin-bottom:8px;padding:6px 8px;border-left:3px solid '+t.color+';background:'+t.bg+';border-radius:4px">'+
-          '<div style="font-weight:600;color:'+t.color+';margin-bottom:4px">'+t.icon+' '+t.label+' ('+items.length+')</div>';
-        items.forEach(function(it){
-          var src=(it.type==='intrare'?'Intrare ':it.type==='iesire'?'Iesire ':'Stoc initial ')+(it.month?MO[it.month-1]:'');
-          // v12.79: 👁 view si ⬇ download direct (fara pencil care deschide record-ul)
-          docsPanel+='<div style="display:flex;align-items:center;gap:4px;padding:3px 0;font-size:11px">'+
-            '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(it.file.name)+'">'+esc(it.file.name)+' <span style="color:var(--txtL);font-size:10px">('+src+')</span></span>'+
-            '<button onclick="bioViewAttByRec('+it.recId+',\''+t.key+'\','+it.fi+')" title="Vizualizeaza" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">&#128065;</button>'+
-            '<button onclick="bioDownloadAttByRec('+it.recId+',\''+t.key+'\','+it.fi+')" title="Descarca" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">&#11015;</button>'+
-            '</div>';
+          '<div style="display:flex;align-items:center;gap:8px;font-weight:600;color:'+t.color+';margin-bottom:4px">'+
+            '<span>'+t.icon+' '+t.label+' ('+items.length+')</span>'+
+            (prod?'<button class="btn bo bsm" style="padding:1px 8px;font-size:10px;margin-left:auto;background:'+t.color+';color:#fff;border:none" onclick="bioAddProductDoc(\''+String(prod.id).replace(/\x27/g,"\\x27")+'\',\''+t.key+'\')">+ Adauga</button>':'')+
+          '</div>';
+        if(items.length===0){docsPanel+='<div style="font-size:10px;color:var(--txtL);font-style:italic;padding:2px 0">(niciun document)</div>'}
+        else items.forEach(function(it){
+          if(it.src==='product'){
+            docsPanel+='<div style="display:flex;align-items:center;gap:4px;padding:3px 0;font-size:11px">'+
+              '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(it.file.name)+'">'+esc(it.file.name)+'</span>'+
+              '<button onclick="bioViewProductDoc(\''+String(it.pid).replace(/\x27/g,"\\x27")+'\',\''+it.key+'\','+it.fi+')" title="Vizualizeaza" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">&#128065;</button>'+
+              '<button onclick="bioDownloadProductDoc(\''+String(it.pid).replace(/\x27/g,"\\x27")+'\',\''+it.key+'\','+it.fi+')" title="Descarca" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">&#11015;</button>'+
+              '<button onclick="bioDeleteProductDoc(\''+String(it.pid).replace(/\x27/g,"\\x27")+'\',\''+it.key+'\','+it.fi+')" title="Sterge" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;color:var(--red)">&#128465;</button>'+
+              '</div>';
+          } else { // src=record (legacy)
+            var src=(it.type==='intrare'?'Intrare ':it.type==='iesire'?'Iesire ':'Stoc initial ')+(it.month?MO[it.month-1]:'');
+            docsPanel+='<div style="display:flex;align-items:center;gap:4px;padding:3px 0;font-size:11px;opacity:.85">'+
+              '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(it.file.name)+'">'+esc(it.file.name)+' <span style="color:#D97706;font-size:10px">('+src+' — legacy)</span></span>'+
+              '<button onclick="bioViewAttByRec('+it.recId+',\''+it.key+'\','+it.fi+')" title="Vizualizeaza" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">&#128065;</button>'+
+              '<button onclick="bioDownloadAttByRec('+it.recId+',\''+it.key+'\','+it.fi+')" title="Descarca" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">&#11015;</button>'+
+              '</div>';
+          }
         });
         docsPanel+='</div>';
       });
-      docsPanel+='<div style="font-size:10px;color:var(--txtL);font-style:italic;margin-top:6px">&#128065; vizualizare  \u00B7  &#11015; descarcare  \u00B7  Pentru modificare/stergere fisier: editeaza inregistrarea din lista Miscari Lunare.</div>'+
-        '</div></details>';
+      if(legacyCount>0){docsPanel+='<div style="margin-top:6px;padding:6px 8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;font-size:11px"><strong>&#9888; Documente pe miscari (legacy): '+legacyCount+'</strong><br><button class="btn bp bsm" style="margin-top:4px;font-size:10px" onclick="bioMigrateDocsToProduct('+(prod?'\''+String(prod.id).replace(/\x27/g,"\\x27")+'\'':'null')+')">Migreaza la produs</button></div>'}
+      docsPanel+='</div></details>';
     }
     // Header cu Stoc Actual compact + v12.79 edit pencil pentru proprietati produs
     h+='<div data-bio-key="'+esc(k)+'" style="border:1px solid var(--brd);border-radius:10px;margin-bottom:12px;background:var(--card);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)">';
@@ -6765,33 +6790,13 @@ async function editBio(id){
   _editBioRec=r;
   const selProd=r.product_id||'';
   const prods=CFG.biocide_products.map(p=>'<option value="'+p.id+'"'+(p.id===selProd?' selected':'')+'>'+sn(p)+'</option>').join('');
-  let attHtml='';
-  if(id){
-    attHtml='<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--brd)"><label style="font-size:13px;font-weight:700;color:var(--navy);display:block;margin-bottom:10px">'+(isEN?'Attached documents':'Documente ata\u0219ate')+'</label>';
-    attHtml+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-    BIO_ATT_TYPES.forEach(t=>{
-      const files=_getBioAttFiles(r,t.key);
-      attHtml+='<div style="border:2px solid '+t.brd+';border-radius:8px;padding:10px;background:'+t.bg+'">'+
-        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'+
-        '<span style="font-size:16px">'+t.icon+'</span><strong style="font-size:12px;color:'+t.color+'">'+t.label+'</strong>'+
-        '<button class="btn bsm" style="background:'+t.color+';color:#fff;font-size:10px;border:none;margin-left:auto;padding:2px 8px" onclick="uploadBioAttModal(\''+t.key+'\')">+ '+(isEN?'Add':'Adauga')+'</button></div>';
-      if(files.length>0){
-        files.forEach((f,fi)=>{
-          attHtml+='<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;font-size:11px">'+
-            '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(f.name)+'">'+esc(f.name)+'</span>'+
-            '<button onclick="viewBioAttModal(\''+t.key+'\','+fi+')" title="'+(isEN?'View':'Vizualizeaza')+'" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px">&#128065;</button>'+
-            '<button onclick="downloadBioAttModal(\''+t.key+'\','+fi+')" title="'+(isEN?'Download':'Descarca')+'" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px">&#11015;</button>'+
-            '<button onclick="removeBioAttModal(\''+t.key+'\','+fi+')" title="'+(isEN?'Delete':'Sterge')+'" style="background:none;border:none;cursor:pointer;font-size:12px;padding:2px;color:var(--red)">&#128465;</button></div>';
-        });
-      }else{
-        attHtml+='<div style="font-size:10px;color:var(--txtL);text-align:center;padding:4px 0">'+(isEN?'No documents':'Niciun document')+'</div>';
-      }
-      attHtml+='</div>';
-    });
-    attHtml+='</div></div>';
-  }else{
-    attHtml='<div class="ib inf" style="margin-top:14px;font-size:11px">'+(isEN?'Documents (approval, technical sheet, SDS) can be attached after saving.':'Documentele (aviz, fisa tehnica, SDS) pot fi atasate dupa salvarea produsului.')+'</div>';
-  }
+  // v12.82 — Documentele NU se mai ataseaza pe miscare. Se gestioneaza la nivel de produs.
+  // Afisam un info box cu instructiuni si legacy warning daca mai exista atasamente pe acest record.
+  var legacyAtt=0;if(r.attachments)BIO_ATT_TYPES.forEach(function(t){legacyAtt+=(_getBioAttFiles(r,t.key)||[]).length});
+  var attHtml='<div class="ib inf" style="margin-top:14px;font-size:11px">'+
+    '<strong>\uD83D\uDCCE Documente</strong> — atasamentele (Aviz BPR, Fisa tehnica, SDS, alte) se gestioneaza acum la nivel de <strong>produs</strong> (click &#9998; pe header-ul cardului din lista). O singura data pentru toate miscarile aceluiasi produs.'+
+    (legacyAtt>0?'<div style="margin-top:6px;padding:6px 8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;color:#854F0B"><strong>&#9888; '+legacyAtt+' document(e) legacy pe aceasta miscare.</strong> Ruleaza migrarea din cardul de produs pentru a le muta.</div>':'')+
+  '</div>';
   openM(id?'Editare':'Inregistrare Noua',
     '<div class="fr"><div class="fg"><label>Produs</label><select id="f-prod" onchange="bioProdChanged()"><option value="">— Selecteaza produs —</option>'+prods+'</select><div style="margin-top:4px"><input id="f-prod-custom" placeholder="sau introdu manual un produs nou" value="'+(CFG.biocide_products.find(p=>p.id===(r.product_id||r.product_name))?'':esc(r.product_name||''))+'" style="font-size:11px"></div></div>'+
     '<div class="fg"><label>UM</label><input id="f-um" value="'+(r.unit||'')+'" placeholder="buc 0.5L"></div></div>'+
@@ -6884,25 +6889,83 @@ async function bioDownloadAttByRec(recId,key,idx){
     if(att.data){var a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
   }catch(e){alert('Eroare download: '+e.message)}
 }
-// v12.79 — Editor proprietati produs (nume, TP, UM, cod) — din header-ul cardului
+// v12.82 — Editor produs COMPLET (identificare, clasificare, parteneri, avize, documente produs).
+// Documentele la nivel de PRODUS inlocuiesc atasamentele duplicate pe fiecare miscare.
 function bioEditProduct(pid){
   var idx=(CFG.biocide_products||[]).findIndex(function(p){return p.id===pid});
   if(idx<0)return alert('Produs negasit.');
   var p=CFG.biocide_products[idx];
+  if(!p.documents)p.documents={aviz:[],fisa_tehnica:[],sds:[],alte_doc:[]};
+  if(!p.avize)p.avize=[];
   var tpOpts=BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(p.product_type===t.id?' selected':'')+'>'+t.id+' — '+t.name+'</option>'}).join('');
   var umList=['buc','flacon','bidon','cutie','tablete','L','mL','kg','g'];
   var umOpts=umList.map(function(u){return '<option value="'+u+'"'+(p.unit===u?' selected':'')+'>'+u+'</option>'}).join('');
-  var h='<div style="font-size:13px"><p style="font-size:11px;color:var(--txtL)">Modifica proprietati produs biocid. Schimbarile se aplica la toate inregistrarile ulterioare.</p>'+
-    '<div class="fr" style="margin-top:10px"><div class="fg"><label>Denumire</label><input id="bep-name" value="'+esc(p.name||'')+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div>'+
-    '<div class="fr" style="margin-top:8px"><div class="fg"><label>Cod intern</label><input id="bep-code" value="'+esc(p.code||'')+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div>'+
-    '<div class="fg"><label>Tip produs (TP)</label><select id="bep-tp" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+tpOpts+'</select></div>'+
-    '<div class="fg"><label>UM</label><select id="bep-um" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+umOpts+'</select></div></div>'+
-    '<div class="fr" style="margin-top:8px"><div class="fg"><label>Producator</label><input id="bep-mfr" value="'+esc(p.manufacturer||'')+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div>'+
-    '<div class="fg"><label>Distribuitor</label><input id="bep-dist" value="'+esc(p.distributor||'')+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div>'+
+  var now=new Date();var soon=new Date(Date.now()+30*86400000);
+  // Sectiunea avize tabel
+  var avizHtml='';
+  if(p.avize.length===0){avizHtml='<div style="color:var(--txtL);font-style:italic;padding:6px 0;font-size:11px">Niciun aviz inregistrat</div>'}
+  else{
+    avizHtml='<table style="width:100%;border-collapse:collapse;font-size:11px">'+
+      '<tr style="color:var(--txtL);font-size:10px"><th style="text-align:left;padding:3px 4px">Nr.</th><th style="text-align:left;padding:3px 4px">Emitere</th><th style="text-align:left;padding:3px 4px">Expirare</th><th style="text-align:left;padding:3px 4px">Status</th><th style="width:24px"></th></tr>';
+    p.avize.forEach(function(a,ai){
+      var stat='—';
+      if(a.date_expiry){var exp=new Date(a.date_expiry);
+        stat=exp<now?'<span style="color:var(--red);font-weight:700">&#9888; Expirat</span>':exp<soon?'<span style="color:#D97706;font-weight:700">&#9203; Curand</span>':'<span style="color:#059669">&#10004; Valabil</span>';}
+      avizHtml+='<tr>'+
+        '<td style="padding:3px 4px"><input value="'+esc(a.nr||a.number||'')+'" placeholder="Nr." onchange="CFG.biocide_products['+idx+'].avize['+ai+'].nr=this.value;saveCfg()" style="width:110px;padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
+        '<td style="padding:3px 4px"><input type="date" value="'+(a.date_issued||'')+'" onchange="CFG.biocide_products['+idx+'].avize['+ai+'].date_issued=this.value;saveCfg();bioEditProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
+        '<td style="padding:3px 4px"><input type="date" value="'+(a.date_expiry||'')+'" onchange="CFG.biocide_products['+idx+'].avize['+ai+'].date_expiry=this.value;saveCfg();bioEditProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
+        '<td style="padding:3px 4px">'+stat+'</td>'+
+        '<td style="padding:3px 4px"><button onclick="if(confirm(\'Stergi aviz?\')){CFG.biocide_products['+idx+'].avize.splice('+ai+',1);saveCfg();bioEditProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')}" title="Sterge" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">&#128465;</button></td>'+
+      '</tr>';
+    });
+    avizHtml+='</table>';
+  }
+  // Sectiunea documente produs (4 tipuri)
+  var docsHtml='';
+  BIO_ATT_TYPES.forEach(function(t){
+    var files=p.documents[t.key]||[];
+    docsHtml+='<div style="border:2px solid '+t.brd+';border-radius:8px;padding:10px;background:'+t.bg+';margin-bottom:8px">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
+      '<span style="font-size:16px">'+t.icon+'</span><strong style="font-size:12px;color:'+t.color+'">'+t.label+'</strong>'+
+      '<button class="btn bsm" style="background:'+t.color+';color:#fff;font-size:10px;border:none;margin-left:auto;padding:2px 10px" onclick="bioAddProductDoc(\''+String(pid).replace(/\x27/g,"\\x27")+'\',\''+t.key+'\')">+ Adauga</button></div>';
+    if(files.length===0){docsHtml+='<div style="font-size:10px;color:var(--txtL);text-align:center;padding:4px 0">Niciun document</div>'}
+    else{
+      files.forEach(function(f,fi){
+        docsHtml+='<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px">'+
+          '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(f.name)+'">'+esc(f.name)+'</span>'+
+          '<button onclick="bioViewProductDoc(\''+String(pid).replace(/\x27/g,"\\x27")+'\',\''+t.key+'\','+fi+')" title="Vizualizare" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px">&#128065;</button>'+
+          '<button onclick="bioDownloadProductDoc(\''+String(pid).replace(/\x27/g,"\\x27")+'\',\''+t.key+'\','+fi+')" title="Descarca" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px">&#11015;</button>'+
+          '<button onclick="bioDeleteProductDoc(\''+String(pid).replace(/\x27/g,"\\x27")+'\',\''+t.key+'\','+fi+')" title="Sterge" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;color:var(--red)">&#128465;</button>'+
+          '</div>';
+      });
+    }
+    docsHtml+='</div>';
+  });
+  var h='<div style="font-size:13px">'+
+    // IDENTIFICARE
+    '<div style="margin-bottom:14px"><h4 style="font-size:13px;color:var(--navy);margin:0 0 8px;border-bottom:1px solid var(--brd);padding-bottom:4px">IDENTIFICARE</h4>'+
+    '<div class="fr"><div class="fg"><label>Denumire</label><input id="bep-name" value="'+esc(p.name||'')+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div>'+
+    '<div class="fg" style="max-width:180px"><label>Cod intern</label><input id="bep-code" value="'+esc(p.code||'')+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div></div>'+
+    // CLASIFICARE
+    '<div style="margin-bottom:14px"><h4 style="font-size:13px;color:var(--navy);margin:0 0 8px;border-bottom:1px solid var(--brd);padding-bottom:4px">CLASIFICARE</h4>'+
+    '<div class="fr"><div class="fg"><label>Tip produs (TP)</label><select id="bep-tp" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+tpOpts+'</select></div>'+
+    '<div class="fg" style="max-width:140px"><label>UM</label><select id="bep-um" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+umOpts+'</select></div></div></div>'+
+    // PARTENERI
+    '<div style="margin-bottom:14px"><h4 style="font-size:13px;color:var(--navy);margin:0 0 8px;border-bottom:1px solid var(--brd);padding-bottom:4px">PARTENERI</h4>'+
+    '<div class="fr"><div class="fg"><label>Producator</label><input id="bep-mfr" value="'+esc(p.manufacturer||'')+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div>'+
+    '<div class="fg"><label>Distribuitor</label><input id="bep-dist" value="'+esc(p.distributor||'')+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div></div>'+
+    // AVIZE
+    '<div style="margin-bottom:14px"><h4 style="font-size:13px;color:var(--navy);margin:0 0 8px;border-bottom:1px solid var(--brd);padding-bottom:4px">AVIZE BPR <button class="btn bo bsm" style="padding:1px 8px;font-size:10px;margin-left:8px" onclick="bioAddAviz(\''+String(pid).replace(/\x27/g,"\\x27")+'\');bioEditProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')">+ Aviz</button></h4>'+
+    avizHtml+'</div>'+
+    // DOCUMENTE PRODUS
+    '<div style="margin-bottom:14px"><h4 style="font-size:13px;color:var(--navy);margin:0 0 8px;border-bottom:1px solid var(--brd);padding-bottom:4px">DOCUMENTE PRODUS</h4>'+
+    '<div style="font-size:11px;color:var(--txtL);margin-bottom:8px">Aviz BPR, Fisa tehnica, SDS si alte documente — se ataseaza o singura data pe produs (nu pe fiecare miscare).</div>'+
+    docsHtml+'</div>'+
   '</div>';
   openM('Editare produs: '+esc(p.name||''),h,
     '<button class="btn bp" onclick="bioSaveProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')">Salveaza</button>'+
-    '<button class="btn bo" onclick="closeM()">Anuleaza</button>');
+    '<button class="btn bo" onclick="closeM()">Inchide</button>');
 }
 function bioSaveProduct(pid){
   var idx=(CFG.biocide_products||[]).findIndex(function(p){return p.id===pid});if(idx<0)return;
@@ -6915,6 +6978,79 @@ function bioSaveProduct(pid){
   CFG.biocide_products[idx].distributor=v('bep-dist');
   saveCfg();closeM();render();
   if(typeof showToast==='function')showToast('Produs actualizat');
+}
+// v12.82 — CRUD documente la nivel de PRODUS (stocate in CFG.biocide_products[].documents[key][])
+function bioAddProductDoc(pid,key){
+  var idx=(CFG.biocide_products||[]).findIndex(function(p){return p.id===pid});if(idx<0)return;
+  var p=CFG.biocide_products[idx];
+  if(!p.documents)p.documents={};if(!p.documents[key])p.documents[key]=[];
+  var inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.doc,.docx,.jpg,.png,.jpeg';inp.multiple=true;
+  inp.onchange=async function(e){
+    var files=Array.from(e.target.files);if(!files.length)return;
+    if(!_attDirHandle){alert('Configureaza mai intai folderul de atasamente: Configurare → Date & Backup → Stocare Atasamente');return}
+    for(var i=0;i<files.length;i++){var f=files[i];
+      if(f.size>10*1024*1024){alert('Fisierul '+f.name+' depaseste 10MB.');continue}
+      try{
+        var ext=f.name.split('.').pop()||'bin';
+        var fname='bp_'+p.id+'_'+key+'_'+Date.now()+'_'+i+'.'+ext;
+        await attWriteFile('biocide',fname,f);
+        p.documents[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});
+      }catch(err){alert('Eroare salvare: '+err.message);return}
+    }
+    await saveCfg();bioEditProduct(pid);render();
+  };inp.click();
+}
+async function bioViewProductDoc(pid,key,fi){
+  var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p||!p.documents||!p.documents[key])return;
+  var att=p.documents[key][fi];if(!att)return;
+  try{
+    if(att.on_disk&&att.filename){var f=await attReadFile('biocide',att.filename);window.open(URL.createObjectURL(f),'_blank');return}
+    if(att.data)window.open(att.data,'_blank');
+  }catch(e){alert('Eroare vizualizare: '+e.message)}
+}
+async function bioDownloadProductDoc(pid,key,fi){
+  var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p||!p.documents||!p.documents[key])return;
+  var att=p.documents[key][fi];if(!att)return;
+  try{
+    if(att.on_disk&&att.filename){var f=await attReadFile('biocide',att.filename);saveAs(f,att.name);return}
+    if(att.data){var a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
+  }catch(e){alert('Eroare download: '+e.message)}
+}
+async function bioDeleteProductDoc(pid,key,fi){
+  if(!confirm('Stergi documentul?'))return;
+  var idx=(CFG.biocide_products||[]).findIndex(function(p){return p.id===pid});if(idx<0)return;
+  var p=CFG.biocide_products[idx];if(!p.documents||!p.documents[key])return;
+  var att=p.documents[key][fi];
+  if(att&&att.on_disk&&att.filename){try{await attDeleteFile('biocide',att.filename)}catch(e){}}
+  p.documents[key].splice(fi,1);
+  await saveCfg();bioEditProduct(pid);render();
+}
+// v12.82 — Migratie atasamente de pe records la nivel de produs
+// Deduplicare: fisiere cu acelasi `name` din miscari diferite ale aceluiasi produs → pastram primul
+async function bioMigrateDocsToProduct(pid){
+  if(!confirm('Migrezi documentele de pe miscari la nivel de produs?\n\nAceasta operatiune:\n• Copie fisierele unice pe produs\n• Elimina atasamentele de pe fiecare miscare\n• Deduplica fisierele cu nume identic\n• Recomandare: fa un backup JSON inainte (Configurare → Backup)'))return;
+  var records=await ga('biocide');
+  var targets=pid?records.filter(function(r){return r.product_id===pid}):records;
+  var moved=0,deduped=0;
+  for(var ri=0;ri<targets.length;ri++){
+    var r=targets[ri];if(!r.attachments||!r.product_id)continue;
+    var pidx=(CFG.biocide_products||[]).findIndex(function(p){return p.id===r.product_id});
+    if(pidx<0)continue;
+    var p=CFG.biocide_products[pidx];if(!p.documents)p.documents={aviz:[],fisa_tehnica:[],sds:[],alte_doc:[]};
+    BIO_ATT_TYPES.forEach(function(t){
+      if(!p.documents[t.key])p.documents[t.key]=[];
+      var files=_getBioAttFiles(r,t.key);
+      files.forEach(function(f){
+        var exists=p.documents[t.key].some(function(x){return x.name===f.name});
+        if(exists){deduped++}
+        else{p.documents[t.key].push(f);moved++}
+      });
+    });
+    // Clean record attachments
+    r.attachments={};await pt('biocide',r,true);
+  }
+  await saveCfg();render();
+  alert('Migratie completa:\n• '+moved+' documente mutate la produs\n• '+deduped+' duplicate eliminate\n\nFisierele raman pe disc — au fost doar re-referentiate.');
 }
 async function saveBio(id){
   const v=s=>document.getElementById(s).value;
@@ -16786,6 +16922,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.82',date:'2026-04-22',notes:'REFACTOR Biocide — documentele (Aviz BPR, Fisa tehnica, SDS, Alte) se gestioneaza O SINGURA DATA la nivel de PRODUS (nu pe fiecare miscare). Stocate in CFG.biocide_products[i].documents[key][]. Editor Produs complet (5 sectiuni): Identificare, Clasificare, Parteneri, Avize BPR tabel editabil, Documente Produs cu 👁 ⬇ 🗑 per fisier. Editor Miscare simplificat: doar Produs/Tip/Luna/Lot/Cantitate/Valoare — fara atasamente. Migratie bioMigrateDocsToProduct cu deduplicare dupa nume fisier. Card view dropdown Documente produs citeste din product.documents prioritar + fallback aggregate din records legacy (badge galben).'},
   {version:'12.81',date:'2026-04-22',notes:'Rapoarte — PV Sedinta CPIAAM cu sectiune GRAFICE SINTEZA (IAAM pe sectii bar orizontal + AWaRe DDD doughnut) inainte de semnaturi. Mentiune Raportul Anual ca Anexa 2 pentru detalii tehnice. Finalizat plan v12.75-v12.81: foundation + 8 rapoarte profesionale cu grafice Chart.js embedded, benchmarks publice, cross-module insights, data-driven recommendations.'},
   {version:'12.80',date:'2026-04-22',notes:'Rapoarte — 3 analize completate cu grafice Chart.js embedded: Analiza IAAM (trend lunar line an curent vs MDR vs anul anterior, distributie sectii bar orizontal, spectru germeni doughnut, origini pie + benchmarks INSP + observatii-cheie), Analiza Deseuri (stacked bar lunar coduri + line kg/om-zi + benchmark national), Raport Trimestrial (IAAM lunar T vs T anterior bar, AWaRe donut DDD, audituri bar orizontal color-coded, deseuri stacked pe coduri). showGen cu progress. Functii noi cu fallback grateful pe erori render grafic.'},
   {version:'12.79',date:'2026-04-22',notes:'UX Biocide — In dropdown-ul Documente produs fiecare fisier are acum butoane 👁 vizualizare si ⬇ descarcare dedicate (fara a deschide inregistrarea). Functii standalone: bioViewAttByRec, bioDownloadAttByRec. Plus: creion editare produs pe header-ul cardului — dialog rapid (bioEditProduct/bioSaveProduct) pentru nume, cod, TP, UM, producator, distribuitor.'},

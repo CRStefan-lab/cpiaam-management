@@ -1,8 +1,11 @@
 {
-  "version": "12.81",
+  "version": "12.82",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Rapoarte — PV Sedinta CPIAAM: adaugata sectiunea GRAFICE SINTEZA inainte de semnaturi, cu distributie IAAM pe sectii (bar orizontal top 6) si AWaRe DDD doughnut. Mentiune explicita ca detaliile sunt in Raportul Anual atasat ca Anexa 2.",
-    "Finalizare serie rapoarte profesionale: plan v12.75-v12.81 complet livrat (foundation + Raport Anual + Trimestrial + 4 Analize individuale + PV). Toate 8 rapoarte ofera acum grafice Chart.js embedded, benchmarks INSP/ECDC/WHO/ANMCS, insight-uri cross-module, recomandari data-driven si glosar abrevieri."
+    "REFACTOR Biocide - separare clara produs vs miscare: documentele (Aviz BPR, Fisa tehnica, SDS, Alte) se gestioneaza acum O SINGURA DATA la nivel de produs (nu mai duplici la fiecare intrare). Stocate in CFG.biocide_products[i].documents[key][].",
+    "NOU Editor Produs complet (click creion pe header card): 5 sectiuni - Identificare, Clasificare, Parteneri, Avize BPR (tabel editabil), Documente Produs (4 tipuri cu butoane 👁 vizualizare, ⬇ descarcare, 🗑 stergere pentru fiecare fisier).",
+    "Simplificare Editor Miscare: scoase complet sectiunile de atasamente - ramane doar Produs + Tip/Luna/Lot/Cantitate/Valoare. Info box explica unde sunt acum documentele.",
+    "Migratie legacy: daca exista atasamente pe miscari vechi, cardul afiseaza badge galben cu legacy + buton Migreaza la produs. Deduplicare automata dupa numele fisierului.",
+    "Card view dropdown Documente produs - citeste din product.documents (prioritar) sau fallback la aggregate din records legacy (cu badge galben pentru migratie)."
   ]
 }

@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.77</title>
+<title>CPIAAM Management v12.79</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2190,7 +2190,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.77';
+const APP_VERSION='12.79';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6676,17 +6676,19 @@ async function rBio(el){
           '<div style="font-weight:600;color:'+t.color+';margin-bottom:4px">'+t.icon+' '+t.label+' ('+items.length+')</div>';
         items.forEach(function(it){
           var src=(it.type==='intrare'?'Intrare ':it.type==='iesire'?'Iesire ':'Stoc initial ')+(it.month?MO[it.month-1]:'');
-          docsPanel+='<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px">'+
+          // v12.79: 👁 view si ⬇ download direct (fara pencil care deschide record-ul)
+          docsPanel+='<div style="display:flex;align-items:center;gap:4px;padding:3px 0;font-size:11px">'+
             '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(it.file.name)+'">'+esc(it.file.name)+' <span style="color:var(--txtL);font-size:10px">('+src+')</span></span>'+
-            '<button onclick="editBio('+it.recId+')" title="Deschide inregistrare" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px">&#9998;</button>'+
+            '<button onclick="bioViewAttByRec('+it.recId+',\''+t.key+'\','+it.fi+')" title="Vizualizeaza" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">&#128065;</button>'+
+            '<button onclick="bioDownloadAttByRec('+it.recId+',\''+t.key+'\','+it.fi+')" title="Descarca" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">&#11015;</button>'+
             '</div>';
         });
         docsPanel+='</div>';
       });
-      docsPanel+='<div style="font-size:10px;color:var(--txtL);font-style:italic;margin-top:6px">Click pe creion pentru a edita inregistrarea si manipula fisierul (view/download/replace/delete).</div>'+
+      docsPanel+='<div style="font-size:10px;color:var(--txtL);font-style:italic;margin-top:6px">&#128065; vizualizare  \u00B7  &#11015; descarcare  \u00B7  Pentru modificare/stergere fisier: editeaza inregistrarea din lista Miscari Lunare.</div>'+
         '</div></details>';
     }
-    // Header cu Stoc Actual compact
+    // Header cu Stoc Actual compact + v12.79 edit pencil pentru proprietati produs
     h+='<div data-bio-key="'+esc(k)+'" style="border:1px solid var(--brd);border-radius:10px;margin-bottom:12px;background:var(--card);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)">';
     h+='<div onclick="bioToggleProd(this.parentElement.dataset.bioKey)" style="cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:12px;background:linear-gradient(to right,var(--navy),var(--teal));color:#fff">';
     h+='<span style="font-size:14px;width:14px;display:inline-block">'+(expanded?'&#9660;':'&#9654;')+'</span>';
@@ -6694,8 +6696,9 @@ async function rBio(el){
     if(tp)h+='<span style="font-size:10px;padding:2px 8px;background:rgba(255,255,255,.2);border-radius:10px;color:#fff;font-weight:600">'+esc(tp)+'</span>';
     if(um)h+='<span style="font-size:11px;color:rgba(255,255,255,.85)">UM: '+esc(um)+'</span>';
     h+='<span style="font-size:11px;color:rgba(255,255,255,.85);padding:2px 10px;background:rgba(255,255,255,.15);border-radius:10px">'+rows.length+' miscari</span>';
-    // v12.77 — Stoc Actual compact in header (langa nr miscari)
     h+='<span style="font-size:12px;color:#fff;padding:3px 12px;background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);border-radius:10px;font-weight:600">Stoc: '+fn(gFinalQ)+' '+umLabel+'</span>';
+    // v12.79 — edit pencil pentru proprietati produs (doar daca are product_id)
+    if(g.pid)h+='<button onclick="event.stopPropagation();bioEditProduct(\''+String(g.pid).replace(/\x27/g,"\\x27")+'\')" title="Editeaza proprietati produs (nume, TP, UM, producator)" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 10px;border-radius:8px;cursor:pointer;font-size:14px">&#9998;</button>';
     h+='</div>';
     h+=avizPanel;
     if(docsPanel)h+=docsPanel;
@@ -6865,6 +6868,53 @@ function viewBioAttModal(key,idx){
     attReadFile('biocide',att.filename).then(file=>{var url=URL.createObjectURL(file);window.open(url,'_blank')}).catch(()=>alert('Nu pot citi fisierul de pe disc.'));return;
   }
   if(att.data){window.open(att.data,'_blank')}
+}
+// v12.79 — view/download standalone (din dropdown „Documente produs", fara sa deschida record-ul)
+async function bioViewAttByRec(recId,key,idx){
+  try{var rec=(await ga('biocide')).find(function(r){return r.id===recId});if(!rec)return alert('Inregistrarea nu mai exista.');
+    var att=(_getBioAttFiles(rec,key)||[])[idx];if(!att)return alert('Fisierul nu mai este disponibil.');
+    if(att.on_disk&&att.filename){var f=await attReadFile('biocide',att.filename);window.open(URL.createObjectURL(f),'_blank');return}
+    if(att.data)window.open(att.data,'_blank');
+  }catch(e){alert('Eroare vizualizare: '+e.message)}
+}
+async function bioDownloadAttByRec(recId,key,idx){
+  try{var rec=(await ga('biocide')).find(function(r){return r.id===recId});if(!rec)return alert('Inregistrarea nu mai exista.');
+    var att=(_getBioAttFiles(rec,key)||[])[idx];if(!att)return alert('Fisierul nu mai este disponibil.');
+    if(att.on_disk&&att.filename){var f=await attReadFile('biocide',att.filename);saveAs(f,att.name);return}
+    if(att.data){var a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
+  }catch(e){alert('Eroare download: '+e.message)}
+}
+// v12.79 — Editor proprietati produs (nume, TP, UM, cod) — din header-ul cardului
+function bioEditProduct(pid){
+  var idx=(CFG.biocide_products||[]).findIndex(function(p){return p.id===pid});
+  if(idx<0)return alert('Produs negasit.');
+  var p=CFG.biocide_products[idx];
+  var tpOpts=BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(p.product_type===t.id?' selected':'')+'>'+t.id+' — '+t.name+'</option>'}).join('');
+  var umList=['buc','flacon','bidon','cutie','tablete','L','mL','kg','g'];
+  var umOpts=umList.map(function(u){return '<option value="'+u+'"'+(p.unit===u?' selected':'')+'>'+u+'</option>'}).join('');
+  var h='<div style="font-size:13px"><p style="font-size:11px;color:var(--txtL)">Modifica proprietati produs biocid. Schimbarile se aplica la toate inregistrarile ulterioare.</p>'+
+    '<div class="fr" style="margin-top:10px"><div class="fg"><label>Denumire</label><input id="bep-name" value="'+esc(p.name||'')+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div>'+
+    '<div class="fr" style="margin-top:8px"><div class="fg"><label>Cod intern</label><input id="bep-code" value="'+esc(p.code||'')+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div>'+
+    '<div class="fg"><label>Tip produs (TP)</label><select id="bep-tp" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+tpOpts+'</select></div>'+
+    '<div class="fg"><label>UM</label><select id="bep-um" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+umOpts+'</select></div></div>'+
+    '<div class="fr" style="margin-top:8px"><div class="fg"><label>Producator</label><input id="bep-mfr" value="'+esc(p.manufacturer||'')+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div>'+
+    '<div class="fg"><label>Distribuitor</label><input id="bep-dist" value="'+esc(p.distributor||'')+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div>'+
+  '</div>';
+  openM('Editare produs: '+esc(p.name||''),h,
+    '<button class="btn bp" onclick="bioSaveProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')">Salveaza</button>'+
+    '<button class="btn bo" onclick="closeM()">Anuleaza</button>');
+}
+function bioSaveProduct(pid){
+  var idx=(CFG.biocide_products||[]).findIndex(function(p){return p.id===pid});if(idx<0)return;
+  var v=function(id){var el=document.getElementById(id);return el?el.value.trim():''};
+  CFG.biocide_products[idx].name=v('bep-name');
+  CFG.biocide_products[idx].code=v('bep-code');
+  CFG.biocide_products[idx].product_type=v('bep-tp');
+  CFG.biocide_products[idx].unit=v('bep-um');
+  CFG.biocide_products[idx].manufacturer=v('bep-mfr');
+  CFG.biocide_products[idx].distributor=v('bep-dist');
+  saveCfg();closeM();render();
+  if(typeof showToast==='function')showToast('Produs actualizat');
 }
 async function saveBio(id){
   const v=s=>document.getElementById(s).value;
@@ -13411,9 +13461,14 @@ async function checkIncompleteIaam(){
 }
 
 // ── Raport Anual ──
+// v12.78 — Raport Anual completely reworked: grafice Chart.js embedded, benchmarks inline,
+// executive summary, cross-module correlations, data-driven recommendations, glosar abrevieri.
 async function genRaportAnualWord(){
   if(!await checkIncompleteIaam())return;
-  showGen('Se colecteaza datele...');const y=A.year,data=await collectAllData(y);const{ia,au,de,bi,audits,trainings,atb,objectives}=data;
+  showGen('1/9 Colectez datele...');const y=A.year,data=await collectAllData(y);const{ia,au,de,bi,audits,trainings,atb,objectives}=data;
+  // v12.78: include ATP + UV in rich analysis
+  data.atp=(await ga('atp')).filter(function(r){return r.year===y});
+  data.uv=(await ga('uvcheck')).filter(function(r){return r.year===y});
   const AN=runAllAnalysis(data);const conf=au.filter(p=>p.result==='conform').length;
   const totD=de.reduce((s,r)=>s+CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0),0);
   const consBio=bi.filter(b=>b.type==='iesire').reduce((s,b)=>s+(+b.value_lei||0),0);
@@ -13607,19 +13662,218 @@ async function genRaportAnualWord(){
     addRecs(children,AN.obiective,'8.1. Recomandari Obiective');
   }
 
-  // Concluzii si Recomandari Generale
-  children.push(wPB());children.push(wH1('Concluzii si Recomandari'));children.push(wSp(40));
+  // ═══════════════════════════════════════════════════════════════════
+  // v12.78: Grafice embedded, insights cross-module, recomandari data-driven, glosar
+  // ═══════════════════════════════════════════════════════════════════
+  showGen('7/9 Grafice IAAM...');
+  // Rich analyses
+  var iaamR=analyzeIAAMRich(data,totalOmZile);
+  var autoR=analyzeAutocontrolRich(data);
+  var correlations=findCorrelations(data);
+  var failItems=rankFailingAuditItems(audits||[],10);
+
+  // ─── Grafice IAAM (trend lunar + top sectii + top germens) ───
+  if(ia.length>0){
+    children.push(wPB());
+    children.push(wH1('7. Analize Grafice IAAM '+y,WC.blue));children.push(wSp(40));
+    try{
+      var iaamTrendChart=await wChartImage('line',{labels:MO,datasets:[
+        {label:y+' — Cazuri IAAM',data:iaamR.trends.monthly,borderColor:CHART_PALETTE[0],backgroundColor:'rgba(27,58,107,0.12)',fill:true,tension:0.3,pointRadius:3},
+        {label:y+' — MDR',data:iaamR.trends.monthlyMdr,borderColor:CHART_PALETTE[3],backgroundColor:'rgba(192,57,43,0.08)',fill:false,tension:0.3,pointRadius:3},
+        {label:(y-1)+' — Cazuri (referinta)',data:iaamR.trends.prevMonthly,borderColor:CHART_PALETTE[6],borderDash:[5,5],fill:false,tension:0.3,pointRadius:2}
+      ]},{width:600,height:280,title:'Trend lunar IAAM '+y+' vs '+(y-1),chartOptions:{scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+      children.push(iaamTrendChart);
+      children.push(wChartCaption('Distributia lunara a cazurilor IAAM si a celor cu germeni multirezistenti (MDR) — comparatie cu anul anterior'));
+    }catch(e){console.warn('Grafic IAAM trend esuat:',e)}
+    // Top sectii bar
+    if(iaamR.bySection.length>0){
+      try{
+        var iaamSecChart=await wChartImage('bar',{labels:iaamR.bySection.slice(0,8).map(function(s){return s.key}),
+          datasets:[{label:'Cazuri IAAM',data:iaamR.bySection.slice(0,8).map(function(s){return s.val}),backgroundColor:CHART_PALETTE[0]}]},
+          {width:600,height:280,title:'Distributie IAAM pe sectii (top 8)',chartOptions:{indexAxis:'y',plugins:{legend:{display:false}}}});
+        children.push(iaamSecChart);
+      }catch(e){console.warn('Grafic IAAM sectii esuat:',e)}
+    }
+    // Top germens pie
+    if(iaamR.byOrganism.length>0){
+      try{
+        var germensChart=await wChartImage('doughnut',{labels:iaamR.byOrganism.slice(0,7).map(function(o){return o.key}),
+          datasets:[{data:iaamR.byOrganism.slice(0,7).map(function(o){return o.val}),backgroundColor:CHART_PALETTE.slice(0,7)}]},
+          {width:500,height:280,title:'Spectru etiologic IAAM — top germeni'});
+        children.push(germensChart);
+      }catch(e){console.warn('Grafic germens esuat:',e)}
+    }
+    // Benchmarks IAAM
+    if(iaamR.benchmarks.length>0){children.push(wH2('7.1. Comparatie cu Referinte Publice',WC.blue));children.push(wSp(40));children.push(wBenchmarkPanel(iaamR.benchmarks))}
+    // Insights locale
+    if(iaamR.insights.length>0){
+      children.push(wSp(60));children.push(wH2('7.2. Observatii-cheie IAAM',WC.blue));children.push(wSp(40));
+      iaamR.insights.forEach(function(ins){children.push(wCorrelationInsight(ins.title,ins.text,ins.sev))});
+    }
+    // Factori risc
+    if(iaamR.riskFactors.length>0){
+      children.push(wSp(60));children.push(wH2('7.3. Factori de Risc Dominanti',WC.blue));children.push(wSp(40));
+      children.push(wP('Factorii de risc prezenti in cazurile IAAM (N='+ia.length+'), prevalenta in cohorta:',{size:18,italic:true,color:WC.gray}));
+      var WRF=[5000,1500,2526];
+      children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WRF,rows:[wTblHead(['Factor de risc','Nr. cazuri','% din cohorta'],WRF),
+        ...iaamR.riskFactors.slice(0,8).map(function(rf,i){return wTblRow([rf.name,String(rf.count),rf.pct+'%'],WRF,i%2===1,rf.pct>=50)})]}));
+    }
+  }
+
+  // ─── Grafice Autocontrol ───
+  showGen('8/9 Grafice Autocontrol...');
+  if(au.length>0||(data.atp&&data.atp.length>0)||(data.uv&&data.uv.length>0)){
+    children.push(wPB());children.push(wH1('8. Analize Grafice Autocontrol '+y,WC.teal));children.push(wSp(40));
+    // Trend lunar
+    if(au.length>0){
+      try{
+        var autoTrendChart=await wChartImage('line',{labels:MO,datasets:[
+          {label:'Total probe',data:autoR.trends.monthly,borderColor:CHART_PALETTE[1],backgroundColor:'rgba(15,123,108,0.1)',fill:true,tension:0.3,pointRadius:3},
+          {label:'Neconforme',data:autoR.trends.monthlyNc,borderColor:CHART_PALETTE[3],backgroundColor:'rgba(192,57,43,0.08)',fill:false,tension:0.3,pointRadius:3}
+        ]},{width:600,height:280,title:'Trend lunar probe autocontrol microbiologic',chartOptions:{scales:{y:{beginAtZero:true}}}});
+        children.push(autoTrendChart);
+      }catch(e){console.warn('Grafic autocontrol trend esuat:',e)}
+    }
+    // Bar pe tipuri probe (conform/neconform)
+    if(autoR.byType.length>0){
+      try{
+        var typesChart=await wChartImage('bar',{labels:autoR.byType.slice(0,10).map(function(t){return t.key.length>18?t.key.substring(0,18)+'...':t.key}),
+          datasets:[
+            {label:'Conforme',data:autoR.byType.slice(0,10).map(function(t){return t.conf}),backgroundColor:CHART_PALETTE[5]},
+            {label:'Neconforme',data:autoR.byType.slice(0,10).map(function(t){return t.nc}),backgroundColor:CHART_PALETTE[3]}
+          ]},{width:600,height:280,title:'Conformitate pe tipuri de probe',chartOptions:{scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});
+        children.push(typesChart);
+      }catch(e){console.warn('Grafic autocontrol tipuri esuat:',e)}
+    }
+    if(autoR.benchmarks.length>0){children.push(wH2('8.1. Comparatie cu Referinte Publice',WC.teal));children.push(wSp(40));children.push(wBenchmarkPanel(autoR.benchmarks))}
+    if(autoR.insights.length>0){
+      children.push(wSp(60));children.push(wH2('8.2. Observatii-cheie Autocontrol',WC.teal));children.push(wSp(40));
+      autoR.insights.forEach(function(ins){children.push(wCorrelationInsight(ins.title,ins.text,ins.sev))});
+    }
+  }
+
+  // ─── Grafice ATB (AWaRe doughnut + top DDD) ───
+  showGen('8/9 Grafice ATB...');
+  if(atb&&atb.length>0){
+    children.push(wPB());children.push(wH1('9. Analize Grafice Consum Antibiotice '+y,WC.navy));children.push(wSp(40));
+    var totalDdd=atb.reduce(function(s,r){return s+(+r.ddd||0)},0);
+    var accessDdd=atb.filter(function(r){return r.aware==='Access'}).reduce(function(s,r){return s+(+r.ddd||0)},0);
+    var watchDdd=atb.filter(function(r){return r.aware==='Watch'}).reduce(function(s,r){return s+(+r.ddd||0)},0);
+    var reserveDdd=atb.filter(function(r){return r.aware==='Reserve'}).reduce(function(s,r){return s+(+r.ddd||0)},0);
+    var unclDdd=totalDdd-accessDdd-watchDdd-reserveDdd;
+    // AWaRe donut
+    try{
+      var awareChart=await wChartImage('doughnut',{labels:['Access','Watch','Reserve','Neclasificat'],
+        datasets:[{data:[accessDdd,watchDdd,reserveDdd,Math.max(0,unclDdd)],backgroundColor:['#16A34A','#D97706','#DC2626','#94A3B8']}]},
+        {width:500,height:280,title:'Distributie DDD pe clasele AWaRe (WHO)'});
+      children.push(awareChart);
+    }catch(e){console.warn('Grafic AWaRe esuat:',e)}
+    // Top 10 substance bar
+    var bySubst={};atb.forEach(function(r){var k=r.atc||r.name||'?';if(!bySubst[k])bySubst[k]={ddd:0,name:(typeof atbName==='function'?atbName(r.atc):null)||r.name||r.atc};bySubst[k].ddd+=+r.ddd||0});
+    var top10=Object.values(bySubst).sort(function(a,b){return b.ddd-a.ddd}).slice(0,10);
+    if(top10.length>0){
+      try{
+        var topChart=await wChartImage('bar',{labels:top10.map(function(s){return s.name.length>18?s.name.substring(0,18):s.name}),
+          datasets:[{label:'DDD',data:top10.map(function(s){return Math.round(s.ddd*10)/10}),backgroundColor:CHART_PALETTE[4]}]},
+          {width:600,height:300,title:'Top 10 antibiotice dupa DDD',chartOptions:{indexAxis:'y',plugins:{legend:{display:false}}}});
+        children.push(topChart);
+      }catch(e){console.warn('Grafic top ATB esuat:',e)}
+    }
+    // Benchmarks ATB
+    var atbBenchmarks=[];
+    var accessPct=totalDdd?Math.round(accessDdd/totalDdd*1000)/10:0;
+    atbBenchmarks.push({label:'% Access din total DDD',userValue:accessPct,userUnit:'%',bmKey:['atb','aware_access']});
+    atbBenchmarks.push({label:'% Watch din total DDD',userValue:totalDdd?Math.round(watchDdd/totalDdd*1000)/10:0,userUnit:'%',bmKey:['atb','aware_watch']});
+    atbBenchmarks.push({label:'% Reserve din total DDD',userValue:totalDdd?Math.round(reserveDdd/totalDdd*1000)/10:0,userUnit:'%',bmKey:['atb','aware_reserve']});
+    children.push(wH2('9.1. Comparatie cu tintele WHO AWaRe',WC.navy));children.push(wSp(40));
+    children.push(wBenchmarkPanel(atbBenchmarks));
+  }
+
+  // ─── Grafic Audituri ───
+  showGen('8/9 Grafice Audituri...');
+  if(audits&&audits.length>0){
+    children.push(wPB());children.push(wH1('10. Analize Grafice Audituri IPC '+y,WC.teal));children.push(wSp(40));
+    var byType={};audits.forEach(function(a){var t=a.audit_type||'General';if(!byType[t])byType[t]={n:0,sum:0};byType[t].n++;byType[t].sum+=(+a.compliance_pct||+a.compliance||0)});
+    var typeLabels=[],typeAvgs=[];Object.keys(byType).forEach(function(k){typeLabels.push((typeof _audCatName==='function'?_audCatName(k):k).substring(0,22));typeAvgs.push(Math.round(byType[k].sum/byType[k].n))});
+    if(typeLabels.length>0){
+      try{
+        var audChart=await wChartImage('bar',{labels:typeLabels,datasets:[{label:'Conformitate %',data:typeAvgs,backgroundColor:typeAvgs.map(function(v){return v>=80?'#16A34A':v>=60?'#D97706':'#DC2626'})}]},
+          {width:600,height:300,title:'Conformitate medie audituri IPC pe tip',chartOptions:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{min:0,max:100,ticks:{callback:function(v){return v+'%'}}}}}});
+        children.push(audChart);
+      }catch(e){console.warn('Grafic audituri esuat:',e)}
+    }
+    // Top failing items
+    if(failItems.length>0){
+      children.push(wSp(60));children.push(wH2('10.1. Itemi Audit cu Cea Mai Frecventa Neconformitate',WC.teal));children.push(wSp(40));
+      children.push(wP('Itemii checklist care au fost marcati ca neconformi cel mai des in auditurile efectuate (minim 2 evaluari). Utile pentru a prioriza temele de instruire.',{size:18,italic:true,color:WC.gray}));
+      var WFI=[5500,1200,1200,1126];
+      children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WFI,rows:[wTblHead(['Element audit','NC','Total','% NC'],WFI),
+        ...failItems.slice(0,8).map(function(f,i){return wTblRow([f.item,String(f.nc),String(f.total),f.pct+'%'],WFI,i%2===1,f.pct>=50)})]}));
+    }
+  }
+
+  // ─── Insight-uri Corelate (cross-module) ───
+  showGen('9/9 Insight-uri corelate...');
+  if(correlations&&correlations.length>0){
+    children.push(wPB());children.push(wH1('11. Insight-uri Corelate (cross-module)',WC.red));children.push(wSp(40));
+    children.push(wP('Observatii rezultate din suprapunerea datelor intre module — identifica pattern-uri care nu sunt vizibile analizand fiecare modul separat.',{size:18,italic:true,color:WC.gray}));
+    children.push(wSp(40));
+    correlations.forEach(function(c){children.push(wCorrelationInsight(c.title,c.text,c.sev));children.push(wSp(40))});
+  }
+
+  // ─── Recomandari Data-Driven ───
+  children.push(wPB());children.push(wH1('12. Recomandari Data-Driven pentru '+(y+1),WC.amber));children.push(wSp(40));
+  // Generam recomandari specifice din datele analizate
+  var recs=[];
+  if(iaamR.bySection[0]&&iaamR.bySection[0].val>=3){
+    recs.push({target:iaamR.bySection[0].key,actions:[
+      'Screening MRSA la internare pentru pacienti cu antecedente de spitalizare recenta (>30 zile)',
+      'Audit igiena maini lunar dedicat acestei sectii',
+      'Revizuire protocoale curatenie/dezinfectie — frecventa suplimentata in saloane cu IAAM',
+      'Comunicare cu Comitetul Director pentru alocare resurse IPC tinta'
+    ]});
+  }
+  autoR.bySection.slice(0,2).forEach(function(s){
+    if(s.pct<80&&s.total>=3){
+      recs.push({target:'Sectia '+s.key+' — autocontrol '+s.pct+'%',actions:[
+        'Re-instruire personal curatenie si dezinfectie (semestrial)',
+        'Verificare stocul si tehnica aplicarii biocidelor (respectarea concentratiei si timpilor de contact)',
+        'Frecventa crescuta a probelor autocontrol pentru validare corectie (T+1 trimestru)'
+      ]});
+    }
+  });
+  if(failItems.length>0&&failItems[0].pct>=40){
+    recs.push({target:'Instruire — tema prioritara: '+(failItems[0].item.length>60?failItems[0].item.substring(0,60)+'...':failItems[0].item),actions:[
+      'Sesiuni dedicate in primul trimestru '+(y+1)+' pe temele cu cea mai mare rata NC',
+      'Re-audit la 3 luni dupa instruire pentru masurarea impactului'
+    ]});
+  }
+  if(recs.length===0){
+    recs.push({target:'Mentinere program actual',actions:['Continuarea supravegherii active IAAM, autocontrol trimestrial, audituri lunare conform '+COUNTRY.regulations.mainOrder,'Participare la runduri PPS ECDC pentru benchmarking extern','Actualizare Plan Anual IPC cu obiective SMART masurabile']});
+  }
+  recs.forEach(function(r){var kids=wDataRecommendation(r.target,r.actions);kids.forEach(function(k){children.push(k)})});
+
+  // ─── Concluzii Finale (sintetizate) ───
+  children.push(wPB());children.push(wH1('13. Concluzii Finale'));children.push(wSp(40));
   var concl=[];
-  concl.push('In anul '+y+', '+CFG.cpiaam_name+' a inregistrat '+ia.length+' cazuri IAAM'+(iaamRate!==null?' (rata: '+iaamRate.toFixed(2)+'/1000 zile-pacient)':'')+'.');
-  concl.push('Autocontrolul microbiologic: '+au.length+' probe efectuate, conformitate '+(au.length>0?fp(conf,au.length):'—')+'.');
-  if(_rpAtp.length>0)concl.push('Autocontrol ATP (bioluminescenta): '+_rpAtp.length+' masuratori, conformitate '+fp(_rpAtpC,_rpAtp.length)+'.');
-  if(_rpUv.length>0)concl.push('Verificari UV (eficacitate curatenie): '+_rpUv.length+' teste, rata trecere '+fp(_rpUvP,_rpUv.length)+'.');
-  concl.push('Deseuri medicale: '+fn(Math.round(totD))+' kg total.');
+  concl.push('In anul '+y+', '+CFG.cpiaam_name+' a inregistrat '+ia.length+' cazuri IAAM'+(iaamRate!==null?' (rata: '+iaamRate.toFixed(2).replace('.',',')+'\u2030)':'')+(iaamR.kpis.mdrPct>0?', dintre care '+iaamR.kpis.mdrPct+'% cu germeni multirezistenti':'')+'.');
+  concl.push('Autocontrol microbiologic: '+au.length+' probe, conformitate '+(au.length>0?fp(conf,au.length):'\u2014')+(autoR.kpis.yoyConfDelta!=null?' ('+(autoR.kpis.yoyConfDelta>=0?'\u25B2 +':'\u25BC ')+Math.abs(autoR.kpis.yoyConfDelta)+' pp vs '+(y-1)+')':'')+'.');
+  if(_rpAtp.length>0)concl.push('Autocontrol ATP: '+_rpAtp.length+' masuratori, conformitate '+fp(_rpAtpC,_rpAtp.length)+'.');
+  if(_rpUv.length>0)concl.push('Verificari UV: '+_rpUv.length+' teste, rata trecere '+fp(_rpUvP,_rpUv.length)+'.');
+  concl.push('Deseuri medicale: '+fn(Math.round(totD))+' kg total'+(totalOmZile>0?' ('+(Math.round(totD/totalOmZile*100)/100).toFixed(2).replace('.',',')+' kg/om-zi)':'')+'.');
   if(atb&&atb.length>0){var pctA=atb.reduce(function(s,r){return s+(r.aware==='Access'?(+r.ddd||0):0)},0)/Math.max(atb.reduce(function(s,r){return s+(+r.ddd||0)},0),1)*100;
-    concl.push('Consum antibiotice: '+(pctA>=60?'Conform tintei OMS ('+pctA.toFixed(1)+'% Access).':'Atentie — '+pctA.toFixed(1)+'% Access, sub tinta OMS de 60%. Se recomanda program de antibiotic stewardship.'));}
-  if(audits&&audits.length>0){var ac=Math.round(audits.reduce(function(s,a){return s+(+a.compliance||0)},0)/audits.length);
-    concl.push('Audituri IPC: conformitate medie '+ac+'%.'+(ac<75?' Se recomanda cresterea frecventei auditurilor si sesiuni de instruire tematice.':''));}
+    concl.push('Consum antibiotice: '+pctA.toFixed(1).replace('.',',')+'% Access (tinta WHO \u226560%) — '+(pctA>=60?'conform':'sub tinta, necesita Antibiotic Stewardship'));}
+  if(audits&&audits.length>0){var ac=Math.round(audits.reduce(function(s,a){return s+(+a.compliance_pct||+a.compliance||0)},0)/audits.length);
+    concl.push('Audituri IPC: conformitate medie '+ac+'% din '+audits.length+' audituri efectuate.');}
+  if(correlations&&correlations.length>0)concl.push('Analiza cross-module a identificat '+correlations.length+' insight-uri corelate (detaliate in sectiunea 11) — recomandat revizuirea la sedinta CPIAAM '+(y+1)+'.');
   concl.forEach(function(c){children.push(wP(c,{size:20,before:40}))});
+
+  // ─── Glosar Abrevieri ───
+  if(typeof wAbbreviationsGlossary==='function'&&typeof ABBREVIATIONS!=='undefined'){
+    children.push(wPB());
+    var glossaryKids=wAbbreviationsGlossary();
+    glossaryKids.forEach(function(k){children.push(k)});
+  }
 
   children.push(...wSigBlock());
   await saveDocx(makeDoc(children,'Raport Anual '+y,'Raport_CPIAAM_'+y),'Raport_Anual_CPIAAM_'+y+'.docx');logActivity('Generat Raport Anual '+y);
@@ -16370,6 +16624,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.79',date:'2026-04-22',notes:'UX Biocide — In dropdown-ul Documente produs fiecare fisier are acum butoane 👁 vizualizare si ⬇ descarcare dedicate (fara a deschide inregistrarea). Functii standalone: bioViewAttByRec, bioDownloadAttByRec. Plus: creion editare produs pe header-ul cardului — dialog rapid (bioEditProduct/bioSaveProduct) pentru nume, cod, TP, UM, producator, distribuitor.'},
+  {version:'12.78',date:'2026-04-22',notes:'Raport Anual complet re-proiectat profesional: 6-8 grafice Chart.js embedded in Word (trend IAAM line cu comparatie an anterior, IAAM pe sectii bar orizontal, germens doughnut, autocontrol trend+tipuri, AWaRe doughnut, top 10 ATB, audituri bar), benchmarks inline (INSP/ECDC/WHO/ESAC-Net/ANMCS cu comparatii automate), sectiune noua „Insight-uri Corelate" din findCorrelations, recomandari data-driven per sectie (pe baza iaamR.bySection si failItems), glosar abrevieri automat la final (45 termeni). showGen cu progress 1/9-9/9. Usa noua analiza: analyzeIAAMRich, analyzeAutocontrolRich, findCorrelations, rankFailingAuditItems.'},
   {version:'12.77',date:'2026-04-22',notes:'UX Biocide — 3 schimbari vizuale: (1) Balanta compacta ca DROPDOWN, cu Stoc Actual vizibil compact in header (langa nr miscari) in capsula alba. Reducere vertical space ~70%. (2) NOU dropdown „Documente produs" — agrega aviz/fisa tehnica/SDS/alte din toate miscarile produsului, cu sursa (Intrare Mar, Iesire Apr). Click pe creion → deschide inregistrarea pentru manipulare fisiere. (3) Coloana „Docs" eliminata din tabelul MISCARI LUNARE — redundanta cu noul dropdown agregat.'},
   {version:'12.76',date:'2026-04-22',notes:'UX Biocide — refresh vizual card produs: Avize devin DROPDOWN compact (summary inline cu status Valabil/Expira/Expirat + Nr Aviz + count pt avize vechi) cand e inchis; tabel editabil la expand (reduce vertical space ~60%). Header cu gradient navy→teal, badges TP/UM stilizate, nr miscari in capsula. Balanta re-proiectata grid 7 coloane (Stoc Initial + Intrari − Iesiri = Stoc Actual) cu font 18-22px, Stoc Actual in card albastru cu border distinct. Shadow subtil pe cards. INFRA — build.js valideaza version.json la build.'},
   {version:'12.75',date:'2026-04-22',notes:'FOUNDATION rapoarte profesionale — fisier nou benchmarks.js cu 20+ referinte (INSP 3.5‰ IAAM, MDR 30%, MRSA 50%; ECDC PPS 6.5% HAI, AMU 32.5%; WHO AWaRe Access ≥60%/Watch ≤30%/Reserve ≤10%; ESAC-Net 360 DDD/1000 pat-zile; ANMCS 95% autocontrol) + glosar 45 abrevieri (CPIAAM/IAAM/MDR/MRSA/CVP/SSI/DDD/AWaRe/PPS/ECDC/WHO/INSP/BO/ATI/etc.). Helpers Word noi: wChartImage (Chart.js pe canvas ascuns → PNG → ImageRun docx, 550x280 pt A4 portrait), wSparkline (Unicode ▁▂▃▄▅▆▇█), wKpiCard color-coded, wBenchmarkPanel, wCorrelationInsight, wDataRecommendation, wExecutiveSummary, wAbbreviationsGlossary. Rich analysis: analyzeIAAMRich/AutocontrolRich returns {kpis,trends,bySection,byOrganism,benchmarks,insights}, findCorrelations detecteaza cross-module (IAAM×Autocontrol/Audituri, MDR×ATB Watch/Reserve), rankFailingAuditItems top itemi neconformi. Nicio schimbare vizibila — foundation pentru v12.76+.'},

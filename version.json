@@ -1,9 +1,9 @@
 {
-  "version": "12.77",
+  "version": "12.79",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "UX Biocide — Balanta compacta ca DROPDOWN (inainte era mare si ocupa mult spatiu). Cand e inchisa: un rand subtire cu formula Stoc initial X + Intrari Y - Iesiri Z = W UM. La expand: grid vizual cu 4 blocuri si Stoc Actual highlight. Plus: Stoc Actual apare compact direct in header-ul produsului (capsula cu rama alba, langa nr. miscari) - vizibil fara sa deschizi nimic.",
-    "UX Biocide — NOU dropdown Documente produs (aviz, fisa tehnica, SDS, alte) - AGREGA documentele din toate miscarile produsului intr-un singur loc. Vedeti cate sunt din fiecare tip si sursa (Intrare Mar, Iesire Apr, etc.). Click pe creion pentru a edita inregistrarea si manipula fisierul.",
-    "UX Biocide — Coloana Docs eliminata din tabelul MISCARI LUNARE (redundanta, documentele sunt acum agregate in dropdown-ul de sus - reducere zgomot vizual)."
+    "UX Biocide — In dropdown-ul Documente produs fiecare fisier are acum butoane dedicate: ochi (vizualizare in tab nou) si sageata jos (descarcare). Nu mai trebuie sa deschizi inregistrarea pentru a citi/descarca un aviz sau fisa tehnica.",
+    "UX Biocide — Creion editare produs adaugat direct pe header-ul cardului (langa Stoc si Miscari). Deschide un dialog rapid pentru modificare denumire, cod, TP, UM, producator, distribuitor. Schimbarile se propaga la toate inregistrarile.",
+    "Functii noi: bioViewAttByRec, bioDownloadAttByRec (standalone, citesc direct recordul dupa id), bioEditProduct, bioSaveProduct (editor proprietati produs)."
   ]
 }

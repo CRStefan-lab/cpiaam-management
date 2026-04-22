@@ -1,11 +1,7 @@
 {
-  "version": "12.66",
+  "version": "12.67",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Rapoarte — EXTINDERE COMPLETA a autocontrolului cu ATP + UV Check in TOATE rapoartele (nu doar Analiza Autocontrol dedicata):",
-    "(1) Raport Anual — sectiunea 2 redenumita „Autocontrol (Microbiologic + ATP + UV)". Sumar in tabel cu 3 metode + sub-sectiuni 2.1/2.2/2.3. Daca lipseste ATP sau UV, raportul explica si recomanda.",
-    "(2) Raport Trimestrial — sectiunea 3 include tabel sumar 3 metode pentru trimestru + detaliu microbiologic. Filtrare ATP/UV pe lunile trimestrului curent.",
-    "(3) PV Sedinta CPIAAM — sectiunea 2 redenumita cu mentiune ATP + UV; include fraze per metoda in prezentare si conditional in concluzii.",
-    "Concluziile finale ale rapoartelor anual si trimestrial mentioneaza ATP + UV cand exista date."
+    "TEXT — Banner „Printeaza fisa goala" de pe pagina Audituri: reformulat mai scurt si mai sobru: „Pentru audituri pe teren (observatie directa). Consemneaza pe hartie in timpul observatiei, apoi introdu datele in acest formular." (fara fraza anterioara care suna nepotrivit)."
   ]
 }

@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.66</title>
+<title>CPIAAM Management v12.67</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2049,7 +2049,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.66';
+const APP_VERSION='12.67';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -10613,7 +10613,7 @@ function _fisaGoalBanner(onclickCode){
     '<div style="font-size:22px">&#128196;</div>'+
     '<div style="flex:1;min-width:200px">'+
       '<div style="font-size:13px;font-weight:600;color:#854F0B">'+(isEN?'Print blank audit sheet':'Printeaza fisa de audit goala')+'</div>'+
-      '<div style="font-size:11px;color:#78350F;line-height:1.4">'+(isEN?'For field audits (direct observation). Write on paper as you go — prevents forgetting which ward/finding you saw. Later, enter the data in this form.':'Pentru audituri pe teren (observatie directa). Consemneaza pe hartie cat observi — previne sa uiti pe ce sectie ce ai vazut. Apoi introdu datele in acest formular.')+'</div>'+
+      '<div style="font-size:11px;color:#78350F;line-height:1.4">'+(isEN?'For field audits (direct observation). Write on paper during observation, then enter the data in this form.':'Pentru audituri pe teren (observatie directa). Consemneaza pe hartie in timpul observatiei, apoi introdu datele in acest formular.')+'</div>'+
     '</div>'+
     '<button class="btn bp bsm" onclick="'+onclickCode+'" style="flex-shrink:0">&#128424; '+(isEN?'Print blank form':'Printeaza fisa goala')+'</button>'+
   '</div>';
@@ -15791,6 +15791,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.67',date:'2026-04-22',notes:'TEXT — Banner „Printeaza fisa goala" pe Audituri: reformulat scurt si sobru, fara fraza care suna nepotrivit.'},
   {version:'12.66',date:'2026-04-22',notes:'Rapoarte — extindere Microbiologic + ATP + UV in TOATE rapoartele (v12.59 avea doar in Analiza Autocontrol dedicata). Raport Anual: sectiunea 2 rescrisa cu sumar 3 metode + sub-sectiuni 2.1/2.2/2.3 + recomandari per metoda lipsa. Raport Trimestrial: sectiunea 3 include tabel sumar 3 metode filtrat pe luni trimestru + detaliu microbiologic. PV Sedinta: sectiunea 2 cu prezentare per metoda + concluzii includ ATP/UV conditional. Concluziile finale mentioneaza toate metodele cand exista date.'},
   {version:'12.65',date:'2026-04-22',notes:'NOU Audituri — Vaccinare Personal (Faza 3 #9 — abordarea GDPR-safe). 7 itemi care verifica EXISTENTA sistemului: registru HR separat, consimtamant GDPR Art. 9, acoperire HBV >90%, campanie gripa anuala, oferirea vaccinarii la angajare, procedura post-expunere (BBP), registru accidente expunere. NU se stocheaza date individuale vaccinale in aplicatie — raman in registrul HR/Medicina Muncii. Auditul verifica DOAR ca sistemul functioneaza.'},
   {version:'12.64',date:'2026-04-22',notes:'NOU Audituri — Agregat IPC: feedback loop (Faza 3 #8 din gap analysis WHO). Sectiune noua intre Matrice si Concluzii: „Status implementare masuri T anterior" cu tabel (Sectia | Actiune | Status dropdown | Motiv). Storage: _agregatData.feedback[secId]. Persistat la salvare in rec.feedback. WHO IPC Core Component 6 (monitoring, audit & feedback). Ajuta la urmarirea blocajelor organizationale repetate intre trimestre.'},

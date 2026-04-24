@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.84</title>
+<title>CPIAAM Management v12.85</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2190,7 +2190,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.84';
+const APP_VERSION='12.85';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -7441,6 +7441,31 @@ function _matchBioProduct(nume){
   var p=(CFG.biocide_products||[]).find(function(x){return String(x.name||'').trim().toUpperCase().replace(/\s+/g,' ')===norm});
   return p||null;
 }
+// v12.85 — fuzzy match pentru import biocide: detecteaza duplicate „DESOGEN AERO" vs „DESOGEN AERO 5L".
+// Normalize: strip unitati (L/ML/G/KG/BUC/FLACON/BIDON/CUTIE/TABLETE), procente, volume numerice, punctuatie.
+function _normBioForMatch(s){
+  return String(s||'').toUpperCase()
+    .replace(/[_\-,;:\/\\]/g,' ')
+    .replace(/\b\d+[\.,]?\d*\s*(L|ML|LITRI|MILILITRI|KG|KILOGRAME|G|GR|GRAME|BUC|BUCATI|FL|FLAC|FLACON|FLACOANE|BIDON|BIDOANE|CUTIE|CUTII|TAB|TABLETE|TB|PCS)\b/g,' ')
+    .replace(/\b\d+[\.,]?\d*\s*%/g,' ')
+    .replace(/\b\d+[\.,]?\d*\b/g,' ')
+    .replace(/\s+/g,' ').trim();
+}
+function _tokensBio(s){return _normBioForMatch(s).split(' ').filter(function(t){return t.length>1})}
+function _jaccardBio(a,b){
+  var ta={};var tb={};_tokensBio(a).forEach(function(t){ta[t]=1});_tokensBio(b).forEach(function(t){tb[t]=1});
+  var ka=Object.keys(ta),kb=Object.keys(tb);if(!ka.length||!kb.length)return 0;
+  var inter=0;ka.forEach(function(t){if(tb[t])inter++});
+  var uni=ka.length+kb.length-inter;
+  return uni?inter/uni:0;
+}
+// Returneaza top N produse din catalog cu similarity >= threshold (default 0.5)
+function _suggestBioProducts(nume,topN,threshold){
+  topN=topN||5;threshold=threshold==null?0.5:threshold;
+  return (CFG.biocide_products||[]).map(function(p){
+    return {prod:p,score:_jaccardBio(nume,p.name||'')};
+  }).filter(function(x){return x.score>=threshold}).sort(function(a,b){return b.score-a.score}).slice(0,topN);
+}
 function _showBioImportPreview(){
   if(!_bioImportData)return;
   var d=_bioImportData;var p=d.period;
@@ -7458,16 +7483,45 @@ function _showBioImportPreview(){
   h+='<div class="ib wrn" style="margin:10px 0;font-size:12px"><strong>&#9888; Atentie:</strong> inregistrarile existente pentru aceeasi perioada nu sunt inlocuite — se adauga in plus. Daca ai introdus deja manual date pentru aceasta perioada, sterge-le intai sau anuleaza acest import.</div>';
   // Preview produse
   h+='<div style="overflow-x:auto;max-height:50vh;overflow-y:auto;border:1px solid var(--brd);border-radius:6px">';
-  h+='<table class="dt" style="margin:0;font-size:11px"><thead style="position:sticky;top:0;background:var(--navy);color:#fff"><tr><th>Import</th><th>Nume</th><th>Status</th><th>TP</th><th>UM</th><th style="text-align:right">Initial Q</th><th style="text-align:right">Initial V</th><th style="text-align:right">Intrari Q</th><th style="text-align:right">Intrari V</th><th style="text-align:right">Iesiri Q</th><th style="text-align:right">Iesiri V</th></tr></thead><tbody>';
+  h+='<table class="dt" style="margin:0;font-size:11px"><thead style="position:sticky;top:0;background:var(--navy);color:#fff"><tr><th>Import</th><th>Nume din fisier</th><th style="min-width:220px">Produs catalog</th><th>TP</th><th>UM</th><th style="text-align:right">Initial Q</th><th style="text-align:right">Initial V</th><th style="text-align:right">Intrari Q</th><th style="text-align:right">Intrari V</th><th style="text-align:right">Iesiri Q</th><th style="text-align:right">Iesiri V</th></tr></thead><tbody>';
+  // v12.85 — suggestions cu fuzzy match; user alege din dropdown daca e +nou sau se potriveste cu produs existent
   d.products.forEach(function(prd,i){
     var match=_matchBioProduct(prd.nume);
+    var suggestions=_suggestBioProducts(prd.nume,5,0.5);
     var tp=match?(match.product_type||_guessBioTp(prd.nume)):_guessBioTp(prd.nume);
     var um=match?(match.unit||_guessBioUnit(prd.nume)):_guessBioUnit(prd.nume);
-    var status=match?'<span style="color:#059669">&#10004; exista</span>':'<span style="color:#D97706">+ nou</span>';
+    // Construieste dropdown: default selected = match exact > fuzzy >=0.9 > +nou
+    var defaultSel='';
+    if(match)defaultSel=match.id;
+    else if(suggestions.length>0&&suggestions[0].score>=0.9)defaultSel=suggestions[0].prod.id;
+    // Ensure exact match appears in list even if duplicate in suggestions
+    var listIds={};suggestions.forEach(function(s){listIds[s.prod.id]=s});
+    if(match&&!listIds[match.id])suggestions.unshift({prod:match,score:1});
+    var selOpts='<option value="">+ Creaza produs nou</option>';
+    // Lista toate produsele din catalog cu highlighting pentru cele sugerate
+    var sortedAll=(CFG.biocide_products||[]).slice().sort(function(a,b){
+      var sa=_jaccardBio(prd.nume,a.name||'');var sb=_jaccardBio(prd.nume,b.name||'');
+      if(sa!==sb)return sb-sa;
+      return String(a.name||'').localeCompare(String(b.name||''));
+    });
+    sortedAll.forEach(function(p){
+      var score=_jaccardBio(prd.nume,p.name||'');
+      var label=esc(p.name||p.id);
+      var scoreStr='';
+      if(match&&match.id===p.id)scoreStr=' \u2713 exact';
+      else if(score>=0.9)scoreStr=' ('+Math.round(score*100)+'% match)';
+      else if(score>=0.5)scoreStr=' (~'+Math.round(score*100)+'%)';
+      selOpts+='<option value="'+esc(p.id)+'"'+(defaultSel===p.id?' selected':'')+'>'+label+scoreStr+'</option>';
+    });
+    var statusLabel='';
+    if(match)statusLabel='<span style="color:#059669;font-size:10px">\u2713 match exact</span>';
+    else if(suggestions.length>0&&suggestions[0].score>=0.9)statusLabel='<span style="color:#0891B2;font-size:10px">\u26A1 auto-match '+Math.round(suggestions[0].score*100)+'%</span>';
+    else if(suggestions.length>0)statusLabel='<span style="color:#D97706;font-size:10px">? similar '+Math.round(suggestions[0].score*100)+'%</span>';
+    else statusLabel='<span style="color:#64748B;font-size:10px">+ nou</span>';
     h+='<tr>'+
       '<td style="text-align:center"><input type="checkbox" id="bimp-ck-'+i+'" checked></td>'+
       '<td><strong>'+esc(prd.nume)+'</strong><br><span style="font-size:9px;color:var(--txtL)">cod: '+esc(prd.cod||'—')+' | id: '+esc(prd.ext_id||'—')+'</span></td>'+
-      '<td>'+status+'</td>'+
+      '<td><select id="bimp-prod-'+i+'" style="width:100%;padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'+selOpts+'</select><div style="margin-top:2px">'+statusLabel+'</div></td>'+
       '<td><input type="text" id="bimp-tp-'+i+'" value="'+esc(tp)+'" style="width:45px;padding:2px 4px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
       '<td><input type="text" id="bimp-um-'+i+'" value="'+esc(um)+'" style="width:60px;padding:2px 4px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
       '<td style="text-align:right">'+fn(prd.initial.q)+'</td><td style="text-align:right">'+fn(Math.round(prd.initial.v*100)/100)+'</td>'+
@@ -7476,6 +7530,7 @@ function _showBioImportPreview(){
     '</tr>';
   });
   h+='</tbody></table></div>';
+  h+='<div class="ib inf" style="margin-top:8px;font-size:11px">\uD83D\uDCA1 <strong>Coloana „Produs catalog"</strong> iti permite sa alegi un produs existent in loc sa creezi duplicat. Fuzzy match detecteaza variante ca „DESOGEN AERO" vs „DESOGEN AERO 5L". Verifica fiecare rand: <b>\u2713 exact</b> = nume identic \u00B7 <b>\u26A1 auto-match</b> = potrivire foarte probabila (>=90%) \u00B7 <b>?</b> similar = verifica manual \u00B7 <b>+ nou</b> = fara sugestii (produs nou).</div>';
   // Totaluri
   var sumIniQ=d.products.reduce(function(s,p){return s+p.initial.q},0);
   var sumIniV=d.products.reduce(function(s,p){return s+p.initial.v},0);
@@ -7507,11 +7562,20 @@ async function _doBioImport(){
     var p=d.products[i];
     var tp=(document.getElementById('bimp-tp-'+i).value||'TP2').trim().toUpperCase();
     var um=(document.getElementById('bimp-um-'+i).value||'buc').trim();
-    // Match sau creeaza produs
-    var match=_matchBioProduct(p.nume);
+    // v12.85 — user alege din dropdown: produs existent (PID) sau „+ nou" (valoare goala)
+    var sel=document.getElementById('bimp-prod-'+i);
+    var chosenPid=sel?sel.value:'';
     var pid;
-    if(match){pid=match.id;if(!match.product_type)match.product_type=tp;if(!match.unit)match.unit=um}
-    else{
+    if(chosenPid){
+      var existing=(CFG.biocide_products||[]).find(function(x){return x.id===chosenPid});
+      if(existing){pid=existing.id;if(!existing.product_type)existing.product_type=tp;if(!existing.unit)existing.unit=um}
+      else{
+        // dropdown valoare invalida — fallback la creare
+        pid=(typeof genId==='function'?genId('bp'):'bp_'+Date.now()+'_'+i);
+        CFG.biocide_products.push({id:pid,name:p.nume,product_type:tp,unit:um,code:p.cod,avize:[]});
+        newProds++;
+      }
+    } else {
       pid=(typeof genId==='function'?genId('bp'):'bp_'+Date.now()+'_'+i);
       CFG.biocide_products.push({id:pid,name:p.nume,product_type:tp,unit:um,code:p.cod,avize:[]});
       newProds++;
@@ -17052,6 +17116,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.85',date:'2026-04-24',notes:'FIX Import Excel Balanta Biocide — fuzzy match la nume produs pentru a preveni duplicate. Problema: la import, „DESOGEN AERO" si „DESOGEN AERO 5L" se creau ca produse separate in catalog desi erau acelasi dezinfectant (existau deja in catalog). Solutie: helpers noi _normBioForMatch (strip unitati de masura L/ML/G/KG/buc/flacon/bidon/tablete, procente, volume numerice, punctuatie) si _jaccardBio (similarity pe tokeni). _suggestBioProducts returneaza top 5 candidati cu score >=0.5. In preview, coloana noua „Produs catalog" inlocuieste „Status" cu dropdown — user alege produs existent sau „+ Creaza nou". Default selectie: match exact > fuzzy >=0.9 > +nou. Badge-uri: bifa verde match exact, fulger cyan auto-match (>=90%), intrebare portocalie similar (50-89%), gri + nou. _doBioImport citeste selectia din dropdown in loc de match greedy. Note info box cu legenda la final preview.'},
   {version:'12.84',date:'2026-04-22',notes:'UX Biocide — card reorganizat ierarhic: click pe produs extinde/colapseaza TOT continutul (Avize + Documente + Balanta); cand produsul e colapsat (▶) ramane doar header-ul cu stocul actual in capsula alba, compact. Miscari lunare mutate IN dropdown-ul Balanta detaliata (KPI grid + tabel miscari apar impreuna cand apesi pe Balanta). Rezultat: densitate vizuala semnificativ mai mare, focus pe ce te intereseaza fara scroll interminabil, 3 nivele de expansion (produs inchis / produs deschis cu 3 dropdown-uri colapsate / dropdown Balanta deschis cu detalii).'},
   {version:'12.83',date:'2026-04-22',notes:'5 imbunatatiri: (A) editBio are buton +Produs nou langa dropdown — bioQuickAddProduct creeaza produs in catalog si revine la miscare cu produsul preselectat. (B) Search biocide fuzzy multi-termen pe nume/cod/lot/TP/producator/distribuitor. (C) Dashboard Urgente afiseaza avize biocide expirate/expira in 30 zile. (D) bioDownloadAllProductDocs — descarcare secventiala a tuturor documentelor unui produs cu prefix tip in filename. (E) genConsumATBWord cu grafice embedded: AWaRe doughnut, top 10 bar orizontal color-coded, benchmarks WHO Access/Watch/Reserve.'},
   {version:'12.82',date:'2026-04-22',notes:'REFACTOR Biocide — documentele (Aviz BPR, Fisa tehnica, SDS, Alte) se gestioneaza O SINGURA DATA la nivel de PRODUS (nu pe fiecare miscare). Stocate in CFG.biocide_products[i].documents[key][]. Editor Produs complet (5 sectiuni): Identificare, Clasificare, Parteneri, Avize BPR tabel editabil, Documente Produs cu 👁 ⬇ 🗑 per fisier. Editor Miscare simplificat: doar Produs/Tip/Luna/Lot/Cantitate/Valoare — fara atasamente. Migratie bioMigrateDocsToProduct cu deduplicare dupa nume fisier. Card view dropdown Documente produs citeste din product.documents prioritar + fallback aggregate din records legacy (badge galben).'},

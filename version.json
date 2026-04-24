@@ -1,8 +1,8 @@
 {
-  "version": "12.84",
+  "version": "12.85",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Card Biocide reorganizat: click pe produs extinde/colapseaza TOT continutul (Avize + Documente + Balanta). Cand e inchis ramane doar header-ul cu stocul actual, compact.",
-    "Miscari lunare mutate in dropdown-ul Balanta detaliata: KPI grid (Stoc initial / Intrari / Iesiri / Stoc actual) + tabel miscari apar impreuna cand apesi pe Balanta. Focus pe ce te intereseaza, fara scroll interminabil."
+    "Import Excel Balanta Biocide — fuzzy match la nume produs pentru a preveni duplicate (ex: DESOGEN AERO vs DESOGEN AERO 5L). Normalize: strip unitati de masura (L/ML/G/KG/buc/flacon/bidon/tablete), procente si volume numerice; apoi Jaccard similarity pe tokeni.",
+    "Preview import: coloana noua Produs catalog cu dropdown — user alege produs existent sau + Creaza nou. Badge-uri colorate: bifa verde exact, fulger cyan auto-match >=90%, intrebare portocalie similar 50-89%, gri + nou (fara sugestii). Default selectie: match exact sau fuzzy >=90%, altfel + nou."
   ]
 }

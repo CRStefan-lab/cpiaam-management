@@ -1,7 +1,10 @@
 {
-  "version": "12.89",
+  "version": "12.90",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Plasa de siguranta (try-catch) pe fuzzy match biocide: _normBioForMatch si _jaccardBio nu mai pot crash-ui dropdown-ul Merge/Import daca un nume de produs contine caractere unicode exotice (RTL override, control chars). Fallback: scor 0, produsul apare sortat la final. Cost: 6 linii, zero risc, zero impact pe calea normala."
+    "Biocide — redesign header card mai lizibil: background gradient din culoarea TP (40% stanga) la slate-800 (60% dreapta). Culoarea TP devine vizibila pe o suprafata mare, nu doar un colt. Border stanga 7px si badge TP pe fundal alb cu text culoarea TP si border colorat — vizibilitate dubla.",
+    "Biocide — sortare produse prioritara dupa TP (TP1 < TP2 < TP4 < TP14 < TP18 < TP22 < fara-TP), apoi alfabetic in cadrul fiecarei categorii. Produsele de acelasi tip apar grupate.",
+    "Biocide — filtru nou: Categorie TP (TP1 Igiena umana / TP2 Dezinfectante suprafete / TP4 Contact alimente / TP14 Rodenticide / TP18 Insecticide / TP22 Fluide imbalsam.). Plus rename Toate tipurile → Toate miscarile pentru claritate (era confuz).",
+    "Reset filter curata si TP."
   ]
 }

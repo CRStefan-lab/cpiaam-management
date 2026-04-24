@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.85</title>
+<title>CPIAAM Management v12.87</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2190,7 +2190,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.85';
+const APP_VERSION='12.87';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6519,6 +6519,17 @@ var BIO_PRODUCT_TYPES=[
   {id:'TP18',name:'Insecticide',desc:'Produse pentru controlul insectelor'},
   {id:'TP22',name:'Fluide imbalsam.',desc:'Fluide de imbalsamare si taxidermie'}
 ];
+// v12.87 — Palette colori pe TP pentru separare vizuala in card view
+var BIO_TP_COLORS={
+  TP1:'#10B981',   // verde — igiena umana (sapun/gel dus/spuma)
+  TP2:'#3B82F6',   // albastru — dezinfectante suprafete (uzul cel mai frecvent in spital)
+  TP4:'#F97316',   // portocaliu — contact cu alimente (bucatarie)
+  TP14:'#78350F',  // brown — rodenticide
+  TP18:'#EAB308',  // galben — insecticide
+  TP22:'#6B7280',  // gri — fluide imbalsamare
+  _default:'#64748B' // gri deschis — fara TP sau TP nedefinit
+};
+function _bioTpColor(tp){return BIO_TP_COLORS[String(tp||'').toUpperCase()]||BIO_TP_COLORS._default}
 async function rBio(el){
   const allData=(await ga('biocide')).filter(r=>r.year===A.year);
   const bf=_bioFilters;
@@ -6600,10 +6611,13 @@ async function rBio(el){
     const gIn=rows.filter(function(r){return r.type==='intrare'}).reduce(function(s,r){return s+(+r.value_lei||0)},0);
     const gOut=rows.filter(function(r){return r.type==='iesire'}).reduce(function(s,r){return s+(+r.value_lei||0)},0);
     const gFinal=gSi+gIn-gOut;
-    const tp=rows[0].product_type||'';const um=rows[0].unit||'';
     const expanded=forceExpand||!!_bioExpanded[k];
     const pidx=g.pid?(CFG.biocide_products||[]).findIndex(function(p){return p.id===g.pid}):-1;
     const prod=pidx>=0?CFG.biocide_products[pidx]:null;
+    // v12.87 — FIX: TP/UM citite prioritar din CATALOG produs (nu din rows[0])
+    // Altfel, dupa edit TP in catalog, card-ul afisa inca TP vechi din records
+    const tp=(prod&&prod.product_type)||rows[0].product_type||'';
+    const um=(prod&&prod.unit)||rows[0].unit||'';
     // v12.76 — Aviz panel ca <details> dropdown: compact cand inchis (status + nr latest), tabel editabil la expand
     var latestAviz=null,avizStatus='',avizStatusColor='';
     if(prod&&prod.avize&&prod.avize.length>0){
@@ -6751,17 +6765,18 @@ async function rBio(el){
       if(legacyCount>0){docsPanel+='<div style="margin-top:6px;padding:6px 8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;font-size:11px"><strong>&#9888; Documente pe miscari (legacy): '+legacyCount+'</strong><br><button class="btn bp bsm" style="margin-top:4px;font-size:10px" onclick="bioMigrateDocsToProduct('+(prod?'\''+String(prod.id).replace(/\x27/g,"\\x27")+'\'':'null')+')">Migreaza la produs</button></div>'}
       docsPanel+='</div></details>';
     }
-    // Header cu Stoc Actual compact + v12.79 edit pencil pentru proprietati produs
-    h+='<div data-bio-key="'+esc(k)+'" style="border:1px solid var(--brd);border-radius:10px;margin-bottom:12px;background:var(--card);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)">';
-    h+='<div onclick="bioToggleProd(this.parentElement.dataset.bioKey)" style="cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:12px;background:linear-gradient(to right,var(--navy),var(--teal));color:#fff">';
-    h+='<span style="font-size:14px;width:14px;display:inline-block">'+(expanded?'&#9660;':'&#9654;')+'</span>';
-    h+='<strong style="flex:1;font-size:14px;color:#fff">'+esc(g.pname)+'</strong>';
-    if(tp)h+='<span style="font-size:10px;padding:2px 8px;background:rgba(255,255,255,.2);border-radius:10px;color:#fff;font-weight:600">'+esc(tp)+'</span>';
-    if(um)h+='<span style="font-size:11px;color:rgba(255,255,255,.85)">UM: '+esc(um)+'</span>';
-    h+='<span style="font-size:11px;color:rgba(255,255,255,.85);padding:2px 10px;background:rgba(255,255,255,.15);border-radius:10px">'+rows.length+' miscari</span>';
-    h+='<span style="font-size:12px;color:#fff;padding:3px 12px;background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);border-radius:10px;font-weight:600">Stoc: '+fn(gFinalQ)+' '+umLabel+'</span>';
+    // v12.87 — Header cu background solid dark (contrast consistent light+dark mode) + border-left colorat per TP + badge TP colorat
+    var tpColor=_bioTpColor(tp);
+    h+='<div data-bio-key="'+esc(k)+'" style="border:1px solid var(--brd);border-left:5px solid '+tpColor+';border-radius:10px;margin-bottom:12px;background:var(--card);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)">';
+    h+='<div onclick="bioToggleProd(this.parentElement.dataset.bioKey)" style="cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:10px;background:#0F172A;color:#fff">';
+    h+='<span style="font-size:14px;width:14px;display:inline-block;color:#fff">'+(expanded?'&#9660;':'&#9654;')+'</span>';
+    h+='<strong style="flex:1;font-size:14px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3)">'+esc(g.pname)+'</strong>';
+    if(tp)h+='<span title="'+esc((BIO_PRODUCT_TYPES.find(function(t){return t.id===tp})||{}).name||'')+'" style="font-size:10px;padding:3px 10px;background:'+tpColor+';border-radius:10px;color:#fff;font-weight:700;letter-spacing:.3px;box-shadow:0 1px 2px rgba(0,0,0,.2)">'+esc(tp)+'</span>';
+    if(um)h+='<span style="font-size:11px;color:#E2E8F0;padding:3px 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px">UM: '+esc(um)+'</span>';
+    h+='<span style="font-size:11px;color:#E2E8F0;padding:3px 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px">'+rows.length+' miscari</span>';
+    h+='<span style="font-size:12px;color:#fff;padding:4px 14px;background:rgba(59,130,246,.35);border:1px solid rgba(147,197,253,.6);border-radius:10px;font-weight:700">Stoc: '+fn(gFinalQ)+' '+umLabel+'</span>';
     // v12.79 — edit pencil pentru proprietati produs (doar daca are product_id)
-    if(g.pid)h+='<button onclick="event.stopPropagation();bioEditProduct(\''+String(g.pid).replace(/\x27/g,"\\x27")+'\')" title="Editeaza proprietati produs (nume, TP, UM, producator)" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 10px;border-radius:8px;cursor:pointer;font-size:14px">&#9998;</button>';
+    if(g.pid)h+='<button onclick="event.stopPropagation();bioEditProduct(\''+String(g.pid).replace(/\x27/g,"\\x27")+'\')" title="Editeaza proprietati produs (nume, TP, UM, producator)" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 10px;border-radius:8px;cursor:pointer;font-size:14px">&#9998;</button>';
     h+='</div>';
     // v12.84 — Panelele (Avize/Documente/Balanta) apar DOAR cand produsul e expandat (▼).
     // Balanta include in dropdown-ul sau KPI grid + tabel MISCARI LUNARE (mutat din bloc separat).
@@ -7041,22 +7056,127 @@ function bioEditProduct(pid){
     '</h4>'+
     '<div style="font-size:11px;color:var(--txtL);margin-bottom:8px">Aviz BPR, Fisa tehnica, SDS si alte documente — se ataseaza o singura data pe produs (nu pe fiecare miscare).</div>'+
     docsHtml+'</div>'+
+    // v12.85 — FUZIONEAZA CU ALT PRODUS (pentru duplicate create inainte de fuzzy match)
+    _bioMergeSectionHtml(pid,p)+
   '</div>';
   openM('Editare produs: '+esc(p.name||''),h,
     '<button class="btn bp" onclick="bioSaveProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')">Salveaza</button>'+
     '<button class="btn bo" onclick="closeM()">Inchide</button>');
 }
-function bioSaveProduct(pid){
+async function bioSaveProduct(pid){
   var idx=(CFG.biocide_products||[]).findIndex(function(p){return p.id===pid});if(idx<0)return;
   var v=function(id){var el=document.getElementById(id);return el?el.value.trim():''};
-  CFG.biocide_products[idx].name=v('bep-name');
+  var oldTp=CFG.biocide_products[idx].product_type||'';
+  var oldUm=CFG.biocide_products[idx].unit||'';
+  var oldName=CFG.biocide_products[idx].name||'';
+  var newName=v('bep-name');
+  var newTp=v('bep-tp');
+  var newUm=v('bep-um');
+  CFG.biocide_products[idx].name=newName;
   CFG.biocide_products[idx].code=v('bep-code');
-  CFG.biocide_products[idx].product_type=v('bep-tp');
-  CFG.biocide_products[idx].unit=v('bep-um');
+  CFG.biocide_products[idx].product_type=newTp;
+  CFG.biocide_products[idx].unit=newUm;
   CFG.biocide_products[idx].manufacturer=v('bep-mfr');
   CFG.biocide_products[idx].distributor=v('bep-dist');
-  saveCfg();closeM();render();
-  if(typeof showToast==='function')showToast('Produs actualizat');
+  await saveCfg();
+  // v12.87 — Propagare TP/UM/nume la toate records existente pentru consistency pe card view
+  // (fix pentru bug unde TP editat in catalog nu se reflecta pe card pentru ca cardul citea tp din rows[0])
+  var propagated=0;
+  if(newTp!==oldTp||newUm!==oldUm||newName!==oldName){
+    var all=await ga('biocide');
+    var recs=all.filter(function(r){return r.product_id===pid});
+    for(var i=0;i<recs.length;i++){
+      var r=recs[i];var changed=false;
+      if(newTp&&r.product_type!==newTp){r.product_type=newTp;changed=true}
+      if(newUm&&r.unit!==newUm){r.unit=newUm;changed=true}
+      if(newName&&r.product_name!==newName){r.product_name=newName;changed=true}
+      if(changed){r._modifiedAt=Date.now();await pt('biocide',r);propagated++}
+    }
+  }
+  closeM();render();
+  if(typeof showToast==='function')showToast('Produs actualizat'+(propagated>0?' \u2022 '+propagated+' miscari sincronizate':''));
+}
+// v12.85 — Sectiune Fuzioneaza cu alt produs (in dialogul de editare produs)
+// Pentru duplicate create inainte de fuzzy match la import (ex: DESOGEN AERO vs DESOGEN AERO 5L).
+function _bioMergeSectionHtml(pid,p){
+  var others=(CFG.biocide_products||[]).filter(function(x){return x.id!==pid}).slice().sort(function(a,b){
+    var sa=_jaccardBio(p.name||'',a.name||'');
+    var sb=_jaccardBio(p.name||'',b.name||'');
+    if(sa!==sb)return sb-sa;
+    return String(a.name||'').localeCompare(String(b.name||''));
+  });
+  if(others.length===0)return '';
+  var defaultSel='';
+  if(others.length>0){var s0=_jaccardBio(p.name||'',others[0].name||'');if(s0>=0.8)defaultSel=others[0].id}
+  var opts='<option value="">\u2014 selecteaza produsul destinatie \u2014</option>';
+  others.forEach(function(op){
+    var score=_jaccardBio(p.name||'',op.name||'');
+    var scoreStr='';
+    if(score>=0.9)scoreStr=' \u2728 '+Math.round(score*100)+'% match';
+    else if(score>=0.5)scoreStr=' (~'+Math.round(score*100)+'%)';
+    opts+='<option value="'+esc(op.id)+'"'+(defaultSel===op.id?' selected':'')+'>'+esc(op.name||op.id)+scoreStr+'</option>';
+  });
+  return '<div style="margin-bottom:14px;padding:12px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px">'+
+    '<h4 style="font-size:13px;color:#B45309;margin:0 0 8px;display:flex;align-items:center;gap:8px">\u26A0 FUZIONEAZA CU ALT PRODUS</h4>'+
+    '<div style="font-size:11px;color:#78350F;margin-bottom:8px">Ai introdus acest produs ca duplicat al altuia existent (ex: „DESOGEN AERO" si „DESOGEN AERO 5L")? Alege produsul destinatie din dropdown — TOATE miscarile, avizele si documentele de aici vor fi mutate la acel produs, iar acest produs va fi sters.</div>'+
+    '<div class="fr" style="align-items:flex-end"><div class="fg"><label style="font-size:11px;color:#78350F">Produs destinatie</label>'+
+      '<select id="bep-merge-target" style="width:100%;padding:6px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:12px">'+opts+'</select></div>'+
+      '<button class="btn bsm" style="background:#DC2626;color:#fff;border:none;padding:8px 14px;font-size:12px;white-space:nowrap" onclick="bioMergeProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')">\uD83D\uDD17 Fuzioneaza</button>'+
+    '</div>'+
+  '</div>';
+}
+async function bioMergeProduct(sourcePid){
+  var sel=document.getElementById('bep-merge-target');
+  var targetPid=sel?sel.value:'';
+  if(!targetPid){alert('Selecteaza un produs destinatie din dropdown.');return}
+  if(targetPid===sourcePid){alert('Nu poti fuziona un produs cu el insusi.');return}
+  var sIdx=CFG.biocide_products.findIndex(function(p){return p.id===sourcePid});
+  var tIdx=CFG.biocide_products.findIndex(function(p){return p.id===targetPid});
+  if(sIdx<0||tIdx<0){alert('Produs(e) negasit(e).');return}
+  var source=CFG.biocide_products[sIdx];
+  var target=CFG.biocide_products[tIdx];
+  // Count records to transfer
+  var allRecs=await ga('biocide');
+  var recs=allRecs.filter(function(r){return r.product_id===sourcePid});
+  var sourceAvize=(source.avize||[]).length;
+  var sourceDocs=0;BIO_ATT_TYPES.forEach(function(t){sourceDocs+=((source.documents||{})[t.key]||[]).length});
+  if(!confirm('Fuzionezi „'+(source.name||'')+'" in „'+(target.name||'')+'"?\n\n'+
+    '\u2022 '+recs.length+' miscari vor fi reatribuite\n'+
+    '\u2022 '+sourceAvize+' avize vor fi combinate (deduplicare dupa Nr+data expirare)\n'+
+    '\u2022 '+sourceDocs+' documente vor fi combinate (deduplicare dupa nume fisier)\n'+
+    '\u2022 Produsul „'+(source.name||'')+'" va fi sters din catalog\n\n'+
+    'Operatia nu poate fi anulata. Continui?'))return;
+  // 1. Merge avize (dedup dupa nr+date_expiry)
+  if(!target.avize)target.avize=[];
+  (source.avize||[]).forEach(function(a){
+    var dup=target.avize.some(function(b){return (b.nr||b.number||'')===(a.nr||a.number||'')&&(b.date_expiry||'')===(a.date_expiry||'')});
+    if(!dup)target.avize.push(a);
+  });
+  // 2. Merge documents (dedup dupa nume fisier per tip)
+  if(!target.documents)target.documents={aviz:[],fisa_tehnica:[],sds:[],alte_doc:[]};
+  BIO_ATT_TYPES.forEach(function(t){
+    if(!target.documents[t.key])target.documents[t.key]=[];
+    var existing={};target.documents[t.key].forEach(function(f){existing[f.name]=1});
+    (((source.documents||{})[t.key])||[]).forEach(function(f){
+      if(!existing[f.name])target.documents[t.key].push(f);
+    });
+  });
+  // 3. Reassign records (pastreaza TP/UM de la target daca source nu avea)
+  for(var i=0;i<recs.length;i++){
+    var r=recs[i];
+    r.product_id=targetPid;
+    r.product_name=target.name;
+    if(target.product_type)r.product_type=target.product_type;
+    if(target.unit)r.unit=target.unit;
+    r._modifiedAt=Date.now();
+    await pt('biocide',r);
+  }
+  // 4. Delete source product
+  CFG.biocide_products.splice(sIdx,1);
+  await saveCfg();
+  closeM();render();
+  if(typeof showToast==='function')showToast('Fuzionat: '+recs.length+' miscari \u2192 „'+(target.name||'')+'"');
+  if(typeof logActivity==='function')logActivity('Biocide fuziune: „'+(source.name||'')+'" \u2192 „'+(target.name||'')+'" ('+recs.length+' miscari, '+sourceAvize+' avize, '+sourceDocs+' docs)');
 }
 // v12.82 — CRUD documente la nivel de PRODUS (stocate in CFG.biocide_products[].documents[key][])
 function bioAddProductDoc(pid,key){
@@ -17116,6 +17236,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.87',date:'2026-04-24',notes:'Biocide — 3 imbunatatiri: (1) FIX TP/UM pe card — editarea in catalog se reflecta imediat pe card, era bug: card citea tp/um din rows[0] (record-uri vechi) in loc de catalog produs. bioSaveProduct propaga acum TP/UM/nume la toate records existente (cu toast „N miscari sincronizate"). (2) Separare vizuala pe TP — border stanga 5px colorat per TP + badge TP colorat in header. Palette: TP1 #10B981 verde (igiena umana), TP2 #3B82F6 albastru (suprafete), TP4 #F97316 portocaliu (contact alimente), TP14 maro (rodenticide), TP18 galben (insecticide), TP22 gri (fluide imbalsamare). Constanta BIO_TP_COLORS + helper _bioTpColor. Tooltip pe badge cu denumirea completa a TP-ului. (3) Header card redesign — background solid dark #0F172A (nu mai gradient navy→teal care facea textul greu de citit in dark mode si in dreapta). Text-shadow pe denumirea produsului pentru lizibilitate. Capsule UM/miscari cu background semi-transparent si border subtil (rgba 255,255,255,.08-.15). Capsula Stoc cu background albastrui (rgba 59,130,246,.35) pentru diferentiere. Contrast consistent in light+dark mode.'},
+  {version:'12.86',date:'2026-04-24',notes:'Biocide — Fuzioneaza cu alt produs (pentru duplicate create inainte de fuzzy match la import). Sectiune noua in editorul de produs (click pe creion pe header-ul cardului): dropdown cu toate celelalte produse din catalog sortate dupa similarity (Jaccard post strip unitati). Top match >=90% este preselectat automat (badge „sparkle + procent match"). La click „Fuzioneaza": (1) toate miscarile produsului sursa → reatribuite la produsul destinatie cu update product_id, product_name, product_type, unit si _modifiedAt; (2) avizele sursa → combinate in avize destinatie cu dedup dupa Nr+data expirare; (3) documentele (Aviz/Fisa/SDS/Alte) → combinate cu dedup dupa nume fisier per tip; (4) produsul sursa sters din catalog. Confirmare cu counters inainte de executie (miscari, avize, docs). logActivity cu rezumat fuziune.'},
   {version:'12.85',date:'2026-04-24',notes:'FIX Import Excel Balanta Biocide — fuzzy match la nume produs pentru a preveni duplicate. Problema: la import, „DESOGEN AERO" si „DESOGEN AERO 5L" se creau ca produse separate in catalog desi erau acelasi dezinfectant (existau deja in catalog). Solutie: helpers noi _normBioForMatch (strip unitati de masura L/ML/G/KG/buc/flacon/bidon/tablete, procente, volume numerice, punctuatie) si _jaccardBio (similarity pe tokeni). _suggestBioProducts returneaza top 5 candidati cu score >=0.5. In preview, coloana noua „Produs catalog" inlocuieste „Status" cu dropdown — user alege produs existent sau „+ Creaza nou". Default selectie: match exact > fuzzy >=0.9 > +nou. Badge-uri: bifa verde match exact, fulger cyan auto-match (>=90%), intrebare portocalie similar (50-89%), gri + nou. _doBioImport citeste selectia din dropdown in loc de match greedy. Note info box cu legenda la final preview.'},
   {version:'12.84',date:'2026-04-22',notes:'UX Biocide — card reorganizat ierarhic: click pe produs extinde/colapseaza TOT continutul (Avize + Documente + Balanta); cand produsul e colapsat (▶) ramane doar header-ul cu stocul actual in capsula alba, compact. Miscari lunare mutate IN dropdown-ul Balanta detaliata (KPI grid + tabel miscari apar impreuna cand apesi pe Balanta). Rezultat: densitate vizuala semnificativ mai mare, focus pe ce te intereseaza fara scroll interminabil, 3 nivele de expansion (produs inchis / produs deschis cu 3 dropdown-uri colapsate / dropdown Balanta deschis cu detalii).'},
   {version:'12.83',date:'2026-04-22',notes:'5 imbunatatiri: (A) editBio are buton +Produs nou langa dropdown — bioQuickAddProduct creeaza produs in catalog si revine la miscare cu produsul preselectat. (B) Search biocide fuzzy multi-termen pe nume/cod/lot/TP/producator/distribuitor. (C) Dashboard Urgente afiseaza avize biocide expirate/expira in 30 zile. (D) bioDownloadAllProductDocs — descarcare secventiala a tuturor documentelor unui produs cu prefix tip in filename. (E) genConsumATBWord cu grafice embedded: AWaRe doughnut, top 10 bar orizontal color-coded, benchmarks WHO Access/Watch/Reserve.'},

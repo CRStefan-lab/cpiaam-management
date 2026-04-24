@@ -1,8 +1,9 @@
 {
-  "version": "12.85",
+  "version": "12.87",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Import Excel Balanta Biocide — fuzzy match la nume produs pentru a preveni duplicate (ex: DESOGEN AERO vs DESOGEN AERO 5L). Normalize: strip unitati de masura (L/ML/G/KG/buc/flacon/bidon/tablete), procente si volume numerice; apoi Jaccard similarity pe tokeni.",
-    "Preview import: coloana noua Produs catalog cu dropdown — user alege produs existent sau + Creaza nou. Badge-uri colorate: bifa verde exact, fulger cyan auto-match >=90%, intrebare portocalie similar 50-89%, gri + nou (fara sugestii). Default selectie: match exact sau fuzzy >=90%, altfel + nou."
+    "FIX Biocide: TP/UM editat la produs se reflecta imediat pe card. Inainte cardul citea tp/um din prima miscare (records) in loc de catalog, deci dupa edit TP in dialog ramanea vechi pe card. Acum prioritate catalog + propagare la save catre toate records-urile (cu toast: N miscari sincronizate).",
+    "Biocide: separare vizuala pe TP — border stanga 5px colorat si badge TP colorat pe card. Palette: TP1 verde (igiena), TP2 albastru (suprafete), TP4 portocaliu (alimente), TP14 maro (rodenticide), TP18 galben (insecticide), TP22 gri (fluide).",
+    "Biocide: header card redesign cu background solid dark (nu gradient) — contrast consistent in light si dark mode, text mai lizibil. Capsule UM/miscari/Stoc cu background semi-transparent si borduri subtile pentru separare clara pe fundalul dark."
   ]
 }

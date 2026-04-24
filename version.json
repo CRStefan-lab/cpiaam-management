@@ -1,9 +1,7 @@
 {
-  "version": "12.87",
+  "version": "12.89",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX Biocide: TP/UM editat la produs se reflecta imediat pe card. Inainte cardul citea tp/um din prima miscare (records) in loc de catalog, deci dupa edit TP in dialog ramanea vechi pe card. Acum prioritate catalog + propagare la save catre toate records-urile (cu toast: N miscari sincronizate).",
-    "Biocide: separare vizuala pe TP — border stanga 5px colorat si badge TP colorat pe card. Palette: TP1 verde (igiena), TP2 albastru (suprafete), TP4 portocaliu (alimente), TP14 maro (rodenticide), TP18 galben (insecticide), TP22 gri (fluide).",
-    "Biocide: header card redesign cu background solid dark (nu gradient) — contrast consistent in light si dark mode, text mai lizibil. Capsule UM/miscari/Stoc cu background semi-transparent si borduri subtile pentru separare clara pe fundalul dark."
+    "Plasa de siguranta (try-catch) pe fuzzy match biocide: _normBioForMatch si _jaccardBio nu mai pot crash-ui dropdown-ul Merge/Import daca un nume de produs contine caractere unicode exotice (RTL override, control chars). Fallback: scor 0, produsul apare sortat la final. Cost: 6 linii, zero risc, zero impact pe calea normala."
   ]
 }

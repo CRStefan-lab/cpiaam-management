@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.87</title>
+<title>CPIAAM Management v12.89</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2190,7 +2190,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.87';
+const APP_VERSION='12.89';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6616,8 +6616,10 @@ async function rBio(el){
     const prod=pidx>=0?CFG.biocide_products[pidx]:null;
     // v12.87 — FIX: TP/UM citite prioritar din CATALOG produs (nu din rows[0])
     // Altfel, dupa edit TP in catalog, card-ul afisa inca TP vechi din records
-    const tp=(prod&&prod.product_type)||rows[0].product_type||'';
-    const um=(prod&&prod.unit)||rows[0].unit||'';
+    // v12.88 — defensiv: rows.length===0 edge case (produs orfan)
+    const firstRow=rows.length>0?rows[0]:{};
+    const tp=(prod&&prod.product_type)||firstRow.product_type||'';
+    const um=(prod&&prod.unit)||firstRow.unit||'';
     // v12.76 — Aviz panel ca <details> dropdown: compact cand inchis (status + nr latest), tabel editabil la expand
     var latestAviz=null,avizStatus='',avizStatusColor='';
     if(prod&&prod.avize&&prod.avize.length>0){
@@ -6694,12 +6696,17 @@ async function rBio(el){
       '<table class="dt" style="margin:0"><thead><tr><th>#</th><th>Luna</th><th>Tip</th><th>Lot</th><th style="text-align:right">Cant.</th><th style="text-align:right">Valoare</th><th>Actiuni</th></tr></thead><tbody>';
     if(sortedRowsBio.length===0){balancePanel+='<tr><td colspan="7" style="text-align:center;color:var(--txtL);font-style:italic;padding:12px">Nicio miscare inregistrata</td></tr>'}
     else sortedRowsBio.forEach(function(r,i){
+      // v12.88 — guard r.id: daca e undefined, afisam rand fara butoane ca sa evitam editBio(undefined)/delRec(undefined)
+      var hasId=r.id!=null&&r.id!=='';
+      var actions=hasId
+        ?'<button onclick="editBio('+JSON.stringify(r.id)+')" title="Editare">&#9998;</button><button onclick="delRec(\'biocide\','+JSON.stringify(r.id)+')" title="Sterge">&#128465;</button>'
+        :'<span title="Inregistrare fara ID — deschide editor manual pentru a o corecta" style="color:var(--red);font-size:14px">&#9888;</span>';
       balancePanel+='<tr><td>'+(i+1)+'</td><td>'+(r.month?MO[r.month-1]:'')+'</td>'+
         '<td><span class="bdg '+(r.type==='intrare'?'bdg-g':r.type==='iesire'?'bdg-a':'bdg-b')+'">'+(r.type==='stoc_initial'?'Stoc initial':r.type==='intrare'?'Intrare':'Iesire')+'</span></td>'+
         '<td style="font-size:11px">'+esc(r.lot||'')+'</td>'+
         '<td style="text-align:right">'+fn(r.quantity)+'</td>'+
         '<td style="text-align:right">'+fn(Math.round((r.value_lei||0)*100)/100)+'</td>'+
-        '<td class="act"><button onclick="editBio('+r.id+')" title="Editare (inclusiv documente)">&#9998;</button><button onclick="delRec(\'biocide\','+r.id+')">&#128465;</button></td></tr>';
+        '<td class="act">'+actions+'</td></tr>';
     });
     balancePanel+='</tbody></table></div></details>';
     // v12.82 — Documente PRODUS (din CFG.biocide_products[i].documents) + fallback agregare records vechi (pentru migratie)
@@ -7072,29 +7079,38 @@ async function bioSaveProduct(pid){
   var newName=v('bep-name');
   var newTp=v('bep-tp');
   var newUm=v('bep-um');
+  // v12.88 — propagare records INAINTE de saveCfg + try-catch: daca esueaza la record
+  // 5/10, raportam partial ca user-ul sa stie ca sunt n-m records desync
+  var propagated=0,failed=0,lastErr=null;
+  if(newTp!==oldTp||newUm!==oldUm||newName!==oldName){
+    try{
+      var all=await ga('biocide');
+      var recs=all.filter(function(r){return r.product_id===pid});
+      for(var i=0;i<recs.length;i++){
+        var r=recs[i];var changed=false;
+        if(newTp&&r.product_type!==newTp){r.product_type=newTp;changed=true}
+        if(newUm&&r.unit!==newUm){r.unit=newUm;changed=true}
+        if(newName&&r.product_name!==newName){r.product_name=newName;changed=true}
+        if(changed){r._modifiedAt=Date.now();
+          try{await pt('biocide',r);propagated++}
+          catch(e){failed++;lastErr=e;break}
+        }
+      }
+    }catch(e){lastErr=e}
+  }
+  // Salvare catalog DUPA propagare records (daca records au esuat partial, macar catalog e consistent cu ce s-a salvat)
   CFG.biocide_products[idx].name=newName;
   CFG.biocide_products[idx].code=v('bep-code');
   CFG.biocide_products[idx].product_type=newTp;
   CFG.biocide_products[idx].unit=newUm;
   CFG.biocide_products[idx].manufacturer=v('bep-mfr');
   CFG.biocide_products[idx].distributor=v('bep-dist');
-  await saveCfg();
-  // v12.87 — Propagare TP/UM/nume la toate records existente pentru consistency pe card view
-  // (fix pentru bug unde TP editat in catalog nu se reflecta pe card pentru ca cardul citea tp din rows[0])
-  var propagated=0;
-  if(newTp!==oldTp||newUm!==oldUm||newName!==oldName){
-    var all=await ga('biocide');
-    var recs=all.filter(function(r){return r.product_id===pid});
-    for(var i=0;i<recs.length;i++){
-      var r=recs[i];var changed=false;
-      if(newTp&&r.product_type!==newTp){r.product_type=newTp;changed=true}
-      if(newUm&&r.unit!==newUm){r.unit=newUm;changed=true}
-      if(newName&&r.product_name!==newName){r.product_name=newName;changed=true}
-      if(changed){r._modifiedAt=Date.now();await pt('biocide',r);propagated++}
-    }
-  }
+  try{await saveCfg()}catch(e){lastErr=e}
   closeM();render();
-  if(typeof showToast==='function')showToast('Produs actualizat'+(propagated>0?' \u2022 '+propagated+' miscari sincronizate':''));
+  if(typeof showToast==='function'){
+    if(failed>0)showToast('\u26A0 Produs partial actualizat: '+propagated+' miscari OK, '+failed+' esuate. '+((lastErr&&lastErr.message)||''));
+    else showToast('Produs actualizat'+(propagated>0?' \u2022 '+propagated+' miscari sincronizate':''));
+  }
 }
 // v12.85 — Sectiune Fuzioneaza cu alt produs (in dialogul de editare produs)
 // Pentru duplicate create inainte de fuzzy match la import (ex: DESOGEN AERO vs DESOGEN AERO 5L).
@@ -7130,12 +7146,12 @@ async function bioMergeProduct(sourcePid){
   var targetPid=sel?sel.value:'';
   if(!targetPid){alert('Selecteaza un produs destinatie din dropdown.');return}
   if(targetPid===sourcePid){alert('Nu poti fuziona un produs cu el insusi.');return}
+  // v12.88 — snapshot + try-catch: daca o parte esueaza (pt record / saveCfg), raportam clar
   var sIdx=CFG.biocide_products.findIndex(function(p){return p.id===sourcePid});
   var tIdx=CFG.biocide_products.findIndex(function(p){return p.id===targetPid});
   if(sIdx<0||tIdx<0){alert('Produs(e) negasit(e).');return}
   var source=CFG.biocide_products[sIdx];
   var target=CFG.biocide_products[tIdx];
-  // Count records to transfer
   var allRecs=await ga('biocide');
   var recs=allRecs.filter(function(r){return r.product_id===sourcePid});
   var sourceAvize=(source.avize||[]).length;
@@ -7146,37 +7162,56 @@ async function bioMergeProduct(sourcePid){
     '\u2022 '+sourceDocs+' documente vor fi combinate (deduplicare dupa nume fisier)\n'+
     '\u2022 Produsul „'+(source.name||'')+'" va fi sters din catalog\n\n'+
     'Operatia nu poate fi anulata. Continui?'))return;
-  // 1. Merge avize (dedup dupa nr+date_expiry)
-  if(!target.avize)target.avize=[];
-  (source.avize||[]).forEach(function(a){
-    var dup=target.avize.some(function(b){return (b.nr||b.number||'')===(a.nr||a.number||'')&&(b.date_expiry||'')===(a.date_expiry||'')});
-    if(!dup)target.avize.push(a);
-  });
-  // 2. Merge documents (dedup dupa nume fisier per tip)
-  if(!target.documents)target.documents={aviz:[],fisa_tehnica:[],sds:[],alte_doc:[]};
-  BIO_ATT_TYPES.forEach(function(t){
-    if(!target.documents[t.key])target.documents[t.key]=[];
-    var existing={};target.documents[t.key].forEach(function(f){existing[f.name]=1});
-    (((source.documents||{})[t.key])||[]).forEach(function(f){
-      if(!existing[f.name])target.documents[t.key].push(f);
+  // Snapshot pentru rollback daca pt() esueaza la mijloc
+  var targetSnapshot={
+    avize:(target.avize||[]).slice(),
+    documents:JSON.parse(JSON.stringify(target.documents||{aviz:[],fisa_tehnica:[],sds:[],alte_doc:[]}))
+  };
+  var failedRec=-1,lastErr=null;
+  try{
+    // 1. Merge avize in memorie (dedup)
+    if(!target.avize)target.avize=[];
+    (source.avize||[]).forEach(function(a){
+      var dup=target.avize.some(function(b){return (b.nr||b.number||'')===(a.nr||a.number||'')&&(b.date_expiry||'')===(a.date_expiry||'')});
+      if(!dup)target.avize.push(a);
     });
-  });
-  // 3. Reassign records (pastreaza TP/UM de la target daca source nu avea)
-  for(var i=0;i<recs.length;i++){
-    var r=recs[i];
-    r.product_id=targetPid;
-    r.product_name=target.name;
-    if(target.product_type)r.product_type=target.product_type;
-    if(target.unit)r.unit=target.unit;
-    r._modifiedAt=Date.now();
-    await pt('biocide',r);
+    // 2. Merge documents
+    if(!target.documents)target.documents={aviz:[],fisa_tehnica:[],sds:[],alte_doc:[]};
+    BIO_ATT_TYPES.forEach(function(t){
+      if(!target.documents[t.key])target.documents[t.key]=[];
+      var existing={};target.documents[t.key].forEach(function(f){existing[f.name]=1});
+      (((source.documents||{})[t.key])||[]).forEach(function(f){
+        if(!existing[f.name])target.documents[t.key].push(f);
+      });
+    });
+    // 3. Reassign records (persist one by one)
+    for(var i=0;i<recs.length;i++){
+      var r=recs[i];
+      r.product_id=targetPid;
+      r.product_name=target.name;
+      if(target.product_type)r.product_type=target.product_type;
+      if(target.unit)r.unit=target.unit;
+      r._modifiedAt=Date.now();
+      try{await pt('biocide',r)}catch(e){failedRec=i;lastErr=e;throw e}
+    }
+    // 4. Revalidate source e tot acolo (in caz ca sync a venit intre timp)
+    var sIdxFinal=CFG.biocide_products.findIndex(function(p){return p.id===sourcePid});
+    if(sIdxFinal>=0)CFG.biocide_products.splice(sIdxFinal,1);
+    // 5. Salveaza catalog
+    await saveCfg();
+    closeM();render();
+    if(typeof showToast==='function')showToast('Fuzionat: '+recs.length+' miscari \u2192 „'+(target.name||'')+'"');
+    if(typeof logActivity==='function')logActivity('Biocide fuziune: „'+(source.name||'')+'" \u2192 „'+(target.name||'')+'" ('+recs.length+' miscari, '+sourceAvize+' avize, '+sourceDocs+' docs)');
+  }catch(e){
+    // Rollback: restaureaza avize/documents target (records pot ramane partial mutate — le raportam)
+    target.avize=targetSnapshot.avize;
+    target.documents=targetSnapshot.documents;
+    var partialMsg=failedRec>=0
+      ?'Fuziune esuata la miscarea '+(failedRec+1)+'/'+recs.length+'. '+failedRec+' miscari deja mutate, '+(recs.length-failedRec)+' ramase neatinse. Poti sa reincerci.'
+      :'Fuziune esuata: '+((e&&e.message)||e);
+    alert('\u26A0 '+partialMsg);
+    render();
   }
-  // 4. Delete source product
-  CFG.biocide_products.splice(sIdx,1);
-  await saveCfg();
-  closeM();render();
-  if(typeof showToast==='function')showToast('Fuzionat: '+recs.length+' miscari \u2192 „'+(target.name||'')+'"');
-  if(typeof logActivity==='function')logActivity('Biocide fuziune: „'+(source.name||'')+'" \u2192 „'+(target.name||'')+'" ('+recs.length+' miscari, '+sourceAvize+' avize, '+sourceDocs+' docs)');
 }
 // v12.82 — CRUD documente la nivel de PRODUS (stocate in CFG.biocide_products[].documents[key][])
 function bioAddProductDoc(pid,key){
@@ -7563,21 +7598,26 @@ function _matchBioProduct(nume){
 }
 // v12.85 — fuzzy match pentru import biocide: detecteaza duplicate „DESOGEN AERO" vs „DESOGEN AERO 5L".
 // Normalize: strip unitati (L/ML/G/KG/BUC/FLACON/BIDON/CUTIE/TABLETE), procente, volume numerice, punctuatie.
+// v12.89 — try-catch defensiv: input cu caractere unicode exotice (RTL, control chars) nu mai crapa dropdown-ul merge/import.
 function _normBioForMatch(s){
-  return String(s||'').toUpperCase()
-    .replace(/[_\-,;:\/\\]/g,' ')
-    .replace(/\b\d+[\.,]?\d*\s*(L|ML|LITRI|MILILITRI|KG|KILOGRAME|G|GR|GRAME|BUC|BUCATI|FL|FLAC|FLACON|FLACOANE|BIDON|BIDOANE|CUTIE|CUTII|TAB|TABLETE|TB|PCS)\b/g,' ')
-    .replace(/\b\d+[\.,]?\d*\s*%/g,' ')
-    .replace(/\b\d+[\.,]?\d*\b/g,' ')
-    .replace(/\s+/g,' ').trim();
+  try{
+    return String(s||'').toUpperCase()
+      .replace(/[_\-,;:\/\\]/g,' ')
+      .replace(/\b\d+[\.,]?\d*\s*(L|ML|LITRI|MILILITRI|KG|KILOGRAME|G|GR|GRAME|BUC|BUCATI|FL|FLAC|FLACON|FLACOANE|BIDON|BIDOANE|CUTIE|CUTII|TAB|TABLETE|TB|PCS)\b/g,' ')
+      .replace(/\b\d+[\.,]?\d*\s*%/g,' ')
+      .replace(/\b\d+[\.,]?\d*\b/g,' ')
+      .replace(/\s+/g,' ').trim();
+  }catch(e){return String(s||'').toUpperCase().trim()}
 }
 function _tokensBio(s){return _normBioForMatch(s).split(' ').filter(function(t){return t.length>1})}
 function _jaccardBio(a,b){
-  var ta={};var tb={};_tokensBio(a).forEach(function(t){ta[t]=1});_tokensBio(b).forEach(function(t){tb[t]=1});
-  var ka=Object.keys(ta),kb=Object.keys(tb);if(!ka.length||!kb.length)return 0;
-  var inter=0;ka.forEach(function(t){if(tb[t])inter++});
-  var uni=ka.length+kb.length-inter;
-  return uni?inter/uni:0;
+  try{
+    var ta={};var tb={};_tokensBio(a).forEach(function(t){ta[t]=1});_tokensBio(b).forEach(function(t){tb[t]=1});
+    var ka=Object.keys(ta),kb=Object.keys(tb);if(!ka.length||!kb.length)return 0;
+    var inter=0;ka.forEach(function(t){if(tb[t])inter++});
+    var uni=ka.length+kb.length-inter;
+    return uni?inter/uni:0;
+  }catch(e){return 0}
 }
 // Returneaza top N produse din catalog cu similarity >= threshold (default 0.5)
 function _suggestBioProducts(nume,topN,threshold){
@@ -7683,19 +7723,13 @@ async function _doBioImport(){
     var tp=(document.getElementById('bimp-tp-'+i).value||'TP2').trim().toUpperCase();
     var um=(document.getElementById('bimp-um-'+i).value||'buc').trim();
     // v12.85 — user alege din dropdown: produs existent (PID) sau „+ nou" (valoare goala)
+    // v12.88 — defensiv: daca chosenPid nu exista in catalog (sync intre deschidere preview si click), fallback la create
     var sel=document.getElementById('bimp-prod-'+i);
     var chosenPid=sel?sel.value:'';
     var pid;
-    if(chosenPid){
-      var existing=(CFG.biocide_products||[]).find(function(x){return x.id===chosenPid});
-      if(existing){pid=existing.id;if(!existing.product_type)existing.product_type=tp;if(!existing.unit)existing.unit=um}
-      else{
-        // dropdown valoare invalida — fallback la creare
-        pid=(typeof genId==='function'?genId('bp'):'bp_'+Date.now()+'_'+i);
-        CFG.biocide_products.push({id:pid,name:p.nume,product_type:tp,unit:um,code:p.cod,avize:[]});
-        newProds++;
-      }
-    } else {
+    var existing=chosenPid?(CFG.biocide_products||[]).find(function(x){return x.id===chosenPid}):null;
+    if(existing){pid=existing.id;if(!existing.product_type)existing.product_type=tp;if(!existing.unit)existing.unit=um}
+    else{
       pid=(typeof genId==='function'?genId('bp'):'bp_'+Date.now()+'_'+i);
       CFG.biocide_products.push({id:pid,name:p.nume,product_type:tp,unit:um,code:p.cod,avize:[]});
       newProds++;
@@ -17236,6 +17270,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'12.89',date:'2026-04-24',notes:'Plasa de siguranta try-catch pe helpers fuzzy match biocide (_normBioForMatch, _jaccardBio) — daca un nume de produs contine caractere unicode exotice (RTL override U+202E, control chars, combinatii neasteptate care fac regex-ul sa arunce), dropdown-ul Merge/Import nu mai crapa. Fallback: _normBioForMatch returneaza varianta simplificata (uppercase+trim), _jaccardBio returneaza 0. Cost: 6 linii, zero risc, zero impact pe calea normala (nume obisnuite trec ca inainte).'},
+  {version:'12.88',date:'2026-04-24',notes:'FIX-uri defensive din audit bugs (5 fix-uri): (1) Card biocide guard rows[0] — daca produsul e orfan (fara miscari in records), nu mai arunca TypeError pe rows[0].product_type. (2) bioSaveProduct rearanjat: propagare TP/UM/nume la records INAINTE de saveCfg cu try-catch pe fiecare pt() — daca esueaza la mijloc (ex: quota IndexedDB), raportam partial „X OK, Y esuate" in toast + mesaj eroare. (3) bioMergeProduct cu snapshot target inainte de fuziune si try-catch global cu rollback: daca pt() esueaza la mijlocul mutarii records, restauram avize/documents la target (pe snapshot), raportam exact cate records au migrat si cate nu printr-un alert care sugereaza reincercarea. Plus revalidare sIdx final inainte de splice (in caz ca sync a venit intre timp). (4) Tabel miscari lunare: guard r.id — daca record-ul n-are ID (corupt), afisam avertisment rosu in loc de butoane editBio/delRec care ar esua silent. Plus JSON.stringify pe r.id in onclick pentru escape corect. (5) _doBioImport: simplificat logica fallback cand chosenPid nu mai exista in catalog (sync intre deschidere preview si click import) — automat fallback la creare.'},
   {version:'12.87',date:'2026-04-24',notes:'Biocide — 3 imbunatatiri: (1) FIX TP/UM pe card — editarea in catalog se reflecta imediat pe card, era bug: card citea tp/um din rows[0] (record-uri vechi) in loc de catalog produs. bioSaveProduct propaga acum TP/UM/nume la toate records existente (cu toast „N miscari sincronizate"). (2) Separare vizuala pe TP — border stanga 5px colorat per TP + badge TP colorat in header. Palette: TP1 #10B981 verde (igiena umana), TP2 #3B82F6 albastru (suprafete), TP4 #F97316 portocaliu (contact alimente), TP14 maro (rodenticide), TP18 galben (insecticide), TP22 gri (fluide imbalsamare). Constanta BIO_TP_COLORS + helper _bioTpColor. Tooltip pe badge cu denumirea completa a TP-ului. (3) Header card redesign — background solid dark #0F172A (nu mai gradient navy→teal care facea textul greu de citit in dark mode si in dreapta). Text-shadow pe denumirea produsului pentru lizibilitate. Capsule UM/miscari cu background semi-transparent si border subtil (rgba 255,255,255,.08-.15). Capsula Stoc cu background albastrui (rgba 59,130,246,.35) pentru diferentiere. Contrast consistent in light+dark mode.'},
   {version:'12.86',date:'2026-04-24',notes:'Biocide — Fuzioneaza cu alt produs (pentru duplicate create inainte de fuzzy match la import). Sectiune noua in editorul de produs (click pe creion pe header-ul cardului): dropdown cu toate celelalte produse din catalog sortate dupa similarity (Jaccard post strip unitati). Top match >=90% este preselectat automat (badge „sparkle + procent match"). La click „Fuzioneaza": (1) toate miscarile produsului sursa → reatribuite la produsul destinatie cu update product_id, product_name, product_type, unit si _modifiedAt; (2) avizele sursa → combinate in avize destinatie cu dedup dupa Nr+data expirare; (3) documentele (Aviz/Fisa/SDS/Alte) → combinate cu dedup dupa nume fisier per tip; (4) produsul sursa sters din catalog. Confirmare cu counters inainte de executie (miscari, avize, docs). logActivity cu rezumat fuziune.'},
   {version:'12.85',date:'2026-04-24',notes:'FIX Import Excel Balanta Biocide — fuzzy match la nume produs pentru a preveni duplicate. Problema: la import, „DESOGEN AERO" si „DESOGEN AERO 5L" se creau ca produse separate in catalog desi erau acelasi dezinfectant (existau deja in catalog). Solutie: helpers noi _normBioForMatch (strip unitati de masura L/ML/G/KG/buc/flacon/bidon/tablete, procente, volume numerice, punctuatie) si _jaccardBio (similarity pe tokeni). _suggestBioProducts returneaza top 5 candidati cu score >=0.5. In preview, coloana noua „Produs catalog" inlocuieste „Status" cu dropdown — user alege produs existent sau „+ Creaza nou". Default selectie: match exact > fuzzy >=0.9 > +nou. Badge-uri: bifa verde match exact, fulger cyan auto-match (>=90%), intrebare portocalie similar (50-89%), gri + nou. _doBioImport citeste selectia din dropdown in loc de match greedy. Note info box cu legenda la final preview.'},

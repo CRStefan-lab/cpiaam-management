@@ -1,9 +1,10 @@
 {
-  "version": "12.92",
+  "version": "13.0",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Biocide - template-uri rescrise GENERIC (fara nume de brand) pentru a evita orice impresie de publicitate. 8 categorii dupa SUBSTANTA ACTIVA + UTILIZARE: gel hidroalcoolic maini, alcool sanitar 70%, tablete clor (DCCNa/hipoclorit), QAC/DDAC concentrat, peroxid de hidrogen nebulizare, alcool propanol/etanol suprafete, servetele dezinfectante QAC, acid peracetic sterilizare rece.",
-    "Editor produs: dropdown manual cu toate cele 8 categorii (user alege explicit categoria potrivita). Auto-match pe keywords ramane ca sugestie (badge sugerat) dar user-ul are control total prin dropdown. Buton Aplica template suprascrie DOAR campurile goale.",
-    "Match-uire prin keyword scoring (in loc de prefix nume): cuvinte-cheie comune produselor de aceeasi categorie (ex: gel/hidroalcoolic, dccna/clor/hipoclorit, ddac/qac, propanol). Bonus 0.5 daca TP coincide cu tp_hint. Cea mai mare suma castiga."
+    "MILESTONE v13.0 - Aplicatie stabila CPIAAM Romania, cumulat din toate dezvoltarile sesiunii v12.49 - v12.100 (52 bump-uri).",
+    "Convetie versiune stabilita: xx.0 - xx.99 patch-uri minore, dupa xx.99 trecem la (xx+1).0 ca milestone. Niciodata xx.100+.",
+    "Capabilitati majore acumulate: 23 categorii templates biocide structurate ierarhic pe TP (Reg. EU 528/2012 BPR), generator Ghid Utilizare Biocide HTML printable A4 cu wizard de selectie, modul recipiente deseuri Ord. MS 1226/2012 cu forecast automat necesar luni ramase, tabel sumar stocuri biocide sortabil, fuziune produse cu rollback transactional, 8 audituri WHO/ECDC, rapoarte profesionale cu grafice Chart.js embedded.",
+    "Stabilitate: 43 blocks parse OK, 1754 KB compiled, 9 fix-uri defensive aplicate in v12.99-12.100, sync protectie extinsa pe toate cataloagele (incl. waste_recipients), defensiv pe edge cases (zero division, future months, XSS, race conditions)."
   ]
 }

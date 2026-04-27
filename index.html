@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v12.92</title>
+<title>CPIAAM Management v13.0</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -240,6 +240,15 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .mb{padding:22px;overflow-y:auto;flex:1;min-height:0}
 .mf{padding:14px 22px;border-top:1px solid var(--brd);display:flex;justify-content:flex-end;gap:8px}
 .md.iw-modal{width:900px;max-width:95vw}.iw-modal .mb{padding:0;overflow:hidden;flex:1;min-height:0}.iw-modal .mf{display:none}
+/* v12.94 — modal mai lat pentru editor produs biocide (tabel profile cu 7 coloane) */
+.md.bio-wide-modal{width:1100px;max-width:96vw}
+.bio-prof-card{border:1px solid var(--brd);border-radius:8px;background:var(--card);margin-bottom:10px;overflow:hidden}
+.bio-prof-card .bio-prof-head{padding:6px 10px;background:var(--bg);border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:var(--navy)}
+.bio-prof-card .bio-prof-body{padding:8px 10px}
+.bio-prof-card .bio-prof-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+.bio-prof-card .bio-prof-row label{display:block;font-size:10px;color:var(--txtL);font-weight:600;margin-bottom:2px}
+.bio-prof-card .bio-prof-row input,.bio-prof-card .bio-prof-row select,.bio-prof-card .bio-prof-row textarea{width:100%;padding:4px 8px;border:1px solid var(--brd);border-radius:4px;font-size:11px;font-family:inherit}
+.bio-prof-card .bio-prof-full{grid-column:1 / -1}
 /* ── IAAM Wizard ── */
 .iw{display:flex;height:calc(90vh - 120px);min-height:400px}
 .iw-nav{width:200px;border-right:1px solid var(--brd);padding:10px 0;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column}
@@ -1593,7 +1602,8 @@ async function _fileActionSwitch(){
 }
 // Smart merge config arrays by ID — adds new items, updates existing by _modifiedAt
 function _smartMergeCfg(local,remote){
-  const arrayKeys=['sections','biocide_products','probe_types','waste_codes','doc_categories','infection_types'];
+  // v12.99 - waste_recipients adaugat (era pierdut la merge cross-PC, vezi audit v12.98)
+  const arrayKeys=['sections','biocide_products','waste_recipients','probe_types','waste_codes','doc_categories','infection_types'];
   // ALL arrays merge by name to prevent duplicates when same item has different IDs across users
   arrayKeys.forEach(key=>{
     if(!remote[key]||!Array.isArray(remote[key]))return;
@@ -2190,7 +2200,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='12.92';
+const APP_VERSION='13.0';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -3208,169 +3218,370 @@ en:{
 </script>
 <script>
 // ═════════════════════════════════════════════════════════════
-// CPIAAM - Template-uri GENERICE protocoale biocide (v12.92)
+// CPIAAM - Template-uri GENERICE protocoale biocide (v12.95)
+// 23 categorii structurate ierarhic pe TP (Reg. EU 528/2012 BPR)
+// + Ord. MS 1761/2021 niveluri dezinfectie
 // Clasificare dupa SUBSTANTA ACTIVA + UTILIZARE, nu dupa brand.
-// Matching: cuvinte-cheie in numele produsului + TP hint.
-// User alege manual din dropdown daca auto-match nu e corect.
-// Protocoale bazate pe Ord. MS 1761/2021 si standarde EN.
+// Naming: cheie tehnica snake_case + label uman in romana.
+// User alege manual din dropdown si poate edita orice profil.
 // ═════════════════════════════════════════════════════════════
 
-// Niveluri de dezinfectie conform Ord. MS 1761/2021
+// Niveluri de dezinfectie / aplicare conform Ord. MS 1761/2021 + BPR
 var BIO_USAGE_LEVELS=[
+  // Cele 3 niveluri Ord. 1761/2021
   {id:'inalt',label:'Nivel Inalt',color:'#7C0A0A',desc:'bacterii veg. + fungi + virusuri + micobacterii + spori'},
   {id:'intermediar',label:'Nivel Intermediar',color:'#7C4A0A',desc:'bacterii veg. + fungi + micobacterii + virusuri (fara spori)'},
   {id:'scazut',label:'Nivel Scazut',color:'#1A5C1A',desc:'majoritate bacterii veg. + unii fungi + unele virusuri'},
+  // Maini
   {id:'maini_igienic',label:'Maini - igienic',color:'#5B21B6',desc:'dezinfectie igienica maini, frecare 30 sec'},
   {id:'maini_chirurgical',label:'Maini - chirurgical',color:'#5B21B6',desc:'dezinfectie chirurgicala maini + antebrat'},
+  {id:'maini_spalare',label:'Maini - spalare antiseptica',color:'#7C3AED',desc:'spalare cu sapun antiseptic + apa'},
+  // Tegument
+  {id:'antiseptic',label:'Antiseptic tegument',color:'#9333EA',desc:'antisepsie pre-injectie, plagi, mucoase'},
+  // Aer
   {id:'nebulizare',label:'Nebulizare',color:'#166534',desc:'dezinfectie aeriana prin nebulizare'},
+  {id:'uvgi',label:'UV-C germicidal',color:'#166534',desc:'iradiere UV-C, dezinfectie aer/suprafete'},
+  // Instrumentar
   {id:'sterilizare_rece',label:'Sterilizare rece',color:'#7C0A0A',desc:'dispozitiv medical Cl. IIb'},
-  {id:'decontaminare_primara',label:'Decontaminare primara',color:'#7C4A0A',desc:'imediat dupa utilizare, pre-spalare'}
+  {id:'decontaminare_primara',label:'Decontaminare primara',color:'#7C4A0A',desc:'imediat dupa utilizare, pre-spalare'},
+  {id:'imersie_instrumentar',label:'Imersie instrumentar',color:'#7C4A0A',desc:'imersie pentru dezinfectie de nivel inalt sau intermediar'},
+  // Apa, alimente, alte
+  {id:'apa_sisteme',label:'Apa sisteme spital',color:'#0891B2',desc:'tratare apa retele, hidranti, dusuri'},
+  {id:'lenjerie',label:'Lenjerie spalatorie',color:'#0D9488',desc:'dezinfectie chimica rufe in spalatorie'},
+  // DDD si alte
+  {id:'rodenticid',label:'Rodenticid (DDD)',color:'#78350F',desc:'control rozatoare'},
+  {id:'insecticid',label:'Insecticid (DDD)',color:'#78350F',desc:'control insecte'},
+  {id:'imbalsamare',label:'Fluid imbalsamare',color:'#6B7280',desc:'morga, taxidermie'}
 ];
+
+// Tipuri de utilizare (categorie spatiu/obiect)
 var BIO_USE_TYPES=[
   {id:'maini',label:'Maini / Tegument'},
+  {id:'tegument',label:'Tegument (antisepsie)'},
   {id:'suprafete',label:'Suprafete'},
   {id:'instrumentar',label:'Instrumentar'},
-  {id:'nebulizare',label:'Nebulizare aer'}
+  {id:'echipamente',label:'Echipamente reutilizabile'},
+  {id:'aer',label:'Aer ambient'},
+  {id:'apa',label:'Apa (sisteme spital)'},
+  {id:'alimente',label:'Suprafete contact alimente'},
+  {id:'lenjerie',label:'Lenjerie / textile'},
+  {id:'ddd',label:'DDD (deratizare/dezinsectie)'},
+  {id:'altele',label:'Alte utilizari'}
 ];
+
+// Cerinte apa pentru preparare solutie
 var BIO_WATER_REQS=[
   {id:'',label:'(nu se aplica)'},
   {id:'rece',label:'Apa rece (obligatoriu)'},
   {id:'calda_35',label:'Apa calda 35°C'},
-  {id:'distilata',label:'Apa distilata'}
+  {id:'calda_50',label:'Apa calda 50°C'},
+  {id:'distilata',label:'Apa distilata'},
+  {id:'sterila',label:'Apa sterila'}
 ];
+
+// Avertismente comune
 var BIO_WARNINGS=[
   {id:'inflamabil',label:'Inflamabil',short:'INFLAMABIL'},
   {id:'iritant',label:'Iritant',short:'IRITANT'},
   {id:'coroziv',label:'Coroziv',short:'COROZIV'},
+  {id:'toxic',label:'Toxic',short:'TOXIC'},
   {id:'spatiu_inchis',label:'Spatiu inchis obligatoriu',short:'SPATIU INCHIS'},
   {id:'personal_evacuat',label:'Personal evacuat',short:'EVACUARE'},
-  {id:'epp_obligatoriu',label:'EIP obligatoriu',short:'EIP'}
+  {id:'epp_obligatoriu',label:'EIP obligatoriu',short:'EIP'},
+  {id:'ventilatie',label:'Ventilatie obligatorie',short:'VENTILATIE'},
+  {id:'foodgrade',label:'Compatibil alimente',short:'FOOD-GRADE'},
+  {id:'restrictii_legale',label:'Restrictii legale (utilizare profesionista)',short:'PROFESIONIST'}
 ];
 
 // ═════════════════════════════════════════════════════════════
-// TEMPLATE-URI GENERICE (fara nume de brand)
-// Cheia = identificator tehnic; label = descriere pentru dropdown
-// keywords = cuvinte-cheie pentru auto-match in numele produsului
-// tp_hint = TP sugerat (TP1 igiena umana, TP2 suprafete)
+// 23 TEMPLATE-URI generice (chei snake_case + label uman ro)
+// Structura ierarhica: TP1 / TP2.A-E / TP4 / TP14 / TP18 / TP22
 // ═════════════════════════════════════════════════════════════
 var BIO_USAGE_TEMPLATES={
-  'gel_hidroalcoolic_maini':{
-    label:'Gel hidroalcoolic - dezinfectie maini (TP1)',
-    keywords:['gel','hidroalcoolic','frecare','antisept'],
-    tp_hint:'TP1',
-    default_um:'L',
-    active_substances:'Etanol / propanol (hidroalcoolic)',
+
+  // ════════ TP1 - IGIENA UMANA ════════
+  'tp1_gel_maini':{
+    label:'TP1 - Gel hidroalcoolic maini (igienic + chirurgical)',
+    keywords:['gel','hidroalcoolic','frecare maini','antisept maini'],
+    tp_hint:'TP1',default_um:'L',
+    active_substances:'Etanol / propanol 60-85% + glicerina + emolienti',
     validity_opened:{value:'conform eticheta produs',conditions:'5-30°C, ferit de foc'},
-    warnings:['inflamabil'],
-    water_req:'',
+    warnings:['inflamabil'],water_req:'',
     usage_profiles:[
-      {use:'maini',level:'maini_igienic',concentration:'nediluat',dose:'3 ml (cantitate suficienta pentru a mentine mainile umede)',contact_time:'30 sec',technique:'frecare pana la uscare, fara apa',protocol:'Numai pe maini curate si uscate. Pentru C. difficile: spalare prealabila cu apa si sapun (gelurile hidroalcoolice NU sunt sporicide).'},
-      {use:'maini',level:'maini_chirurgical',concentration:'nediluat',dose:'2 aplicatii consecutive',contact_time:'90 sec total (2 × 45 sec)',technique:'frecare maini + antebrat pana la uscare',protocol:'Precedat de spalare cu apa si sapun antiseptic si uscare cu prosop steril. Acoperire completa maini + antebrate.'}
+      {use:'maini',level:'maini_igienic',concentration:'nediluat',dose:'3 ml (cantitate suficienta pentru a mentine mainile umede)',contact_time:'30 sec',technique:'frecare pana la uscare, fara apa',protocol:'Numai pe maini curate si uscate. Pentru C. difficile: spalare prealabila cu apa si sapun (gelurile NU sunt sporicide).'},
+      {use:'maini',level:'maini_chirurgical',concentration:'nediluat',dose:'2 aplicatii consecutive',contact_time:'90 sec total (2 × 45 sec)',technique:'frecare maini + antebrat pana la uscare',protocol:'Precedat de spalare cu apa si sapun antiseptic + uscare cu prosop steril.'}
     ]
   },
-  'alcool_sanitar_70_tegument':{
-    label:'Alcool sanitar 70% - tegument si suprafete mici (TP1)',
-    keywords:['alcool sanitar','etanol 70','alcool 70'],
-    tp_hint:'TP1',
-    default_um:'L',
-    active_substances:'Etanol 70% v/v',
-    validity_opened:{value:'conform eticheta produs',conditions:'ferit de foc'},
-    warnings:['inflamabil'],
-    water_req:'',
+  'tp1_lichid_maini':{
+    label:'TP1 - Solutie / spray dezinfectant maini (non-gel)',
+    keywords:['lichid maini','spray maini','solutie maini','foam maini'],
+    tp_hint:'TP1',default_um:'L',
+    active_substances:'Etanol / propanol / QAC',
+    validity_opened:{value:'conform eticheta produs',conditions:'5-30°C, ferit de foc'},
+    warnings:['inflamabil'],water_req:'',
     usage_profiles:[
-      {use:'maini',level:'scazut',concentration:'nediluat (100%)',dose:'stergere',contact_time:'1 min',technique:'stergere directa',protocol:'Bactericid + levuricid + virucid anvelopat. NU sporicide, NU micobactericid, NU virusuri neanvelopate.'},
-      {use:'suprafete',level:'scazut',concentration:'nediluat (100%)',dose:'stergere',contact_time:'1 min',technique:'stergere directa',protocol:'Doar suprafete mici. INFLAMABIL - evitati focul si scanteile.'}
+      {use:'maini',level:'maini_igienic',concentration:'nediluat',dose:'2-3 ml spray/foam',contact_time:'30 sec',technique:'pulverizare/aplicare + frecare pana la uscare',protocol:'Forma alternativa la gel - lichid mai usor de aplicat, uscare mai rapida. Numai pe maini curate.'}
     ]
   },
-  'tablete_clor':{
-    label:'Tablete clor (DCCNa/hipoclorit) - suprafete TP2',
-    keywords:['clor','dccna','hipoclorit','tablete','sodium dichloroisocyanurate'],
-    tp_hint:'TP2',
-    default_um:'tablete',
-    active_substances:'Dicloroizocianurat de sodiu (DCCNa) sau hipoclorit',
+  'tp1_sapun_antiseptic':{
+    label:'TP1 - Sapun lichid antiseptic (spalare maini)',
+    keywords:['sapun antiseptic','sapun lichid','spuma antiseptica','clorhexidina','povidona','triclosan'],
+    tp_hint:'TP1',default_um:'L',
+    active_substances:'Clorhexidina / povidona-iod / triclosan / acid lactic',
+    validity_opened:{value:'conform eticheta',conditions:'5-30°C'},
+    warnings:[],water_req:'',
+    usage_profiles:[
+      {use:'maini',level:'maini_spalare',concentration:'nediluat',dose:'3-5 ml',contact_time:'40-60 sec',technique:'spalare cu apa, frecare, clatire, uscare cu prosop',protocol:'Spalare antiseptica - pentru maini vizibil murdare, dupa contact cu lichide biologice, dupa C. difficile (sporicide cand contine clorhexidina). Inainte si dupa orice procedura.'}
+    ]
+  },
+  'tp1_antiseptic_tegument':{
+    label:'TP1 - Antiseptic tegumente (pre-injectie, plagi, mucoase)',
+    keywords:['antiseptic','betadina','povidona','clorhexidina','alcool 70','tegument'],
+    tp_hint:'TP1',default_um:'L',
+    active_substances:'Etanol 70% / povidona-iod 10% / clorhexidina alcoolica 0.5-2%',
+    validity_opened:{value:'conform eticheta',conditions:'ferit de foc, lumina'},
+    warnings:['inflamabil'],water_req:'',
+    usage_profiles:[
+      {use:'tegument',level:'antiseptic',concentration:'nediluat',dose:'tampon imbibat',contact_time:'30 sec - 2 min',technique:'tamponare pe piele intacta',protocol:'Pre-injectie: alcool 70% min. 30 sec. Plagi/pre-operator: betadina sau clorhexidina 2 min. Mucoase: doar produse special pentru mucoase. Atentie iod la alergici.'}
+    ]
+  },
+
+  // ════════ TP2 - SUPRAFETE ════════
+  'tp2_supr_clor':{
+    label:'TP2 - Suprafete: clor (DCCNa / hipoclorit / dicloroizocianurat)',
+    keywords:['clor','dccna','hipoclorit','dicloroizocianurat','tablete clor','sodium dichloroisocyanurate'],
+    tp_hint:'TP2',default_um:'tablete',
+    active_substances:'Dicloroizocianurat de sodiu (DCCNa) sau hipoclorit de sodiu',
     validity_opened:{value:'solutie: imediat dupa preparare',conditions:'tablete in cutie inchisa etans, ferit de umiditate'},
-    warnings:['iritant','coroziv'],
-    water_req:'rece',
+    warnings:['iritant','coroziv'],water_req:'rece',
     usage_profiles:[
       {use:'suprafete',level:'scazut',concentration:'1 tbl / 3 L apa rece (conform producator)',dose:'solutie',contact_time:'5 min',technique:'stergere / spalare mecanica',protocol:'Conditii de curatenie. Bactericid + levuricid + virucid partial. APA RECE obligatoriu (apa calda descompune substanta activa).'},
       {use:'suprafete',level:'intermediar',concentration:'1 tbl / 3 L apa rece',dose:'solutie',contact_time:'60 min',technique:'stergere / spalare',protocol:'Conditii de curatenie. Bactericid + levuricid + fungicid + tuberculocid + virucid. Dezinfectie terminala curenta.'},
       {use:'suprafete',level:'inalt',concentration:'1 tbl / 3 L apa rece',dose:'solutie',contact_time:'60 min',technique:'spalare / imersie',protocol:'Conditii de MURDARIE. Sporicide + virucid (Parvovirus, Norovirus). Obligatoriu izolator, C. difficile, bloc operator. Clatiti dupa expunere.'}
     ]
   },
-  'qac_ddac_concentrat':{
-    label:'QAC / DDAC concentrat - suprafete + instrumentar TP2',
-    keywords:['ddac','qac','amoniu cuaternar','didecildimet','amoniu'],
-    tp_hint:'TP2',
-    default_um:'L',
-    active_substances:'Amoniu cuaternar (DDAC + QAC C12-C18)',
+  'tp2_supr_qac':{
+    label:'TP2 - Suprafete: QAC / DDAC concentrat',
+    keywords:['ddac','qac','amoniu cuaternar','didecildimet','amoniu','quat'],
+    tp_hint:'TP2',default_um:'L',
+    active_substances:'Amoniu cuaternar (DDAC + QAC C12-C18) ± alti potentatori',
     validity_opened:{value:'6 luni (conform eticheta)',conditions:'5-30°C; solutie diluata: conform producator'},
-    warnings:['iritant'],
-    water_req:'',
+    warnings:['iritant'],water_req:'',
     usage_profiles:[
       {use:'suprafete',level:'intermediar',concentration:'2% (20 ml/L apa)',dose:'6-10 ml/mp pulverizare',contact_time:'5 min',technique:'stergere / pulverizare',protocol:'Bactericid + levuricid + fungicid + virucid. Domeniu medical.'},
       {use:'suprafete',level:'intermediar',concentration:'2% (20 ml/L apa)',dose:'solutie',contact_time:'30 min',technique:'stergere',protocol:'Adauga tuberculocid la timp contact 30 min.'},
-      {use:'suprafete',level:'inalt',concentration:'2% (20 ml/L apa)',dose:'solutie',contact_time:'60 min',technique:'stergere / imersie',protocol:'Micobactericid + sporicide. Dezinfectie terminala: bloc operator, izolator BMR, C. difficile.'},
-      {use:'instrumentar',level:'intermediar',concentration:'2% (20 ml/L apa)',dose:'imersie',contact_time:'10 min',technique:'imersie',protocol:'Levuricid + fungicid la 10 min.'},
-      {use:'instrumentar',level:'inalt',concentration:'2% (20 ml/L apa)',dose:'imersie',contact_time:'60 min',technique:'imersie',protocol:'Micobactericid + tuberculocid + sporicide.'}
+      {use:'suprafete',level:'inalt',concentration:'2% (20 ml/L apa)',dose:'solutie',contact_time:'60 min',technique:'stergere / imersie',protocol:'Micobactericid + sporicide. Dezinfectie terminala: bloc operator, izolator BMR, C. difficile.'}
     ]
   },
-  'h2o2_nebulizare':{
-    label:'Peroxid de hidrogen - nebulizare aer + suprafete inaccesibile',
-    keywords:['nebuli','h2o2','peroxid','apa oxigenata','aero'],
-    tp_hint:'TP2',
-    default_um:'L',
-    active_substances:'H2O2 (peroxid de hidrogen) ± stabilizatori',
-    validity_opened:{value:'6 luni; solutie diluata max 48 ore',conditions:'5-30°C'},
-    warnings:['iritant','spatiu_inchis','personal_evacuat'],
-    water_req:'',
-    usage_profiles:[
-      {use:'nebulizare',level:'nebulizare',concentration:'conform producator',dose:'10 ml/mc (tipic)',contact_time:'30 min expunere',technique:'nebulizare cu aparat specializat',protocol:'Dezinfectie prin nebulizare - aer si suprafete inaccesibile. SPATIU INCHIS si PERSONAL EVACUAT obligatoriu. Aerisire min. 30 min dupa expunere. A nu se folosi pentru stergere sau imersie.'}
-    ]
-  },
-  'alcool_propanol_suprafete':{
-    label:'Alcool (propanol/etanol) - suprafete mici TP2',
-    keywords:['propanol','propan-1-ol','alcool suprafete','suprafete mici alcool'],
-    tp_hint:'TP2',
-    default_um:'L',
-    active_substances:'Propan-1-ol / Propan-2-ol / Etanol',
-    validity_opened:{value:'conform eticheta (solutie gata utilizare)',conditions:'ferit de foc'},
-    warnings:['inflamabil'],
-    water_req:'',
+  'tp2_supr_alcool':{
+    label:'TP2 - Suprafete: alcool (servetele / spray gata uz)',
+    keywords:['propanol','propan-1-ol','etanol suprafete','alcool suprafete','suprafete mici','servetele alcool'],
+    tp_hint:'TP2',default_um:'L',
+    active_substances:'Propan-1-ol / Propan-2-ol / Etanol (gata utilizare)',
+    validity_opened:{value:'conform eticheta',conditions:'ferit de foc, recipient inchis etans'},
+    warnings:['inflamabil'],water_req:'',
     usage_profiles:[
       {use:'suprafete',level:'intermediar',concentration:'nediluat (100%)',dose:'stergere',contact_time:'30 sec',technique:'stergere directa cu laveta / servetel',protocol:'Virucid anvelopat la 30 sec. Pentru suprafete mici.'},
       {use:'suprafete',level:'intermediar',concentration:'nediluat (100%)',dose:'stergere',contact_time:'1 min',technique:'stergere directa',protocol:'Bactericid + levuricid + micobactericid la 1 min.'},
       {use:'suprafete',level:'intermediar',concentration:'nediluat (100%)',dose:'stergere',contact_time:'2 min',technique:'stergere directa',protocol:'Fungicid Aspergillus la 2 min. INFLAMABIL - fara foc / scantei.'}
     ]
   },
-  'servetele_qac':{
-    label:'Servetele dezinfectante QAC - suprafete + instrumentar TP2',
-    keywords:['servetele','wipes','serv'],
-    tp_hint:'TP2',
-    default_um:'cutie',
-    active_substances:'Amoniu cuaternar (DDAC + QAC) - servetele impregnate',
-    validity_opened:{value:'2 luni (conform eticheta)',conditions:'5-30°C, ambalaj inchis etans'},
-    warnings:[],
-    water_req:'',
+  'tp2_supr_aldehide':{
+    label:'TP2 - Suprafete: aldehide (glutaraldehida / formaldehida)',
+    keywords:['glutaraldehida','formaldehida','aldehida','glutar'],
+    tp_hint:'TP2',default_um:'L',
+    active_substances:'Glutaraldehida 2-2.5% / formaldehida (utilizare restrictionata)',
+    validity_opened:{value:'14 zile dupa activare (glutaraldehida)',conditions:'5-30°C, recipient acoperit, EIP obligatoriu la manipulare'},
+    warnings:['iritant','toxic','epp_obligatoriu','ventilatie','restrictii_legale'],water_req:'',
     usage_profiles:[
-      {use:'suprafete',level:'intermediar',concentration:'ca atare',dose:'2 servetele/mp',contact_time:'5 min',technique:'stergere directa',protocol:'Bactericid + levuricid + fungicid + virucid. Suprafete frecvent atinse, echipamente, dispozitive medicale mici, patul pacientului.'},
-      {use:'instrumentar',level:'intermediar',concentration:'ca atare',dose:'stergere',contact_time:'5 min',technique:'stergere directa',protocol:'Dispozitive medicale mici.'},
-      {use:'suprafete',level:'inalt',concentration:'ca atare',dose:'stergere',contact_time:'60 min',technique:'stergere / imersie',protocol:'Micobactericid + sporicide la 60 min.'}
+      {use:'suprafete',level:'inalt',concentration:'2-2.5% (gata activata)',dose:'solutie',contact_time:'30-60 min',technique:'imersie sau stergere cu EIP complet',protocol:'Substanta cu restrictii legale CMR. Utilizare PROFESIONISTA. Sporicide + micobactericid. Ventilatie obligatorie. Tendinta de inlocuire cu acid peracetic / H2O2 (mai sigure).'}
     ]
   },
-  'acid_peracetic_sterilizare':{
-    label:'Acid peracetic - sterilizare rece / decontaminare instrumentar',
-    keywords:['acid peracetic','peracetic','paa','steril instrumentar','sterilizare rece'],
-    tp_hint:'',
-    default_um:'L',
-    active_substances:'Acid peracetic stabilizat (dispozitiv medical Cl. IIb)',
-    validity_opened:{value:'solutie 2%: 30 ore; solutie 1%: 48 ore',conditions:'apa calda 35°C obligatoriu la preparare'},
-    warnings:['iritant','epp_obligatoriu'],
-    water_req:'calda_35',
+  'tp2_supr_oxidante':{
+    label:'TP2 - Suprafete: oxidanti (H2O2 / acid peracetic)',
+    keywords:['h2o2','peroxid','apa oxigenata','acid peracetic','peracetic','peroxizi'],
+    tp_hint:'TP2',default_um:'L',
+    active_substances:'Peroxid de hidrogen (H2O2) ± acid peracetic (PAA)',
+    validity_opened:{value:'conform eticheta; sol. diluate: max 24-48 ore',conditions:'5-30°C, recipient inchis, ferit de soare'},
+    warnings:['iritant','coroziv'],water_req:'',
     usage_profiles:[
-      {use:'instrumentar',level:'sterilizare_rece',concentration:'2% (20 ml/L apa calda 35°C)',dose:'imersie totala',contact_time:'10 min',technique:'imersie totala in solutie 2%',protocol:'1. Curatati/spalati instrumentele conform instructiunilor specifice. 2. Scufundati complet 10 min. 3. Indepartati STERIL si clatiti cu APA STERILA min. 5 min. Pentru instrumente chirurgicale, endoscoape, echipamente stomatologice nesterile.'},
-      {use:'instrumentar',level:'decontaminare_primara',concentration:'1% (10 ml/L apa calda 35°C)',dose:'imersie',contact_time:'10 min',technique:'imersie imediata dupa utilizare',protocol:'1. Scufundati instrumentele IMEDIAT dupa utilizare, FARA spalare prealabila, 10 min. 2. Clatiti cu apa de robinet min. 5 min. Urmat de curatare mecanica, dezinfectie nivel inalt si sterilizare daca este indicat.'}
+      {use:'suprafete',level:'intermediar',concentration:'0.5-1% H2O2',dose:'stergere / pulverizare',contact_time:'5 min',technique:'stergere directa',protocol:'Bactericid + virucid. Compatibilitate buna cu majoritatea materialelor. Decompune in apa + oxigen (fara reziduu toxic).'},
+      {use:'suprafete',level:'inalt',concentration:'2-3% H2O2 sau 0.5% PAA',dose:'solutie',contact_time:'10-30 min',technique:'stergere / imersie',protocol:'Sporicide + micobactericid. Alternativa moderna la aldehide.'}
+    ]
+  },
+
+  // ════════ TP2 - AER ════════
+  'tp2_aer_nebulizare':{
+    label:'TP2 - Aer: nebulizare (H2O2 / acid peracetic)',
+    keywords:['nebuli','nebulizare','aerosolizare','vapori','dry mist','fog'],
+    tp_hint:'TP2',default_um:'L',
+    active_substances:'H2O2 6% ± acid peracetic ± stabilizatori',
+    validity_opened:{value:'6 luni; solutie diluata max 48 ore',conditions:'5-30°C, ferit de foc'},
+    warnings:['iritant','spatiu_inchis','personal_evacuat','ventilatie'],water_req:'',
+    usage_profiles:[
+      {use:'aer',level:'nebulizare',concentration:'conform producator (tipic 6% H2O2)',dose:'10 ml/mc (tipic)',contact_time:'30 min expunere',technique:'nebulizare cu aparat specializat (dry mist / vapor)',protocol:'Dezinfectie aer + suprafete inaccesibile. SPATIU INCHIS, PERSONAL EVACUAT obligatoriu. Aerisire min. 30 min dupa expunere. A nu se folosi pentru stergere.'}
+    ]
+  },
+  'tp2_aer_uvgi':{
+    label:'TP2 - Aer: UV-C germicidal (UVGI)',
+    keywords:['uv','uv-c','ultraviolet','uvgi','lampa uv'],
+    tp_hint:'TP2',default_um:'buc',
+    active_substances:'Radiatie UV-C (254 nm) - lampa germicidala',
+    validity_opened:{value:'durata bec 8000-15000 ore',conditions:'verificare iradianta periodica'},
+    warnings:['toxic','spatiu_inchis','personal_evacuat'],water_req:'',
+    usage_profiles:[
+      {use:'aer',level:'uvgi',concentration:'iradianta minim 0.5 mW/cm² la suprafata',dose:'doza min. 30 mJ/cm²',contact_time:'15-30 min (in functie de incapere)',technique:'lampa fixa / mobila in spatiu fara persoane',protocol:'NU este biocid chimic, dar uneori inclus in protocoalele IPC. PERSONAL EVACUAT obligatoriu (UV-C cancerigen pentru piele/ochi). Verifica iradianta lampii anual.'}
+    ]
+  },
+
+  // ════════ TP2 - APA ════════
+  'tp2_apa_sisteme':{
+    label:'TP2 - Apa: tratare sisteme spital (clorinare / peroxizi)',
+    keywords:['apa potabila','tratare apa','clorinare','clordioxid','sistem apa'],
+    tp_hint:'TP2',default_um:'L',
+    active_substances:'Clor / clor dioxid / H2O2 / argint coloidal',
+    validity_opened:{value:'conform tip produs',conditions:'specific producator'},
+    warnings:['iritant','restrictii_legale'],water_req:'',
+    usage_profiles:[
+      {use:'apa',level:'apa_sisteme',concentration:'conform calcul rezervor',dose:'doza specifica per litru apa',contact_time:'continuu / soc',technique:'dozare automata sau soc termic / chimic',protocol:'Dezinfectie sisteme apa potabila spital - prevenire Legionella, biofilme. Necesita autorizatie speciala + monitoring rezidual clor. Soc termic (60°C, 30 min) este alternativa la chimic.'}
+    ]
+  },
+
+  // ════════ TP2 - INSTRUMENTAR MEDICAL ════════
+  'tp2_instr_imersie':{
+    label:'TP2 - Instrumentar: imersie pentru dezinfectie (QAC / aldehide)',
+    keywords:['imersie instrumentar','imersie instrument','solutie instrumentar'],
+    tp_hint:'TP2',default_um:'L',
+    active_substances:'QAC / DDAC / aldehide (in functie de tip produs)',
+    validity_opened:{value:'sol. preparata: conform producator',conditions:'cuva acoperita, schimb la 24-48 ore'},
+    warnings:['iritant','epp_obligatoriu'],water_req:'',
+    usage_profiles:[
+      {use:'instrumentar',level:'imersie_instrumentar',concentration:'2% (20 ml/L apa) tipic',dose:'imersie totala',contact_time:'10-15 min',technique:'imersie totala in cuva',protocol:'Dezinfectie de nivel intermediar pentru instrumente non-critice. Pre-conditie: curatare mecanica prealabila. Dupa imersie: clatire + uscare.'},
+      {use:'instrumentar',level:'inalt',concentration:'2-3% (conform producator)',dose:'imersie totala',contact_time:'60 min',technique:'imersie totala',protocol:'Dezinfectie de nivel inalt - micobactericid + sporicide. Pentru instrumente semi-critice (laringoscop, etc.).'}
+    ]
+  },
+  'tp2_instr_sterilizare_rece':{
+    label:'TP2 - Instrumentar: sterilizare rece (acid peracetic / glutaraldehida)',
+    keywords:['sterilizare rece','sterilizare la rece','acid peracetic','peracetic instrumentar','endoscopie'],
+    tp_hint:'',default_um:'L',
+    active_substances:'Acid peracetic stabilizat (Cl. IIb) sau glutaraldehida 2%',
+    validity_opened:{value:'sol. 2% acid peracetic: 30 ore; sol. 1%: 48 ore',conditions:'apa calda 35°C la preparare'},
+    warnings:['iritant','epp_obligatoriu','ventilatie'],water_req:'calda_35',
+    usage_profiles:[
+      {use:'instrumentar',level:'sterilizare_rece',concentration:'2% (20 ml/L apa calda 35°C)',dose:'imersie totala',contact_time:'10 min',technique:'imersie totala in solutie 2%',protocol:'1. Curatati / spalati instrumentele conform instructiunilor specifice. 2. Scufundati complet 10 min. 3. Indepartati STERIL si clatiti cu APA STERILA min. 5 min. Pentru endoscoape, instrumente chirurgicale, echipamente stomatologice nesterile.'}
+    ]
+  },
+  'tp2_instr_decontaminare':{
+    label:'TP2 - Instrumentar: decontaminare primara (pre-spalare)',
+    keywords:['decontaminare primara','pre-spalare','decontaminare instrumentar'],
+    tp_hint:'',default_um:'L',
+    active_substances:'Acid peracetic 1% / QAC diluat / detergent enzimatic + dezinfectant',
+    validity_opened:{value:'sol. 1%: 48 ore',conditions:'cuva acoperita'},
+    warnings:['iritant','epp_obligatoriu'],water_req:'calda_35',
+    usage_profiles:[
+      {use:'instrumentar',level:'decontaminare_primara',concentration:'1% (10 ml/L apa calda 35°C)',dose:'imersie',contact_time:'10 min',technique:'imersie imediata dupa utilizare',protocol:'1. Scufundati instrumentele IMEDIAT dupa utilizare, FARA spalare prealabila, 10 min. 2. Clatiti cu apa de robinet min. 5 min. Urmat de curatare mecanica, dezinfectie de nivel inalt si sterilizare daca este indicat.'}
+    ]
+  },
+
+  // ════════ TP2 - ECHIPAMENTE REUTILIZABILE ════════
+  'tp2_echip_servetele':{
+    label:'TP2 - Echipamente: servetele dezinfectante (monitoare, electrozi, manjete)',
+    keywords:['servetele','wipes','serv'],
+    tp_hint:'TP2',default_um:'cutie',
+    active_substances:'Servetele impregnate cu QAC / alcool / oxidanti',
+    validity_opened:{value:'2 luni (conform eticheta)',conditions:'5-30°C, ambalaj inchis etans'},
+    warnings:[],water_req:'',
+    usage_profiles:[
+      {use:'echipamente',level:'intermediar',concentration:'ca atare',dose:'2 servetele/mp',contact_time:'5 min',technique:'stergere directa',protocol:'Bactericid + levuricid + fungicid + virucid. Suprafete frecvent atinse, echipamente, dispozitive medicale mici, patul pacientului.'},
+      {use:'echipamente',level:'inalt',concentration:'ca atare',dose:'stergere repetata',contact_time:'60 min',technique:'stergere repetata',protocol:'Micobactericid + sporicide la 60 min (in functie de produs).'}
+    ]
+  },
+  'tp2_echip_spray':{
+    label:'TP2 - Echipamente: spray gata uz pentru echipamente medicale mici',
+    keywords:['spray echipamente','spray dezinfectant','aerosol'],
+    tp_hint:'TP2',default_um:'L',
+    active_substances:'Alcool / QAC (gata utilizare)',
+    validity_opened:{value:'conform eticheta',conditions:'ferit de foc'},
+    warnings:['inflamabil'],water_req:'',
+    usage_profiles:[
+      {use:'echipamente',level:'intermediar',concentration:'nediluat',dose:'pulverizare uniforma',contact_time:'30 sec - 1 min',technique:'pulverizare + stergere cu laveta',protocol:'Pentru stetoscop, manjete tensiometru, electrozi ECG, monitoare. INFLAMABIL - departe de defibrillator activ.'}
+    ]
+  },
+  'tp2_echip_lenjerie':{
+    label:'TP2 - Echipamente: dezinfectant lenjerie (spalatorie spital)',
+    keywords:['lenjerie','rufe','spalatorie','detergent dezinfectant','rufa contaminata'],
+    tp_hint:'TP2',default_um:'L',
+    active_substances:'Detergent dezinfectant (QAC / oxidanti / clor)',
+    validity_opened:{value:'conform eticheta',conditions:'5-30°C'},
+    warnings:['iritant'],water_req:'calda_50',
+    usage_profiles:[
+      {use:'lenjerie',level:'lenjerie',concentration:'conform producator (per kg lenjerie)',dose:'doza per cuva masina',contact_time:'min. 10 min in ciclu',technique:'spalare automatizata in masini industriale spalatorie',protocol:'Dezinfectie chimica termica (60-90°C) sau chimica la rece pentru lenjerie contaminata cu lichide biologice. Lenjerie infectioasa: ciclu separat dupa standarde HACCP/IPC.'}
+    ]
+  },
+
+  // ════════ TP4 - CONTACT ALIMENTE ════════
+  'tp4_alim_clor':{
+    label:'TP4 - Alimente: clor alimentar (bucatarie, ambalaje)',
+    keywords:['clor alimentar','hipoclorit alimentar','tablete clor alimente'],
+    tp_hint:'TP4',default_um:'tablete',
+    active_substances:'Hipoclorit de sodiu / DCCNa - food-grade',
+    validity_opened:{value:'sol. preparata: imediat',conditions:'apa rece, recipient curat'},
+    warnings:['iritant','foodgrade'],water_req:'rece',
+    usage_profiles:[
+      {use:'alimente',level:'intermediar',concentration:'200 ppm clor activ (conform producator)',dose:'imersie / stergere suprafete contact',contact_time:'5-10 min',technique:'stergere / imersie',protocol:'Dezinfectie suprafete + ustensile bucatarie. Clatire cu apa potabila dupa expunere. Compatibilitate alimentara verificata.'}
+    ]
+  },
+  'tp4_alim_qac':{
+    label:'TP4 - Alimente: QAC food-grade (bucatarie)',
+    keywords:['qac alimentar','amoniu cuaternar food','dezinfectant bucatarie'],
+    tp_hint:'TP4',default_um:'L',
+    active_substances:'QAC food-grade (autorizate pentru contact alimentar)',
+    validity_opened:{value:'6 luni',conditions:'5-30°C'},
+    warnings:['iritant','foodgrade'],water_req:'',
+    usage_profiles:[
+      {use:'alimente',level:'intermediar',concentration:'conform producator (tipic 200 ppm)',dose:'pulverizare / stergere',contact_time:'5 min',technique:'pulverizare + stergere',protocol:'Dezinfectie suprafete bucatarie. Compatibilitate alimentara verificata. Clatire optionala in functie de produs.'}
+    ]
+  },
+
+  // ════════ TP14 - RODENTICIDE ════════
+  'tp14_rodenticide':{
+    label:'TP14 - Rodenticide (control rozatoare)',
+    keywords:['rodenticid','raticid','soareci','sobolani','rozatoare'],
+    tp_hint:'TP14',default_um:'kg',
+    active_substances:'Anticoagulante (cumarinice / indandione) sau acute (zinc fosfid)',
+    validity_opened:{value:'conform eticheta',conditions:'depozitare in cutie inchisa, ferit de copii / animale'},
+    warnings:['toxic','restrictii_legale','epp_obligatoriu'],water_req:'',
+    usage_profiles:[
+      {use:'ddd',level:'rodenticid',concentration:'conform produs (gata utilizare)',dose:'momela in puncte fixe (statii securizate)',contact_time:'monitoring permanent',technique:'plasare in statii rodenticide securizate',protocol:'Numai prin firma autorizata DDD cu contract. Statii securizate (NU in sectii). Monitoring + raportare lunar. Substante CMR.'}
+    ]
+  },
+
+  // ════════ TP18 - INSECTICIDE ════════
+  'tp18_insecticide':{
+    label:'TP18 - Insecticide (control insecte: muste, gandaci, capuse)',
+    keywords:['insecticid','dezinsectie','muste','gandaci','capuse','plosnite'],
+    tp_hint:'TP18',default_um:'L',
+    active_substances:'Piretroide / neonicotinoide / IGR (regulatori crestere insecte)',
+    validity_opened:{value:'conform eticheta',conditions:'depozitare in spatiu securizat'},
+    warnings:['toxic','iritant','restrictii_legale','epp_obligatoriu','ventilatie'],water_req:'',
+    usage_profiles:[
+      {use:'ddd',level:'insecticid',concentration:'conform producator',dose:'pulverizare / fumigare / momele',contact_time:'expunere variabila + interval reintrare',technique:'pulverizare aer/suprafete sau momele',protocol:'Numai prin firma autorizata DDD. Evacuare personal pe durata + interval re-intrare specific. Documentatie tratament obligatorie.'}
+    ]
+  },
+
+  // ════════ TP22 - FLUIDE IMBALSAMARE ════════
+  'tp22_imbalsamare':{
+    label:'TP22 - Fluide imbalsamare (morga / taxidermie)',
+    keywords:['imbalsamare','formaldehida','fluid imbalsam','morga'],
+    tp_hint:'TP22',default_um:'L',
+    active_substances:'Formaldehida / glutaraldehida / metanol',
+    validity_opened:{value:'conform eticheta',conditions:'5-30°C, ferit de foc'},
+    warnings:['toxic','inflamabil','restrictii_legale','epp_obligatoriu','ventilatie'],water_req:'',
+    usage_profiles:[
+      {use:'altele',level:'imbalsamare',concentration:'conform tip fluid',dose:'volum specific corp/proba',contact_time:'expunere prelungita',technique:'injectie arteriala / imersie',protocol:'Numai personal calificat morga / patologie. Ventilatie obligatorie. EIP complet (masca cu filtru chimic). Substante CMR.'}
     ]
   }
+
 };
 
 </script>
@@ -6646,7 +6857,197 @@ async function rDes(el){
       '<div class="kc am"><div class="kl">kg deseuri / 1000 zile spit.</div><div class="kv">'+des1000+'</div></div>'+
       '<div class="kc rd"><div class="kl">kg deseuri / pacient ext.</div><div class="kv">'+desExt+'</div></div>'+
     '</div>'+
-  '</div></div>';
+  '</div></div>'+
+  // v12.98 - Forecast recipiente + catalog
+  _wRecipForecastHtml(byM,activeWC)+
+  _wRecipCatalogHtml();
+}
+// v12.98 - Forecast necesar recipiente pentru luni ramase din anul curent
+function _wRecipForecastHtml(byM,activeWC){
+  if(typeof CFG.waste_recipients==='undefined'||(CFG.waste_recipients||[]).length===0){
+    return '<div class="pn"><div class="ph"><h3>Necesar recipiente pentru luni ramase</h3></div><div class="pb">'+
+      '<div class="ib inf" style="font-size:12px">Pentru a vedea forecast-ul automat al necesarului de recipiente (cutii taietoare-intepatoare, saci galbeni, etc.), defineste in jos catalogul de recipiente conform Ord. MS 1226/2012. Click <strong>"Pre-populeaza categorii standard"</strong> pentru 12 tipuri reprezentative.</div>'+
+      '</div></div>';
+  }
+  // Calculeaza luni cu date YTD si forecast pe luni ramase
+  // v12.100 - clamp lastMonth la currentMonth (ignora records-uri in luni viitoare,
+  // ex. user a inregistrat din greseala luna 12 in mai - forecast nu se mai sare la 0).
+  var monthsWithData=Object.keys(byM).map(Number).sort(function(a,b){return a-b});
+  var currentMonth=new Date().getFullYear()===A.year?new Date().getMonth()+1:12;
+  var lastMonthValid=monthsWithData.filter(function(m){return m<=currentMonth}).pop()||0;
+  // Effective YTD = max dintre luna ultima cu date (clamp current) si luna curenta
+  var monthsYTD=Math.min(12,Math.max(currentMonth,lastMonthValid));
+  var monthsRem=12-monthsYTD;
+  var rows='',totalCost=0,hasCost=false,anyHasMapping=false;
+  activeWC.forEach(function(w){
+    var totalYTD=0;Object.keys(byM).forEach(function(m){totalYTD+=+(byM[m][w.id])||0});
+    if(totalYTD<=0)return;
+    if(monthsYTD<=0)return; // v12.99 defensiv: fara luni cu date, nu putem calcula medie/forecast
+    var avgPerMonth=totalYTD/monthsYTD;
+    var forecastRem=avgPerMonth*monthsRem;
+    var totalNeeded=totalYTD+forecastRem;
+    // Cauta recipient mapped la cod
+    var code=w.code||'';
+    var recip=null;
+    if(typeof getRecipientForWasteCode==='function'){recip=getRecipientForWasteCode(code)}
+    if(!recip){
+      rows+='<tr style="background:#FFFBEB"><td><strong>'+esc(w.code||'')+'</strong> '+esc(w.name||'')+'</td>'+
+        '<td style="text-align:right">'+fn(Math.round(totalYTD*10)/10)+' kg</td>'+
+        '<td style="text-align:right">'+fn(Math.round(forecastRem*10)/10)+' kg</td>'+
+        '<td colspan="3" style="font-style:italic;color:#92400E;font-size:11px">Niciun recipient mapat la acest cod. Adauga in catalog.</td></tr>';
+      return;
+    }
+    anyHasMapping=true;
+    var cap=recip.capacity_kg||1;
+    var bucYTD=Math.ceil(totalYTD/cap);
+    var bucRem=Math.ceil(forecastRem/cap);
+    var bucTotal=Math.ceil(totalNeeded/cap);
+    var costStr='-';
+    if(recip.cost_lei){
+      hasCost=true;
+      var costVal=bucRem*recip.cost_lei;
+      totalCost+=costVal;
+      costStr=fn(Math.round(costVal))+' lei';
+    }
+    rows+='<tr><td><strong>'+esc(w.code||'')+'</strong> <span style="font-size:11px;color:var(--txtL)">'+esc(w.name||'')+'</span></td>'+
+      '<td style="text-align:right">'+fn(Math.round(totalYTD*10)/10)+' kg<br><span style="font-size:10px;color:var(--txtL)">'+monthsYTD+' luni</span></td>'+
+      '<td style="text-align:right;color:#B45309;font-weight:700">'+fn(Math.round(forecastRem*10)/10)+' kg<br><span style="font-size:10px;font-weight:400;color:var(--txtL)">'+monthsRem+' luni ramase</span></td>'+
+      '<td><span style="display:inline-block;padding:2px 8px;background:'+_wasteCatColor(recip.category)+';color:#fff;border-radius:8px;font-size:10px;font-weight:600">'+esc(recip.name||'')+'</span><br><span style="font-size:10px;color:var(--txtL)">'+(recip.capacity_kg||0)+' kg / buc</span></td>'+
+      '<td style="text-align:right;font-weight:700;color:#B45309;font-size:14px">'+bucRem+' buc<br><span style="font-size:10px;font-weight:400;color:var(--txtL)">total an: '+bucTotal+' buc</span></td>'+
+      '<td style="text-align:right;color:#B45309;font-weight:600">'+costStr+'</td></tr>';
+  });
+  if(rows===''){
+    return '<div class="pn"><div class="ph"><h3>Necesar recipiente pentru luni ramase</h3></div><div class="pb">'+
+      '<div class="ib inf" style="font-size:12px">Niciun cod deseu cu cantitati YTD. Completeaza tabelul de mai sus cu kg lunare si revino aici.</div>'+
+      '</div></div>';
+  }
+  return '<div class="pn"><div class="ph"><h3>Necesar recipiente pentru luni ramase ('+monthsRem+' luni)</h3></div><div class="pb">'+
+    '<div class="ib inf" style="font-size:11px;margin-bottom:10px">Forecast bazat pe consumul YTD ('+monthsYTD+' luni) extrapolat liniar pentru lunile ramase. Coloana <strong>Buc necesare</strong> arata cate recipiente trebuie comandate pentru luni ramase.</div>'+
+    '<div style="overflow-x:auto"><table class="dt" style="font-size:12px">'+
+    '<thead><tr><th>Cod deseu</th><th style="text-align:right">Consum YTD</th><th style="text-align:right">Forecast luni ramase</th><th>Recipient</th><th style="text-align:right">Buc necesare</th><th style="text-align:right">Cost (optional)</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody>'+
+    (hasCost?'<tfoot><tr style="background:var(--navy);color:#fff;font-weight:700"><td colspan="5" style="text-align:right">TOTAL BUGET ESTIMAT (luni ramase, doar recipiente cu cost)</td><td style="text-align:right">'+fn(Math.round(totalCost))+' lei</td></tr></tfoot>':'')+
+    '</table></div>'+
+    (anyHasMapping?'':'<div class="ib wrn" style="margin-top:8px;font-size:11px">Niciun recipient mapat la codurile tale active. Adauga recipiente in catalogul de mai jos cu coduri deseu corecte.</div>')+
+    '</div></div>';
+}
+// v12.98 - Catalog recipiente (CRUD)
+function _wRecipCatalogHtml(){
+  var recips=CFG.waste_recipients||[];
+  var rows='';
+  if(recips.length===0){
+    rows='<tr><td colspan="6" style="text-align:center;color:var(--txtL);font-style:italic;padding:14px">Niciun recipient definit. Click "Pre-populeaza categorii standard" pentru 12 tipuri Ord. 1226/2012.</td></tr>';
+  } else {
+    // Sortez dupa categorie + capacitate
+    recips.slice().sort(function(a,b){
+      var ca=String(a.category||''),cb=String(b.category||'');
+      if(ca!==cb)return ca.localeCompare(cb);
+      return (a.capacity_kg||0)-(b.capacity_kg||0);
+    }).forEach(function(r,_i){
+      var idx=recips.indexOf(r);
+      var codes=(r.waste_codes||[]).map(function(c){return '<span style="display:inline-block;padding:1px 6px;background:var(--bg);border:1px solid var(--brd);border-radius:8px;font-size:10px;font-family:monospace;margin:1px">'+esc(c)+'</span>'}).join(' ');
+      rows+='<tr>'+
+        '<td><strong>'+esc(r.name||'')+'</strong><br><span style="font-size:10px;color:var(--txtL)">'+_wasteCtypeLabel(r.container_type)+'</span></td>'+
+        '<td><span style="display:inline-block;padding:2px 8px;background:'+_wasteCatColor(r.category)+';color:#fff;border-radius:8px;font-size:10px;font-weight:600">'+esc(_wasteCatLabel(r.category))+'</span></td>'+
+        '<td>'+codes+'</td>'+
+        '<td style="text-align:right;font-family:monospace">'+(r.capacity_kg||'-')+' kg<br><span style="font-size:10px;color:var(--txtL)">'+(r.capacity_L||'-')+' L</span></td>'+
+        '<td style="text-align:right">'+(r.cost_lei?fn(r.cost_lei)+' lei':'<span style="color:var(--txtL);font-style:italic;font-size:10px">-</span>')+'</td>'+
+        '<td class="act"><button onclick="wRecipEdit('+idx+')" title="Editeaza">&#9998;</button><button onclick="wRecipDelete('+idx+')" title="Sterge">&#128465;</button></td>'+
+      '</tr>';
+    });
+  }
+  return '<div class="pn"><div class="ph"><h3>Catalog recipiente deseuri (Ord. MS 1226/2012)</h3></div><div class="pb">'+
+    '<div style="display:flex;gap:6px;margin-bottom:10px;align-items:center">'+
+      '<button class="btn bp" onclick="wRecipEdit(-1)">+ Adauga recipient</button>'+
+      (recips.length===0?'<button class="btn bo" onclick="wRecipPrePopulate()" title="Adauga 12 tipuri standard conform ord. 1226/2012">&#128202; Pre-populeaza categorii standard</button>':'')+
+      '<span style="margin-left:auto;font-size:11px;color:var(--txtL)">'+recips.length+' tipuri definite</span>'+
+    '</div>'+
+    '<div style="overflow-x:auto"><table class="dt" style="font-size:12px">'+
+    '<thead><tr><th>Nume / Tip container</th><th>Categorie</th><th>Cod-uri deseu</th><th style="text-align:right">Capacitate</th><th style="text-align:right">Cost (lei) <span style="font-weight:400;color:var(--txtL);font-size:10px">opt.</span></th><th>Actiuni</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody></table></div>'+
+    '</div></div>';
+}
+// CRUD recipiente
+async function wRecipPrePopulate(){
+  if(typeof DEFAULT_WASTE_RECIPIENTS==='undefined'){alert('Erori la incarcarea seed-ului default.');return}
+  if(!CFG.waste_recipients)CFG.waste_recipients=[];
+  // v12.99 - duplicate detection dupa nume (in caz ca user apasa de 2 ori sau sync aduce date)
+  var existingNames={};(CFG.waste_recipients||[]).forEach(function(r){existingNames[(r.name||'').toLowerCase()]=true});
+  var toAdd=DEFAULT_WASTE_RECIPIENTS.filter(function(d){return !existingNames[(d.name||'').toLowerCase()]});
+  if(toAdd.length===0){alert('Toate cele '+DEFAULT_WASTE_RECIPIENTS.length+' tipuri standard sunt deja in catalog.');return}
+  var skipped=DEFAULT_WASTE_RECIPIENTS.length-toAdd.length;
+  if(!confirm('Vor fi adaugate '+toAdd.length+' tipuri standard de recipiente conform Ord. MS 1226/2012'+(skipped>0?' ('+skipped+' deja existente vor fi pastrate intacte)':'')+'. Le poti edita / sterge ulterior. Continui?'))return;
+  toAdd.forEach(function(d){
+    var copy=JSON.parse(JSON.stringify(d));
+    copy.id=_wasteRecipId();
+    CFG.waste_recipients.push(copy);
+  });
+  await saveCfg();
+  if(typeof showToast==='function')showToast('Adaugate '+toAdd.length+' tipuri recipiente standard'+(skipped>0?' ('+skipped+' duplicate sarite)':''));
+  if(typeof logActivity==='function')logActivity('Pre-populare catalog recipiente deseuri (+'+toAdd.length+' tipuri, '+skipped+' duplicate sarite)');
+  rDes(document.getElementById('pc'));
+}
+function wRecipEdit(idx){
+  var r=idx>=0?(CFG.waste_recipients||[])[idx]:{};
+  var isNew=idx<0;
+  var catOpts=WASTE_CATEGORIES.map(function(c){return '<option value="'+esc(c.id)+'"'+(r.category===c.id?' selected':'')+'>'+esc(c.label)+'</option>'}).join('');
+  var ctypeOpts=WASTE_CONTAINER_TYPES.map(function(t){return '<option value="'+esc(t.id)+'"'+(r.container_type===t.id?' selected':'')+'>'+esc(t.label)+'</option>'}).join('');
+  var colorOpts=WASTE_COLORS.map(function(c){return '<option value="'+esc(c.id)+'"'+(r.color===c.id?' selected':'')+'>'+esc(c.label)+'</option>'}).join('');
+  // Coduri deseu ca checkbox-uri pe baza WASTE_CATEGORIES
+  var allCodes=[];
+  WASTE_CATEGORIES.forEach(function(c){c.codes.forEach(function(code){if(allCodes.indexOf(code)<0)allCodes.push(code)})});
+  var existingCodes=r.waste_codes||[];
+  var codesHtml=allCodes.map(function(c){return '<label style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid var(--brd);border-radius:14px;font-size:11px;background:'+(existingCodes.indexOf(c)>=0?'#FEF3C7':'var(--card)')+';margin:2px;cursor:pointer"><input type="checkbox" data-wcode="'+esc(c)+'"'+(existingCodes.indexOf(c)>=0?' checked':'')+' style="margin:0">'+esc(c)+'</label>'}).join('');
+  var h='<div style="font-size:13px">'+
+    '<div class="fr"><div class="fg"><label>Nume recipient</label><input id="wr-name" value="'+esc(r.name||'')+'" placeholder="ex: Cutie 5L taietoare-intepatoare" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div>'+
+    '<div class="fr" style="margin-top:8px"><div class="fg"><label>Categorie</label><select id="wr-cat" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+catOpts+'</select></div>'+
+    '<div class="fg"><label>Tip container</label><select id="wr-ctype" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+ctypeOpts+'</select></div>'+
+    '<div class="fg" style="max-width:200px"><label>Culoare</label><select id="wr-color" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+colorOpts+'</select></div></div>'+
+    '<div style="margin-top:10px"><label style="font-weight:600;font-size:12px">Coduri deseu compatibile (HG 856/2002)</label>'+
+      '<div id="wr-codes" style="margin-top:4px;padding:6px;border:1px solid var(--brd);border-radius:6px;background:var(--bg)">'+codesHtml+'</div></div>'+
+    '<div class="fr" style="margin-top:10px"><div class="fg"><label>Capacitate (kg) - greutate maxima estimata</label><input id="wr-capkg" type="number" step="0.1" min="0" value="'+(r.capacity_kg||'')+'" placeholder="ex: 5" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div>'+
+    '<div class="fg"><label>Capacitate (L)</label><input id="wr-capl" type="number" step="0.1" min="0" value="'+(r.capacity_L||'')+'" placeholder="ex: 60" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div>'+
+    '<div class="fg"><label>Cost (lei) <span style="font-weight:400;color:var(--txtL);font-size:10px">- optional</span></label><input id="wr-cost" type="number" step="0.01" min="0" value="'+(r.cost_lei||'')+'" placeholder="ex: 8.50" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div>'+
+    '<div style="margin-top:8px"><label style="display:flex;align-items:center;gap:6px;font-size:12px"><input type="checkbox" id="wr-innerbag"'+(r.needs_inner_bag?' checked':'')+'> Necesita sac interior</label></div>'+
+  '</div>';
+  openM(isNew?'+ Recipient nou':'Editare recipient',h,
+    '<button class="btn bp" onclick="wRecipSave('+idx+')">Salveaza</button>'+
+    '<button class="btn bo" onclick="closeM()">Anuleaza</button>');
+}
+async function wRecipSave(idx){
+  var v=function(id){var el=document.getElementById(id);return el?el.value.trim():''};
+  var n=v('wr-name');if(!n){alert('Numele recipientului este obligatoriu.');return}
+  var capKg=parseFloat(v('wr-capkg'));if(!capKg||capKg<=0){alert('Capacitatea (kg) este obligatorie si trebuie sa fie pozitiva.');return}
+  var codes=[];document.querySelectorAll('[data-wcode]:checked').forEach(function(c){codes.push(c.getAttribute('data-wcode'))});
+  if(codes.length===0){alert('Selecteaza cel putin un cod deseu.');return}
+  var costEl=document.getElementById('wr-cost');var costVal=costEl?parseFloat(costEl.value):0;
+  var rec={
+    id:idx>=0?(CFG.waste_recipients[idx].id||_wasteRecipId()):_wasteRecipId(),
+    name:n,
+    category:v('wr-cat'),
+    container_type:v('wr-ctype'),
+    color:v('wr-color'),
+    waste_codes:codes,
+    capacity_kg:capKg,
+    capacity_L:parseFloat(v('wr-capl'))||null,
+    needs_inner_bag:document.getElementById('wr-innerbag').checked
+  };
+  if(costVal>0)rec.cost_lei=costVal;
+  if(!CFG.waste_recipients)CFG.waste_recipients=[];
+  if(idx>=0)CFG.waste_recipients[idx]=rec;else CFG.waste_recipients.push(rec);
+  await saveCfg();
+  closeM();
+  if(typeof showToast==='function')showToast(idx>=0?'Recipient actualizat':'Recipient adaugat');
+  if(typeof logActivity==='function')logActivity((idx>=0?'Editat':'Adaugat')+' recipient deseuri: '+n);
+  rDes(document.getElementById('pc'));
+}
+async function wRecipDelete(idx){
+  var r=(CFG.waste_recipients||[])[idx];if(!r)return;
+  if(!confirm('Stergi recipientul "'+(r.name||'')+'"?'))return;
+  CFG.waste_recipients.splice(idx,1);
+  await saveCfg(); // v12.99 - await pentru a preveni racing la click rapid
+  if(typeof showToast==='function')showToast('Recipient sters');
+  rDes(document.getElementById('pc'));
 }
 async function sDes(month,field,value){
   const data=(await ga('deseuri')).filter(r=>r.year===A.year);let rec=data.find(r=>r.month===month);
@@ -6665,6 +7066,25 @@ async function sDes(month,field,value){
 
 // ═══════════════════════════════════════════════════════════════
 var _bioFilters={search:'',type:'',month:'',tp:''};
+// v12.97 - Sortare tabel sumar stocuri (state pastrat intre render-uri)
+var _bioSumSort={key:'tp',dir:'asc'};
+// v12.100 - sumarul afiseaza implicit TOATE produsele (nu doar filtrate). Toggle din header.
+var _bioSumarShowAll=true;
+function bioSumarToggle(){_bioSumarShowAll=!_bioSumarShowAll;render()}
+function bioSortSumar(key){
+  if(_bioSumSort.key===key)_bioSumSort.dir=(_bioSumSort.dir==='asc'?'desc':'asc');
+  else{_bioSumSort.key=key;_bioSumSort.dir='asc'}
+  render();
+}
+// v12.97 - Click pe rand din tabel sumar: expand card + scroll spre el
+function bioSumarFocus(key){
+  _bioExpanded[key]=true;
+  render();
+  setTimeout(function(){
+    var el=document.querySelector('[data-bio-key="'+CSS.escape(key)+'"]');
+    if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.style.outline='3px solid #3B82F6';setTimeout(function(){el.style.outline=''},1800)}
+  },80);
+}
 // v12.52: per-product expand state (default collapsed)
 var _bioExpanded={};
 function bioToggleProd(k){_bioExpanded[k]=!_bioExpanded[k];render()}
@@ -6758,6 +7178,7 @@ async function rBio(el){
       '<button class="btn bo bsm" onclick="bioCollapseAll()">Restrange tot</button>'+
     '</div>'+
     '<div style="display:flex;gap:6px">'+
+      '<button class="btn bo" onclick="genGhidBiocideOpenWizard()" title="Genereaza ghid utilizare biocide HTML imprimabil A4">&#128209; Genereaza Ghid</button>'+
       '<button class="btn bo" onclick="importBiocideBalanceExcel()" title="Import balanta stocuri XLSX">&#128202; Import Excel</button>'+
       '<button class="btn bp" onclick="editBio()">+ Inregistrare</button>'+
     '</div>'+
@@ -6769,6 +7190,94 @@ async function rBio(el){
     if(!groups[key])groups[key]={pid:r.product_id||null,pname:r.product_id?rBioProd(r.product_id):(r.product_name||'—'),rows:[]};
     groups[key].rows.push(r);
   });
+  // v12.97 - TABEL SUMAR STOCURI (deasupra cards, sortabil, color-coded status)
+  // v12.100 - Construire date sumar din TOATE records-urile (nu doar filtrate) cand _bioSumarShowAll=true.
+  // Toggle prin buton in header - default arata toate produsele indiferent de filtre.
+  function _bioBuildSumar(){
+    var srcGroups=groups; // default = filtrate
+    if(_bioSumarShowAll){
+      // Reconstruieste grupurile din ALL DATA (an curent intreg, fara filtre)
+      srcGroups={};
+      allData.forEach(function(r){
+        var key=r.product_id||('name:'+(r.product_name||'—'));
+        if(!srcGroups[key])srcGroups[key]={pid:r.product_id||null,pname:r.product_id?rBioProd(r.product_id):(r.product_name||'—'),rows:[]};
+        srcGroups[key].rows.push(r);
+      });
+    }
+    return Object.keys(srcGroups).map(function(key){
+      var g=srcGroups[key];
+      var prod=g.pid?(CFG.biocide_products||[]).find(function(p){return p.id===g.pid}):null;
+      var tp=(prod&&prod.product_type)||(g.rows[0]&&g.rows[0].product_type)||'';
+      var um=(prod&&prod.unit)||(g.rows[0]&&g.rows[0].unit)||'';
+      var siQ=g.rows.filter(function(r){return r.type==='stoc_initial'}).reduce(function(s,r){return s+(+r.quantity||0)},0);
+      var inQ=g.rows.filter(function(r){return r.type==='intrare'}).reduce(function(s,r){return s+(+r.quantity||0)},0);
+      var outQ=g.rows.filter(function(r){return r.type==='iesire'}).reduce(function(s,r){return s+(+r.quantity||0)},0);
+      var stoc=siQ+inQ-outQ;
+      var status,statusColor,statusBg;
+      if(stoc<=0){status='Epuizat';statusColor='#7C0A0A';statusBg='#FEE2E2'}
+      else if(stoc<5){status='Scazut';statusColor='#92400E';statusBg='#FEF3C7'}
+      else{status='OK';statusColor='#166534';statusBg='#DCFCE7'}
+      return {key:key,pname:g.pname,pid:g.pid,tp:tp,um:um,stoc:stoc,nMisc:g.rows.length,status:status,statusColor:statusColor,statusBg:statusBg,statusOrder:(stoc<=0?0:stoc<5?1:2)};
+    });
+  }
+  // Helper-i declarati inainte de folosire (evitam dependent hoisting in async block)
+  var _tpNumExt=function(tp){var n=parseInt(String(tp||'').replace(/^TP/i,''));return isNaN(n)?999:n};
+  var _sumArrow=function(k){return _bioSumSort.key===k?(_bioSumSort.dir==='asc'?' ▲':' ▼'):''};
+  var sumar=_bioBuildSumar();
+  // Sortare dupa _bioSumSort
+  sumar.sort(function(a,b){
+    var k=_bioSumSort.key,dir=_bioSumSort.dir==='asc'?1:-1;
+    var va,vb;
+    if(k==='tp'){va=_tpNumExt(a.tp);vb=_tpNumExt(b.tp)}
+    else if(k==='stoc'||k==='nMisc'||k==='status'){va=k==='status'?a.statusOrder:a[k];vb=k==='status'?b.statusOrder:b[k]}
+    else{va=String(a[k]||'').toLowerCase();vb=String(b[k]||'').toLowerCase()}
+    if(va<vb)return -1*dir;
+    if(va>vb)return 1*dir;
+    return 0;
+  });
+  // Header inteligent: count per status
+  var nEpuizat=sumar.filter(function(s){return s.statusOrder===0}).length;
+  var nScazut=sumar.filter(function(s){return s.statusOrder===1}).length;
+  var nOK=sumar.filter(function(s){return s.statusOrder===2}).length;
+  var summaryHeaderText='SUMAR STOCURI ('+sumar.length+' produse)'+
+    (nEpuizat>0?' • <span style="color:#7C0A0A;font-weight:700">'+nEpuizat+' epuizat'+(nEpuizat>1?'e':'')+'</span>':'')+
+    (nScazut>0?' • <span style="color:#92400E;font-weight:700">'+nScazut+' sub prag</span>':'')+
+    (nOK>0?' • <span style="color:#166534">'+nOK+' OK</span>':'');
+  // v12.100 - toggle filtrate vs toate (default = toate, ignora filtrele de mai sus)
+  var hasActiveFilter=!!(bf.search||bf.type||bf.month||bf.tp);
+  var toggleBtn=hasActiveFilter?'<button class="btn bo bsm" onclick="event.stopPropagation();event.preventDefault();bioSumarToggle()" style="margin-left:10px;font-size:10px;padding:2px 8px" title="Comuta intre toate produsele si doar cele din filtrul activ">'+(_bioSumarShowAll?'Arata: Toate':'Arata: Filtrate')+'</button>':'';
+  var modeLabel=hasActiveFilter?(_bioSumarShowAll?'<span style="font-size:10px;color:var(--txtL);font-weight:400;margin-left:8px">(ignora filtrele)</span>':'<span style="font-size:10px;color:#B45309;font-weight:600;margin-left:8px">(doar filtrate)</span>'):'';
+  if(sumar.length>0){
+    h+='<details open style="margin-bottom:14px;border:1px solid var(--brd);border-radius:8px;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.04)">'+
+      '<summary style="cursor:pointer;padding:10px 14px;font-size:13px;font-weight:700;color:var(--navy);list-style:none;user-select:none;border-bottom:1px solid var(--brd);background:var(--bg)">'+
+        '<span style="display:inline-block;margin-right:6px">▾</span>'+summaryHeaderText+modeLabel+toggleBtn+
+        '<span style="float:right;font-size:11px;color:var(--txtL);font-weight:400">click rand pentru detalii</span>'+
+      '</summary>'+
+      '<div style="overflow-x:auto;max-height:340px;overflow-y:auto">'+
+        '<table style="width:100%;border-collapse:collapse;font-size:12px">'+
+        '<thead style="position:sticky;top:0;background:var(--bg);z-index:1"><tr>'+
+          '<th style="text-align:left;padding:6px 10px;border-bottom:2px solid var(--brd);cursor:pointer;color:var(--navy)" onclick="bioSortSumar(\'pname\')">Produs'+_sumArrow('pname')+'</th>'+
+          '<th style="text-align:left;padding:6px 10px;border-bottom:2px solid var(--brd);cursor:pointer;color:var(--navy);width:70px" onclick="bioSortSumar(\'tp\')">TP'+_sumArrow('tp')+'</th>'+
+          '<th style="text-align:right;padding:6px 10px;border-bottom:2px solid var(--brd);cursor:pointer;color:var(--navy);width:100px" onclick="bioSortSumar(\'stoc\')">Stoc'+_sumArrow('stoc')+'</th>'+
+          '<th style="text-align:left;padding:6px 10px;border-bottom:2px solid var(--brd);color:var(--navy);width:60px">UM</th>'+
+          '<th style="text-align:center;padding:6px 10px;border-bottom:2px solid var(--brd);cursor:pointer;color:var(--navy);width:100px" onclick="bioSortSumar(\'status\')">Status'+_sumArrow('status')+'</th>'+
+          '<th style="text-align:right;padding:6px 10px;border-bottom:2px solid var(--brd);cursor:pointer;color:var(--navy);width:80px" onclick="bioSortSumar(\'nMisc\')">Miscari'+_sumArrow('nMisc')+'</th>'+
+        '</tr></thead><tbody>';
+    sumar.forEach(function(s){
+      var tpColor=_bioTpColor(s.tp);
+      // v12.99 - dataset attribute in loc de inline JSON.stringify (sigur la nume produs cu apostroafe / ghilimele)
+      var keyAttr=String(s.key||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      h+='<tr data-bio-sumar-key="'+keyAttr+'" onclick="bioSumarFocus(this.dataset.bioSumarKey)" style="cursor:pointer;border-bottom:1px solid var(--brd)" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">'+
+        '<td style="padding:6px 10px;font-weight:600">'+esc(s.pname)+'</td>'+
+        '<td style="padding:6px 10px">'+(s.tp?'<span style="display:inline-block;padding:2px 8px;background:'+tpColor+';color:#fff;border-radius:10px;font-size:10px;font-weight:700">'+esc(s.tp)+'</span>':'<span style="color:var(--txtL);font-size:11px">-</span>')+'</td>'+
+        '<td style="padding:6px 10px;text-align:right;font-family:monospace;font-weight:700;font-size:13px;color:'+s.statusColor+'">'+fn(s.stoc)+'</td>'+
+        '<td style="padding:6px 10px;color:var(--txtL);font-size:11px">'+esc(s.um||'-')+'</td>'+
+        '<td style="padding:6px 10px;text-align:center"><span style="display:inline-block;padding:2px 10px;background:'+s.statusBg+';color:'+s.statusColor+';border-radius:10px;font-size:10px;font-weight:700">'+s.status+'</span></td>'+
+        '<td style="padding:6px 10px;text-align:right;font-size:11px;color:var(--txtL)">'+s.nMisc+'</td>'+
+      '</tr>';
+    });
+    h+='</tbody></table></div></details>';
+  }
   // v12.90 — sortare prioritara pe TP (TP1 < TP2 < TP4 < TP14 < TP18 < TP22 < fara-TP), apoi alfabetic
   const _tpOf=function(g){
     var prod=g.pid?(CFG.biocide_products||[]).find(function(p){return p.id===g.pid}):null;
@@ -7074,7 +7583,9 @@ function bioProdChanged(){
 }
 async function editBio(id){
   const isEN=CFG.lang==='en';
-  let r=id?(await ga('biocide')).find(x=>x.id===id):{year:A.year,type:'iesire',month:new Date().getMonth()+1};
+  // v12.93 - FIX: id poate fi number (records vechi) sau string (records noi via genId).
+  // Strict equal === esua pentru records migrate (id number) vs onclick stringify (id string).
+  let r=id!=null?(await ga('biocide')).find(x=>String(x.id)===String(id)):{year:A.year,type:'iesire',month:new Date().getMonth()+1};
   if(!r)r={year:A.year,type:'iesire',month:new Date().getMonth()+1};
   _editBioRec=r;
   const selProd=r.product_id||'';
@@ -7267,6 +7778,8 @@ function bioEditProduct(pid){
   openM('Editare produs: '+esc(p.name||''),h,
     '<button class="btn bp" onclick="bioSaveProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')">Salveaza</button>'+
     '<button class="btn bo" onclick="closeM()">Inchide</button>');
+  // v12.94 — modal mai lat (1100px) pentru tabel Profile + sectiunea Fuzioneaza colapsata
+  setTimeout(function(){var m=document.getElementById('mdc');if(m)m.classList.add('bio-wide-modal')},20);
 }
 async function bioSaveProduct(pid,skipCloseAndRender){
   var idx=(CFG.biocide_products||[]).findIndex(function(p){return p.id===pid});if(idx<0)return;
@@ -7354,14 +7867,8 @@ function _bioMergeSectionHtml(pid,p){
     else if(score>=0.5)scoreStr=' (~'+Math.round(score*100)+'%)';
     opts+='<option value="'+esc(op.id)+'"'+(defaultSel===op.id?' selected':'')+'>'+esc(op.name||op.id)+scoreStr+'</option>';
   });
-  return '<div style="margin-bottom:14px;padding:12px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px">'+
-    '<h4 style="font-size:13px;color:#B45309;margin:0 0 8px;display:flex;align-items:center;gap:8px">\u26A0 FUZIONEAZA CU ALT PRODUS</h4>'+
-    '<div style="font-size:11px;color:#78350F;margin-bottom:8px">Ai introdus acest produs ca duplicat al altuia existent (ex: „DESOGEN AERO" si „DESOGEN AERO 5L")? Alege produsul destinatie din dropdown — TOATE miscarile, avizele si documentele de aici vor fi mutate la acel produs, iar acest produs va fi sters.</div>'+
-    '<div class="fr" style="align-items:flex-end"><div class="fg"><label style="font-size:11px;color:#78350F">Produs destinatie</label>'+
-      '<select id="bep-merge-target" style="width:100%;padding:6px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:12px">'+opts+'</select></div>'+
-      '<button class="btn bsm" style="background:#DC2626;color:#fff;border:none;padding:8px 14px;font-size:12px;white-space:nowrap" onclick="bioMergeProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')">\uD83D\uDD17 Fuzioneaza</button>'+
-    '</div>'+
-  '</div>';
+  // v12.94 — sectiune COLAPSATA default (ascunsa pana cand user da click; rar folosit)
+  return '<details style="margin-bottom:14px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px"><summary style="cursor:pointer;padding:10px 12px;font-size:12px;font-weight:700;color:#B45309;list-style:none;user-select:none">⚠ FUZIONEAZA CU ALT PRODUS (optiune avansata) <span style="font-size:10px;font-weight:400;color:#78350F">- click pentru a expanda</span></summary><div style="padding:0 12px 12px 12px"><div style="font-size:11px;color:#78350F;margin-bottom:8px">Foloseste DOAR daca ai introdus acest produs ca duplicat al altuia existent. Alege produsul destinatie din dropdown - TOATE miscarile, avizele si documentele de aici vor fi mutate la acel produs, iar acest produs va fi sters.</div><div class="fr" style="align-items:flex-end"><div class="fg"><label style="font-size:11px;color:#78350F">Produs destinatie</label><select id="bep-merge-target" style="width:100%;padding:6px 10px;border:1px solid #FDE68A;border-radius:6px;font-size:12px">'+opts+'</select></div><button class="btn bsm" style="background:#DC2626;color:#fff;border:none;padding:8px 14px;font-size:12px;white-space:nowrap" onclick="bioMergeProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')">🔗 Fuzioneaza</button></div></div></details>';
 }
 // v12.91 — Sectiune PROPRIETATI PROTOCOL (substante active, valabilitate dupa deschidere, apa, avertismente)
 function _bioProtocolSectionHtml(pid,p){
@@ -7402,36 +7909,52 @@ function _bioProtocolSectionHtml(pid,p){
   '</div>';
 }
 // Sectiune PROFILE DE UTILIZARE (tabel: utilizare / nivel / concentratie / doza / timp / tehnica / protocol)
+// v12.94 — PROFILE DE UTILIZARE redesign: cards verticale in loc de tabel orizontal cu 7 coloane.
+// Fiecare profil are header (nr + buton sterge) + body cu campuri pe randuri (2 coloane label/input).
+// Mai compact vertical, mai usor de citit pe ecrane mici, fara scroll orizontal.
 function _bioUsageProfilesSectionHtml(pid,p){
   var profiles=p.usage_profiles||[];
   var useOpts=(typeof BIO_USE_TYPES!=='undefined'?BIO_USE_TYPES:[]).map(function(u){return '<option value="'+esc(u.id)+'">'+esc(u.label)+'</option>'}).join('');
   var levelOpts=(typeof BIO_USAGE_LEVELS!=='undefined'?BIO_USAGE_LEVELS:[]).map(function(l){return '<option value="'+esc(l.id)+'">'+esc(l.label)+'</option>'}).join('');
   var rows='';
+  var pidEsc=String(pid).replace(/\x27/g,"\\x27");
   if(profiles.length===0){
-    rows='<tr><td colspan="8" style="text-align:center;color:var(--txtL);font-style:italic;padding:12px;font-size:11px">Niciun profil de utilizare. Click „+ Adauga profil" sau „Populeaza din template" (daca disponibil).</td></tr>';
+    rows='<div style="text-align:center;color:var(--txtL);font-style:italic;padding:14px;font-size:11px;border:1px dashed var(--brd);border-radius:6px">Niciun profil de utilizare. Click „+ Adauga profil" sau „Aplica template" de mai sus.</div>';
   } else {
     profiles.forEach(function(pr,i){
       var useSel=useOpts.replace('value="'+esc(pr.use||'')+'"','value="'+esc(pr.use||'')+'" selected');
       var lvlSel=levelOpts.replace('value="'+esc(pr.level||'')+'"','value="'+esc(pr.level||'')+'" selected');
-      rows+='<tr>'+
-        '<td style="padding:2px"><select data-f="use" data-i="'+i+'" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:3px;font-size:11px"><option value="">—</option>'+useSel+'</select></td>'+
-        '<td style="padding:2px"><select data-f="level" data-i="'+i+'" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:3px;font-size:11px"><option value="">—</option>'+lvlSel+'</select></td>'+
-        '<td style="padding:2px"><input data-f="concentration" data-i="'+i+'" value="'+esc(pr.concentration||'')+'" placeholder="2% / nediluat" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
-        '<td style="padding:2px"><input data-f="dose" data-i="'+i+'" value="'+esc(pr.dose||'')+'" placeholder="20 ml/L / 3 ml" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
-        '<td style="padding:2px"><input data-f="contact_time" data-i="'+i+'" value="'+esc(pr.contact_time||'')+'" placeholder="5 min / 30 sec" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
-        '<td style="padding:2px"><input data-f="technique" data-i="'+i+'" value="'+esc(pr.technique||'')+'" placeholder="stergere / imersie" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
-        '<td style="padding:2px"><textarea data-f="protocol" data-i="'+i+'" rows="2" placeholder="protocol scurt + avertismente" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:3px;font-size:10px;resize:vertical;min-height:26px">'+esc(pr.protocol||'')+'</textarea></td>'+
-        '<td style="padding:2px;text-align:center"><button onclick="bioDeleteUsageProfile(\''+String(pid).replace(/\x27/g,"\\x27")+'\','+i+')" title="Sterge profil" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">&#128465;</button></td>'+
-      '</tr>';
+      // Card vertical (fiecare profil = un card cu header + body cu campuri pe randuri grid 2-col)
+      rows+='<div class="bio-prof-card">'+
+        '<div class="bio-prof-head">'+
+          '<span>Profil #'+(i+1)+'</span>'+
+          '<span style="flex:1"></span>'+
+          '<button onclick="bioDeleteUsageProfile(\''+pidEsc+'\','+i+')" title="Sterge profil" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;padding:2px 6px">&#128465;</button>'+
+        '</div>'+
+        '<div class="bio-prof-body">'+
+          '<div class="bio-prof-row">'+
+            '<div><label>Utilizare</label><select data-f="use" data-i="'+i+'"><option value="">-- selecteaza --</option>'+useSel+'</select></div>'+
+            '<div><label>Nivel dezinfectie</label><select data-f="level" data-i="'+i+'"><option value="">-- selecteaza --</option>'+lvlSel+'</select></div>'+
+          '</div>'+
+          '<div class="bio-prof-row">'+
+            '<div><label>Concentratie</label><input data-f="concentration" data-i="'+i+'" value="'+esc(pr.concentration||'')+'" placeholder="2% / nediluat / 1 tbl/3L apa rece"></div>'+
+            '<div><label>Doza</label><input data-f="dose" data-i="'+i+'" value="'+esc(pr.dose||'')+'" placeholder="20 ml/L / 3 ml / stergere"></div>'+
+          '</div>'+
+          '<div class="bio-prof-row">'+
+            '<div><label>Timp contact</label><input data-f="contact_time" data-i="'+i+'" value="'+esc(pr.contact_time||'')+'" placeholder="5 min / 30 sec / 60 min"></div>'+
+            '<div><label>Tehnica aplicare</label><input data-f="technique" data-i="'+i+'" value="'+esc(pr.technique||'')+'" placeholder="stergere / imersie / pulverizare"></div>'+
+          '</div>'+
+          '<div class="bio-prof-row">'+
+            '<div class="bio-prof-full"><label>Protocol scurt + avertismente</label><textarea data-f="protocol" data-i="'+i+'" rows="2" placeholder="ex: Bactericid + virucid. APA RECE obligatoriu. Conditii curatenie." style="resize:vertical;min-height:34px">'+esc(pr.protocol||'')+'</textarea></div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
     });
   }
   return '<div style="margin-bottom:14px"><h4 style="font-size:13px;color:var(--navy);margin:0 0 8px;border-bottom:1px solid var(--brd);padding-bottom:4px;display:flex;align-items:center;gap:8px">PROFILE DE UTILIZARE'+
-    '<button class="btn bo bsm" onclick="bioAddUsageProfile(\''+String(pid).replace(/\x27/g,"\\x27")+'\')" style="padding:2px 10px;font-size:10px;margin-left:auto">+ Adauga profil</button></h4>'+
-    '<div style="font-size:11px;color:var(--txtL);margin-bottom:6px">Fiecare profil = o combinatie utilizare + nivel + concentratie. Un produs poate avea mai multe profile (ex: suprafete 5 min curatenie, suprafete 60 min murdarie).</div>'+
-    '<div style="overflow-x:auto;border:1px solid var(--brd);border-radius:6px"><table style="width:100%;border-collapse:collapse;font-size:11px;min-width:900px">'+
-      '<thead><tr style="background:var(--bg);color:var(--navy)"><th style="padding:4px;text-align:left">Utilizare</th><th style="padding:4px;text-align:left">Nivel</th><th style="padding:4px;text-align:left">Concentratie</th><th style="padding:4px;text-align:left">Doza</th><th style="padding:4px;text-align:left">Timp contact</th><th style="padding:4px;text-align:left">Tehnica</th><th style="padding:4px;text-align:left">Protocol</th><th style="width:28px"></th></tr></thead>'+
-      '<tbody id="bep-prof-body">'+rows+'</tbody>'+
-    '</table></div>'+
+    '<button class="btn bo bsm" onclick="bioAddUsageProfile(\''+pidEsc+'\')" style="padding:2px 10px;font-size:10px;margin-left:auto">+ Adauga profil</button></h4>'+
+    '<div style="font-size:11px;color:var(--txtL);margin-bottom:8px">Fiecare profil = o combinatie utilizare + nivel + concentratie. Un produs poate avea mai multe profile (ex: suprafete 5 min curatenie, suprafete 60 min murdarie).</div>'+
+    '<div id="bep-prof-body">'+rows+'</div>'+
   '</div>';
 }
 // CRUD profile utilizare
@@ -7489,16 +8012,25 @@ async function bioMergeProduct(sourcePid){
   var recs=allRecs.filter(function(r){return r.product_id===sourcePid});
   var sourceAvize=(source.avize||[]).length;
   var sourceDocs=0;BIO_ATT_TYPES.forEach(function(t){sourceDocs+=((source.documents||{})[t.key]||[]).length});
+  var sourceProfiles=(source.usage_profiles||[]).length;
   if(!confirm('Fuzionezi „'+(source.name||'')+'" in „'+(target.name||'')+'"?\n\n'+
     '\u2022 '+recs.length+' miscari vor fi reatribuite\n'+
     '\u2022 '+sourceAvize+' avize vor fi combinate (deduplicare dupa Nr+data expirare)\n'+
     '\u2022 '+sourceDocs+' documente vor fi combinate (deduplicare dupa nume fisier)\n'+
+    '\u2022 '+sourceProfiles+' profile utilizare vor fi combinate (dedup utilizare+nivel+concentratie)\n'+
+    '\u2022 Proprietati protocol (substante, valabilitate, avertismente, apa) preluate de la sursa daca tinta nu le are\n'+
     '\u2022 Produsul „'+(source.name||'')+'" va fi sters din catalog\n\n'+
     'Operatia nu poate fi anulata. Continui?'))return;
   // Snapshot pentru rollback daca pt() esueaza la mijloc
   var targetSnapshot={
     avize:(target.avize||[]).slice(),
-    documents:JSON.parse(JSON.stringify(target.documents||{aviz:[],fisa_tehnica:[],sds:[],alte_doc:[]}))
+    documents:JSON.parse(JSON.stringify(target.documents||{aviz:[],fisa_tehnica:[],sds:[],alte_doc:[]})),
+    // v12.100 - snapshot pentru protocoale (rollback complet daca pt() esueaza)
+    usage_profiles:(target.usage_profiles||[]).slice(),
+    active_substances:target.active_substances,
+    validity_opened:target.validity_opened?JSON.parse(JSON.stringify(target.validity_opened)):null,
+    warnings:(target.warnings||[]).slice(),
+    water_req:target.water_req
   };
   var failedRec=-1,lastErr=null;
   try{
@@ -7517,6 +8049,21 @@ async function bioMergeProduct(sourcePid){
         if(!existing[f.name])target.documents[t.key].push(f);
       });
     });
+    // v12.100 - 2b. Merge usage_profiles (dedup dupa use+level+concentration)
+    if(!target.usage_profiles)target.usage_profiles=[];
+    var existingProfiles={};
+    target.usage_profiles.forEach(function(p){
+      existingProfiles[(p.use||'')+'|'+(p.level||'')+'|'+(p.concentration||'')]=1;
+    });
+    (source.usage_profiles||[]).forEach(function(p){
+      var key=(p.use||'')+'|'+(p.level||'')+'|'+(p.concentration||'');
+      if(!existingProfiles[key]){target.usage_profiles.push(JSON.parse(JSON.stringify(p)));existingProfiles[key]=1}
+    });
+    // Daca target nu avea active_substances/validity/warnings, prelua de la source
+    if(!target.active_substances&&source.active_substances)target.active_substances=source.active_substances;
+    if(!target.validity_opened&&source.validity_opened)target.validity_opened=JSON.parse(JSON.stringify(source.validity_opened));
+    if((!target.warnings||!target.warnings.length)&&source.warnings&&source.warnings.length)target.warnings=source.warnings.slice();
+    if(!target.water_req&&source.water_req)target.water_req=source.water_req;
     // 3. Reassign records (persist one by one)
     for(var i=0;i<recs.length;i++){
       var r=recs[i];
@@ -7539,6 +8086,12 @@ async function bioMergeProduct(sourcePid){
     // Rollback: restaureaza avize/documents target (records pot ramane partial mutate — le raportam)
     target.avize=targetSnapshot.avize;
     target.documents=targetSnapshot.documents;
+    // v12.100 - rollback complet incl. profile + proprietati protocol
+    target.usage_profiles=targetSnapshot.usage_profiles;
+    target.active_substances=targetSnapshot.active_substances;
+    target.validity_opened=targetSnapshot.validity_opened;
+    target.warnings=targetSnapshot.warnings;
+    target.water_req=targetSnapshot.water_req;
     var partialMsg=failedRec>=0
       ?'Fuziune esuata la miscarea '+(failedRec+1)+'/'+recs.length+'. '+failedRec+' miscari deja mutate, '+(recs.length-failedRec)+' ramase neatinse. Poti sa reincerci.'
       :'Fuziune esuata: '+((e&&e.message)||e);
@@ -7645,7 +8198,7 @@ async function saveBio(id){
   if(!prodVal){alert('Completeaza produsul.');return}
   const prodObj=CFG.biocide_products.find(p=>p.id===prodVal)||CFG.biocide_products.find(p=>p.name===prodVal);
   const rec={year:A.year,product_id:prodObj?prodObj.id:prodVal,product_name:prodObj?prodObj.name:(customVal||prodVal),unit:v('f-um').trim(),type:v('f-tp'),month:+v('f-mo')||null,lot:v('f-lot').trim(),quantity:+v('f-qty')||0,value_lei:+v('f-val')||0,manufacturer:(document.getElementById('f-bio-mfr')?.value||'').trim(),distributor:(document.getElementById('f-bio-dist')?.value||'').trim(),product_type:(document.getElementById('f-bio-ptype')?.value||'')};
-  if(id){const old=(await ga('biocide')).find(x=>x.id===id);if(old?.attachments)rec.attachments=old.attachments;rec.id=id}
+  if(id){const old=(await ga('biocide')).find(x=>String(x.id)===String(id));if(old?.attachments)rec.attachments=old.attachments;rec.id=id}
   await pt('biocide',rec);logActivity((id?'Editat':'Adaugat')+' biocid — '+rec.product_name);closeM();render();
 }
 
@@ -7669,7 +8222,7 @@ function showBioAttPopup(evt,id,key){
   // Remove any existing popup
   var old=document.getElementById('bio-att-popup');if(old)old.remove();
   ga('biocide').then(function(data){
-    var rec=data.find(function(x){return x.id===id});if(!rec)return;
+    var rec=data.find(function(x){return String(x.id)===String(id)});if(!rec)return;
     var files=_getBioAttFiles(rec,key);if(!files.length)return;
     var t=BIO_ATT_TYPES.find(function(x){return x.key===key})||{icon:'',label:key};
     var h='<div id="bio-att-popup" style="position:fixed;z-index:600;background:var(--card);border:1px solid var(--brd);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.2);padding:10px 12px;min-width:250px;max-width:400px;font-size:12px">'+
@@ -7696,19 +8249,19 @@ function showBioAttPopup(evt,id,key){
   });
 }
 async function viewBioAttIdx(id,key,idx){
-  var data=await ga('biocide');var rec=data.find(function(x){return x.id===id});if(!rec)return;
+  var data=await ga('biocide');var rec=data.find(function(x){return String(x.id)===String(id)});if(!rec)return;
   var files=_getBioAttFiles(rec,key);var att=files[idx];if(!att)return;
   if(att.on_disk&&att.filename){try{var file=await attReadFile('biocide',att.filename);window.open(URL.createObjectURL(file),'_blank');return}catch(e){alert('Nu pot citi fisierul de pe disc.')};return}
   if(att.data)window.open(att.data,'_blank');
 }
 async function downloadBioAttIdx(id,key,idx){
-  var data=await ga('biocide');var rec=data.find(function(x){return x.id===id});if(!rec)return;
+  var data=await ga('biocide');var rec=data.find(function(x){return String(x.id)===String(id)});if(!rec)return;
   var files=_getBioAttFiles(rec,key);var att=files[idx];if(!att)return;
   if(att.on_disk&&att.filename){try{var file=await attReadFile('biocide',att.filename);saveAs(file,att.name);return}catch(e){alert('Nu pot citi fisierul de pe disc.')};return}
   if(att.data){var a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
 }
 async function downloadBioAttAll(id,key){
-  var data=await ga('biocide');var rec=data.find(function(x){return x.id===id});if(!rec)return;
+  var data=await ga('biocide');var rec=data.find(function(x){return String(x.id)===String(id)});if(!rec)return;
   var files=_getBioAttFiles(rec,key);
   for(var i=0;i<files.length;i++){
     var att=files[i];
@@ -7719,7 +8272,7 @@ async function downloadBioAttAll(id,key){
 function uploadBioAtt(id,key){
   const inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.doc,.docx,.jpg,.png,.jpeg';inp.multiple=true;
   inp.onchange=async e=>{const files=Array.from(e.target.files);if(!files.length)return;
-    const data=await ga('biocide');const rec=data.find(x=>x.id===id);if(!rec)return;
+    const data=await ga('biocide');const rec=data.find(x=>String(x.id)===String(id));if(!rec)return;
     _migrateBioAtt(rec,key);
     for(const f of files){
       if(f.size>10*1024*1024){alert('Fisierul '+f.name+' depaseste 10MB.');continue}
@@ -7737,7 +8290,7 @@ function uploadBioAtt(id,key){
     await pt('biocide',rec);render()};inp.click();
 }
 async function downloadBioAtt(id,key){
-  const data=await ga('biocide');const rec=data.find(x=>x.id===id);
+  const data=await ga('biocide');const rec=data.find(x=>String(x.id)===String(id));
   const files=_getBioAttFiles(rec,key);if(!files.length)return;
   const att=files[0];
   if(att.on_disk&&att.filename){
@@ -7748,7 +8301,7 @@ async function downloadBioAtt(id,key){
   if(att.data){const a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
 }
 async function viewBioAtt(id,key){
-  const data=await ga('biocide');const rec=data.find(x=>x.id===id);
+  const data=await ga('biocide');const rec=data.find(x=>String(x.id)===String(id));
   const files=_getBioAttFiles(rec,key);if(!files.length)return;
   const att=files[0];
   if(att.on_disk&&att.filename){
@@ -8130,6 +8683,394 @@ async function _doBioImport(){
   render();
 }
 
+
+</script>
+<script>
+// ═════════════════════════════════════════════════════════════
+// CPIAAM - Generator Ghid Utilizare Biocide (v12.96)
+// HTML imprimabil A4 landscape cu wizard de selectie manuala TP-uri.
+// Sectiuni fixe optionale: Risk Score (Ord. 1761/2021), Legenda, Precautii, Referinte.
+// Output: fereastra noua cu HTML curat, printable, salvable ca PDF prin browser.
+// ═════════════════════════════════════════════════════════════
+
+// Grupeaza produsele din catalog pe template-key (auto-match)
+function _genGhidGroupProducts(){
+  var groups={};
+  if(typeof BIO_USAGE_TEMPLATES==='undefined')return groups;
+  Object.keys(BIO_USAGE_TEMPLATES).forEach(function(k){groups[k]={tplKey:k,tpl:BIO_USAGE_TEMPLATES[k],products:[]}});
+  (CFG.biocide_products||[]).forEach(function(p){
+    var tpl=_matchBioTemplate(p.name,p.product_type);
+    if(tpl){
+      var key=Object.keys(BIO_USAGE_TEMPLATES).find(function(k){return BIO_USAGE_TEMPLATES[k]===tpl});
+      if(key&&groups[key])groups[key].products.push(p);
+    }
+  });
+  return groups;
+}
+// Modal wizard pentru generare Ghid
+function genGhidBiocideOpenWizard(){
+  var groups=_genGhidGroupProducts();
+  var hospitalName=(CFG&&CFG.hospital_name)||'Spital';
+  var cpiaamHead=(CFG&&CFG.cpiaam_coordinator)||(CFG&&CFG.current_user)||'';
+  var rows='';
+  Object.keys(BIO_USAGE_TEMPLATES).forEach(function(k){
+    var g=groups[k];var n=g.products.length;
+    var prodNames=g.products.map(function(p){return p.name||p.id}).join(', ');
+    var checked=n>0?' checked':'';
+    var color=n>0?'#059669':'#9CA3AF';
+    var bg=n>0?'#F0FDF4':'transparent';
+    rows+='<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--brd);border-radius:6px;background:'+bg+';cursor:pointer;font-size:12px">'+
+      '<input type="checkbox" data-ghid-tpl="'+esc(k)+'"'+checked+' style="margin:0">'+
+      '<div style="flex:1">'+
+        '<div style="font-weight:600;color:'+color+'">'+esc(g.tpl.label||k)+'</div>'+
+        (n>0?'<div style="font-size:10px;color:var(--txtL);margin-top:2px">'+n+' produs'+(n>1?'e':'')+': '+esc(prodNames)+'</div>':'<div style="font-size:10px;color:#9CA3AF;margin-top:2px;font-style:italic">(niciun produs in catalog)</div>')+
+      '</div>'+
+    '</label>';
+  });
+  var h='<div style="font-size:12px">'+
+    '<div class="ib inf" style="margin-bottom:10px;font-size:11px">Selecteaza TP-urile / categoriile pe care doresti sa le incluzi in ghid. Cele cu produse asociate sunt bifate automat. Poti adauga si categorii fara produse (ex: pentru completitudine sau formare personal).</div>'+
+    '<h4 style="font-size:13px;color:var(--navy);margin:12px 0 6px">Categorii TP / utilizare</h4>'+
+    '<div style="display:flex;flex-direction:column;gap:4px;max-height:340px;overflow-y:auto;padding:4px;border:1px solid var(--brd);border-radius:6px">'+rows+'</div>'+
+    '<div style="display:flex;gap:6px;margin-top:6px"><button class="btn bo bsm" onclick="document.querySelectorAll(\'[data-ghid-tpl]\').forEach(function(c){c.checked=true})" style="font-size:10px">Bifeaza tot</button><button class="btn bo bsm" onclick="document.querySelectorAll(\'[data-ghid-tpl]\').forEach(function(c){c.checked=false})" style="font-size:10px">Debifeaza tot</button></div>'+
+    '<h4 style="font-size:13px;color:var(--navy);margin:14px 0 6px">Sectiuni fixe</h4>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'+
+      '<label style="display:flex;align-items:center;gap:6px;padding:6px;border:1px solid var(--brd);border-radius:4px;cursor:pointer"><input type="checkbox" id="ghid-opt-risk" checked> Risk Score (Ord. 1761/2021) - PC + FA + S</label>'+
+      '<label style="display:flex;align-items:center;gap:6px;padding:6px;border:1px solid var(--brd);border-radius:4px;cursor:pointer"><input type="checkbox" id="ghid-opt-legend" checked> Legenda niveluri dezinfectie</label>'+
+      '<label style="display:flex;align-items:center;gap:6px;padding:6px;border:1px solid var(--brd);border-radius:4px;cursor:pointer"><input type="checkbox" id="ghid-opt-precautii" checked> Precautii generale obligatorii</label>'+
+      '<label style="display:flex;align-items:center;gap:6px;padding:6px;border:1px solid var(--brd);border-radius:4px;cursor:pointer"><input type="checkbox" id="ghid-opt-referinte" checked> Referinte legale (Ord. 1761, BPR)</label>'+
+    '</div>'+
+    '<h4 style="font-size:13px;color:var(--navy);margin:14px 0 6px">Header personalizat</h4>'+
+    '<div class="fr"><div class="fg"><label>Nume unitate</label><input id="ghid-hosp" value="'+esc(hospitalName)+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div>'+
+    '<div class="fg"><label>Coordonator CPIAAM</label><input id="ghid-head" value="'+esc(cpiaamHead)+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div>'+
+  '</div>';
+  openM('Genereaza Ghid Utilizare Biocide',h,
+    '<button class="btn bp" onclick="genGhidBiocideRun()">Genereaza HTML</button>'+
+    '<button class="btn bo" onclick="closeM()">Anuleaza</button>');
+}
+// Citeste optiunile din wizard si genereaza HTML-ul
+function genGhidBiocideRun(){
+  var sel={};
+  document.querySelectorAll('[data-ghid-tpl]').forEach(function(cb){
+    if(cb.checked)sel[cb.getAttribute('data-ghid-tpl')]=true;
+  });
+  if(Object.keys(sel).length===0){alert('Selecteaza cel putin o categorie.');return}
+  var v=function(id){var el=document.getElementById(id);return el?el.value.trim():''};
+  var ck=function(id){var el=document.getElementById(id);return el?el.checked:false};
+  var opts={
+    selected:sel,
+    incRisk:ck('ghid-opt-risk'),
+    incLegend:ck('ghid-opt-legend'),
+    incPrecautii:ck('ghid-opt-precautii'),
+    incRef:ck('ghid-opt-referinte'),
+    hospital:v('ghid-hosp')||'Spital',
+    head:v('ghid-head')||''
+  };
+  closeM();
+  var html=genGhidBiocideHTML(opts);
+  var w=window.open('','_blank');
+  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.');return}
+  w.document.write(html);w.document.close();
+  if(typeof showToast==='function')showToast('Ghid generat cu '+Object.keys(sel).length+' categorii');
+  if(typeof logActivity==='function')logActivity('Generat Ghid Utilizare Biocide ('+Object.keys(sel).length+' categorii)');
+}
+// Helper escape HTML pentru output
+function _ghidEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+
+// Construieste HTML-ul ghidului
+function genGhidBiocideHTML(opts){
+  var groups=_genGhidGroupProducts();
+  var d=new Date();var dateStr=d.getDate()+'.'+(d.getMonth()+1)+'.'+d.getFullYear();
+  var levelLabel=function(id){var l=(BIO_USAGE_LEVELS||[]).find(function(x){return x.id===id});return l?l.label:id};
+  var useLabel=function(id){var u=(BIO_USE_TYPES||[]).find(function(x){return x.id===id});return u?u.label:id};
+  var levelColor=function(id){var l=(BIO_USAGE_LEVELS||[]).find(function(x){return x.id===id});return l&&l.color?l.color:'#6B7280'};
+  var warnLabels=function(arr){return (arr||[]).map(function(w){var b=(BIO_WARNINGS||[]).find(function(x){return x.id===w});return b?b.short:w}).join(' / ')};
+
+  // CSS imprimabil A4 landscape
+  var css='@page{size:297mm 210mm;margin:8mm}'+
+    '*{box-sizing:border-box;margin:0;padding:0}'+
+    'body{font-family:Arial,sans-serif;font-size:9pt;color:#101828;line-height:1.4}'+
+    '.page{width:281mm;min-height:194mm;page-break-after:always;padding:4mm 6mm}'+
+    '.page:last-child{page-break-after:auto}'+
+    '.hdr{display:flex;justify-content:space-between;border-bottom:2.5px solid #004E9A;padding-bottom:5px;margin-bottom:8px}'+
+    '.hdr h1{font-size:12pt;color:#004E9A;font-weight:700}'+
+    '.hdr .sub{font-size:7.5pt;color:#475467;margin-top:2px}'+
+    '.hdr .right{font-size:7.5pt;color:#475467;text-align:right;line-height:1.5}'+
+    '.tag{display:inline-block;background:#004E9A;color:#fff;padding:2px 8px;border-radius:3px;font-size:7.5pt;font-weight:600;margin-bottom:3px}'+
+    '.section-title{font-size:9pt;font-weight:700;color:#fff;background:#004E9A;padding:4px 9px;border-radius:3px 3px 0 0;text-transform:uppercase;letter-spacing:.3px;margin:8px 0 0 0}'+
+    'table{width:100%;border-collapse:collapse;font-size:8pt}'+
+    'thead th{background:#E6EFF8;color:#004E9A;font-weight:600;padding:4px 6px;border:0.5px solid #D0D5E0;text-align:left}'+
+    'tbody td{padding:4px 6px;border:0.5px solid #D0D5E0;vertical-align:top;line-height:1.45}'+
+    'tbody tr:nth-child(even) td{background:#F8F9FA}'+
+    '.pname{font-weight:700;font-size:9pt;color:#004E9A}'+
+    '.psub{font-size:7.5pt;color:#475467;margin-top:1px}'+
+    '.niv{display:inline-block;padding:2px 7px;border-radius:3px;font-size:7.5pt;font-weight:700}'+
+    '.conc{font-family:monospace;font-weight:700;color:#004E9A}'+
+    '.timp{font-family:monospace;color:#006B65;font-weight:700}'+
+    '.warn{color:#B85C00;font-weight:700;font-size:7.5pt}'+
+    '.scor-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px}'+
+    '.scor-card{border:2px solid #ccc;border-radius:5px;overflow:hidden}'+
+    '.scor-head{padding:5px 9px;font-weight:700;font-size:9pt;border-bottom:1.5px solid #ccc}'+
+    '.scor-body{padding:5px 9px;font-size:8pt;line-height:1.55}'+
+    '.scor-body ul{padding-left:16px;margin-top:3px}'+
+    '.s7{border-color:#7C0A0A}.s7 .scor-head{background:#FCEAEA;color:#7C0A0A}'+
+    '.s46{border-color:#B85C00}.s46 .scor-head{background:#FEF3E2;color:#7C4A0A}'+
+    '.s23{border-color:#1A5C1A}.s23 .scor-head{background:#E6F4E6;color:#1A5C1A}'+
+    '.formula-box{background:#E6EFF8;border:1px solid #004E9A;border-radius:4px;padding:6px 12px;margin:6px 0;display:flex;gap:18px;align-items:center;flex-wrap:wrap;font-size:8pt}'+
+    '.formula-title{font-weight:700;color:#004E9A;font-size:9pt}'+
+    '.legend{display:flex;gap:8px;flex-wrap:wrap;background:#F8F9FA;border:0.5px solid #D0D5E0;border-radius:3px;padding:5px 9px;margin-bottom:6px;font-size:8pt;align-items:center}'+
+    '.lchip{padding:2px 8px;border-radius:3px;font-weight:700;font-size:7.5pt}'+
+    '.l-inalt{background:#FCEAEA;color:#7C0A0A;border:1.5px solid #c88}'+
+    '.l-inter{background:#FEF3E2;color:#7C4A0A;border:1.5px solid #e8a87c}'+
+    '.l-scazut{background:#E6F4E6;color:#1A5C1A;border:1.5px solid #8c8}'+
+    '.precautii-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}'+
+    '.precautii-card{border:1px solid #D0D5E0;border-radius:4px;padding:6px 9px;font-size:8pt;line-height:1.55}'+
+    '.precautii-card h5{font-size:9pt;color:#004E9A;margin-bottom:4px;font-weight:700}'+
+    '.footer{border-top:1px solid #D0D5E0;margin-top:6px;padding-top:4px;display:flex;justify-content:space-between;font-size:7pt;color:#475467}'+
+    '@media print{.page{page-break-after:always}.page:last-child{page-break-after:auto}}';
+
+  var hdrHtml=function(subtitle){
+    return '<div class="hdr"><div>'+
+      '<h1>GHID DE UTILIZARE A PRODUSELOR BIOCIDE - Pagina __PN__ / __PT__</h1>'+
+      '<div class="sub">'+_ghidEsc(opts.hospital)+(subtitle?' - '+_ghidEsc(subtitle):'')+' - generat la '+dateStr+'</div>'+
+    '</div><div class="right">'+
+      '<span class="tag">CPIAAM Generat automat</span><br>'+_ghidEsc(opts.head||'Coordonator CPIAAM')+'<br>Uz intern - personal sanitar'+
+    '</div></div>';
+  };
+  var footerHtml=function(){
+    return '<div class="footer"><div><strong>'+_ghidEsc(opts.hospital)+'</strong> - C.P.I.A.A.M.'+(opts.head?' - '+_ghidEsc(opts.head):'')+(opts.incRef?' - Ord. MS 1761/2021 - BPR EU 528/2012':'')+'</div>'+
+      '<div>Pagina __PN__ din __PT__ - A4 Landscape - Uz intern</div></div>';
+  };
+
+  // Construire randuri produse (selectate)
+  var selectedKeys=Object.keys(BIO_USAGE_TEMPLATES).filter(function(k){return opts.selected[k]});
+  var allRows=[];
+  selectedKeys.forEach(function(k){
+    var g=groups[k];var tplLabel=g.tpl.label||k;
+    if(g.products.length===0){
+      allRows.push({type:'category-empty',title:tplLabel,profiles:g.tpl.usage_profiles||[],activeSubst:g.tpl.active_substances});
+    } else {
+      g.products.forEach(function(p){allRows.push({type:'product',title:tplLabel,product:p})});
+    }
+  });
+  // Distribuie pe pagini (max 7 randuri/pagina pentru landscape)
+  var rowsPerPage=7;var pageRows=[];
+  for(var i=0;i<allRows.length;i+=rowsPerPage)pageRows.push(allRows.slice(i,i+rowsPerPage));
+  if(pageRows.length===0)pageRows.push([]);
+
+  var prodPages=pageRows.map(function(rows){
+    var tableRows='';
+    rows.forEach(function(r){
+      if(r.type==='product'){
+        var p=r.product;var profs=p.usage_profiles||[];
+        if(profs.length===0){
+          tableRows+='<tr><td><div class="pname">'+_ghidEsc(p.name||'')+'</div><div class="psub">'+_ghidEsc(p.product_type||'')+(p.unit?' - '+_ghidEsc(p.unit):'')+'</div></td>'+
+            '<td colspan="6" style="font-style:italic;color:#999">Niciun profil de utilizare definit. Editeaza produsul pentru a adauga profile.</td></tr>';
+        } else {
+          profs.forEach(function(pr,pi){
+            tableRows+='<tr>'+
+              (pi===0?'<td rowspan="'+profs.length+'"><div class="pname">'+_ghidEsc(p.name||'')+'</div><div class="psub">'+_ghidEsc(p.product_type||'')+(p.unit?' - '+_ghidEsc(p.unit):'')+'</div>'+(p.active_substances?'<div class="psub" style="margin-top:3px">'+_ghidEsc(p.active_substances)+'</div>':'')+'</td>':'')+
+              '<td>'+_ghidEsc(useLabel(pr.use))+'</td>'+
+              '<td><span class="niv" style="background:'+levelColor(pr.level)+'22;color:'+levelColor(pr.level)+';border:1.5px solid '+levelColor(pr.level)+'">'+_ghidEsc(levelLabel(pr.level))+'</span></td>'+
+              '<td><span class="conc">'+_ghidEsc(pr.concentration||'-')+'</span><br><span style="font-size:7pt;color:#475467">'+_ghidEsc(pr.dose||'')+'</span></td>'+
+              '<td><span class="timp">'+_ghidEsc(pr.contact_time||'-')+'</span></td>'+
+              '<td>'+_ghidEsc(pr.technique||'-')+'</td>'+
+              '<td style="font-size:7.5pt">'+_ghidEsc(pr.protocol||'')+(p.warnings&&p.warnings.length?'<br><span class="warn">! '+_ghidEsc(warnLabels(p.warnings))+'</span>':'')+'</td>'+
+            '</tr>';
+          });
+        }
+      } else if(r.type==='category-empty'){
+        tableRows+='<tr style="background:#FFFBEB"><td colspan="7" style="padding:6px 10px"><strong style="color:#7C4A0A">'+_ghidEsc(r.title)+' (categorie generica - niciun produs in catalogul tau)</strong>'+
+          (r.activeSubst?'<div class="psub" style="margin-top:3px">'+_ghidEsc(r.activeSubst)+'</div>':'')+'</td></tr>';
+        (r.profiles||[]).forEach(function(pr){
+          tableRows+='<tr style="background:#FFFEFB">'+
+            '<td></td>'+
+            '<td>'+_ghidEsc(useLabel(pr.use))+'</td>'+
+            '<td><span class="niv" style="background:'+levelColor(pr.level)+'22;color:'+levelColor(pr.level)+';border:1.5px solid '+levelColor(pr.level)+'">'+_ghidEsc(levelLabel(pr.level))+'</span></td>'+
+            '<td><span class="conc">'+_ghidEsc(pr.concentration||'-')+'</span><br><span style="font-size:7pt;color:#475467">'+_ghidEsc(pr.dose||'')+'</span></td>'+
+            '<td><span class="timp">'+_ghidEsc(pr.contact_time||'-')+'</span></td>'+
+            '<td>'+_ghidEsc(pr.technique||'-')+'</td>'+
+            '<td style="font-size:7.5pt">'+_ghidEsc(pr.protocol||'')+'</td>'+
+          '</tr>';
+        });
+      }
+    });
+    return '<div class="page">'+hdrHtml('Produse si profile de utilizare')+
+      '<div class="section-title">PRODUSE BIOCIDE - PROTOCOL DE UTILIZARE</div>'+
+      '<table>'+
+        '<thead><tr><th style="width:13%">Produs</th><th style="width:10%">Utilizare</th><th style="width:11%">Nivel</th><th style="width:14%">Concentratie / Doza</th><th style="width:8%">Timp</th><th style="width:11%">Tehnica</th><th style="width:33%">Protocol / Avertismente</th></tr></thead>'+
+        '<tbody>'+tableRows+'</tbody>'+
+      '</table>'+
+      footerHtml()+'</div>';
+  });
+
+  // Sectiuni fixe
+  var fixedPages=[];
+  if(opts.incLegend||opts.incRisk){
+    var p='<div class="page">'+hdrHtml('Cadru general - niveluri dezinfectie + scor de risc')+
+      (opts.incLegend?
+        '<div class="section-title">LEGENDA NIVELURI DEZINFECTIE - ORD. MS 1761/2021</div>'+
+        '<div class="legend">'+
+          '<span class="lchip l-inalt">NIVEL INALT</span><span style="font-size:7.5pt">bacterii veg. + fungi + virusuri + micobacterii + spori</span>'+
+          '<span style="color:#bbb">|</span>'+
+          '<span class="lchip l-inter">NIVEL INTERMEDIAR</span><span style="font-size:7.5pt">bacterii veg. + fungi + micobacterii + virusuri (fara spori)</span>'+
+          '<span style="color:#bbb">|</span>'+
+          '<span class="lchip l-scazut">NIVEL SCAZUT</span><span style="font-size:7.5pt">majoritate bacterii veg. + unii fungi + unele virusuri (fara micobacterii, spori)</span>'+
+        '</div>'
+      :'')+
+      (opts.incRisk?
+        '<div class="section-title">CALCULUL SCORULUI DE RISC SI NIVELUL DE DEZINFECTIE - ORD. MS 1761/2021</div>'+
+        '<div style="border:0.5px solid #D0D5E0;border-top:none;padding:8px 10px">'+
+        '<div class="formula-box">'+
+          '<div class="formula-title">Scor total =</div>'+
+          '<div><strong>PC</strong> Probabilitatea contaminarii (Mare=3, Medie=2, Mica=1)</div>'+
+          '<span style="font-size:14pt">+</span>'+
+          '<div><strong>FA</strong> Frecventa atingerii (Mare=3, Mica=1)</div>'+
+          '<span style="font-size:14pt">+</span>'+
+          '<div><strong>S</strong> Susceptibilitate pacienti (Crescuta=1, Scazuta=0)</div>'+
+          '<span style="font-size:14pt">=</span>'+
+          '<div><strong>SCOR TOTAL</strong> (2-7) -&gt; nivel obligatoriu</div>'+
+        '</div>'+
+        '<div class="scor-grid">'+
+          '<div class="scor-card s7"><div class="scor-head">SCOR = 7 - DEZINFECTIE NIVEL INALT</div><div class="scor-body"><strong>Frecventa minima:</strong> dupa fiecare procedura/pacient sau min. 2 ori/zi.<br><strong>Spatii:</strong><ul><li>Bloc operator, sali nasteri</li><li>Izolator BMR, IAAM confirmate, C. difficile</li><li>Laborator, endoscopie, baza tratament</li><li>Depozit deseuri sectii (zilnic dupa evacuare)</li></ul></div></div>'+
+          '<div class="scor-card s46"><div class="scor-head">SCOR = 4-6 - NIVEL INTERMEDIAR</div><div class="scor-body"><strong>Frecventa minima:</strong> cel putin 1 data/zi.<br><strong>Spatii:</strong><ul><li>Saloane generale, rezerve</li><li>Ambulatoriu, cabinete</li><li>Lift, holuri trafic ridicat</li><li>Radiologie, explorari</li><li>Depozit deseuri central (la 48 ore)</li></ul></div></div>'+
+          '<div class="scor-card s23"><div class="scor-head">SCOR = 2-3 - NIVEL SCAZUT</div><div class="scor-body"><strong>Frecventa minima:</strong> 1 data/zi.<br><strong>Spatii:</strong><ul><li>Holuri principale, scari</li><li>Spatii administrative</li><li>Depozite materiale risc scazut</li><li>Spatii tehnice</li></ul></div></div>'+
+        '</div></div>'
+      :'')+
+      footerHtml()+'</div>';
+    fixedPages.push(p);
+  }
+  if(opts.incPrecautii){
+    var p='<div class="page">'+hdrHtml('Precautii generale obligatorii')+
+      '<div class="section-title">PRECAUTII GENERALE OBLIGATORII</div>'+
+      '<div style="border:0.5px solid #D0D5E0;border-top:none;padding:8px 10px">'+
+      '<div class="precautii-grid">'+
+        '<div class="precautii-card" style="border-color:#7C0A0A"><h5 style="color:#7C0A0A">NIVEL INALT</h5>Bloc operator, sali nasteri, izolator BMR, IAAM confirmate, C. difficile.<br><strong>Min. 2 ori/zi</strong> + la fiecare procedura / externare.</div>'+
+        '<div class="precautii-card" style="border-color:#B85C00"><h5 style="color:#7C4A0A">NIVEL INTERMEDIAR</h5>Saloane generale, laboratoare, cabinete, ambulatoriu, lift.<br><strong>Min. 1 data/zi</strong> + ori de cate ori este nevoie.</div>'+
+        '<div class="precautii-card" style="border-color:#1A5C1A"><h5 style="color:#1A5C1A">NIVEL SCAZUT</h5>Holuri, spatii administrative, depozite risc scazut.<br><strong>1 data/zi</strong> + ori de cate ori este nevoie.</div>'+
+        '<div class="precautii-card" style="border-color:#B85C00"><h5 style="color:#B85C00">REGULI GENERALE</h5>'+
+          '. <strong>Curatare mecanica</strong> inainte de orice dezinfectie<br>'+
+          '. <strong>Respectati timpul de contact</strong> integral<br>'+
+          '. <strong>EIP:</strong> manusi obligatoriu; ochelari + masca la concentrati<br>'+
+          '. Solutie <strong>proaspata + etichetata</strong> (concentratie + data + termen)<br>'+
+          '. <strong>Nu amestecati</strong> produse biocide diferite<br>'+
+          '. Verificati <strong>compatibilitatea apei</strong> (rece/calda 35C)'+
+        '</div>'+
+      '</div></div>'+
+      footerHtml()+'</div>';
+    fixedPages.push(p);
+  }
+  if(opts.incRef){
+    var refP='<div class="page">'+hdrHtml('Referinte legale + abrevieri')+
+      '<div class="section-title">REFERINTE LEGALE</div>'+
+      '<div style="border:0.5px solid #D0D5E0;border-top:none;padding:10px;font-size:9pt;line-height:1.7">'+
+        '<p><strong>Reglementare nationala:</strong></p>'+
+        '<ul style="padding-left:20px;margin:6px 0">'+
+          '<li><strong>Ord. MS 1761/2021</strong> - Norme tehnice privind dezinfectia, sterilizarea si gestionarea deseurilor medicale (niveluri dezinfectie, scor risc, frecvente)</li>'+
+          '<li><strong>Ord. MS 1226/2012</strong> - Norme tehnice privind gestionarea deseurilor medicale (categorii, recipiente, marcare)</li>'+
+          '<li><strong>HG 856/2002</strong> - Lista deseurilor (codificare HEW - 18 01 xx)</li>'+
+          '<li><strong>Ord. MS 1101/2016</strong> - Aprobarea normelor de supraveghere, prevenire si control IAAM</li>'+
+        '</ul>'+
+        '<p style="margin-top:8px"><strong>Reglementare europeana:</strong></p>'+
+        '<ul style="padding-left:20px;margin:6px 0">'+
+          '<li><strong>Reg. EU 528/2012 (BPR)</strong> - Punerea pe piata si utilizarea produselor biocide. Tipuri de produse (TP1-TP22)</li>'+
+          '<li><strong>EN 14885</strong> - Standard european dezinfectanti chimici - aplicare</li>'+
+          '<li><strong>EN 12791</strong> - Dezinfectie chirurgicala maini</li>'+
+          '<li><strong>EN 1500</strong> - Dezinfectie igienica maini prin frecare</li>'+
+        '</ul>'+
+        '<p style="margin-top:8px"><strong>Abrevieri:</strong> CPIAAM = Compartiment Prevenire Infectii Asociate Asistentei Medicale; IAAM = Infectii Asociate Asistentei Medicale; BMR = Bacterii Multi-Rezistente; TP = Tipuri de Produs (BPR); EIP = Echipament Individual Protectie; QAC = Compusi de Amoniu Cuaternar; DDAC = Didecildimetilamoniu clorura; PAA = Acid Peracetic; H2O2 = Peroxid de Hidrogen; UVGI = Ultraviolet Germicidal Irradiation; DDD = Dezinfectie, Dezinsectie, Deratizare</p>'+
+      '</div>'+
+      footerHtml()+'</div>';
+    fixedPages.push(refP);
+  }
+
+  var allPages=prodPages.concat(fixedPages);
+  var totalPages=allPages.length;
+  // Substituie placeholderii __PN__ si __PT__
+  for(var pi=0;pi<allPages.length;pi++){
+    allPages[pi]=allPages[pi].split('__PN__').join(String(pi+1)).split('__PT__').join(String(totalPages));
+  }
+  return '<!DOCTYPE html><html lang="ro"><head><meta charset="UTF-8"><title>Ghid Utilizare Biocide - '+_ghidEsc(opts.hospital)+'</title><style>'+css+'</style></head><body>'+allPages.join('')+'</body></html>';
+}
+
+</script>
+<script>
+// ═════════════════════════════════════════════════════════════
+// CPIAAM - Catalog tipuri RECIPIENTE deseuri (v12.98)
+// Conform Ord. MS 1226/2012 + HG 856/2002 (codificare HEW 18 01 xx)
+// 5 categorii standard + 12 dimensiuni pre-populate.
+// User extinde / editeaza in catalog. Forecast automatic in raport.
+// ═════════════════════════════════════════════════════════════
+
+// Categorii deseuri medicale conform Ord. MS 1226/2012
+var WASTE_CATEGORIES=[
+  {id:'taietoare',label:'Taietoare-intepatoare',color:'#7C0A0A',codes:['18 01 01','18 01 03'],desc:'Ace, lame, sticla cioburi, alte obiecte ascutite'},
+  {id:'infectioase',label:'Infectioase',color:'#B45309',codes:['18 01 03'],desc:'Materiale contaminate cu lichide biologice'},
+  {id:'anatomopat',label:'Anatomo-patologice',color:'#9333EA',codes:['18 01 02','18 01 03'],desc:'Fragmente, organe, tesuturi umane'},
+  {id:'chimice',label:'Chimice / farmaceutice',color:'#0891B2',codes:['18 01 06','18 01 08','18 01 09'],desc:'Substante chimice, citostatice, medicamente expirate'},
+  {id:'menajere',label:'Asimilabile menajer',color:'#475467',codes:['18 01 04'],desc:'Deseuri ne-periculoase din activitati medicale'}
+];
+
+// Tipuri recipiente conform ord. 1226/2012
+var WASTE_CONTAINER_TYPES=[
+  {id:'cutie_rigida',label:'Cutie rigida (carton intarit / plastic)',colorReq:'galben',innerBag:false},
+  {id:'sac',label:'Sac (polietilena)',colorReq:'galben_negru',innerBag:false},
+  {id:'container_etans',label:'Container etans (plastic rigid)',colorReq:'galben',innerBag:false},
+  {id:'container_cu_sac',label:'Container cu sac interior',colorReq:'galben',innerBag:true}
+];
+
+// Culori standard
+var WASTE_COLORS=[
+  {id:'galben',label:'Galben (deseuri periculoase)',hex:'#FCD34D'},
+  {id:'negru',label:'Negru (asimilabile menajere)',hex:'#374151'},
+  {id:'transparent',label:'Transparent (asimilabile menajere)',hex:'#E5E7EB'},
+  {id:'rosu',label:'Rosu (anatomopatologice - optional)',hex:'#DC2626'}
+];
+
+// Default-uri pre-populate (12 tipuri reprezentative). Greutati estimative spital.
+var DEFAULT_WASTE_RECIPIENTS=[
+  // Taietoare-intepatoare (cutii rigide, fara sac interior)
+  {name:'Cutie 1L taietoare-intepatoare',category:'taietoare',waste_codes:['18 01 01','18 01 03'],container_type:'cutie_rigida',color:'galben',capacity_L:1,capacity_kg:0.4,needs_inner_bag:false},
+  {name:'Cutie 3L taietoare-intepatoare',category:'taietoare',waste_codes:['18 01 01','18 01 03'],container_type:'cutie_rigida',color:'galben',capacity_L:3,capacity_kg:1.2,needs_inner_bag:false},
+  {name:'Cutie 5L taietoare-intepatoare',category:'taietoare',waste_codes:['18 01 01','18 01 03'],container_type:'cutie_rigida',color:'galben',capacity_L:5,capacity_kg:2,needs_inner_bag:false},
+  {name:'Cutie 10L taietoare-intepatoare',category:'taietoare',waste_codes:['18 01 01','18 01 03'],container_type:'cutie_rigida',color:'galben',capacity_L:10,capacity_kg:4,needs_inner_bag:false},
+  // Infectioase (saci galbeni)
+  {name:'Sac galben 30L infectioase',category:'infectioase',waste_codes:['18 01 03'],container_type:'sac',color:'galben',capacity_L:30,capacity_kg:4.5,needs_inner_bag:false},
+  {name:'Sac galben 60L infectioase',category:'infectioase',waste_codes:['18 01 03'],container_type:'sac',color:'galben',capacity_L:60,capacity_kg:9,needs_inner_bag:false},
+  {name:'Sac galben 120L infectioase',category:'infectioase',waste_codes:['18 01 03'],container_type:'sac',color:'galben',capacity_L:120,capacity_kg:18,needs_inner_bag:false},
+  // Anatomo-patologice (saci galbeni rezistenti)
+  {name:'Sac galben 30L anatomo-patologic',category:'anatomopat',waste_codes:['18 01 02'],container_type:'sac',color:'galben',capacity_L:30,capacity_kg:6,needs_inner_bag:false},
+  {name:'Sac galben 60L anatomo-patologic',category:'anatomopat',waste_codes:['18 01 02'],container_type:'sac',color:'galben',capacity_L:60,capacity_kg:12,needs_inner_bag:false},
+  // Chimice (containere etanse, max 5L Ord. 1226)
+  {name:'Container etans 5L chimic',category:'chimice',waste_codes:['18 01 06','18 01 08','18 01 09'],container_type:'container_etans',color:'galben',capacity_L:5,capacity_kg:5,needs_inner_bag:false},
+  // Asimilabile menajere (sac negru/transparent)
+  {name:'Sac negru 60L menajer',category:'menajere',waste_codes:['18 01 04'],container_type:'sac',color:'negru',capacity_L:60,capacity_kg:8,needs_inner_bag:false},
+  {name:'Sac negru 120L menajer',category:'menajere',waste_codes:['18 01 04'],container_type:'sac',color:'negru',capacity_L:120,capacity_kg:16,needs_inner_bag:false}
+];
+
+// Helpers
+function _wasteCatLabel(id){var c=WASTE_CATEGORIES.find(function(x){return x.id===id});return c?c.label:id}
+function _wasteCatColor(id){var c=WASTE_CATEGORIES.find(function(x){return x.id===id});return c?c.color:'#6B7280'}
+function _wasteCtypeLabel(id){var t=WASTE_CONTAINER_TYPES.find(function(x){return x.id===id});return t?t.label:id}
+function _wasteColorHex(id){var c=WASTE_COLORS.find(function(x){return x.id===id});return c?c.hex:'#6B7280'}
+
+// Genereaza ID unic pentru recipient
+function _wasteRecipId(){return 'wr_'+Date.now()+'_'+Math.random().toString(36).substr(2,5)}
+
+// Returneaza primul recipient potrivit pentru un cod deseu (cel mai mic capacity_kg pentru utilizare flexibila)
+function getRecipientForWasteCode(code){
+  if(!CFG.waste_recipients)return null;
+  var matches=CFG.waste_recipients.filter(function(r){return (r.waste_codes||[]).indexOf(code)>=0});
+  if(matches.length===0)return null;
+  matches.sort(function(a,b){return (a.capacity_kg||0)-(b.capacity_kg||0)});
+  return matches[0];
+}
+
+// Returneaza toate recipientele potrivite pentru un cod deseu (sortate dupa capacitate ascendent)
+function getAllRecipientsForCode(code){
+  if(!CFG.waste_recipients)return [];
+  return (CFG.waste_recipients||[]).filter(function(r){return (r.waste_codes||[]).indexOf(code)>=0})
+    .sort(function(a,b){return (a.capacity_kg||0)-(b.capacity_kg||0)});
+}
 
 </script>
 <!-- PPS adapter: HelicsWin.Net .mdb import (ECDC-PPS-IR-v1.0) -->
@@ -13959,6 +14900,8 @@ async function rRap(el){
       '<div class="bg"><button class="btn bp" onclick="genAnalizaDesWord()">Word</button>'+aiBtn('genAnalizaDesWordAI()')+'</div></div>'+
     '<div class="rc"><h3>Consum Antibiotice DDD/AWaRe</h3><p>DDD/100 zile-pat, clasificare AWaRe, comparatie ESAC-Net.</p>'+
       '<div class="bg"><button class="btn bp" onclick="genConsumATBWord()">Word</button>'+aiBtn('genConsumATBWordAI()')+'</div></div>'+
+    '<div class="rc"><h3>Ghid Utilizare Biocide</h3><p><strong>HTML imprimabil A4 landscape</strong> conform Ord. MS 1761/2021. Wizard de selectie TP-uri si optiuni layout (risk score, legenda, precautii, referinte). Output deschide in fereastra noua, salvabil ca PDF din browser.</p>'+
+      '<div class="bg"><button class="btn bp" onclick="genGhidBiocideOpenWizard()">Genereaza Ghid</button></div></div>'+
     '<div class="rc"><h3>Anchete Epidemiologice</h3><p>Din modulul IAAM — butonul pe fiecare caz.</p>'+
       '<button class="btn bo" onclick="nav(\'iaam\')">Mergi la IAAM</button></div>'+
     '<div class="rc"><h3>Backup / Transfer</h3><p>Export/import JSON — backup sau transfer la colegi.</p>'+
@@ -17647,6 +18590,15 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.0',date:'2026-04-24',notes:'MILESTONE v13.0 - Aplicatie stabila CPIAAM Romania. Acumuleaza toate cele 52 bump-uri ale sesiunii v12.49-v12.100. Renumerotare de la 12.100 la 13.0 conform conventiei stabilite: xx.0 - xx.99 = patch-uri minore, dupa xx.99 trecem direct la (xx+1).0 ca milestone (niciodata xx.100+). Capabilitati majore accumulate: (1) 23 categorii templates biocide structurate ierarhic pe TP (Reg. EU 528/2012 BPR + Ord. MS 1761/2021), match automat prin keyword scoring + dropdown manual de selectie, auto-populare la creare produs nou si la import Excel; (2) Generator Ghid Utilizare Biocide HTML printable A4 landscape cu wizard de selectie TP-uri si optiuni layout (risk score, legenda, precautii, referinte); (3) Modul Recipiente Deseuri conform Ord. MS 1226/2012 cu 5 categorii standard, 12 tipuri pre-populate, forecast automat necesar luni ramase si calcul buget optional; (4) Tabel Sumar Stocuri biocide sortabil cu color-coded status si toggle Toate/Filtrate; (5) Fuziune produse cu rollback transactional (avize, documents, usage_profiles, proprietati protocol); (6) 8 audituri WHO IPC Core Components / ECDC Framework; (7) Rapoarte profesionale cu grafice Chart.js embedded, benchmarks INSP/ECDC/WHO, cross-module insights. Stabilitate: 43 blocks parse OK consistent, 1754 KB compiled, 9 fix-uri defensive aplicate in v12.99-v12.100 (sync protectie waste_recipients, division by zero, XSS escape, race conditions, duplicate detection, rollback complet).'},
+  {version:'12.100',date:'2026-04-24',notes:'FIX-uri din audit subtle (3 issues necritice prinse dupa testing intern v12.99). (1) bioMergeProduct extins: usage_profiles si proprietati protocol (active_substances, validity_opened, warnings, water_req) acum se transfera la merge - era un bug subtil unde usage_profiles ale produsului sursa se pierdeau pentru ca merge logic gestiona doar avize+documents+records. Profile-le se combina cu dedup dupa cheia compozita use+level+concentration. Proprietatile (substante/valabilitate/etc.) se preiau de la sursa doar daca tinta nu le are completate (preserve target wins). Snapshot pentru rollback extins cu toate aceste campuri - daca pt() esueaza la mijloc, target revine complet la starea initiala. Confirmare dialog actualizat cu count profile + nota despre proprietati. (2) Tabel sumar stocuri biocide cu toggle: state nou _bioSumarShowAll (default true) determina daca tabelul afiseaza TOATE produsele (din allData, an intreg, ignora filtre) sau doar produsele din filter activ (din data filtrata). Cand exista filtru activ (search sau type sau month sau tp), apare buton bio-sm in header sumar pentru toggle Toate/Filtrate. Eticheta colorata indica modul (gri pentru Toate, portocaliu pentru Filtrate). (3) Forecast deseuri clamp lastMonth: daca user a inregistrat din greseala kg in luni inca neparcurse (ex: decembrie inregistrat in mai accidental), monthsYTD se sare la 12 si forecast-ul afisa 0 buc necesare. Fix: lastMonthValid = monthsWithData.filter(m => m <= currentMonth).pop() - ignora records in viitor pentru calculul monthsYTD.'},
+  {version:'12.99',date:'2026-04-24',notes:'FIX-uri defensive din audit v12.93-12.98 (6 fix-uri aplicate, 5 false pozitive ignorate). (1) BLOCKER: sters cod mort din _bioMergeSectionHtml - 9 linii unreachable dupa primul return (varianta veche pre-v12.94 ramasa accidental). (2) FIX CRITIC sync: waste_recipients adaugat in arrayKeys din _smartMergeCfg din sync.js linia 522. Fara fix, in scenariu cross-PC (2 useri/PC-uri sync prin GDrive cu fisier comun), Object.assign suprascria toti recipientii adaugati de un PC. (3) Defensiv division-by-zero: forecast deseuri sare peste cod daca monthsYTD <= 0 (defensive, edge case records cu month undefined). (4) XSS-safe tabel sumar biocide: in loc de JSON.stringify(s.key) inline in onclick (vulnerabil la apostroafe/ghilimele in nume produs), folosesc data-bio-sumar-key attribute escape-uit (replace & ` " si apostrof) + this.dataset.bioSumarKey citire in click handler. (5) wRecipDelete acum este async cu await saveCfg() - era sync, racing la click rapid pe 2 butoane stergere consecutive. (6) wRecipPrePopulate cu duplicate detection dupa nume (case-insensitive) - daca user apasa „Pre-populeaza standard" de 2 ori sau sync aduce date duplicate, sare peste si raporteaza in toast cate au fost efectiv adaugate vs sarite. IGNORATE ca false pozitive: CSS.escape (IE11 nu mai e problema in 2026), cost_lei=0 deletion (intentional), placeholder __PN__ collision (improbabil real), empty page array (handled deja prin alert), CFG fallbacks (deja safe cu ||).'},
+  {version:'12.98',date:'2026-04-24',notes:'MODUL Recipiente Deseuri (Faza 4 din planul UX) - conform Ord. MS 1226/2012 + HG 856/2002. Fisier nou data_waste_recipients.js cu constante WASTE_CATEGORIES (5: taietoare/infectioase/anatomopat/chimice/menajere), WASTE_CONTAINER_TYPES (4 tipuri), WASTE_COLORS (4 culori) si DEFAULT_WASTE_RECIPIENTS seed cu 12 tipuri pre-populate (cutii 1L/3L/5L/10L taietoare-intepatoare, saci galbeni 30L/60L/120L infectiosi, saci 30L/60L anatomopatologic, container etans 5L chimic, saci 60L/120L menajer). Schema CFG.waste_recipients[i] = {id, name, category, container_type, color, waste_codes [HG 856/2002], capacity_kg, capacity_L, cost_lei optional, needs_inner_bag}. Sectiune noua in pagina Deseuri cu doua componente: (1) FORECAST automat - pentru fiecare cod deseu cu kg YTD, extrapolare liniara pe luni ramase, mapping la primul recipient potrivit, calcul buc necesare + total an + cost (daca completat). Coduri fara mapping = warning galben. (2) CATALOG cu CRUD - tabel cu toate recipientele sortate dupa categorie + capacitate, dialog editor cu validare campuri obligatorii (nume, capacity_kg > 0, min 1 cod deseu), buton pre-populeaza standard. Helpers globali: getRecipientForWasteCode, getAllRecipientsForCode (reutilizabile in raport Word). Cost este OPTIONAL - daca completat, calculul de buget se face automat; daca nu, raportul afiseaza doar cantitati.'},
+  {version:'12.97',date:'2026-04-24',notes:'Biocide - TABEL SUMAR STOCURI deasupra cards (Faza 3 din planul UX biocide). Vedere de ansamblu rapida pentru a vedea imediat ce produs ai, in ce cantitate, ce stoc trebuie comandat. 6 coloane sortabile: Produs, TP (badge colorat din BIO_TP_COLORS), Stoc (cantitate cumulata stoc_initial+intrari-iesiri), UM, Status (Epuizat/Scazut/OK color-coded), Miscari (count). Status: Epuizat (rosu, stoc=0), Scazut (galben, stoc<5), OK (verde, stoc>=5). Header summary cu counters (X epuizate, Y sub prag, Z OK). Click pe rand: expandeaza cardul produsului respectiv (_bioExpanded[key]=true) si scroll smooth spre el cu highlight albastru 1.8 sec (CSS.escape pentru selector valid + outline temporar). Sortare prin click pe header coloana - state pastrat in _bioSumSort (key + dir asc/desc). Default sortare: TP ascendent. Sectiune collapsible (details/summary, deschisa default), max-height 340px overflow-y. State: _bioSumSort, functii: bioSortSumar(key), bioSumarFocus(key), _bioBuildSumar(). Pentru produse fara TP afiseaza dash gri.'},
+  {version:'12.96',date:'2026-04-24',notes:'GENERATOR Ghid Utilizare Biocide - HTML imprimabil A4 landscape conform Ord. MS 1761/2021. Fisier nou biocide_ghid.js cu functii _genGhidGroupProducts (grupare produse pe template-key prin auto-match), genGhidBiocideOpenWizard (modal de selectie), genGhidBiocideRun (citire optiuni + open window) si genGhidBiocideHTML (constructie HTML completa). Wizard cu: (1) checkboxes pentru cele 23 categorii TP - cele cu produse din catalog sunt bifate auto cu badge verde si count, cele fara produse sunt bifabile manual; butoane Bifeaza/Debifeaza tot. (2) 4 sectiuni fixe optionale: Risk Score (Ord. 1761/2021 cu PC+FA+S formula si cele 3 carduri 7 / 4-6 / 2-3), Legenda niveluri dezinfectie, Precautii generale (4 carduri color-coded), Referinte legale (Ord. RO + BPR EU + EN standards + abrevieri). (3) Header personalizat - nume unitate + coordonator CPIAAM (precompletat din CFG). Output: tabel produse cu 7 coloane (Produs/Utilizare/Nivel/Concentratie+Doza/Timp/Tehnica/Protocol+Avertismente), color-coded badge-uri niveluri, paginare automata 7 randuri/pagina, footer cu nume unitate + paginare, CSS print-optimized. Buton „Genereaza Ghid" in toolbar Biocide + card dedicat in pagina Generare Rapoarte. Click deschide fereastra noua cu HTML, printable sau salvabil ca PDF prin browser.'},
+  {version:'12.95',date:'2026-04-24',notes:'Biocide - taxonomie templates EXTINSA la 23 categorii (era 8) structurate ierarhic pe TP (Reg. EU 528/2012 BPR + Ord. MS 1761/2021). Acoperire completa pentru spital RO + fork global. Categorii: TP1 Igiena umana (4: gel maini, lichid/spray maini, sapun antiseptic, antiseptic tegument). TP2 Suprafete (5: clor/DCCNa, QAC/DDAC, alcool gata uz, aldehide glutaraldehida, oxidanti H2O2/acid peracetic). TP2 Aer (2: nebulizare H2O2/PAA, UV-C germicidal UVGI). TP2 Apa (1: tratare sisteme spital). TP2 Instrumentar (3: imersie, sterilizare rece Cl. IIb, decontaminare primara). TP2 Echipamente reutilizabile (3: servetele, spray gata uz, lenjerie spalatorie). TP4 Contact alimente (2: clor alimentar, QAC food-grade). TP14/TP18/TP22 (3: rodenticide, insecticide, fluide imbalsamare). Vocabular extins: 17 niveluri de dezinfectie/aplicare in BIO_USAGE_LEVELS, 11 tipuri utilizare in BIO_USE_TYPES, 6 cerinte apa in BIO_WATER_REQS (adauga calda_50 si sterila), 10 avertismente in BIO_WARNINGS (adauga toxic, ventilatie, foodgrade, restrictii_legale). Naming convention: chei snake_case tehnice + label uman romana. Auto-match keyword scoring (cu try-catch defensiv din v12.89) sau selectie manuala prin dropdown.'},
+  {version:'12.94',date:'2026-04-24',notes:'UX editor produs Biocide - 4 imbunatatiri vizuale: (1) Modal mai lat (1100px vs 700px) prin clasa noua CSS bio-wide-modal aplicata dinamic dupa openM. Cuprinde continutul fara scroll orizontal urat la mijlocul modalului. (2) Sectiunea „Fuzioneaza cu alt produs" colapsata default folosind elementul HTML details cu summary. Fiind o optiune avansata si rar folosita (doar cand ai duplicate), nu mai ocupa loc mereu - click pentru a expanda. (3) PROFILE DE UTILIZARE redesign complet: in loc de tabel orizontal cu 7 coloane (Utilizare/Nivel/Concentratie/Doza/Timp/Tehnica/Protocol) care obliga la scroll orizontal pe ecran mediu, fiecare profil este acum un CARD vertical: header cu titlul „Profil #N" si buton sterge, body cu campuri grupate logic pe 2 coloane (Utilizare+Nivel, Concentratie+Doza, Timp+Tehnica) si textarea Protocol pe latimea cardului. Mult mai citit si compact pe orice ecran. (4) CSS clase noi in styles.css: bio-wide-modal, bio-prof-card, bio-prof-head, bio-prof-body, bio-prof-row (grid 2-col), bio-prof-full (grid-column 1/-1 pentru protocol).'},
+  {version:'12.93',date:'2026-04-24',notes:'FIX critic Biocide: butonul de editare la miscari nu functiona pentru produsele fuzionate (sau pentru records vechi cu id numeric). Cauza: in tabelul de miscari, onclick genera editBio(JSON.stringify(r.id)) care produce mereu string. Functia editBio facea find(x=>x.id===id) cu STRICT equal — pentru records vechi cu id number (ex 123), comparatia 123 === "123" returna false, deci form-ul deschidea gol. Fix: comparare loose String(x.id)===String(id) in 8 locuri (editBio + 7 functii de attachments: viewBioAttIdx, downloadBioAttIdx, downloadBioAttAll, uploadBioAtt, downloadBioAtt, viewBioAtt + linia 989 din saveBio). Toate records (vechi numeric + noi string + migrate prin fuziune) functioneaza acum corect.'},
   {version:'12.92',date:'2026-04-24',notes:'Biocide - template-uri protocol rescrise GENERIC (fara nume de brand) pentru a evita orice impresie de publicitate ascunsa. Cele 9 template-uri brand din v12.91 (ANIOSGEL, ALCHOSEPT, CLOROM, DEZICON, DESOGEN AERO, MIKROZID, SERVETELE KLINTENSIV, STERIL-C) inlocuite cu 8 categorii GENERICE bazate pe substanta activa + utilizare: gel_hidroalcoolic_maini (TP1), alcool_sanitar_70_tegument (TP1), tablete_clor (TP2), qac_ddac_concentrat (TP2), h2o2_nebulizare (TP2), alcool_propanol_suprafete (TP2), servetele_qac (TP2), acid_peracetic_sterilizare. Match-uire prin keyword scoring (cuvinte-cheie ca gel/hidroalcoolic, dccna/clor, ddac/qac, propanol etc.) + bonus 0.5 daca TP coincide cu tp_hint. Editor produs: dropdown manual cu toate categoriile (user are control total) + auto-match ca badge sugerat. _matchBioTemplate refactorizat cu scor keywords, _getBioTemplateByKey adaugat pentru selectie manuala. Functia bioApplyTemplateByKey aplica template-ul ales din dropdown.'},
   {version:'12.91',date:'2026-04-24',notes:'FOUNDATION Ghid Utilizare Biocide automat (v12.92 va adauga generatorul HTML): (1) Fisier nou data_biocide_templates.js cu constante BIO_USAGE_LEVELS (8 niveluri incl. maini igienic/chirurgical + nebulizare + sterilizare rece + decontaminare primara), BIO_USE_TYPES (maini/suprafete/instrumentar/nebulizare), BIO_WATER_REQS (rece/calda 35/distilata), BIO_WARNINGS (inflamabil/iritant/coroziv/spatiu inchis/personal evacuat/EIP obligatoriu). (2) BIO_USAGE_TEMPLATES seed RO cu 9 produse uzuale (ANIOSGEL, ALCHOSEPT, ALCOOL SANITAR, CLOROM, DEZICON, DESOGEN AERO, MIKROZID, SERVETELE KLINTENSIV, STERIL-C) cu 1-5 profile de utilizare fiecare, concentratii, timpi, protocoale, avertismente. (3) Helpers: _matchBioTemplate (match prefix longest), _applyBioTemplate (populate doar campuri goale — nu suprascrie). (4) Schema produs extinsa: active_substances (string), validity_opened {value, conditions}, water_req, warnings [], usage_profiles [{use, level, concentration, dose, contact_time, technique, protocol}]. (5) Editor produs — 2 sectiuni noi: „Proprietati protocol" (inputs substante + valabilitate + apa + warnings chips) si „Profile de utilizare" (tabel editabil add/delete). Buton „Populeaza din template" daca nume match. (6) Auto-populare la bioQuickAddProductSave + _doBioImport cand product nume matchuieste template RO — user vede toast „(protocol pre-populat din template RO)".'},
   {version:'12.90',date:'2026-04-24',notes:'Biocide — 4 imbunatatiri UX card: (1) Header redesign mai lizibil — background gradient orizontal din culoarea TP in stanga (40% latime) catre slate-800 (#1E293B) in dreapta. Culoarea TP ocupa acum o suprafata mare, nu doar un mic colt din bordura stanga. Border stanga 7px (in loc de 5px) pentru accent mai puternic. Shadow card crescut (0 2px 6px). (2) Badge TP redesign: fundal alb, text in culoarea TP, border 2px colorat + shadow — contrast dublu, se vede de la distanta. (3) Sortare produse prioritara dupa TP (TP1 < TP2 < TP4 < TP14 < TP18 < TP22 < fara-TP, via _tpNum helper), apoi alfabetic in cadrul fiecarei categorii. Produsele grupate vizual pe tip. (4) Filtru nou „Categorie TP" in filter bar (toate cele 6 TP-uri din BIO_PRODUCT_TYPES). Plus rename primul dropdown „Toate tipurile" → „Toate miscarile" (era confuz — userii credeau ca e filtrul pe TP produs). Reset buton curata si noul filtru TP.'},

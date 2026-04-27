@@ -1,10 +1,9 @@
 {
-  "version": "12.90",
+  "version": "12.92",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Biocide — redesign header card mai lizibil: background gradient din culoarea TP (40% stanga) la slate-800 (60% dreapta). Culoarea TP devine vizibila pe o suprafata mare, nu doar un colt. Border stanga 7px si badge TP pe fundal alb cu text culoarea TP si border colorat — vizibilitate dubla.",
-    "Biocide — sortare produse prioritara dupa TP (TP1 < TP2 < TP4 < TP14 < TP18 < TP22 < fara-TP), apoi alfabetic in cadrul fiecarei categorii. Produsele de acelasi tip apar grupate.",
-    "Biocide — filtru nou: Categorie TP (TP1 Igiena umana / TP2 Dezinfectante suprafete / TP4 Contact alimente / TP14 Rodenticide / TP18 Insecticide / TP22 Fluide imbalsam.). Plus rename Toate tipurile → Toate miscarile pentru claritate (era confuz).",
-    "Reset filter curata si TP."
+    "Biocide - template-uri rescrise GENERIC (fara nume de brand) pentru a evita orice impresie de publicitate. 8 categorii dupa SUBSTANTA ACTIVA + UTILIZARE: gel hidroalcoolic maini, alcool sanitar 70%, tablete clor (DCCNa/hipoclorit), QAC/DDAC concentrat, peroxid de hidrogen nebulizare, alcool propanol/etanol suprafete, servetele dezinfectante QAC, acid peracetic sterilizare rece.",
+    "Editor produs: dropdown manual cu toate cele 8 categorii (user alege explicit categoria potrivita). Auto-match pe keywords ramane ca sugestie (badge sugerat) dar user-ul are control total prin dropdown. Buton Aplica template suprascrie DOAR campurile goale.",
+    "Match-uire prin keyword scoring (in loc de prefix nume): cuvinte-cheie comune produselor de aceeasi categorie (ex: gel/hidroalcoolic, dccna/clor/hipoclorit, ddac/qac, propanol). Bonus 0.5 daca TP coincide cu tp_hint. Cea mai mare suma castiga."
   ]
 }

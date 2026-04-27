@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.0</title>
+<title>CPIAAM Management v13.2</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2200,7 +2200,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.0';
+const APP_VERSION='13.2';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -7877,9 +7877,10 @@ function _bioProtocolSectionHtml(pid,p){
   var waterOpts=(typeof BIO_WATER_REQS!=='undefined'?BIO_WATER_REQS:[{id:'',label:''}]).map(function(w){
     return '<option value="'+esc(w.id)+'"'+((p.water_req||'')===w.id?' selected':'')+'>'+esc(w.label)+'</option>';
   }).join('');
+  // v13.2 - layout grid uniform pentru avertismente (chips de aceeasi marime, fara wrapping urat)
   var warnChips=(typeof BIO_WARNINGS!=='undefined'?BIO_WARNINGS:[]).map(function(w){
     var checked=warns.indexOf(w.id)>=0;
-    return '<label style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid '+(checked?'#B45309':'var(--brd)')+';border-radius:14px;font-size:11px;background:'+(checked?'#FEF3C7':'var(--card)')+';cursor:pointer;margin:2px"><input type="checkbox" data-warn="'+esc(w.id)+'"'+(checked?' checked':'')+' style="margin:0">'+esc(w.label)+'</label>';
+    return '<label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid '+(checked?'#B45309':'var(--brd)')+';border-radius:6px;font-size:11px;background:'+(checked?'#FEF3C7':'var(--card)')+';color:'+(checked?'#92400E':'var(--txt)')+';font-weight:'+(checked?'600':'400')+';cursor:pointer;line-height:1.3;min-height:32px"><input type="checkbox" data-warn="'+esc(w.id)+'"'+(checked?' checked':'')+' style="margin:0;flex-shrink:0"><span>'+esc(w.label)+'</span></label>';
   }).join('');
   // v12.92 - Dropdown MANUAL: user alege template generic dupa categorie (nu auto-detectie pe brand)
   var autoTpl=_matchBioTemplate(p.name,p.product_type);
@@ -7905,7 +7906,7 @@ function _bioProtocolSectionHtml(pid,p){
     '<div class="fr" style="margin-top:6px"><div class="fg"><label>Valabilitate dupa deschidere</label><input id="bep-valop-val" value="'+esc(v.value||'')+'" placeholder="ex: 6 luni / conf. eticheta" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div>'+
     '<div class="fg"><label>Conditii depozitare</label><input id="bep-valop-cond" value="'+esc(v.conditions||'')+'" placeholder="ex: 5-30°C, inchis etans" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div>'+
     '<div class="fr" style="margin-top:6px"><div class="fg" style="max-width:240px"><label>Cerinte apa preparare</label><select id="bep-water" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+waterOpts+'</select></div>'+
-    '<div class="fg"><label>Avertismente</label><div id="bep-warns" style="padding:4px;border:1px solid var(--brd);border-radius:6px;background:var(--bg);min-height:34px">'+warnChips+'</div></div></div>'+
+    '<div class="fg"><label>Avertismente</label><div id="bep-warns" style="padding:8px;border:1px solid var(--brd);border-radius:6px;background:var(--bg);display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px">'+warnChips+'</div></div></div>'+
   '</div>';
 }
 // Sectiune PROFILE DE UTILIZARE (tabel: utilizare / nivel / concentratie / doza / timp / tehnica / protocol)
@@ -7957,20 +7958,40 @@ function _bioUsageProfilesSectionHtml(pid,p){
     '<div id="bep-prof-body">'+rows+'</div>'+
   '</div>';
 }
+// v13.1 - Helper: re-render dialog produs cu scroll preserve / scroll la noul card
+// Inainte: bioEditProduct(pid) reset modalul + scroll la 0 -> user trebuia sa scrolleze inapoi.
+// Acum: fie pastreaza scroll-ul anterior, fie face scroll smooth la ultimul profil card.
+function _bioReRenderEditor(pid,opts){
+  opts=opts||{};
+  var mb=document.querySelector('.mb');
+  var savedScroll=mb?mb.scrollTop:0;
+  bioEditProduct(pid);
+  setTimeout(function(){
+    var mb2=document.querySelector('.mb');if(!mb2)return;
+    if(opts.scrollToLastProfile){
+      var cards=mb2.querySelectorAll('.bio-prof-card');
+      if(cards.length){cards[cards.length-1].scrollIntoView({behavior:'smooth',block:'center'});return}
+    }
+    // default: restaureaza scroll-ul anterior
+    mb2.scrollTop=savedScroll;
+  },60);
+}
 // CRUD profile utilizare
 function bioAddUsageProfile(pid){
   bioSaveProduct(pid,true); // save fields inainte de re-render
   var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p)return;
   if(!p.usage_profiles)p.usage_profiles=[];
   p.usage_profiles.push({use:'suprafete',level:'intermediar',concentration:'',dose:'',contact_time:'',technique:'',protocol:''});
-  saveCfg();bioEditProduct(pid);
+  saveCfg();
+  _bioReRenderEditor(pid,{scrollToLastProfile:true}); // v13.1 scroll la noul profil
 }
 function bioDeleteUsageProfile(pid,idx){
   if(!confirm('Stergi acest profil de utilizare?'))return;
   bioSaveProduct(pid,true);
   var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p||!p.usage_profiles)return;
   p.usage_profiles.splice(idx,1);
-  saveCfg();bioEditProduct(pid);
+  saveCfg();
+  _bioReRenderEditor(pid); // v13.1 pastreaza scroll
 }
 // Aplica template peste produsul curent (din editor) - auto-match pe keywords
 async function bioApplyTemplateToProduct(pid){
@@ -7980,7 +8001,7 @@ async function bioApplyTemplateToProduct(pid){
   var applied=_applyBioTemplate(p,tpl);
   await saveCfg();
   if(typeof showToast==='function')showToast('Template aplicat: '+applied+' campuri populate');
-  bioEditProduct(pid);
+  _bioReRenderEditor(pid); // v13.1
 }
 // v12.92 - Aplica template-ul ales MANUAL din dropdown (nu pe keyword match)
 async function bioApplyTemplateByKey(pid){
@@ -7995,7 +8016,7 @@ async function bioApplyTemplateByKey(pid){
   var applied=_applyBioTemplate(p,tpl);
   await saveCfg();
   if(typeof showToast==='function')showToast('Template aplicat: '+applied+' campuri populate (din '+(tpl.label||key)+')');
-  bioEditProduct(pid);
+  _bioReRenderEditor(pid); // v13.1
 }
 async function bioMergeProduct(sourcePid){
   var sel=document.getElementById('bep-merge-target');
@@ -18590,6 +18611,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.2',date:'2026-04-24',notes:'FIX UX avertismente in editor produs biocide. Problema raportata: chipsurile aveau lungimi inconsistente - INFLAMABIL/IRITANT mici, RESTRICTII LEGALE (UTILIZARE PROFESIONISTA) ocupa rand intreg, COMPATIBIL ALIMENTE rupt urat. Cauza: display:inline-flex fara grid layout, fiecare chip lua latimea proprie. Solutie: container schimbat la display:grid cu grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)) - toate chips au aceeasi latime minima 180px si se aranjeaza in 2-3 coloane uniform in functie de spatiu modal. Chips redesign: padding 6px 10px (era 3px 8px), border-radius 6px (era 14px - mai patrat, mai modern), display:flex pe label cu align-items:center si gap:6px, span pentru text (permite wrap natural daca e prea lung), min-height:32px (uniform vertical). Cele bifate primesc culoare maro accent (#92400E) + background galben (#FEF3C7) + font-weight:600 - distinctie vizuala clara intre cele active si inactive.'},
+  {version:'13.1',date:'2026-04-24',notes:'FIX UX editor produs biocide: scroll-ul body-ului modal NU se mai reseteaza la 0 cand adaugi / stergi un profil de utilizare sau cand aplici un template. Cauza: bioAddUsageProfile / bioDeleteUsageProfile / bioApplyTemplateByKey / bioApplyTemplateToProduct apelau bioEditProduct(pid) care re-genereaza intregul modal prin openM(...), iar openM creeaza nou DOM cu scrollTop = 0. Solutie: helper nou _bioReRenderEditor(pid, opts) care salveaza scrollTop din .mb inainte de re-render si dupa setTimeout de 60ms aplica unul din 2 comportamente: (a) scrollToLastProfile=true pentru bioAddUsageProfile - scroll smooth la ultimul .bio-prof-card (user vede imediat profilul nou creat, nu trebuie sa scrolleze manual). (b) restore scrollTop pentru bioDeleteUsageProfile / bioApplyTemplate* - pozitia ramane unde era user-ul. Comportament natural si previzibil. Fix critic pentru fluxul de lucru cu produse cu multe profile.'},
   {version:'13.0',date:'2026-04-24',notes:'MILESTONE v13.0 - Aplicatie stabila CPIAAM Romania. Acumuleaza toate cele 52 bump-uri ale sesiunii v12.49-v12.100. Renumerotare de la 12.100 la 13.0 conform conventiei stabilite: xx.0 - xx.99 = patch-uri minore, dupa xx.99 trecem direct la (xx+1).0 ca milestone (niciodata xx.100+). Capabilitati majore accumulate: (1) 23 categorii templates biocide structurate ierarhic pe TP (Reg. EU 528/2012 BPR + Ord. MS 1761/2021), match automat prin keyword scoring + dropdown manual de selectie, auto-populare la creare produs nou si la import Excel; (2) Generator Ghid Utilizare Biocide HTML printable A4 landscape cu wizard de selectie TP-uri si optiuni layout (risk score, legenda, precautii, referinte); (3) Modul Recipiente Deseuri conform Ord. MS 1226/2012 cu 5 categorii standard, 12 tipuri pre-populate, forecast automat necesar luni ramase si calcul buget optional; (4) Tabel Sumar Stocuri biocide sortabil cu color-coded status si toggle Toate/Filtrate; (5) Fuziune produse cu rollback transactional (avize, documents, usage_profiles, proprietati protocol); (6) 8 audituri WHO IPC Core Components / ECDC Framework; (7) Rapoarte profesionale cu grafice Chart.js embedded, benchmarks INSP/ECDC/WHO, cross-module insights. Stabilitate: 43 blocks parse OK consistent, 1754 KB compiled, 9 fix-uri defensive aplicate in v12.99-v12.100 (sync protectie waste_recipients, division by zero, XSS escape, race conditions, duplicate detection, rollback complet).'},
   {version:'12.100',date:'2026-04-24',notes:'FIX-uri din audit subtle (3 issues necritice prinse dupa testing intern v12.99). (1) bioMergeProduct extins: usage_profiles si proprietati protocol (active_substances, validity_opened, warnings, water_req) acum se transfera la merge - era un bug subtil unde usage_profiles ale produsului sursa se pierdeau pentru ca merge logic gestiona doar avize+documents+records. Profile-le se combina cu dedup dupa cheia compozita use+level+concentration. Proprietatile (substante/valabilitate/etc.) se preiau de la sursa doar daca tinta nu le are completate (preserve target wins). Snapshot pentru rollback extins cu toate aceste campuri - daca pt() esueaza la mijloc, target revine complet la starea initiala. Confirmare dialog actualizat cu count profile + nota despre proprietati. (2) Tabel sumar stocuri biocide cu toggle: state nou _bioSumarShowAll (default true) determina daca tabelul afiseaza TOATE produsele (din allData, an intreg, ignora filtre) sau doar produsele din filter activ (din data filtrata). Cand exista filtru activ (search sau type sau month sau tp), apare buton bio-sm in header sumar pentru toggle Toate/Filtrate. Eticheta colorata indica modul (gri pentru Toate, portocaliu pentru Filtrate). (3) Forecast deseuri clamp lastMonth: daca user a inregistrat din greseala kg in luni inca neparcurse (ex: decembrie inregistrat in mai accidental), monthsYTD se sare la 12 si forecast-ul afisa 0 buc necesare. Fix: lastMonthValid = monthsWithData.filter(m => m <= currentMonth).pop() - ignora records in viitor pentru calculul monthsYTD.'},
   {version:'12.99',date:'2026-04-24',notes:'FIX-uri defensive din audit v12.93-12.98 (6 fix-uri aplicate, 5 false pozitive ignorate). (1) BLOCKER: sters cod mort din _bioMergeSectionHtml - 9 linii unreachable dupa primul return (varianta veche pre-v12.94 ramasa accidental). (2) FIX CRITIC sync: waste_recipients adaugat in arrayKeys din _smartMergeCfg din sync.js linia 522. Fara fix, in scenariu cross-PC (2 useri/PC-uri sync prin GDrive cu fisier comun), Object.assign suprascria toti recipientii adaugati de un PC. (3) Defensiv division-by-zero: forecast deseuri sare peste cod daca monthsYTD <= 0 (defensive, edge case records cu month undefined). (4) XSS-safe tabel sumar biocide: in loc de JSON.stringify(s.key) inline in onclick (vulnerabil la apostroafe/ghilimele in nume produs), folosesc data-bio-sumar-key attribute escape-uit (replace & ` " si apostrof) + this.dataset.bioSumarKey citire in click handler. (5) wRecipDelete acum este async cu await saveCfg() - era sync, racing la click rapid pe 2 butoane stergere consecutive. (6) wRecipPrePopulate cu duplicate detection dupa nume (case-insensitive) - daca user apasa „Pre-populeaza standard" de 2 ori sau sync aduce date duplicate, sare peste si raporteaza in toast cate au fost efectiv adaugate vs sarite. IGNORATE ca false pozitive: CSS.escape (IE11 nu mai e problema in 2026), cost_lei=0 deletion (intentional), placeholder __PN__ collision (improbabil real), empty page array (handled deja prin alert), CFG fallbacks (deja safe cu ||).'},

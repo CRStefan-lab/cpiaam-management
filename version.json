@@ -1,10 +1,8 @@
 {
-  "version": "13.0",
+  "version": "13.2",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "MILESTONE v13.0 - Aplicatie stabila CPIAAM Romania, cumulat din toate dezvoltarile sesiunii v12.49 - v12.100 (52 bump-uri).",
-    "Convetie versiune stabilita: xx.0 - xx.99 patch-uri minore, dupa xx.99 trecem la (xx+1).0 ca milestone. Niciodata xx.100+.",
-    "Capabilitati majore acumulate: 23 categorii templates biocide structurate ierarhic pe TP (Reg. EU 528/2012 BPR), generator Ghid Utilizare Biocide HTML printable A4 cu wizard de selectie, modul recipiente deseuri Ord. MS 1226/2012 cu forecast automat necesar luni ramase, tabel sumar stocuri biocide sortabil, fuziune produse cu rollback transactional, 8 audituri WHO/ECDC, rapoarte profesionale cu grafice Chart.js embedded.",
-    "Stabilitate: 43 blocks parse OK, 1754 KB compiled, 9 fix-uri defensive aplicate in v12.99-12.100, sync protectie extinsa pe toate cataloagele (incl. waste_recipients), defensiv pe edge cases (zero division, future months, XSS, race conditions)."
+    "FIX UX avertismente in editor produs biocide. Inainte: chips inline-flex cu lungimi inconsistente (INFLAMABIL mic, RESTRICTII LEGALE rupt pe rand intreg). Acum: layout grid cu coloane uniforme auto-fill minmax(180px, 1fr) - toate chips au aceeasi latime minima, se aranjeaza automat in 2-3 coloane in functie de spatiu.",
+    "Chips redesign: padding mai mare (6px 10px), border-radius mai patrat (6px in loc de 14px), checkbox aliniat stanga, label cu wrap pe span (line-height 1.3 daca textul e lung). Cele bifate au culoare maro accent + background galben + font-weight 600."
   ]
 }

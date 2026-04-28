@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.13</title>
+<title>CPIAAM Management v13.14</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -372,8 +372,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dark .dash-quick button:hover{background:#0D9488;border-color:#0D9488;color:#fff}
 .dark .tb-icon:hover{background:#334155;border-color:#475569}
 .dark .dt .act button:hover{background:#334155}
-.dark .dash-cfg-bar{border-color:#334155}.dark .dash-cfg-bar button{color:#94A3B8}.dark .dash-cfg-bar button:hover{color:#E2E8F0}
-.dark .dash-cfg-panel{border-color:#334155}.dark .dash-cfg-panel label{color:#94A3B8}
+/* old dash-cfg-bar/panel dark overrides eliminated in v13.14 (replaced by dash-cfg-btn-pretty + group toggles, dark theme handled in main rules) */
 .dark .cal-nav button{border-color:#475569;color:#CBD5E1}.dark .cal-nav button:hover{background:#334155;border-color:#2DD4BF}
 .dark .ac-cell-gn{background:#1A3D1A;color:#86EFAC}.dark .ac-cell-yl{background:#3D2E0A;color:#FCD34D}
 .dark .ac-cell-rd{background:#450A0A;color:#FCA5A5}.dark .ac-cell-gr{background:#1E293B;color:#64748B}.dark .ac-cell-na{background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(255,255,255,.04) 3px,rgba(255,255,255,.04) 6px);color:#475569}
@@ -522,13 +521,52 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dash-quick button{display:flex;align-items:center;gap:7px;padding:10px 18px;border:1px solid var(--brd);border-radius:24px;background:var(--card);color:var(--txt);font-size:12.5px;font-weight:500;font-family:var(--f);cursor:pointer;transition:all .15s ease}
 .dash-quick button:hover{background:#0D9488;border-color:#0D9488;color:#fff;transform:translateY(-1px)}
 .dash-quick button .qicon{font-size:15px}
-.dash-cfg-bar{border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:center;min-height:22px;margin:0 -20px;padding:0}
-.dash-cfg-bar button{background:none;border:none;cursor:pointer;color:var(--txtL);font-size:11px;padding:3px 16px;transition:.2s;display:inline-flex;align-items:center;justify-content:center;gap:4px;font-family:var(--f)}
-.dash-cfg-bar button:hover{color:var(--navy)}
-.dash-cfg-panel{overflow:hidden;max-height:0;transition:max-height .3s ease;display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:center;padding:0 12px;margin:0 -20px;border-bottom:0px solid var(--brd)}
-.dash-cfg-panel.open{max-height:120px;padding:8px 12px;border-bottom-width:1px}
-.dash-cfg-panel label{font-size:11.5px;color:var(--txtL);cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;user-select:none}
-.dash-cfg-panel input[type="checkbox"]{accent-color:#0D9488;margin:0;cursor:pointer}
+/* v13.14 - dashboard config bar redesign: buton cu icon gear + badge count + panou cu toggle switches */
+.dash-cfg-bar{display:flex;align-items:center;justify-content:flex-end;margin:0 0 8px;padding:0}
+.dash-cfg-btn-pretty{background:#fff;border:1px solid var(--brd);box-shadow:0 1px 2px rgba(15,23,42,.04);border-radius:10px;cursor:pointer;color:var(--txt);font-size:12px;font-weight:500;padding:7px 12px;transition:all .15s;display:inline-flex;align-items:center;gap:8px;font-family:var(--f);user-select:none}
+.dash-cfg-btn-pretty:hover{border-color:#0D9488;color:#0D9488;box-shadow:0 2px 8px rgba(13,148,136,.12)}
+.dash-cfg-btn-pretty.open{border-color:#0D9488;color:#0D9488;background:#F0FDFA}
+.dash-cfg-btn-pretty .dash-cfg-icon{font-size:15px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:transform .3s ease}
+.dash-cfg-btn-pretty:hover .dash-cfg-icon,.dash-cfg-btn-pretty.open .dash-cfg-icon{transform:rotate(60deg)}
+.dash-cfg-btn-pretty .dash-cfg-text{flex:0 0 auto}
+.dash-cfg-btn-pretty .dash-cfg-count{background:#0D9488;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:9px;line-height:1.5;letter-spacing:.3px}
+.dash-cfg-btn-pretty .dash-cfg-caret{font-size:9px;opacity:.5;transition:transform .2s}
+.dash-cfg-btn-pretty.open .dash-cfg-caret{transform:rotate(180deg)}
+.dash-cfg-panel{overflow:hidden;max-height:0;transition:max-height .3s ease,padding .25s ease,margin .25s ease;background:#F8FAFC;border-radius:12px;border:1px solid transparent;display:flex;flex-wrap:wrap;gap:14px;padding:0 14px;margin-bottom:0}
+.dash-cfg-panel.open{max-height:600px;padding:14px;border-color:var(--brd);margin-bottom:14px}
+.dash-cfg-group{flex:1 1 220px;min-width:220px}
+.dash-cfg-group-title{font-size:10px;color:var(--txtL);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--brd)}
+.dash-cfg-group-items{display:flex;flex-direction:column;gap:4px}
+.dash-cfg-toggle{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;cursor:pointer;transition:background .15s,box-shadow .15s;background:#fff;border:1px solid var(--brd);user-select:none;outline:none}
+.dash-cfg-toggle:hover{border-color:#0D9488;box-shadow:0 1px 4px rgba(13,148,136,.1)}
+.dash-cfg-toggle:focus-visible{outline:2px solid #0D9488;outline-offset:2px}
+.dash-cfg-toggle .dcti{font-size:14px;width:20px;text-align:center;color:var(--txtL);transition:color .15s}
+.dash-cfg-toggle.on .dcti{color:#0D9488}
+.dash-cfg-toggle .dctl{flex:1;font-size:12px;color:var(--txt);font-weight:500}
+.dash-cfg-toggle .dcts{position:relative;display:inline-block;width:32px;height:18px;border-radius:9px;background:#CBD5E1;transition:background .2s;flex-shrink:0}
+.dash-cfg-toggle .dcts::before{content:'';position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s,box-shadow .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.dash-cfg-toggle.on .dcts{background:#0D9488}
+.dash-cfg-toggle.on .dcts::before{left:16px}
+/* dark theme overrides */
+.dark .dash-cfg-btn-pretty{background:#1E293B;border-color:#334155;color:#E2E8F0}
+.dark .dash-cfg-btn-pretty:hover,.dark .dash-cfg-btn-pretty.open{background:#0F2D2A;border-color:#0D9488;color:#5EEAD4}
+.dark .dash-cfg-panel{background:#0F172A}
+.dark .dash-cfg-panel.open{border-color:#334155}
+.dark .dash-cfg-group-title{border-color:#334155}
+.dark .dash-cfg-toggle{background:#1E293B;border-color:#334155}
+.dark .dash-cfg-toggle .dctl{color:#E2E8F0}
+.dark .dash-cfg-toggle .dcts{background:#475569}
+/* Period tabs (30/60/90 zile) */
+.dash-period-tabs{display:flex;align-items:center;gap:6px;padding:8px 12px;background:#F8FAFC;border:1px solid var(--brd);border-radius:10px;margin-bottom:12px;flex-wrap:wrap}
+.dash-period-tabs .dash-period-label{font-size:11px;color:var(--txtL);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-right:4px}
+.dash-period-tab{background:transparent;border:1px solid transparent;cursor:pointer;font-size:12px;color:var(--txtL);padding:5px 14px;border-radius:8px;transition:all .15s;font-family:var(--f);font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.dash-period-tab:hover{color:var(--navy);background:#fff;border-color:var(--brd)}
+.dash-period-tab.active{background:#0D9488;color:#fff;font-weight:700;border-color:#0D9488;box-shadow:0 2px 6px rgba(13,148,136,.25)}
+.dash-period-tab .dpt-cnt{display:inline-block;background:rgba(255,255,255,.25);color:inherit;font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600;min-width:18px;text-align:center}
+.dash-period-tab:not(.active) .dpt-cnt{background:#E2E8F0;color:var(--txtL)}
+.dark .dash-period-tabs{background:#0F172A;border-color:#334155}
+.dark .dash-period-tab:hover{background:#1E293B;border-color:#334155}
+.dark .dash-period-tab:not(.active) .dpt-cnt{background:#334155;color:#94A3B8}
 .dash-section{transition:opacity .3s ease,max-height .3s ease;overflow:hidden}
 .dash-section.hidden{max-height:0!important;opacity:0;padding:0!important;margin:0!important}
 /* Activity feed */
@@ -2203,7 +2241,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.13';
+const APP_VERSION='13.14';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -3965,6 +4003,11 @@ function toggleWidget(key){
   w[key]=w[key]===false?true:false;CFG.dash_widgets=w;saveCfg();
   const sec=document.querySelector('[data-dw="'+key+'"]');
   if(sec){sec.classList.toggle('hidden',w[key]===false)}
+  // v13.14 - sync toggle UI + badge count
+  const tog=document.querySelector('.dash-cfg-toggle[data-dwkey="'+key+'"]');
+  if(tog){tog.classList.toggle('on',w[key]!==false);tog.setAttribute('aria-checked',w[key]!==false)}
+  const allTogs=document.querySelectorAll('.dash-cfg-toggle');
+  if(allTogs.length){var on=0;allTogs.forEach(t=>{if(t.classList.contains('on'))on++});var badge=document.getElementById('dash-cfg-count');if(badge)badge.textContent=on+'/'+allTogs.length}
   if((key==='charts'||key==='desChart')&&w[key]!==false)setTimeout(()=>initDashCharts(),50);
   if(key==='miniCal'&&w[key]!==false){const mc=document.getElementById('dash-mini-cal');if(mc&&!mc.innerHTML)renderDashCalendar().then(html=>{mc.innerHTML=html})}
 }
@@ -3974,8 +4017,20 @@ function toggleDashCfg(){
   _dashCfgOpen=!_dashCfgOpen;
   const panel=document.getElementById('dash-cfg-panel'),btn=document.getElementById('dash-cfg-btn');
   if(panel)panel.classList.toggle('open',_dashCfgOpen);
-  const isEN=CFG.lang==='en';
-  if(btn)btn.innerHTML=_dashCfgOpen?(isEN?'Customize dashboard':'Personalizeaza dashboard')+' &#9650;':(isEN?'Customize dashboard':'Personalizeaza dashboard')+' &#9660;';
+  if(btn)btn.classList.toggle('open',_dashCfgOpen);
+}
+// v13.14 - schimba pragul (30/60/90 zile) pentru cardurile PROXIME din dashboard fara re-render full
+function setDashPeriod(p){
+  if(!window._dashPeriodCounts||!window._dashPeriodCounts[p])return;
+  CFG.dash_period=p;saveCfg();
+  // Update tab active state
+  document.querySelectorAll('.dash-period-tab').forEach(b=>{var on=b.textContent.trim().startsWith(p+' ');b.classList.toggle('active',on);b.setAttribute('aria-selected',on)});
+  // Update card values + label day count
+  const c=window._dashPeriodCounts[p];const map={dls:c.dls,docs:c.docs,evts:c.evts,trains:c.trains,audits:c.audits};
+  document.querySelectorAll('.dash-up-card').forEach(card=>{
+    var k=card.getAttribute('data-dwk');if(k&&map[k]!==undefined){var v=card.querySelector('.dup-val');if(v)v.textContent=map[k]}
+    var d=card.querySelector('.dup-d');if(d)d.textContent=p;
+  });
 }
 
 
@@ -4060,27 +4115,19 @@ async function rDash(el){
     var end=new Date(_today0.getTime()+(days+1)*86400000);
     return dt>=_today0&&dt<end;
   }
-  const dlsUp=dls.filter(d=>{if(!d.due_date||d.status==='trimis'||d.status==='finalizat'||d._isTemplate)return false;return _isInDays(d.due_date,30)}).length;
-  // v13.3+13.7 - dashboard arata si Evenimente/Sedinte, Instruiri si Audituri programate in proximele 30 zile.
-  // events store contine TOATE intrarile manuale (incl. category='training','audit','meeting','other')
-  // de aceea SPLIT-UM evenimentele dupa category pentru a numara separat.
+  // v13.14 - count-uri pentru 3 ferestre: 30, 60, 90 zile (user comuta in tabs)
   const _allEvts=await ga('events');
   const _allTrains=await ga('trainings');
   const _allAudits=await ga('audits');
-  // Sedinte/evenimente generale (nu audit, nu training): general + meeting + inspection + other + deadline (manual)
-  const evtsUp=_allEvts.filter(e=>{
-    if(!_isInDays(e.date,30))return false;
-    const cat=e.category||'general';
-    return cat!=='audit'&&cat!=='training';
-  }).length;
-  // Instruiri planificate = events cu category='training' + records din store trainings cu data viitoare
-  const trainsUp=
-    _allEvts.filter(e=>e.category==='training'&&_isInDays(e.date,30)).length+
-    _allTrains.filter(t=>_isInDays(t.date,30)).length;
-  // Audituri planificate = events cu category='audit' + records din store audits cu data viitoare
-  const auditsUp=
-    _allEvts.filter(e=>e.category==='audit'&&_isInDays(e.date,30)).length+
-    _allAudits.filter(a=>_isInDays(a.date,30)).length;
+  function _evtsUpFor(d){return _allEvts.filter(e=>{if(!_isInDays(e.date,d))return false;const cat=e.category||'general';return cat!=='audit'&&cat!=='training'}).length}
+  function _trainsUpFor(d){return _allEvts.filter(e=>e.category==='training'&&_isInDays(e.date,d)).length+_allTrains.filter(t=>_isInDays(t.date,d)).length}
+  function _auditsUpFor(d){return _allEvts.filter(e=>e.category==='audit'&&_isInDays(e.date,d)).length+_allAudits.filter(a=>_isInDays(a.date,d)).length}
+  function _dlsUpFor(d){return dls.filter(x=>{if(!x.due_date||x.status==='trimis'||x.status==='finalizat'||x._isTemplate)return false;return _isInDays(x.due_date,d)}).length}
+  function _docsExpSoonFor(d){var end=new Date(_today0.getTime()+(d+1)*86400000);return docs.filter(x=>{var dt=_parseDate(x.date_expiry);if(!dt)return false;return dt>=_today0&&dt<end}).length}
+  const _periods=[30,60,90];
+  const _curPeriod=[30,60,90].includes(+(CFG.dash_period))?+CFG.dash_period:30;
+  const _counts={};_periods.forEach(p=>{_counts[p]={dls:_dlsUpFor(p),docs:_docsExpSoonFor(p),evts:_evtsUpFor(p),trains:_trainsUpFor(p),audits:_auditsUpFor(p)}});
+  const dlsUp=_counts[_curPeriod].dls, docsExpSoonP=_counts[_curPeriod].docs, evtsUp=_counts[_curPeriod].evts, trainsUp=_counts[_curPeriod].trains, auditsUp=_counts[_curPeriod].audits;
   // Sparkline data: IAAM per month
   const ibm=Array(12).fill(0);ia.forEach(r=>{if(r.month>=1&&r.month<=12)ibm[r.month-1]++});
   // Sparkline data: autocontrol neconf per month
@@ -4107,12 +4154,45 @@ async function rDash(el){
   });
 
   let h='<div class="print-header"></div>';
-  // CONFIG BAR
+  // v13.14 - CONFIG BAR redesign: buton cu icon gear + badge count + panou cu toggle switches grupate pe categorii cu mini-icon
   const _dw=CFG.dash_widgets||{};
-  const _dwItems=[['kpi','KPI-uri principale'],['docsKpi','Documente & Raportari'],['audKpi','Audituri & Instruiri'],['atpKpi','ATP / UV'],['miniCal','Calendar & Evenimente'],['activity','Activitate Recenta'],['charts','Grafice IAAM/Auto'],['desChart','Grafice Deseuri/Sectii']];
-  h+='<div class="dash-cfg-bar"><button id="dash-cfg-btn" onclick="toggleDashCfg()" title="'+(isEN?'Configure sections':'Configureaza sectiuni')+'">'+(isEN?'Customize dashboard':'Personalizeaza dashboard')+' &#9660;</button></div>';
+  const _dwGroups=[
+    {title:isEN?'Indicators':'Indicatori',items:[
+      ['kpi','&#128202;',isEN?'Main KPIs':'KPI-uri principale'],
+      ['docsKpi','&#128197;',isEN?'Documents & Reporting':'Documente & Raportari'],
+      ['audKpi','&#9989;',isEN?'Audits & Trainings':'Audituri & Instruiri'],
+      ['atpKpi','&#128167;',isEN?'ATP / UV':'ATP / UV']
+    ]},
+    {title:isEN?'Calendar & Activity':'Calendar & Activitate',items:[
+      ['miniCal','&#128467;',isEN?'Calendar & Events':'Calendar & Evenimente'],
+      ['activity','&#128276;',isEN?'Recent Activity':'Activitate Recenta']
+    ]},
+    {title:isEN?'Charts':'Grafice',items:[
+      ['charts','&#128200;',isEN?'IAAM / Autocontrol':'IAAM / Autocontrol'],
+      ['desChart','&#128203;',isEN?'Waste / Sections':'Deseuri / Sectii']
+    ]}
+  ];
+  const _totalWidgets=_dwGroups.reduce((s,g)=>s+g.items.length,0);
+  const _activeWidgets=_dwGroups.reduce((s,g)=>s+g.items.filter(([k])=>_dw[k]!==false).length,0);
+  h+='<div class="dash-cfg-bar"><button id="dash-cfg-btn" class="dash-cfg-btn-pretty" onclick="toggleDashCfg()" title="'+(isEN?'Configure sections':'Configureaza sectiuni')+'">'+
+    '<span class="dash-cfg-icon">&#9881;</span>'+
+    '<span class="dash-cfg-text">'+(isEN?'Customize dashboard':'Personalizeaza dashboard')+'</span>'+
+    '<span class="dash-cfg-count" id="dash-cfg-count">'+_activeWidgets+'/'+_totalWidgets+'</span>'+
+    '<span class="dash-cfg-caret">&#9660;</span>'+
+  '</button></div>';
   h+='<div id="dash-cfg-panel" class="dash-cfg-panel">';
-  _dwItems.forEach(([k,l])=>{h+='<label><input type="checkbox" '+(_dw[k]!==false?'checked':'')+' onchange="toggleWidget(\''+k+'\')"> '+l+'</label>'});
+  _dwGroups.forEach(g=>{
+    h+='<div class="dash-cfg-group"><div class="dash-cfg-group-title">'+g.title+'</div><div class="dash-cfg-group-items">';
+    g.items.forEach(([k,ic,lbl])=>{
+      var on=_dw[k]!==false;
+      h+='<div class="dash-cfg-toggle'+(on?' on':'')+'" data-dwkey="'+k+'" onclick="toggleWidget(\''+k+'\')" role="switch" aria-checked="'+on+'" tabindex="0">'+
+        '<span class="dcti">'+ic+'</span>'+
+        '<span class="dctl">'+lbl+'</span>'+
+        '<span class="dcts" aria-hidden="true"></span>'+
+      '</div>';
+    });
+    h+='</div></div>';
+  });
   h+='</div>';
   // 1. QUICK ACTIONS — eliminat in v13.13 (redundant cu sidebar; "Genereaza Raport" doar naviga, "Proba Autocontrol" mergea doar la microbio si confuza userul cu privire la ATP/UV)
   // 2. CALENDAR & EVENIMENTE — moved up
@@ -4134,18 +4214,25 @@ async function rDash(el){
     '<div class="kc bl" onclick="nav(\'biocide\')"><div class="kl"><span>'+T('kpi_biocide')+'</span>'+sparkSVG(bbm,50,16,'#2563B0')+'</div><div class="kv">'+fn(Math.round(consBio))+' lei</div><div class="ks">'+y+'</div>'+kpiTrend(Math.round(consBio),Math.round(pConsBio),true,pBi.length>0)+'</div>'+
     '<div class="kc gn" onclick="nav(\'config\')"><div class="kl"><span>'+T('kpi_paturi')+'</span></div><div class="kv">'+wb.toFixed(0)+'</div><div class="ks">'+T('kpi_capacitate')+' '+y+'</div></div>'+
     (()=>{const tzs=de.reduce((s,r)=>s+(+r.zile_spit||0),0);const iaam1000=tzs>0?((ia.length*1000)/tzs).toFixed(2):'—';const tpe=de.reduce((s,r)=>s+(+r.pac_ext||0),0);const des1000=tzs>0?((totD*1000)/tzs).toFixed(2):'—';const desPe=tpe>0?(totD/tpe).toFixed(2):'—';return (tzs>0?'<div class="kc bl" onclick="nav(\'iaam\')"><div class="kl">IAAM/1000 zile spit.</div><div class="kv">'+iaam1000+'</div></div><div class="kc am" onclick="nav(\'deseuri\')"><div class="kl">kg des/1000 zile spit.</div><div class="kv">'+des1000+'</div></div>':'')+(tpe>0?'<div class="kc tl" onclick="nav(\'deseuri\')"><div class="kl">kg des/pac. ext.</div><div class="kv">'+desPe+'</div></div>':'')})()+'</div></div>';
-  // 5. Docs & deadlines KPI - v13.4: 2 carduri cumulative + 5 carduri PROXIME 30 ZILE color-matched cu legenda Calendar
-  h+='<div class="dash-section'+(_dw.docsKpi===false?' hidden':'')+'" data-dw="docsKpi"><div class="kg">'+
-    // CUMULATIVE (despre prezent)
+  // 5. Docs & deadlines KPI - v13.14: tab bar 30/60/90 zile peste cardurile PROXIME (motiv: viza anuala mediu si alte raportari au fereastra 30-60 zile pentru depunere documente)
+  // Total counts pentru fiecare perioada inscrise pe tabs (user vede diferenta dintre 30/60/90 instant)
+  const _totFor=p=>_counts[p].dls+_counts[p].docs+_counts[p].evts+_counts[p].trains+_counts[p].audits;
+  var _periodTabs='<div class="dash-period-tabs" role="tablist">'+
+    '<span class="dash-period-label">'+(isEN?'Time window:':'Fereastra:')+'</span>'+
+    _periods.map(p=>'<button class="dash-period-tab'+(p===_curPeriod?' active':'')+'" onclick="setDashPeriod('+p+')" role="tab" aria-selected="'+(p===_curPeriod)+'">'+p+' '+(isEN?'days':'zile')+'<span class="dpt-cnt">'+_totFor(p)+'</span></button>').join('')+
+  '</div>';
+  h+='<div class="dash-section'+(_dw.docsKpi===false?' hidden':'')+'" data-dw="docsKpi" id="dash-docsKpi-wrap">'+_periodTabs+'<div class="kg" id="dash-docsKpi-grid">'+
     '<div class="kc gn" onclick="nav(\'documente\')"><div class="kl">'+T('kpi_docs_val')+'</div><div class="kv">'+docsValid+'</div><div class="ks">'+T('kpi_ok')+'</div></div>'+
     (docsExpired>0?'<div class="kc rd" onclick="nav(\'documente\')"><div class="kl">'+(isEN?'EXPIRED DOCUMENTS':'DOCUMENTE EXPIRATE')+'</div><div class="kv">'+docsExpired+'</div></div>':'')+
-    // PROXIME 30 ZILE (color-matched cu legenda Calendar: rosu termene, galben expirare docs, albastru evenimente, verde instruiri, teal audituri)
-    '<div class="kc rd" onclick="nav(\'calendar\')"><div class="kl">'+(isEN?'DEADLINES <= 30 DAYS':'TERMENE/RAPORTARI ≤ 30 ZILE')+'</div><div class="kv">'+dlsUp+'</div><div class="ks"><a href="#" onclick="nav(\'calendar\');return false" style="color:var(--red);font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
-    '<div class="kc am" onclick="nav(\'documente\')"><div class="kl">'+(isEN?'DOCS EXPIRING <= 30 DAYS':'EXPIRARE DOCUMENTE ≤ 30 ZILE')+'</div><div class="kv">'+docsExpSoon+'</div><div class="ks"><a href="#" onclick="nav(\'documente\');return false" style="color:var(--amber);font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
-    '<div class="kc bl" onclick="nav(\'calendar\')"><div class="kl">'+(isEN?'EVENTS/MEETINGS <= 30 DAYS':'EVENIMENTE/SEDINTE ≤ 30 ZILE')+'</div><div class="kv">'+evtsUp+'</div><div class="ks"><a href="#" onclick="nav(\'calendar\');return false" style="color:#2563B0;font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
-    '<div class="kc gn" onclick="nav(\'calendar\')"><div class="kl">'+(isEN?'TRAININGS PLANNED <= 30 DAYS':'INSTRUIRI PLANIFICATE ≤ 30 ZILE')+'</div><div class="kv">'+trainsUp+'</div><div class="ks"><a href="#" onclick="nav(\'calendar\');return false" style="color:#166534;font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
-    '<div class="kc tl" onclick="nav(\'calendar\')"><div class="kl">'+(isEN?'AUDITS PLANNED <= 30 DAYS':'AUDITURI PLANIFICATE ≤ 30 ZILE')+'</div><div class="kv">'+auditsUp+'</div><div class="ks"><a href="#" onclick="nav(\'calendar\');return false" style="color:#0F7B6C;font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
+    // Carduri reactive la _curPeriod prin atribute data-* + label dinamic
+    '<div class="kc rd dash-up-card" data-dwk="dls" onclick="nav(\'calendar\')"><div class="kl"><span class="dup-lbl">'+(isEN?'DEADLINES':'TERMENE/RAPORTARI')+' ≤ <span class="dup-d">'+_curPeriod+'</span> '+(isEN?'DAYS':'ZILE')+'</span></div><div class="kv dup-val">'+dlsUp+'</div><div class="ks"><a href="#" onclick="nav(\'calendar\');return false" style="color:var(--red);font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
+    '<div class="kc am dash-up-card" data-dwk="docs" onclick="nav(\'documente\')"><div class="kl"><span class="dup-lbl">'+(isEN?'DOCS EXPIRING':'EXPIRARE DOCUMENTE')+' ≤ <span class="dup-d">'+_curPeriod+'</span> '+(isEN?'DAYS':'ZILE')+'</span></div><div class="kv dup-val">'+docsExpSoonP+'</div><div class="ks"><a href="#" onclick="nav(\'documente\');return false" style="color:var(--amber);font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
+    '<div class="kc bl dash-up-card" data-dwk="evts" onclick="nav(\'calendar\')"><div class="kl"><span class="dup-lbl">'+(isEN?'EVENTS/MEETINGS':'EVENIMENTE/SEDINTE')+' ≤ <span class="dup-d">'+_curPeriod+'</span> '+(isEN?'DAYS':'ZILE')+'</span></div><div class="kv dup-val">'+evtsUp+'</div><div class="ks"><a href="#" onclick="nav(\'calendar\');return false" style="color:#2563B0;font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
+    '<div class="kc gn dash-up-card" data-dwk="trains" onclick="nav(\'calendar\')"><div class="kl"><span class="dup-lbl">'+(isEN?'TRAININGS PLANNED':'INSTRUIRI PLANIFICATE')+' ≤ <span class="dup-d">'+_curPeriod+'</span> '+(isEN?'DAYS':'ZILE')+'</span></div><div class="kv dup-val">'+trainsUp+'</div><div class="ks"><a href="#" onclick="nav(\'calendar\');return false" style="color:#166534;font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
+    '<div class="kc tl dash-up-card" data-dwk="audits" onclick="nav(\'calendar\')"><div class="kl"><span class="dup-lbl">'+(isEN?'AUDITS PLANNED':'AUDITURI PLANIFICATE')+' ≤ <span class="dup-d">'+_curPeriod+'</span> '+(isEN?'DAYS':'ZILE')+'</span></div><div class="kv dup-val">'+auditsUp+'</div><div class="ks"><a href="#" onclick="nav(\'calendar\');return false" style="color:#0F7B6C;font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
   '</div></div>';
+  // Expune _counts pe window pentru setDashPeriod() (definita in ui.js)
+  window._dashPeriodCounts=_counts;
   // 6. Audituri + Instruire KPI
   const audits=(await ga('audits')).filter(r=>r.year===y);
   const trains=(await ga('trainings')).filter(r=>r.year===y);
@@ -18734,6 +18821,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.14',date:'2026-04-28',notes:'(1) Dashboard - butonul Personalizeaza dashboard redesignat din ghost-button text in card-button cu icon gear ⚙ care se roteste 60° la hover/open, badge teal cu count widget-uri active (ex 8/8), caret jos care se rotește la deschidere. La open primeste background pal teal #F0FDFA si border #0D9488. Panoul de configurare schimbat fundamental: in loc de checkbox-uri native inline, acum 3 grupuri logice (Indicatori cu KPI/docsKpi/audKpi/atpKpi, Calendar & Activitate cu miniCal/activity, Grafice cu charts/desChart) - fiecare grup cu titlu uppercase, fiecare item cu mini-icon Unicode (📊 KPI, 📅 Documente, ✅ Audituri, 💧 ATP, 🗓 Calendar, 🔔 Activity, 📈 IAAM, 📋 Deseuri) plus toggle switch stil iOS (32x18px, glisor cu shadow, animatie .2s) in loc de checkbox native ce era cu accent-color teal. Hover pe fiecare toggle ridica box-shadow subtila si schimba border in teal. Focus visible cu outline teal pentru accesibilitate. toggleWidget() in ui.js sincronizeaza acum starea toggle-ului + recalculeaza badge-ul count. Dark theme handled cu overrides specifice pentru background si border.'},
+  {version:'13.14',date:'2026-04-28',notes:'(2) Dashboard - filtru 30/60/90 zile peste cardurile PROXIME (Termene/Raportari, Expirare Documente, Evenimente/Sedinte, Instruiri Planificate, Audituri Planificate). Motivul real (raportat de user): viza anuala de mediu si alte raportari oficiale au fereastra 30-60 zile inainte de expirare in care trebuie depuse documentele - cu doar 30 zile vizibile, raportarea iese pe ecran prea tarziu. Implementare: tab bar deasupra sectiunii docsKpi cu butoane 30/60/90 zile, fiecare arata count total (suma celor 5 carduri) ca user vede diferenta intre ferestre instant. Persistent in CFG.dash_period. Implementare optimizata: la render dashboard se calculeaza count-urile pentru toate cele 3 ferestre o data (functii _evtsUpFor/_trainsUpFor/_auditsUpFor/_dlsUpFor/_docsExpSoonFor parametrice cu d zile), apoi click pe tab nu mai face re-render full ci doar swap valori prin DOM (.dup-val span) + label dinamic (span .dup-d arata 30/60/90 zile in titlu). Functie globala setDashPeriod(p) in ui.js. Cardurile au data-dwk attribute (dls/docs/evts/trains/audits) pentru DOM addressing curat. window._dashPeriodCounts stocheaza count-urile precalculate.'},
   {version:'13.13',date:'2026-04-28',notes:'Dashboard - eliminat rândul Quick Actions (4 butoane: Caz IAAM, Proba Autocontrol, Audit Nou, Genereaza Raport) care ocupa ~80px vertical sus si nu aducea valoare reala. Motivele de eliminare per buton: (1) Genereaza Raport era PUR REDUNDANT cu nav-ul sidebar -> apasarea facea exact ce face click pe Generare Rapoarte din sidebar (zero acțiune extra, doar nav). (2) Proba Autocontrol mergea la autocontrol + editAuto() care deschide doar Probe Microbiologice, NU si ATP / Testare UV - userul era confuz. (3) Caz IAAM si Audit Nou economiseau doar 1 click fata de fluxul standard (sidebar -> + buton din pagina). Cum sidebar-ul are 4-5 module esentiale toate vizibile mereu, nu exista cazul tipic Quick Actions (10+ module ascunse in submeniuri profunde). Castig: ~80px vertical, calendarul + evenimentele saptamana asta urca direct in viewport-ul fara scroll. Codul sterse din dashboard.js (5 linii div + 4 butoane + class CSS dash-quick orphan ramane in styles.css dar nu mai e folosit, cleanup CSS la pasul urmator).'},
   {version:'13.12',date:'2026-04-28',notes:'(1) FIX CRITICAL date parsing in calendar - records vechi cu format ISO complet (YYYY-MM-DDTHH:MM:SS[.ms][Z]), format RO (DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY) sau timestamp ms (10+ cifre) erau pierdute la afisare. Bug cumulativ in 4 locuri necovered de fix-ul v13.7-v13.9 care s-a aplicat doar la cardurile KPI dashboard: (a) calendar.js getCalendarEvents (linia 406-435) - punctele colorate pe grid-ul lunar foloseau new Date(d.due_date) naive care esua silentios; (b) calendar.js buildMonthGrid (linia 442) - evMap construit cu parseInt(ev.date.slice(-2)) presupunea YYYY-MM-DD, sparge pe DD/MM/YYYY (extrage 26 ca zi din 30/04/2026); (c) calendar.js renderDashCalendar (linia 612-617, 627, 645, 651) - lista Upcoming din mini-calendar dashboard cu 6 surse separate (deadlines, docs, events, trainings, audits, biocide_avize) toate folosind new Date(d+T00:00:00) care esueaza cand d e deja ISO complet sau RO; (d) dashboard.js urgent banner (linia 110-123) - alerte expirat/depasit/aviz biocid foloseau new Date(s)<new Date() naive in 4 forEach. Solutie: helper global parseDate(s) in helpers.js cu 5 patterns ordonate (YYYY-MM-DD scurt, ISO complet cu T, RO cu separator . / -, timestamp ms 10+, fallback nativ) returnand Date la 00:00 local; plus parseDateISO(s) care returneaza YYYY-MM-DD din orice format. event.date din getCalendarEvents acum normalizat la ISO inainte de push, deci downstream buildMonthGrid + filterByDays + grouping primesc format consistent. Banner urgente foloseste _parseDate local (deja existent in dashboard.js) pentru toate cele 4 cazuri. Comportament: toate evenimentele apar acum indiferent de cum a fost salvata data initiala (manual, import, sync de la alt PC, format vechi pre-v12).'},
   {version:'13.12',date:'2026-04-28',notes:'(2) Autocontrol Planificare reordonare logica - sectiunile A si B au fost interschimbate. Inainte: A Nerecoltat (rosu) -> B Cu neconformitati (portocaliu) -> C >6 luni (galben). Acum: B Cu neconformitati (portocaliu, prioritate maxima) -> A Nerecoltat in perioada curenta (rosu) -> C >6 luni (galben). Argumentul: NC = risc CONFIRMAT (proba deja recoltata, esuata, problema reala pe sectie) in timp ce Nerecoltat = risc POTENTIAL (probabil OK dar n-avem date). Plus volumul mare la Nerecoltat (370 items intr-un sample real) ar fi ingropat cele 2 NC critice mai jos, scrolled-down si ignorate. Logica IPC ECDC/INSP: trateaza ce e dovedit ca problema inainte de a cauta probleme noi. Vizibil in summary B: subtitlu (prioritate — risc confirmat) / (priority — confirmed risk) font-size 10px opacity .75 langa titlu, ca utilizatorul sa inteleaga de ce e prima. Numerotarea interna a checkbox-urilor (acp-0, acp-1, ...) ramane consecutiva indiferent de ordine pentru ca idx se incrementeaza in ordinea HTML, deci saveAutoPlanning() functioneaza neschimbata.'},

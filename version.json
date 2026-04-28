@@ -1,7 +1,8 @@
 {
-  "version": "13.13",
+  "version": "13.14",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Dashboard: eliminat rândul Quick Actions (Caz IAAM / Proba Autocontrol / Audit Nou / Genereaza Raport). Motive: 'Genereaza Raport' era pur redundant cu sidebar (doar naviga); 'Proba Autocontrol' mergea doar la microbio si confuza userul fata de ATP/UV; 'Caz IAAM' si 'Audit Nou' salvau doar 1 click vs sidebar. Castig vertical ~80px deci calendarul si evenimentele urca in zona vizibila fara scroll."
+    "Dashboard: butonul 'Personalizeaza dashboard' redesignat - icon gear ⚙ care se roteste la hover, badge cu count widget-uri active (8/8), efect lift cu border teal la hover/open. Panoul cu checkbox-uri inline inlocuit de 3 grupuri (Indicatori / Calendar & Activitate / Grafice) cu mini-icon per fiecare item si toggle switches stil iOS in loc de checkbox native.",
+    "Dashboard: filtru 30/60/90 zile peste cardurile PROXIME (Termene/Documente/Evenimente/Instruiri/Audituri). Util pentru viza anuala mediu si alte raportari cu fereastra 30-60 zile pana la expirare. Tab bar arata count total per perioada (vezi diferenta intre 30/60/90 instant). Persistent in CFG.dash_period."
   ]
 }

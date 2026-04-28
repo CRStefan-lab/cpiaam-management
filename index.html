@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.10</title>
+<title>CPIAAM Management v13.11</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -185,6 +185,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 /* Plan tab */
 .ac-plan-section{margin-bottom:18px}
 .ac-plan-section h4{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)}
+.ac-plan-section>summary:hover{filter:brightness(.97)}
+.ac-plan-section[open]>summary .ac-plan-chev{transform:rotate(90deg)}
+.ac-plan-section>summary::-webkit-details-marker{display:none}
 .ac-plan-item{padding:8px 0;border-bottom:1px solid var(--brd);font-size:12px}
 .ac-plan-item label{display:flex;align-items:flex-start;gap:8px;cursor:pointer}
 .ac-plan-item input[type=checkbox]{margin-top:3px;accent-color:var(--teal)}
@@ -2200,7 +2203,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.10';
+const APP_VERSION='13.11';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6090,34 +6093,41 @@ function renderAutoTab2(data,allData,matrix,probeTypes,sections,isEN,qLabel){
   let idx=0;
 
   // v13.10 - Sectiuni A/B/C ca <details> collapsible cu count in summary
+  // v13.11 - default inchise + chevron rotativ ca indicator vizual
   // Section A - Nerecoltat in perioada curenta
-  h+='<details open class="ac-plan-section" style="margin-bottom:12px;border:1px solid var(--brd);border-radius:8px;overflow:hidden">'+
+  h+='<details class="ac-plan-section" style="margin-bottom:12px;border:1px solid var(--brd);border-radius:8px;overflow:hidden">'+
     '<summary style="cursor:pointer;padding:10px 14px;background:#FEE2E2;color:#7C0A0A;font-weight:700;font-size:14px;list-style:none;user-select:none;display:flex;align-items:center;gap:8px">'+
+    '<span class="ac-plan-chev" style="display:inline-block;font-size:11px;width:12px;text-align:center;transition:transform .15s">&#9654;</span>'+
     '<span style="font-size:16px">&#128308;</span> '+
     '<span style="flex:1">'+(isEN?'Not sampled in current period':'Nerecoltat in perioada curenta')+' ('+qLabel+')</span>'+
     '<span style="background:#7C0A0A;color:#fff;padding:2px 10px;border-radius:10px;font-size:12px">'+planA.length+'</span>'+
+    '<span style="font-size:11px;font-weight:500;opacity:.7;margin-left:6px">'+(isEN?'click to expand':'click pentru detalii')+'</span>'+
     '</summary><div style="padding:8px 14px">';
   if(planA.length===0) h+='<div style="font-size:12px;color:var(--txtL);padding:8px 0">'+(isEN?'All combinations tested!':'Toate combinatiile testate!')+'</div>';
   else planA.forEach(p=>{h+=renderPlanItem(idx++,p.ptName,p.secName,'nerecoltat',isEN?'Not sampled in '+qLabel:'Nerecoltat in '+qLabel,isEN)});
   h+='</div></details>';
 
   // Section B - Cu neconformitati
-  h+='<details open class="ac-plan-section" style="margin-bottom:12px;border:1px solid var(--brd);border-radius:8px;overflow:hidden">'+
+  h+='<details class="ac-plan-section" style="margin-bottom:12px;border:1px solid var(--brd);border-radius:8px;overflow:hidden">'+
     '<summary style="cursor:pointer;padding:10px 14px;background:#FED7AA;color:#7C2D12;font-weight:700;font-size:14px;list-style:none;user-select:none;display:flex;align-items:center;gap:8px">'+
+    '<span class="ac-plan-chev" style="display:inline-block;font-size:11px;width:12px;text-align:center;transition:transform .15s">&#9654;</span>'+
     '<span style="font-size:16px">&#128992;</span> '+
     '<span style="flex:1">'+(isEN?'Non-conformities — retest needed':'Cu neconformitati — re-testare necesara')+'</span>'+
     '<span style="background:#7C2D12;color:#fff;padding:2px 10px;border-radius:10px;font-size:12px">'+planB.length+'</span>'+
+    '<span style="font-size:11px;font-weight:500;opacity:.7;margin-left:6px">'+(isEN?'click to expand':'click pentru detalii')+'</span>'+
     '</summary><div style="padding:8px 14px">';
   if(planB.length===0) h+='<div style="font-size:12px;color:var(--txtL);padding:8px 0">'+(isEN?'No non-conformities':'Fara neconformitati')+'</div>';
   else planB.forEach(p=>{h+=renderPlanItem(idx++,p.ptName,p.secName,'neconformitate',(isEN?'NC ':'NC ')+p.ncPct+'% — '+(isEN?'retest recommended':'re-testare recomandata'),isEN)});
   h+='</div></details>';
 
   // Section C - Nerecoltat de >6 luni
-  h+='<details open class="ac-plan-section" style="margin-bottom:12px;border:1px solid var(--brd);border-radius:8px;overflow:hidden">'+
+  h+='<details class="ac-plan-section" style="margin-bottom:12px;border:1px solid var(--brd);border-radius:8px;overflow:hidden">'+
     '<summary style="cursor:pointer;padding:10px 14px;background:#FEF3C7;color:#854F0B;font-weight:700;font-size:14px;list-style:none;user-select:none;display:flex;align-items:center;gap:8px">'+
+    '<span class="ac-plan-chev" style="display:inline-block;font-size:11px;width:12px;text-align:center;transition:transform .15s">&#9654;</span>'+
     '<span style="font-size:16px">&#128993;</span> '+
     '<span style="flex:1">'+(isEN?'Not sampled in >6 months':'Nerecoltat de >6 luni')+'</span>'+
     '<span style="background:#854F0B;color:#fff;padding:2px 10px;border-radius:10px;font-size:12px">'+planCFiltered.length+'</span>'+
+    '<span style="font-size:11px;font-weight:500;opacity:.7;margin-left:6px">'+(isEN?'click to expand':'click pentru detalii')+'</span>'+
     '</summary><div style="padding:8px 14px">';
   if(planCFiltered.length===0) h+='<div style="font-size:12px;color:var(--txtL);padding:8px 0">'+(isEN?'No old gaps':'Fara lacune vechi')+'</div>';
   else planCFiltered.forEach(p=>{h+=renderPlanItem(idx++,p.ptName,p.secName,'vechi',(isEN?'Last sampled: ':'Ultima recoltare: ')+p.last,isEN)});
@@ -18693,6 +18703,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.11',date:'2026-04-28',notes:'UX Autocontrol -> Planificare: cele 3 sectiuni (Nerecoltat in perioada curenta / Cu neconformitati - re-testare necesara / Nerecoltat de >6 luni) sunt acum INCHISE default (inainte erau open default, deci la intrarea pe tab user-ul vedea toate sutele de probe expandate si trebuia sa scrolleze mult). Acum vede doar 3 headere compacte cu count badge si decide singur ce sa exploreze. Indicator vizual de expand: chevron triunghi (▶) la inceputul fiecarui header care se roteste 90° (▼) cand sectiunea e deschisa - feedback clar ca header-ul e clickabil. Plus hint text "click pentru detalii" / "click to expand" (font-size 11px, opacity .7) afisat la dreapta count badge-ului ca sa nu existe ambiguitate. Hover pe summary aplica filter:brightness(.97) - efect subtil de lift. CSS in styles.css: .ac-plan-section[open]>summary .ac-plan-chev{transform:rotate(90deg)} cu transition .15s smooth. WebKit details-marker hidden cu ::-webkit-details-marker{display:none} ca sa nu apara duplicat alaturi de chevron-ul nostru.'},
   {version:'13.10',date:'2026-04-24',notes:'UX Autocontrol -> Planificare: cele 3 sectiuni (Nerecoltat in perioada curenta cu emoji rosu, Cu neconformitati - re-testare necesara cu emoji portocaliu, Nerecoltat de >6 luni cu emoji galben) sunt acum elemente HTML details/summary collapsible (deschise default). Click pe header inchide / deschide sectiunea, util pentru liste lungi cand vrei sa te concentrezi doar pe una. Fiecare summary contine: emoji punct colorat, titlul sectiunii, badge count la dreapta cu numarul total de probe in sectiune (background colorat in tonul sectiunii). Backgrounds: A rosu deschis (#FEE2E2 + text #7C0A0A), B portocaliu (#FED7AA + text #7C2D12), C galben (#FEF3C7 + text #854F0B). Padding 10px 14px in summary, 8px 14px in continut. Border-radius 8px pe details, overflow hidden pentru round corners.'},
   {version:'13.9',date:'2026-04-24',notes:'FIX FINAL dashboard cardurile 30-zile - parser robust _parseDate care accepta TOATE formatele de data salvate de-a lungul timpului. Cauza pe care v13.7 nu o acoperea: records vechi pot avea format ISO complet (2026-04-28T00:00:00.000Z), format RO (28.04.2026, 30/04/2026), sau timestamp ms - parser-ul scurt new Date(s+T00:00:00) esua pe ele si returna NaN, deci filtrul excludea. Parser-ul nou foloseste 5 patterns ordonate: (1) /^\\d{4}-\\d{2}-\\d{2}$/ regex pentru format scurt YYYY-MM-DD - parseaza direct cu T00:00:00 ca sa fie local time; (2) /^\\d{4}-\\d{2}-\\d{2}T/ pentru ISO complet - parseaza nativ + reconstructie local din getFullYear/Month/Date la 00:00 (asta evita shift-ul TZ care ar muta data cu o zi inainte/dupa cand timezone-ul user-ului difera de UTC); (3) /^(\\d{1,2})[.\\/](\\d{1,2})[.\\/](\\d{4})$/ pentru DD.MM.YYYY si DD/MM/YYYY format RO; (4) /^\\d{10,}$/ pentru timestamp ms numeric (10+ cifre); (5) Fallback la new Date(s) nativ. Returneaza null pentru date invalide. Aplicat in _isInDays (folosit pentru events/trainings/audits/deadlines) si in cele 3 calcule docsValid/docsExpSoon/docsExpired. Sterse cele 4 console.log debug v13.8 (rolul lor a fost confirmat: codul functioneaza, formatul vechi era cauza). TESTAT in preview server cu 6 formate simultan - fiecare card primeste numar corect distribuit pe categorii (4 events general/other/meeting + 1 audit ISO + 1 training ISO).'},
   {version:'13.8',date:'2026-04-24',notes:'DEBUG temporar dashboard: 4 mesaje console.log adaugate dupa await ga(events/trainings/audits) pentru a diagnostica de ce cardurile EVENIMENTE/INSTRUIRI/AUDITURI <= 30 ZILE arata 0 in screenshot-uri user dupa fix v13.7. Mesaje: counts totale per store, sample primul event (date+title+category), count events in next 30d cu data curenta. Logging-ul nu afecteaza UI - doar in browser console (F12). Va fi sters dupa diagnoza in v13.9. Plus fix pentru cazul cand SW serveste versiune cached - user trebuie hard refresh (Ctrl+Shift+R) sau click verifica update.'},

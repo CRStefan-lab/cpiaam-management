@@ -1,8 +1,8 @@
 {
-  "version": "13.10",
+  "version": "13.11",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "UX Autocontrol -> Planificare: cele 3 sectiuni (Nerecoltat in perioada curenta / Cu neconformitati - re-testare necesara / Nerecoltat de >6 luni) sunt acum collapsible cu details/summary, deschise default. Click pe header le inchide/deschide.",
-    "Fiecare sectiune are: header colorat (rosu / portocaliu / galben), emoji punct, titlu, count badge la dreapta cu numarul de probe in sectiune. Mai usor de scanat liste lungi - inchide cele care nu te intereseaza acum si te concentrezi pe celelalte."
+    "UX Autocontrol -> Planificare: cele 3 sectiuni (Nerecoltat in perioada curenta / Cu neconformitati / Nerecoltat de >6 luni) sunt acum INCHISE default. Userul vede doar headerele cu count badge si decide singur ce sectiune sa exploreze.",
+    "Indicator vizual de expand: chevron triunghi (▶) la inceputul fiecarui header care se roteste 90° cand sectiunea e deschisa + hint text 'click pentru detalii' la dreapta count-ului. Mai usor de inteles ca sunt clickabile."
   ]
 }

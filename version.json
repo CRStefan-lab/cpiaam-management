@@ -1,8 +1,8 @@
 {
-  "version": "13.2",
+  "version": "13.6",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX UX avertismente in editor produs biocide. Inainte: chips inline-flex cu lungimi inconsistente (INFLAMABIL mic, RESTRICTII LEGALE rupt pe rand intreg). Acum: layout grid cu coloane uniforme auto-fill minmax(180px, 1fr) - toate chips au aceeasi latime minima, se aranjeaza automat in 2-3 coloane in functie de spatiu.",
-    "Chips redesign: padding mai mare (6px 10px), border-radius mai patrat (6px in loc de 14px), checkbox aliniat stanga, label cu wrap pe span (line-height 1.3 daca textul e lung). Cele bifate au culoare maro accent + background galben + font-weight 600."
+    "FIX UX Avertismente in editor produs: chips erau taiate (IN..., COR..., RESTRI LEGALE UTILIZ PROFE...). Cauza: Avertismente era pe acelasi rand cu Cerinte apa preparare (flex row), deci primea doar jumatate din latimea modal - nu era suficient pentru chips de minim 180px.",
+    "Solutie: Avertismente acum pe rand propriu (full width modal), sub Cerinte apa preparare. Chips au spatiu sa apara complet, 4-5 coloane in loc de 1-2 stricate."
   ]
 }

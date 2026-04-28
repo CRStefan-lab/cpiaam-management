@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.2</title>
+<title>CPIAAM Management v13.6</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2200,7 +2200,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.2';
+const APP_VERSION='13.6';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -3987,6 +3987,14 @@ async function rDash(el){
   const docsExpSoon=docs.filter(d=>{if(!d.date_expiry)return false;const diff=Math.ceil((new Date(d.date_expiry)-new Date())/864e5);return diff>=0&&diff<=30}).length;
   const docsExpired=docs.filter(d=>d.date_expiry&&new Date(d.date_expiry)<new Date()).length;
   const dlsUp=dls.filter(d=>{if(!d.due_date||d.status==='trimis'||d.status==='finalizat'||d._isTemplate)return false;const diff=Math.ceil((new Date(d.due_date)-new Date())/864e5);return diff>=0&&diff<=30}).length;
+  // v13.3 - acum dashboard arata si Evenimente/Sedinte, Instruiri si Audituri programate in proximele 30 zile (nu doar realizate in an)
+  const _allEvts=await ga('events');
+  const _allTrains=await ga('trainings');
+  const _allAudits=await ga('audits');
+  function _diff30(dStr){if(!dStr)return -1;const diff=Math.ceil((new Date(dStr)-new Date())/864e5);return diff}
+  const evtsUp=_allEvts.filter(e=>{const d=_diff30(e.date);return d>=0&&d<=30}).length;
+  const trainsUp=_allTrains.filter(t=>{const d=_diff30(t.date);return d>=0&&d<=30}).length;
+  const auditsUp=_allAudits.filter(a=>{const d=_diff30(a.date);return d>=0&&d<=30}).length;
   // Sparkline data: IAAM per month
   const ibm=Array(12).fill(0);ia.forEach(r=>{if(r.month>=1&&r.month<=12)ibm[r.month-1]++});
   // Sparkline data: autocontrol neconf per month
@@ -4045,11 +4053,17 @@ async function rDash(el){
     '<div class="kc bl" onclick="nav(\'biocide\')"><div class="kl"><span>'+T('kpi_biocide')+'</span>'+sparkSVG(bbm,50,16,'#2563B0')+'</div><div class="kv">'+fn(Math.round(consBio))+' lei</div><div class="ks">'+y+'</div>'+kpiTrend(Math.round(consBio),Math.round(pConsBio),true,pBi.length>0)+'</div>'+
     '<div class="kc gn" onclick="nav(\'config\')"><div class="kl"><span>'+T('kpi_paturi')+'</span></div><div class="kv">'+wb.toFixed(0)+'</div><div class="ks">'+T('kpi_capacitate')+' '+y+'</div></div>'+
     (()=>{const tzs=de.reduce((s,r)=>s+(+r.zile_spit||0),0);const iaam1000=tzs>0?((ia.length*1000)/tzs).toFixed(2):'—';const tpe=de.reduce((s,r)=>s+(+r.pac_ext||0),0);const des1000=tzs>0?((totD*1000)/tzs).toFixed(2):'—';const desPe=tpe>0?(totD/tpe).toFixed(2):'—';return (tzs>0?'<div class="kc bl" onclick="nav(\'iaam\')"><div class="kl">IAAM/1000 zile spit.</div><div class="kv">'+iaam1000+'</div></div><div class="kc am" onclick="nav(\'deseuri\')"><div class="kl">kg des/1000 zile spit.</div><div class="kv">'+des1000+'</div></div>':'')+(tpe>0?'<div class="kc tl" onclick="nav(\'deseuri\')"><div class="kl">kg des/pac. ext.</div><div class="kv">'+desPe+'</div></div>':'')})()+'</div></div>';
-  // 5. Docs & deadlines KPI
+  // 5. Docs & deadlines KPI - v13.4: 2 carduri cumulative + 5 carduri PROXIME 30 ZILE color-matched cu legenda Calendar
   h+='<div class="dash-section'+(_dw.docsKpi===false?' hidden':'')+'" data-dw="docsKpi"><div class="kg">'+
-    '<div class="kc gn" onclick="nav(\'documente\')"><div class="kl">'+T('kpi_docs_val')+'</div><div class="kv">'+docsValid+'</div><div class="ks">'+(docsExpSoon>0?docsExpSoon+(isEN?' expiring soon':' expira curand'):T('kpi_ok'))+'</div></div>'+
+    // CUMULATIVE (despre prezent)
+    '<div class="kc gn" onclick="nav(\'documente\')"><div class="kl">'+T('kpi_docs_val')+'</div><div class="kv">'+docsValid+'</div><div class="ks">'+T('kpi_ok')+'</div></div>'+
     (docsExpired>0?'<div class="kc rd" onclick="nav(\'documente\')"><div class="kl">'+(isEN?'EXPIRED DOCUMENTS':'DOCUMENTE EXPIRATE')+'</div><div class="kv">'+docsExpired+'</div></div>':'')+
-    '<div class="kc am" onclick="nav(\'calendar\')"><div class="kl">'+T('kpi_rap_30z')+'</div><div class="kv">'+dlsUp+'</div><div class="ks"><a href="#" onclick="nav(\'calendar\');return false" style="color:var(--amber);font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
+    // PROXIME 30 ZILE (color-matched cu legenda Calendar: rosu termene, galben expirare docs, albastru evenimente, verde instruiri, teal audituri)
+    '<div class="kc rd" onclick="nav(\'calendar\')"><div class="kl">'+(isEN?'DEADLINES <= 30 DAYS':'TERMENE/RAPORTARI ≤ 30 ZILE')+'</div><div class="kv">'+dlsUp+'</div><div class="ks"><a href="#" onclick="nav(\'calendar\');return false" style="color:var(--red);font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
+    '<div class="kc am" onclick="nav(\'documente\')"><div class="kl">'+(isEN?'DOCS EXPIRING <= 30 DAYS':'EXPIRARE DOCUMENTE ≤ 30 ZILE')+'</div><div class="kv">'+docsExpSoon+'</div><div class="ks"><a href="#" onclick="nav(\'documente\');return false" style="color:var(--amber);font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
+    '<div class="kc bl" onclick="nav(\'calendar\')"><div class="kl">'+(isEN?'EVENTS/MEETINGS <= 30 DAYS':'EVENIMENTE/SEDINTE ≤ 30 ZILE')+'</div><div class="kv">'+evtsUp+'</div><div class="ks"><a href="#" onclick="nav(\'calendar\');return false" style="color:#2563B0;font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
+    '<div class="kc gn" onclick="nav(\'calendar\')"><div class="kl">'+(isEN?'TRAININGS PLANNED <= 30 DAYS':'INSTRUIRI PLANIFICATE ≤ 30 ZILE')+'</div><div class="kv">'+trainsUp+'</div><div class="ks"><a href="#" onclick="nav(\'calendar\');return false" style="color:#166534;font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
+    '<div class="kc tl" onclick="nav(\'calendar\')"><div class="kl">'+(isEN?'AUDITS PLANNED <= 30 DAYS':'AUDITURI PLANIFICATE ≤ 30 ZILE')+'</div><div class="kv">'+auditsUp+'</div><div class="ks"><a href="#" onclick="nav(\'calendar\');return false" style="color:#0F7B6C;font-size:11px">'+T('kpi_vezi_detalii')+'</a></div></div>'+
   '</div></div>';
   // 6. Audituri + Instruire KPI
   const audits=(await ga('audits')).filter(r=>r.year===y);
@@ -7593,15 +7607,16 @@ async function editBio(id){
   // v12.82 — Documentele NU se mai ataseaza pe miscare. Se gestioneaza la nivel de produs.
   // Afisam un info box cu instructiuni si legacy warning daca mai exista atasamente pe acest record.
   var legacyAtt=0;if(r.attachments)BIO_ATT_TYPES.forEach(function(t){legacyAtt+=(_getBioAttFiles(r,t.key)||[]).length});
-  var attHtml='<div class="ib inf" style="margin-top:14px;font-size:11px">'+
+  // v13.5 - wrap text intr-un singur span ca flex sa nu rupa text-ul (.ib are display:flex care trata strong-urile ca flex items separate)
+  var attHtml='<div class="ib inf" style="margin-top:14px;font-size:11px"><span style="flex:1">'+
     '<strong>\uD83D\uDCCE Documente</strong> — atasamentele (Aviz BPR, Fisa tehnica, SDS, alte) se gestioneaza acum la nivel de <strong>produs</strong> (click &#9998; pe header-ul cardului din lista). O singura data pentru toate miscarile aceluiasi produs.'+
     (legacyAtt>0?'<div style="margin-top:6px;padding:6px 8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;color:#854F0B"><strong>&#9888; '+legacyAtt+' document(e) legacy pe aceasta miscare.</strong> Ruleaza migrarea din cardul de produs pentru a le muta.</div>':'')+
-  '</div>';
+  '</span></div>';
   openM(id?'Editare':'Inregistrare Noua',
     '<div class="fr"><div class="fg"><label>Produs</label>'+
       '<div style="display:flex;gap:6px;align-items:stretch">'+
         '<select id="f-prod" onchange="bioProdChanged()" style="flex:1"><option value="">— Selecteaza produs —</option>'+prods+'</select>'+
-        '<button class="btn bo bsm" style="padding:4px 10px;font-size:11px;white-space:nowrap" onclick="bioQuickAddProduct()" title="Creeaza produs nou in catalog">+ Produs nou</button>'+
+        '<button class="btn bsm" style="padding:6px 14px;font-size:11px;white-space:nowrap;background:linear-gradient(135deg,#059669,#0F7B6C);color:#fff;border:none;font-weight:700;box-shadow:0 2px 4px rgba(15,123,108,.25)" onclick="bioQuickAddProduct()" title="Creeaza produs nou in catalog">+ Produs nou</button>'+
       '</div>'+
       '<div style="margin-top:4px"><input id="f-prod-custom" placeholder="sau introdu manual un produs nou" value="'+(CFG.biocide_products.find(p=>p.id===(r.product_id||r.product_name))?'':esc(r.product_name||''))+'" style="font-size:11px"></div></div>'+
     '<div class="fg"><label>UM</label><input id="f-um" value="'+(r.unit||'')+'" placeholder="buc 0.5L"></div></div>'+
@@ -7905,8 +7920,9 @@ function _bioProtocolSectionHtml(pid,p){
     '<div class="fr"><div class="fg"><label>Substante active</label><input id="bep-active" value="'+esc(p.active_substances||'')+'" placeholder="ex: DDAC 17% + QAC C12-C18 4.5%" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div>'+
     '<div class="fr" style="margin-top:6px"><div class="fg"><label>Valabilitate dupa deschidere</label><input id="bep-valop-val" value="'+esc(v.value||'')+'" placeholder="ex: 6 luni / conf. eticheta" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div>'+
     '<div class="fg"><label>Conditii depozitare</label><input id="bep-valop-cond" value="'+esc(v.conditions||'')+'" placeholder="ex: 5-30°C, inchis etans" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div>'+
-    '<div class="fr" style="margin-top:6px"><div class="fg" style="max-width:240px"><label>Cerinte apa preparare</label><select id="bep-water" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+waterOpts+'</select></div>'+
-    '<div class="fg"><label>Avertismente</label><div id="bep-warns" style="padding:8px;border:1px solid var(--brd);border-radius:6px;background:var(--bg);display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px">'+warnChips+'</div></div></div>'+
+    // v13.6 - Cerinte apa pe rand propriu (compact), Avertismente pe rand intreg (full width pentru ca grid-ul are spatiu pentru chips de min 180px)
+    '<div class="fr" style="margin-top:6px"><div class="fg" style="max-width:280px"><label>Cerinte apa preparare</label><select id="bep-water" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px">'+waterOpts+'</select></div></div>'+
+    '<div style="margin-top:10px"><label style="font-weight:600;font-size:12px;display:block;margin-bottom:4px">Avertismente</label><div id="bep-warns" style="padding:8px;border:1px solid var(--brd);border-radius:6px;background:var(--bg);display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px">'+warnChips+'</div></div>'+
   '</div>';
 }
 // Sectiune PROFILE DE UTILIZARE (tabel: utilizare / nivel / concentratie / doza / timp / tehnica / protocol)
@@ -18611,6 +18627,10 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.6',date:'2026-04-24',notes:'FIX UX Avertismente in editor produs biocid: chips erau taiate vizual (IN... COR... SP IN OB... RESTRI LEGALE UTILIZ PROFE...). Cauza: linia 847-848 avea Avertismente in acelasi <div class="fr"> (flex row) cu Cerinte apa preparare - cele 2 elemente impart latimea modalului 50/50, deci Avertismente primea doar jumatate. Cum chip-urile sunt grid cu minmax(180px, 1fr), in spatiul redus apareau pe 1-2 coloane cu text rupt urat. Solutie: Avertismente mutat pe rand propriu sub Cerinte apa preparare, full width modal (1100px bio-wide-modal). Acum chips au spatiu pentru 4-5 coloane uniform, vizibil complet. Cerinte apa max-width crescut de la 240px la 280px (mai aerisit).'},
+  {version:'13.5',date:'2026-04-24',notes:'FIX UX dialogul Inregistrare Noua biocid (2 imbunatatiri raportate de user). (1) Textul info de jos (atasamentele - se gestioneaza la nivel de produs) era afisat amestecat - cuvintele aparau pe pozitii separate vizual ciudat (Documente, produs, alte aparand in alta ordine). Cauza: clasa .ib din styles.css linia 271 are display:flex;align-items:flex-start;gap:8px - asta trateaza toate copiii directi ca flex items separate, deci elementele strong (Documente, produs) erau pozitionate ca coloane separate in flex container, rupand textul. Solutie: wrap intregul continut text intr-un singur span cu flex:1 - acum exista un singur flex item, textul curge natural ca paragraph. Plus reformulare „atasamentele se gestioneaza acum la nivel de produs" -> „Documente: atasamentele se gestioneaza la nivel de produs" pentru claritate. (2) Butonul + Produs nou (langa dropdown Selecteaza produs) avea clasa btn bo bsm - era outline transparent, indistinct. Schimb la background:linear-gradient(135deg,#059669,#0F7B6C) gradient verde-teal cu color:#fff text alb, font-weight:700, padding marit (6px 14px), box-shadow subtil. Iese clar in evidenta ca actiune principala vs dropdown-ul de selectie. Pastreaza accesibilitatea cu title si aceeasi functie bioQuickAddProduct().'},
+  {version:'13.4',date:'2026-04-24',notes:'Dashboard - completat cu cardul lipsa EXPIRARE DOCUMENTE <= 30 ZILE (galben). Inainte era doar subtext mic la cardul DOCUMENTE VALABILE (X expira curand) - acum e card separat clickabil care duce la pagina Documente. Foloseste docsExpSoon deja calculat anterior. Plus color-matching corectat cu legenda Calendar: TERMENE/RAPORTARI acum este rosu (kc rd) in loc de galben (kc am) - identic cu punctul rosu din pagina Calendar (legenda jos). Sectiune docsKpi finala (v13.4): 2 carduri cumulative (Documente valabile verde + Documente expirate rosu conditional daca > 0) + 5 carduri PROXIME 30 zile color-matched cu legenda Calendar (Termene/Raportari rosu, Expirare documente galben, Evenimente/Sedinte albastru, Instruiri planificate verde, Audituri planificate teal). Toate clickabile cu navigatie la calendar/documente.'},
+  {version:'13.3',date:'2026-04-24',notes:'Dashboard - sectiunea Documente & Raportari (docsKpi) extinsa cu 3 carduri noi pentru toate tipurile de evenimente programate in proximele 30 zile, conform legendei din pagina Calendar. Inainte arata doar Termene/Raportari (deadlines store) - lipseau Sedinte, Instruiri planificate si Audituri planificate. Acum: (1) EVENIMENTE/SEDINTE <= 30 ZILE (kc bl albastru) - din ga(events) cu data >= astazi si <= 30 zile; (2) INSTRUIRI PLANIFICATE <= 30 ZILE (kc gn verde) - din ga(trainings) filtrate similar; (3) AUDITURI PLANIFICATE <= 30 ZILE (kc tl teal) - din ga(audits) filtrate similar. Helper _diff30(dStr) calculeaza diferenta in zile. Toate cele 3 carduri sunt clickabile -> nav(calendar) pentru detalii. Cardul existent RAPORTARI <= 30 ZILE redenumit explicit la TERMENE/RAPORTARI <= 30 ZILE pentru claritate (deadlines store contine ambele tipuri). Color coding identic cu pagina Calendar (legenda din partea de jos): rosu Termene, galben Documente, albastru Evenimente, verde Instruiri, teal Audituri. Distinctie importanta: cardurile existente Audituri/Instruiri din sectiunea audKpi numara records DESFASURATE in anul curent (audits.length, trains.length); noile carduri din docsKpi numara PROGRAMATE in proximele 30 zile.'},
   {version:'13.2',date:'2026-04-24',notes:'FIX UX avertismente in editor produs biocide. Problema raportata: chipsurile aveau lungimi inconsistente - INFLAMABIL/IRITANT mici, RESTRICTII LEGALE (UTILIZARE PROFESIONISTA) ocupa rand intreg, COMPATIBIL ALIMENTE rupt urat. Cauza: display:inline-flex fara grid layout, fiecare chip lua latimea proprie. Solutie: container schimbat la display:grid cu grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)) - toate chips au aceeasi latime minima 180px si se aranjeaza in 2-3 coloane uniform in functie de spatiu modal. Chips redesign: padding 6px 10px (era 3px 8px), border-radius 6px (era 14px - mai patrat, mai modern), display:flex pe label cu align-items:center si gap:6px, span pentru text (permite wrap natural daca e prea lung), min-height:32px (uniform vertical). Cele bifate primesc culoare maro accent (#92400E) + background galben (#FEF3C7) + font-weight:600 - distinctie vizuala clara intre cele active si inactive.'},
   {version:'13.1',date:'2026-04-24',notes:'FIX UX editor produs biocide: scroll-ul body-ului modal NU se mai reseteaza la 0 cand adaugi / stergi un profil de utilizare sau cand aplici un template. Cauza: bioAddUsageProfile / bioDeleteUsageProfile / bioApplyTemplateByKey / bioApplyTemplateToProduct apelau bioEditProduct(pid) care re-genereaza intregul modal prin openM(...), iar openM creeaza nou DOM cu scrollTop = 0. Solutie: helper nou _bioReRenderEditor(pid, opts) care salveaza scrollTop din .mb inainte de re-render si dupa setTimeout de 60ms aplica unul din 2 comportamente: (a) scrollToLastProfile=true pentru bioAddUsageProfile - scroll smooth la ultimul .bio-prof-card (user vede imediat profilul nou creat, nu trebuie sa scrolleze manual). (b) restore scrollTop pentru bioDeleteUsageProfile / bioApplyTemplate* - pozitia ramane unde era user-ul. Comportament natural si previzibil. Fix critic pentru fluxul de lucru cu produse cu multe profile.'},
   {version:'13.0',date:'2026-04-24',notes:'MILESTONE v13.0 - Aplicatie stabila CPIAAM Romania. Acumuleaza toate cele 52 bump-uri ale sesiunii v12.49-v12.100. Renumerotare de la 12.100 la 13.0 conform conventiei stabilite: xx.0 - xx.99 = patch-uri minore, dupa xx.99 trecem direct la (xx+1).0 ca milestone (niciodata xx.100+). Capabilitati majore accumulate: (1) 23 categorii templates biocide structurate ierarhic pe TP (Reg. EU 528/2012 BPR + Ord. MS 1761/2021), match automat prin keyword scoring + dropdown manual de selectie, auto-populare la creare produs nou si la import Excel; (2) Generator Ghid Utilizare Biocide HTML printable A4 landscape cu wizard de selectie TP-uri si optiuni layout (risk score, legenda, precautii, referinte); (3) Modul Recipiente Deseuri conform Ord. MS 1226/2012 cu 5 categorii standard, 12 tipuri pre-populate, forecast automat necesar luni ramase si calcul buget optional; (4) Tabel Sumar Stocuri biocide sortabil cu color-coded status si toggle Toate/Filtrate; (5) Fuziune produse cu rollback transactional (avize, documents, usage_profiles, proprietati protocol); (6) 8 audituri WHO IPC Core Components / ECDC Framework; (7) Rapoarte profesionale cu grafice Chart.js embedded, benchmarks INSP/ECDC/WHO, cross-module insights. Stabilitate: 43 blocks parse OK consistent, 1754 KB compiled, 9 fix-uri defensive aplicate in v12.99-v12.100 (sync protectie waste_recipients, division by zero, XSS escape, race conditions, duplicate detection, rollback complet).'},

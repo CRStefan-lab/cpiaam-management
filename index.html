@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.15</title>
+<title>CPIAAM Management v13.16</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2247,7 +2247,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.15';
+const APP_VERSION='13.16';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -12581,10 +12581,21 @@ async function renderDashCalendar(){
   const todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   const allDls=await ga('deadlines'),allDocs=await ga('documents'),allEvts=await ga('events'),allTr=await ga('trainings'),allAud=await ga('audits');
   // v13.12 - parseDate robust pentru toate formate (records vechi cu ISO complet, RO, timestamp ms etc.)
+  // v13.16 - multi-day events ongoing: daca date_end >= today, include in Upcoming chiar daca date (start) < today.
+  // Display date e start daca-i in viitor, altfel today (apare ca "Azi - in desfasurare").
   var allUpcoming=[];
   allDls.forEach(d=>{if(!d.due_date||d.status==='trimis'||d.status==='finalizat'||d._isTemplate)return;var dt=parseDate(d.due_date);if(dt&&dt>=todayStart)allUpcoming.push({date:parseDateISO(d.due_date),color:'red',label:d.name,link:'termene',_dlId:d.id})});
   allDocs.forEach(d=>{if(!d.date_expiry)return;var dt=parseDate(d.date_expiry);if(dt&&dt>=todayStart)allUpcoming.push({date:parseDateISO(d.date_expiry),color:'yellow',label:d.name,link:'documente'})});
-  allEvts.forEach(e=>{if(!e.date)return;var dt=parseDate(e.date);if(dt&&dt>=todayStart)allUpcoming.push({date:parseDateISO(e.date),color:'blue',label:e.title,link:'calendar'})});
+  allEvts.forEach(e=>{
+    if(!e.date)return;
+    var start=parseDate(e.date);if(!start)return;
+    var end=e.date_end?(parseDate(e.date_end)||start):start;
+    var ongoing=start<todayStart && end>=todayStart;
+    if(start>=todayStart||ongoing){
+      var displayISO=ongoing?(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')):parseDateISO(e.date);
+      allUpcoming.push({date:displayISO,color:'blue',label:e.title+(ongoing?' '+(isEN?'(ongoing)':'(în desfășurare)'):''),link:'calendar',_ongoing:ongoing});
+    }
+  });
   allTr.forEach(t=>{if(!t.date)return;var dt=parseDate(t.date);if(dt&&dt>=todayStart)allUpcoming.push({date:parseDateISO(t.date),color:'green',label:t.topic||'Instruire',link:'instruire'})});
   allAud.forEach(a=>{if(!a.date)return;var dt=parseDate(a.date);if(dt&&dt>=todayStart)allUpcoming.push({date:parseDateISO(a.date),color:'teal',label:a.type||'Audit',link:'audituri'})});
   (CFG.biocide_products||[]).forEach(p=>{(p.avize||[]).forEach(a=>{if(!a.date_expiry)return;var dt=parseDate(a.date_expiry);if(dt&&dt>=todayStart)allUpcoming.push({date:parseDateISO(a.date_expiry),color:'yellow',label:(p.name||'Biocid')+' — Aviz '+(a.nr||''),link:'biocide'})})});
@@ -18827,6 +18838,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.16',date:'2026-04-28',notes:'FIX dashboard lista Upcoming din mini-calendar (panoul dreapta cu tab-urile Azi/Maine/7 zile/30 zile/90 zile) - evenimentele multi-day care au inceput in trecut dar inca sunt in desfasurare NU apareau in lista. Cauza: filtrul allEvts.forEach in renderDashCalendar se uita doar la e.date (start) cu conditia dt>=todayStart, deci un Audit ISO inregistrat cu date=2026-04-25 si date_end=2026-04-30 era exclus din Upcoming pe data de 28 aprilie desi era inca in desfasurare. User vedea doar deadline-uri viitoare (4 Mai IACRS+POLIO) si nimic pentru azi/maine cand de fapt avea evenimente active. Fix: detectie ongoing prin start<todayStart && end>=todayStart (cu end fallback la start daca date_end lipseste sau parseDate esueaza). Daca ongoing, displayISO devine ziua de azi (apar in grupul Astazi din lista) si label-ul primeste sufix (în desfășurare) / (ongoing). Daca start>=today (eveniment viitor normal) nu se schimba nimic. Aplicabil doar pentru store events (deadlines/docs/trainings/audits/biocide_avize sunt single-date prin natura, nu au date_end). Filtru identic refactorizat in 4 forEach-uri ramase pentru consistenta cu acelasi pattern.'},
   {version:'13.15',date:'2026-04-28',notes:'FIX UX dashboard mini-calendar - evenimentele DIN TRECUT erau de fapt afisate corect in cod (parsate prin parseDate v13.12, dot-uri prezente in DOM) DAR practic invizibile vizual din 2 motive cumulative: (a) .mini-cal .cal-dot avea width/height:5px ceea ce e prea mic ca sa fie observat usor mai ales pentru daltonisti sau pe ecrane de 1080p+, (b) .cal-day.cal-has-evt-past avea background:transparent deci celula cu evenimente trecute arata identic cu o celula goala fara niciun indicator. User raporta repetat „evenimentele vechi nu apar" - bug-ul era pur vizual, nu functional (diagnostic confirmat 0 INVALID + 14 events parse OK in datele lui). Fix aplicat: (1) Dot-uri marite 5x5 -> 7x7 px (40% mai vizibile, dar inca compacte). (2) Background subtil gri #F1F5F9 (sau dark theme rgba(148,163,184,.08)) pentru .mini-cal .cal-day.cal-has-evt-past + hover #E2E8F0 - celula primeste un indicator vizual clar ca a avut evenimente. (3) Min-height celule mini-cal 28 -> 34px ca sa incapa count badge in colt fara overlap pe dot-uri. (4) Count badge activat si in compact mode prin eliminarea conditiei „&&!compact" din buildMonthGrid - cand o zi are 2+ evenimente apare cerc teal in coltul dreapta-sus cu numarul (8.5px font, padding 0 4px, border-radius 8px). Pentru zile in trecut badge-ul devine gri #94A3B8 (decorative, nu critic) iar pentru viitor ramane teal #0D9488 (atentie). Position absolute top:1px right:2px relative la cell. Pe Calendar full page badge-ul a fost intotdeauna activ - acum e consistent in ambele view-uri.'},
   {version:'13.14',date:'2026-04-28',notes:'(1) Dashboard - butonul Personalizeaza dashboard redesignat din ghost-button text in card-button cu icon gear ⚙ care se roteste 60° la hover/open, badge teal cu count widget-uri active (ex 8/8), caret jos care se rotește la deschidere. La open primeste background pal teal #F0FDFA si border #0D9488. Panoul de configurare schimbat fundamental: in loc de checkbox-uri native inline, acum 3 grupuri logice (Indicatori cu KPI/docsKpi/audKpi/atpKpi, Calendar & Activitate cu miniCal/activity, Grafice cu charts/desChart) - fiecare grup cu titlu uppercase, fiecare item cu mini-icon Unicode (📊 KPI, 📅 Documente, ✅ Audituri, 💧 ATP, 🗓 Calendar, 🔔 Activity, 📈 IAAM, 📋 Deseuri) plus toggle switch stil iOS (32x18px, glisor cu shadow, animatie .2s) in loc de checkbox native ce era cu accent-color teal. Hover pe fiecare toggle ridica box-shadow subtila si schimba border in teal. Focus visible cu outline teal pentru accesibilitate. toggleWidget() in ui.js sincronizeaza acum starea toggle-ului + recalculeaza badge-ul count. Dark theme handled cu overrides specifice pentru background si border.'},
   {version:'13.14',date:'2026-04-28',notes:'(2) Dashboard - filtru 30/60/90 zile peste cardurile PROXIME (Termene/Raportari, Expirare Documente, Evenimente/Sedinte, Instruiri Planificate, Audituri Planificate). Motivul real (raportat de user): viza anuala de mediu si alte raportari oficiale au fereastra 30-60 zile inainte de expirare in care trebuie depuse documentele - cu doar 30 zile vizibile, raportarea iese pe ecran prea tarziu. Implementare: tab bar deasupra sectiunii docsKpi cu butoane 30/60/90 zile, fiecare arata count total (suma celor 5 carduri) ca user vede diferenta intre ferestre instant. Persistent in CFG.dash_period. Implementare optimizata: la render dashboard se calculeaza count-urile pentru toate cele 3 ferestre o data (functii _evtsUpFor/_trainsUpFor/_auditsUpFor/_dlsUpFor/_docsExpSoonFor parametrice cu d zile), apoi click pe tab nu mai face re-render full ci doar swap valori prin DOM (.dup-val span) + label dinamic (span .dup-d arata 30/60/90 zile in titlu). Functie globala setDashPeriod(p) in ui.js. Cardurile au data-dwk attribute (dls/docs/evts/trains/audits) pentru DOM addressing curat. window._dashPeriodCounts stocheaza count-urile precalculate.'},

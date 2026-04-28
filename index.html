@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.14</title>
+<title>CPIAAM Management v13.15</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -465,10 +465,16 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .mini-cal{background:var(--card);border:none;border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .mini-cal .cal-grid{gap:0}
 .mini-cal .cal-hdr{padding:4px 2px;font-size:10px}
-.mini-cal .cal-day{min-height:28px;padding:2px;text-align:center;cursor:pointer}
+.mini-cal .cal-day{min-height:34px;padding:2px;text-align:center;cursor:pointer;position:relative}
 .mini-cal .day-num{font-size:11px;margin:0}
 .mini-cal .cal-dots{justify-content:center;gap:2px;margin-top:1px}
-.mini-cal .cal-dot{width:5px;height:5px}
+.mini-cal .cal-dot{width:7px;height:7px}
+/* v13.15 - mini-cal: highlight subtil pentru zile cu evenimente trecute (era invizibil pana acum) + count badge mic */
+.mini-cal .cal-day.cal-has-evt-past{background:#F1F5F9}
+.mini-cal .cal-day.cal-has-evt-past:hover{background:#E2E8F0}
+.dark .mini-cal .cal-day.cal-has-evt-past{background:rgba(148,163,184,.08)}
+.mini-cal .cal-day .cal-count{position:absolute;top:1px;right:2px;font-size:8.5px;background:#0D9488;color:#fff;padding:0 4px;border-radius:8px;line-height:1.4;font-weight:700;min-width:14px;text-align:center}
+.mini-cal .cal-day.cal-has-evt-past .cal-count{background:#94A3B8}
 /* Popup */
 .cal-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border:1px solid var(--brd);border-radius:var(--rL);box-shadow:var(--shL);z-index:80;width:380px;max-height:80vh;overflow-y:auto}
 .cal-popup-h{padding:12px 16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;font-weight:700;color:var(--navy)}
@@ -2241,7 +2247,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.14';
+const APP_VERSION='13.15';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -12426,8 +12432,8 @@ function buildMonthGrid(y,m,events,compact){
       }
     }
     const dateStr=dayNum>=1&&dayNum<=daysInMonth?y+'-'+String(m+1).padStart(2,'0')+'-'+String(dayNum).padStart(2,'0'):'';
-    // Count badge
-    var countBadge=dayEvts.length>1&&!compact?'<span class="cal-count">'+dayEvts.length+'</span>':'';
+    // Count badge (v13.15 - aratam count si in compact / mini-cal pentru ca dot-urile mici de 7px sunt greu de numarat)
+    var countBadge=dayEvts.length>1?'<span class="cal-count">'+dayEvts.length+'</span>':'';
     grid+='<div class="'+cls+'"'+(dateStr&&!compact?' onclick="calDayClick(\''+dateStr+'\')"':'')+'>'+
       '<div class="day-num">'+num+countBadge+'</div>'+
       (dayEvts.length?'<div class="cal-dots">'+dayEvts.map(e=>'<div class="cal-dot '+e.color+'" title="'+e.label+'"></div>').join('')+'</div>'+
@@ -18821,6 +18827,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.15',date:'2026-04-28',notes:'FIX UX dashboard mini-calendar - evenimentele DIN TRECUT erau de fapt afisate corect in cod (parsate prin parseDate v13.12, dot-uri prezente in DOM) DAR practic invizibile vizual din 2 motive cumulative: (a) .mini-cal .cal-dot avea width/height:5px ceea ce e prea mic ca sa fie observat usor mai ales pentru daltonisti sau pe ecrane de 1080p+, (b) .cal-day.cal-has-evt-past avea background:transparent deci celula cu evenimente trecute arata identic cu o celula goala fara niciun indicator. User raporta repetat „evenimentele vechi nu apar" - bug-ul era pur vizual, nu functional (diagnostic confirmat 0 INVALID + 14 events parse OK in datele lui). Fix aplicat: (1) Dot-uri marite 5x5 -> 7x7 px (40% mai vizibile, dar inca compacte). (2) Background subtil gri #F1F5F9 (sau dark theme rgba(148,163,184,.08)) pentru .mini-cal .cal-day.cal-has-evt-past + hover #E2E8F0 - celula primeste un indicator vizual clar ca a avut evenimente. (3) Min-height celule mini-cal 28 -> 34px ca sa incapa count badge in colt fara overlap pe dot-uri. (4) Count badge activat si in compact mode prin eliminarea conditiei „&&!compact" din buildMonthGrid - cand o zi are 2+ evenimente apare cerc teal in coltul dreapta-sus cu numarul (8.5px font, padding 0 4px, border-radius 8px). Pentru zile in trecut badge-ul devine gri #94A3B8 (decorative, nu critic) iar pentru viitor ramane teal #0D9488 (atentie). Position absolute top:1px right:2px relative la cell. Pe Calendar full page badge-ul a fost intotdeauna activ - acum e consistent in ambele view-uri.'},
   {version:'13.14',date:'2026-04-28',notes:'(1) Dashboard - butonul Personalizeaza dashboard redesignat din ghost-button text in card-button cu icon gear ⚙ care se roteste 60° la hover/open, badge teal cu count widget-uri active (ex 8/8), caret jos care se rotește la deschidere. La open primeste background pal teal #F0FDFA si border #0D9488. Panoul de configurare schimbat fundamental: in loc de checkbox-uri native inline, acum 3 grupuri logice (Indicatori cu KPI/docsKpi/audKpi/atpKpi, Calendar & Activitate cu miniCal/activity, Grafice cu charts/desChart) - fiecare grup cu titlu uppercase, fiecare item cu mini-icon Unicode (📊 KPI, 📅 Documente, ✅ Audituri, 💧 ATP, 🗓 Calendar, 🔔 Activity, 📈 IAAM, 📋 Deseuri) plus toggle switch stil iOS (32x18px, glisor cu shadow, animatie .2s) in loc de checkbox native ce era cu accent-color teal. Hover pe fiecare toggle ridica box-shadow subtila si schimba border in teal. Focus visible cu outline teal pentru accesibilitate. toggleWidget() in ui.js sincronizeaza acum starea toggle-ului + recalculeaza badge-ul count. Dark theme handled cu overrides specifice pentru background si border.'},
   {version:'13.14',date:'2026-04-28',notes:'(2) Dashboard - filtru 30/60/90 zile peste cardurile PROXIME (Termene/Raportari, Expirare Documente, Evenimente/Sedinte, Instruiri Planificate, Audituri Planificate). Motivul real (raportat de user): viza anuala de mediu si alte raportari oficiale au fereastra 30-60 zile inainte de expirare in care trebuie depuse documentele - cu doar 30 zile vizibile, raportarea iese pe ecran prea tarziu. Implementare: tab bar deasupra sectiunii docsKpi cu butoane 30/60/90 zile, fiecare arata count total (suma celor 5 carduri) ca user vede diferenta intre ferestre instant. Persistent in CFG.dash_period. Implementare optimizata: la render dashboard se calculeaza count-urile pentru toate cele 3 ferestre o data (functii _evtsUpFor/_trainsUpFor/_auditsUpFor/_dlsUpFor/_docsExpSoonFor parametrice cu d zile), apoi click pe tab nu mai face re-render full ci doar swap valori prin DOM (.dup-val span) + label dinamic (span .dup-d arata 30/60/90 zile in titlu). Functie globala setDashPeriod(p) in ui.js. Cardurile au data-dwk attribute (dls/docs/evts/trains/audits) pentru DOM addressing curat. window._dashPeriodCounts stocheaza count-urile precalculate.'},
   {version:'13.13',date:'2026-04-28',notes:'Dashboard - eliminat rândul Quick Actions (4 butoane: Caz IAAM, Proba Autocontrol, Audit Nou, Genereaza Raport) care ocupa ~80px vertical sus si nu aducea valoare reala. Motivele de eliminare per buton: (1) Genereaza Raport era PUR REDUNDANT cu nav-ul sidebar -> apasarea facea exact ce face click pe Generare Rapoarte din sidebar (zero acțiune extra, doar nav). (2) Proba Autocontrol mergea la autocontrol + editAuto() care deschide doar Probe Microbiologice, NU si ATP / Testare UV - userul era confuz. (3) Caz IAAM si Audit Nou economiseau doar 1 click fata de fluxul standard (sidebar -> + buton din pagina). Cum sidebar-ul are 4-5 module esentiale toate vizibile mereu, nu exista cazul tipic Quick Actions (10+ module ascunse in submeniuri profunde). Castig: ~80px vertical, calendarul + evenimentele saptamana asta urca direct in viewport-ul fara scroll. Codul sterse din dashboard.js (5 linii div + 4 butoane + class CSS dash-quick orphan ramane in styles.css dar nu mai e folosit, cleanup CSS la pasul urmator).'},

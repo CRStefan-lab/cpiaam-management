@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.12</title>
+<title>CPIAAM Management v13.13</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2203,7 +2203,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.12';
+const APP_VERSION='13.13';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -4114,13 +4114,7 @@ async function rDash(el){
   h+='<div id="dash-cfg-panel" class="dash-cfg-panel">';
   _dwItems.forEach(([k,l])=>{h+='<label><input type="checkbox" '+(_dw[k]!==false?'checked':'')+' onchange="toggleWidget(\''+k+'\')"> '+l+'</label>'});
   h+='</div>';
-  // 1. QUICK ACTIONS
-  h+='<div class="dash-quick">'+
-    '<button onclick="nav(\'iaam\');setTimeout(()=>editIAAM(),100)"><span class="qicon">&#128737;</span> '+(isEN?'IAAM Case':'Caz IAAM')+'</button>'+
-    '<button onclick="nav(\'autocontrol\');setTimeout(()=>editAuto(),100)"><span class="qicon">&#128300;</span> '+(isEN?'Sample':'Proba Autocontrol')+'</button>'+
-    '<button onclick="nav(\'audituri\');setTimeout(()=>editAudit(),100)"><span class="qicon">&#128203;</span> '+(isEN?'New Audit':'Audit Nou')+'</button>'+
-    '<button onclick="nav(\'rapoarte\')"><span class="qicon">&#128196;</span> '+(isEN?'Generate Report':'Genereaza Raport')+'</button>'+
-  '</div>';
+  // 1. QUICK ACTIONS — eliminat in v13.13 (redundant cu sidebar; "Genereaza Raport" doar naviga, "Proba Autocontrol" mergea doar la microbio si confuza userul cu privire la ATP/UV)
   // 2. CALENDAR & EVENIMENTE — moved up
   h+='<div class="dash-section'+(_dw.miniCal===false?' hidden':'')+'" data-dw="miniCal"><div id="dash-mini-cal"></div></div>';
   // 3. URGENT BANNER (if any expired/overdue)
@@ -18740,6 +18734,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.13',date:'2026-04-28',notes:'Dashboard - eliminat rândul Quick Actions (4 butoane: Caz IAAM, Proba Autocontrol, Audit Nou, Genereaza Raport) care ocupa ~80px vertical sus si nu aducea valoare reala. Motivele de eliminare per buton: (1) Genereaza Raport era PUR REDUNDANT cu nav-ul sidebar -> apasarea facea exact ce face click pe Generare Rapoarte din sidebar (zero acțiune extra, doar nav). (2) Proba Autocontrol mergea la autocontrol + editAuto() care deschide doar Probe Microbiologice, NU si ATP / Testare UV - userul era confuz. (3) Caz IAAM si Audit Nou economiseau doar 1 click fata de fluxul standard (sidebar -> + buton din pagina). Cum sidebar-ul are 4-5 module esentiale toate vizibile mereu, nu exista cazul tipic Quick Actions (10+ module ascunse in submeniuri profunde). Castig: ~80px vertical, calendarul + evenimentele saptamana asta urca direct in viewport-ul fara scroll. Codul sterse din dashboard.js (5 linii div + 4 butoane + class CSS dash-quick orphan ramane in styles.css dar nu mai e folosit, cleanup CSS la pasul urmator).'},
   {version:'13.12',date:'2026-04-28',notes:'(1) FIX CRITICAL date parsing in calendar - records vechi cu format ISO complet (YYYY-MM-DDTHH:MM:SS[.ms][Z]), format RO (DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY) sau timestamp ms (10+ cifre) erau pierdute la afisare. Bug cumulativ in 4 locuri necovered de fix-ul v13.7-v13.9 care s-a aplicat doar la cardurile KPI dashboard: (a) calendar.js getCalendarEvents (linia 406-435) - punctele colorate pe grid-ul lunar foloseau new Date(d.due_date) naive care esua silentios; (b) calendar.js buildMonthGrid (linia 442) - evMap construit cu parseInt(ev.date.slice(-2)) presupunea YYYY-MM-DD, sparge pe DD/MM/YYYY (extrage 26 ca zi din 30/04/2026); (c) calendar.js renderDashCalendar (linia 612-617, 627, 645, 651) - lista Upcoming din mini-calendar dashboard cu 6 surse separate (deadlines, docs, events, trainings, audits, biocide_avize) toate folosind new Date(d+T00:00:00) care esueaza cand d e deja ISO complet sau RO; (d) dashboard.js urgent banner (linia 110-123) - alerte expirat/depasit/aviz biocid foloseau new Date(s)<new Date() naive in 4 forEach. Solutie: helper global parseDate(s) in helpers.js cu 5 patterns ordonate (YYYY-MM-DD scurt, ISO complet cu T, RO cu separator . / -, timestamp ms 10+, fallback nativ) returnand Date la 00:00 local; plus parseDateISO(s) care returneaza YYYY-MM-DD din orice format. event.date din getCalendarEvents acum normalizat la ISO inainte de push, deci downstream buildMonthGrid + filterByDays + grouping primesc format consistent. Banner urgente foloseste _parseDate local (deja existent in dashboard.js) pentru toate cele 4 cazuri. Comportament: toate evenimentele apar acum indiferent de cum a fost salvata data initiala (manual, import, sync de la alt PC, format vechi pre-v12).'},
   {version:'13.12',date:'2026-04-28',notes:'(2) Autocontrol Planificare reordonare logica - sectiunile A si B au fost interschimbate. Inainte: A Nerecoltat (rosu) -> B Cu neconformitati (portocaliu) -> C >6 luni (galben). Acum: B Cu neconformitati (portocaliu, prioritate maxima) -> A Nerecoltat in perioada curenta (rosu) -> C >6 luni (galben). Argumentul: NC = risc CONFIRMAT (proba deja recoltata, esuata, problema reala pe sectie) in timp ce Nerecoltat = risc POTENTIAL (probabil OK dar n-avem date). Plus volumul mare la Nerecoltat (370 items intr-un sample real) ar fi ingropat cele 2 NC critice mai jos, scrolled-down si ignorate. Logica IPC ECDC/INSP: trateaza ce e dovedit ca problema inainte de a cauta probleme noi. Vizibil in summary B: subtitlu (prioritate — risc confirmat) / (priority — confirmed risk) font-size 10px opacity .75 langa titlu, ca utilizatorul sa inteleaga de ce e prima. Numerotarea interna a checkbox-urilor (acp-0, acp-1, ...) ramane consecutiva indiferent de ordine pentru ca idx se incrementeaza in ordinea HTML, deci saveAutoPlanning() functioneaza neschimbata.'},
   {version:'13.11',date:'2026-04-28',notes:'UX Autocontrol -> Planificare: cele 3 sectiuni (Nerecoltat in perioada curenta / Cu neconformitati - re-testare necesara / Nerecoltat de >6 luni) sunt acum INCHISE default (inainte erau open default, deci la intrarea pe tab user-ul vedea toate sutele de probe expandate si trebuia sa scrolleze mult). Acum vede doar 3 headere compacte cu count badge si decide singur ce sa exploreze. Indicator vizual de expand: chevron triunghi (▶) la inceputul fiecarui header care se roteste 90° (▼) cand sectiunea e deschisa - feedback clar ca header-ul e clickabil. Plus hint text "click pentru detalii" / "click to expand" (font-size 11px, opacity .7) afisat la dreapta count badge-ului ca sa nu existe ambiguitate. Hover pe summary aplica filter:brightness(.97) - efect subtil de lift. CSS in styles.css: .ac-plan-section[open]>summary .ac-plan-chev{transform:rotate(90deg)} cu transition .15s smooth. WebKit details-marker hidden cu ::-webkit-details-marker{display:none} ca sa nu apara duplicat alaturi de chevron-ul nostru.'},

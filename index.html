@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.11</title>
+<title>CPIAAM Management v13.12</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2203,7 +2203,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.11';
+const APP_VERSION='13.12';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -3593,6 +3593,39 @@ var BIO_USAGE_TEMPLATES={
 // CPIAAM — Helpers — Utility Functions
 // ═════════════════════════════════════════════════════════════
 
+// v13.12 - parser robust pentru toate formatele de date (records vechi pot avea ISO complet, format RO, timestamp ms, etc.)
+// Returneaza Date la 00:00 local sau null pentru input invalid.
+function parseDate(s){
+  if(!s)return null;
+  if(s instanceof Date)return isNaN(s)?null:new Date(s.getFullYear(),s.getMonth(),s.getDate(),0,0,0,0);
+  s=String(s).trim();if(!s)return null;
+  var dt=null;
+  // 1. Format input type=date: YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)){dt=new Date(s+'T00:00:00')}
+  // 2. ISO complet cu T: YYYY-MM-DDTHH:MM:SS[.ms][Z|±HH:MM]
+  else if(/^\d{4}-\d{2}-\d{2}T/.test(s)){
+    var p=new Date(s);
+    if(!isNaN(p))dt=new Date(p.getFullYear(),p.getMonth(),p.getDate(),0,0,0,0);
+  }
+  // 3. Format RO: DD.MM.YYYY / DD/MM/YYYY / DD-MM-YYYY
+  else{
+    var m=s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
+    if(m){dt=new Date(parseInt(m[3]),parseInt(m[2])-1,parseInt(m[1]),0,0,0,0)}
+    // 4. Timestamp ms (10+ cifre)
+    else if(/^\d{10,}$/.test(s)){
+      var ts=parseInt(s);if(!isNaN(ts)){var p2=new Date(ts);if(!isNaN(p2))dt=new Date(p2.getFullYear(),p2.getMonth(),p2.getDate(),0,0,0,0)}
+    }
+    else{
+      // 5. Fallback parser nativ
+      var fb=new Date(s);
+      if(!isNaN(fb))dt=new Date(fb.getFullYear(),fb.getMonth(),fb.getDate(),0,0,0,0);
+    }
+  }
+  return (dt&&!isNaN(dt))?dt:null;
+}
+// ISO YYYY-MM-DD din orice format suportat (sau null daca invalid). Folosit pentru chei de zi in calendar grid.
+function parseDateISO(s){var dt=parseDate(s);if(!dt)return null;return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
+
 // Toast notification
 function showToast(msg){
   const t=document.createElement('div');
@@ -4058,17 +4091,18 @@ async function rDash(el){
 
   const isEN=CFG.lang==='en';
   // Urgent items: expired docs + overdue deadlines
+  // v13.12 - parseDate robust (records vechi cu format ISO complet, RO, timestamp ms ar fi pierdut altfel)
   const urgentItems=[];
-  docs.forEach(d=>{if(!d.date_expiry)return;if(new Date(d.date_expiry)<new Date())urgentItems.push({icon:'⚫',text:(isEN?'Expired: ':'Expirat: ')+d.name,link:'documente'})});
-  dls.forEach(d=>{if(!d.due_date)return;if(d.status==='trimis'||d.status==='finalizat')return;if(new Date(d.due_date)<new Date())urgentItems.push({icon:'⚫',text:(isEN?'Overdue: ':'Depasit: ')+d.name,link:'termene',_dlId:d.id})});
+  docs.forEach(d=>{if(!d.date_expiry)return;var dt=_parseDate(d.date_expiry);if(dt&&dt<_today0)urgentItems.push({icon:'⚫',text:(isEN?'Expired: ':'Expirat: ')+d.name,link:'documente'})});
+  dls.forEach(d=>{if(!d.due_date)return;if(d.status==='trimis'||d.status==='finalizat')return;var dt=_parseDate(d.due_date);if(dt&&dt<_today0)urgentItems.push({icon:'⚫',text:(isEN?'Overdue: ':'Depasit: ')+d.name,link:'termene',_dlId:d.id})});
   // v12.83: alerte expirare avize biocide (expirat sau expira in urmatoarele 30 zile)
-  var _now=new Date(),_soon=new Date(Date.now()+30*86400000);
+  var _soon=new Date(_today0.getTime()+31*86400000);
   (CFG.biocide_products||[]).forEach(function(p){
     if(!p.avize||!p.avize.length)return;
     var latest=p.avize.reduce(function(a,b){return(b.date_expiry||'')>(a.date_expiry||'')?b:a},p.avize[0]);
     if(!latest.date_expiry)return;
-    var exp=new Date(latest.date_expiry);
-    if(exp<_now)urgentItems.push({icon:'🔴',text:(isEN?'Expired biocide approval: ':'Aviz biocid expirat: ')+esc(p.name||'')+' ('+fmtDate(latest.date_expiry)+')',link:'biocide'});
+    var exp=_parseDate(latest.date_expiry);if(!exp)return;
+    if(exp<_today0)urgentItems.push({icon:'🔴',text:(isEN?'Expired biocide approval: ':'Aviz biocid expirat: ')+esc(p.name||'')+' ('+fmtDate(latest.date_expiry)+')',link:'biocide'});
     else if(exp<_soon)urgentItems.push({icon:'🟠',text:(isEN?'Biocide approval expiring: ':'Aviz biocid expira curand: ')+esc(p.name||'')+' ('+fmtDate(latest.date_expiry)+')',link:'biocide'});
   });
 
@@ -6094,7 +6128,21 @@ function renderAutoTab2(data,allData,matrix,probeTypes,sections,isEN,qLabel){
 
   // v13.10 - Sectiuni A/B/C ca <details> collapsible cu count in summary
   // v13.11 - default inchise + chevron rotativ ca indicator vizual
-  // Section A - Nerecoltat in perioada curenta
+  // v13.12 - reordonare: NC (risc confirmat) sus, apoi Nerecoltat curent, apoi >6 luni. Plus subtitlu prioritate.
+  // Section B - Cu neconformitati (PRIORITATE 1: risc confirmat, re-testare obligatorie)
+  h+='<details class="ac-plan-section" style="margin-bottom:12px;border:1px solid var(--brd);border-radius:8px;overflow:hidden">'+
+    '<summary style="cursor:pointer;padding:10px 14px;background:#FED7AA;color:#7C2D12;font-weight:700;font-size:14px;list-style:none;user-select:none;display:flex;align-items:center;gap:8px">'+
+    '<span class="ac-plan-chev" style="display:inline-block;font-size:11px;width:12px;text-align:center;transition:transform .15s">&#9654;</span>'+
+    '<span style="font-size:16px">&#128992;</span> '+
+    '<span style="flex:1">'+(isEN?'Non-conformities — retest needed':'Cu neconformitati — re-testare necesara')+'<span style="font-size:10px;font-weight:500;opacity:.75;margin-left:6px">'+(isEN?'(priority — confirmed risk)':'(prioritate — risc confirmat)')+'</span></span>'+
+    '<span style="background:#7C2D12;color:#fff;padding:2px 10px;border-radius:10px;font-size:12px">'+planB.length+'</span>'+
+    '<span style="font-size:11px;font-weight:500;opacity:.7;margin-left:6px">'+(isEN?'click to expand':'click pentru detalii')+'</span>'+
+    '</summary><div style="padding:8px 14px">';
+  if(planB.length===0) h+='<div style="font-size:12px;color:var(--txtL);padding:8px 0">'+(isEN?'No non-conformities':'Fara neconformitati')+'</div>';
+  else planB.forEach(p=>{h+=renderPlanItem(idx++,p.ptName,p.secName,'neconformitate',(isEN?'NC ':'NC ')+p.ncPct+'% — '+(isEN?'retest recommended':'re-testare recomandata'),isEN)});
+  h+='</div></details>';
+
+  // Section A - Nerecoltat in perioada curenta (PRIORITATE 2: risc potential, conform plan)
   h+='<details class="ac-plan-section" style="margin-bottom:12px;border:1px solid var(--brd);border-radius:8px;overflow:hidden">'+
     '<summary style="cursor:pointer;padding:10px 14px;background:#FEE2E2;color:#7C0A0A;font-weight:700;font-size:14px;list-style:none;user-select:none;display:flex;align-items:center;gap:8px">'+
     '<span class="ac-plan-chev" style="display:inline-block;font-size:11px;width:12px;text-align:center;transition:transform .15s">&#9654;</span>'+
@@ -6105,19 +6153,6 @@ function renderAutoTab2(data,allData,matrix,probeTypes,sections,isEN,qLabel){
     '</summary><div style="padding:8px 14px">';
   if(planA.length===0) h+='<div style="font-size:12px;color:var(--txtL);padding:8px 0">'+(isEN?'All combinations tested!':'Toate combinatiile testate!')+'</div>';
   else planA.forEach(p=>{h+=renderPlanItem(idx++,p.ptName,p.secName,'nerecoltat',isEN?'Not sampled in '+qLabel:'Nerecoltat in '+qLabel,isEN)});
-  h+='</div></details>';
-
-  // Section B - Cu neconformitati
-  h+='<details class="ac-plan-section" style="margin-bottom:12px;border:1px solid var(--brd);border-radius:8px;overflow:hidden">'+
-    '<summary style="cursor:pointer;padding:10px 14px;background:#FED7AA;color:#7C2D12;font-weight:700;font-size:14px;list-style:none;user-select:none;display:flex;align-items:center;gap:8px">'+
-    '<span class="ac-plan-chev" style="display:inline-block;font-size:11px;width:12px;text-align:center;transition:transform .15s">&#9654;</span>'+
-    '<span style="font-size:16px">&#128992;</span> '+
-    '<span style="flex:1">'+(isEN?'Non-conformities — retest needed':'Cu neconformitati — re-testare necesara')+'</span>'+
-    '<span style="background:#7C2D12;color:#fff;padding:2px 10px;border-radius:10px;font-size:12px">'+planB.length+'</span>'+
-    '<span style="font-size:11px;font-weight:500;opacity:.7;margin-left:6px">'+(isEN?'click to expand':'click pentru detalii')+'</span>'+
-    '</summary><div style="padding:8px 14px">';
-  if(planB.length===0) h+='<div style="font-size:12px;color:var(--txtL);padding:8px 0">'+(isEN?'No non-conformities':'Fara neconformitati')+'</div>';
-  else planB.forEach(p=>{h+=renderPlanItem(idx++,p.ptName,p.secName,'neconformitate',(isEN?'NC ':'NC ')+p.ncPct+'% — '+(isEN?'retest recommended':'re-testare recomandata'),isEN)});
   h+='</div></details>';
 
   // Section C - Nerecoltat de >6 luni
@@ -12249,35 +12284,35 @@ async function genRecurringDeadlines(){
 // ═══════════════════════════════════════════════════════════════
 var _calMonth=new Date().getMonth(),_calYear=new Date().getFullYear();
 async function getCalendarEvents(year,month){
+  // v13.12 - parseDate robust + ISO normalizat in event.date (era bug pentru records vechi cu format ISO/RO/timestamp)
   const events=[];
   // Deadlines (red dots)
   const dls=await ga('deadlines');
-  dls.forEach(d=>{if(!d.due_date)return;const dt=new Date(d.due_date);
+  dls.forEach(d=>{if(!d.due_date)return;var dt=parseDate(d.due_date);if(!dt)return;
     if(dt.getFullYear()===year&&dt.getMonth()===month){
-      // Finalized/sent deadlines show green (done), pending show red (urgent)
       var isDone=(d.status==='finalizat'||d.status==='trimis');
-      events.push({date:d.due_date,color:isDone?'green':'red',label:d.name,type:'deadline',link:'termene',_dlId:d.id,_status:d.status||'neinceput',_recipient:d.recipient||''});
+      events.push({date:parseDateISO(d.due_date),color:isDone?'green':'red',label:d.name,type:'deadline',link:'termene',_dlId:d.id,_status:d.status||'neinceput',_recipient:d.recipient||''});
     }});
   // Document expiry (yellow dots)
   const docs=await ga('documents');
-  docs.forEach(d=>{if(!d.date_expiry)return;const dt=new Date(d.date_expiry);
+  docs.forEach(d=>{if(!d.date_expiry)return;var dt=parseDate(d.date_expiry);if(!dt)return;
     if(dt.getFullYear()===year&&dt.getMonth()===month)
-      events.push({date:d.date_expiry,color:'yellow',label:d.name,type:'doc_expiry',link:'documente'})});
+      events.push({date:parseDateISO(d.date_expiry),color:'yellow',label:d.name,type:'doc_expiry',link:'documente'})});
   // Biocide aviz expiry (orange dots)
   (CFG.biocide_products||[]).forEach(p=>{
-    (p.avize||[]).forEach(a=>{if(!a.date_expiry)return;var dt=new Date(a.date_expiry);
+    (p.avize||[]).forEach(a=>{if(!a.date_expiry)return;var dt=parseDate(a.date_expiry);if(!dt)return;
       if(dt.getFullYear()===year&&dt.getMonth()===month)
-        events.push({date:a.date_expiry,color:'yellow',label:(p.name||'Biocid')+' — Aviz '+(a.nr||''),type:'bio_expiry',link:'biocide'})});
+        events.push({date:parseDateISO(a.date_expiry),color:'yellow',label:(p.name||'Biocid')+' — Aviz '+(a.nr||''),type:'bio_expiry',link:'biocide'})});
   });
   // Manual events (blue dots) — support multi-day via date_end
   const evts=await ga('events');
   const CAT_COLORS={general:'blue',meeting:'blue',training:'green',audit:'teal',deadline:'red',inspection:'yellow',other:'blue'};
   evts.forEach(e=>{if(!e.date)return;
-    const start=new Date(e.date),end=e.date_end?new Date(e.date_end):start;
-    // Add event for each day it spans within this month
-    for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+    var start=parseDate(e.date);if(!start)return;
+    var end=e.date_end?(parseDate(e.date_end)||start):start;
+    for(var d=new Date(start.getTime());d<=end;d.setDate(d.getDate()+1)){
       if(d.getFullYear()===year&&d.getMonth()===month){
-        const ds=d.toISOString().slice(0,10);
+        var ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
         events.push({date:ds,color:CAT_COLORS[e.category]||'blue',label:e.title,type:'manual',id:e.id,description:e.description||'',category:e.category||'general'});
       }
     }
@@ -12287,8 +12322,9 @@ async function getCalendarEvents(year,month){
 var _calView='month',_calTab='calendar';// 'calendar' or 'termene'
 function getMonthNames(){return CFG.lang==='en'?LANG.en.months_full:T('months_full_ro')}
 function buildMonthGrid(y,m,events,compact){
+  // v13.12 - getCalendarEvents normalizeaza ev.date la ISO YYYY-MM-DD, deci slice(-2) functioneaza acum corect
   const dayNames=T('cal_days');
-  const evMap={};events.forEach(ev=>{const day=parseInt(ev.date.slice(-2));if(!evMap[day])evMap[day]=[];evMap[day].push(ev)});
+  const evMap={};events.forEach(ev=>{var iso=ev.date&&/^\d{4}-\d{2}-\d{2}$/.test(ev.date)?ev.date:parseDateISO(ev.date);if(!iso)return;var day=parseInt(iso.slice(-2));if(!evMap[day])evMap[day]=[];evMap[day].push(ev)});
   const firstDay=new Date(y,m,1).getDay();const startOff=(firstDay+6)%7;
   const daysInMonth=new Date(y,m+1,0).getDate();const prevDays=new Date(y,m,0).getDate();
   const today=new Date();const isCurrentMonth=today.getFullYear()===y&&today.getMonth()===m;const todayDate=today.getDate();
@@ -12457,23 +12493,24 @@ async function renderDashCalendar(){
   // Gather ALL upcoming events
   const todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   const allDls=await ga('deadlines'),allDocs=await ga('documents'),allEvts=await ga('events'),allTr=await ga('trainings'),allAud=await ga('audits');
+  // v13.12 - parseDate robust pentru toate formate (records vechi cu ISO complet, RO, timestamp ms etc.)
   var allUpcoming=[];
-  allDls.forEach(d=>{if(!d.due_date||d.status==='trimis'||d.status==='finalizat'||d._isTemplate)return;var dt=new Date(d.due_date+'T00:00:00');if(dt>=todayStart)allUpcoming.push({date:d.due_date,color:'red',label:d.name,link:'termene',_dlId:d.id})});
-  allDocs.forEach(d=>{if(!d.date_expiry)return;var dt=new Date(d.date_expiry+'T00:00:00');if(dt>=todayStart)allUpcoming.push({date:d.date_expiry,color:'yellow',label:d.name,link:'documente'})});
-  allEvts.forEach(e=>{if(!e.date)return;var dt=new Date(e.date+'T00:00:00');if(dt>=todayStart)allUpcoming.push({date:e.date,color:'blue',label:e.title,link:'calendar'})});
-  allTr.forEach(t=>{if(!t.date)return;var dt=new Date(t.date+'T00:00:00');if(dt>=todayStart)allUpcoming.push({date:t.date,color:'green',label:t.topic||'Instruire',link:'instruire'})});
-  allAud.forEach(a=>{if(!a.date)return;var dt=new Date(a.date+'T00:00:00');if(dt>=todayStart)allUpcoming.push({date:a.date,color:'teal',label:a.type||'Audit',link:'audituri'})});
-  (CFG.biocide_products||[]).forEach(p=>{(p.avize||[]).forEach(a=>{if(!a.date_expiry)return;var dt=new Date(a.date_expiry+'T00:00:00');if(dt>=todayStart)allUpcoming.push({date:a.date_expiry,color:'yellow',label:(p.name||'Biocid')+' — Aviz '+(a.nr||''),link:'biocide'})})});
+  allDls.forEach(d=>{if(!d.due_date||d.status==='trimis'||d.status==='finalizat'||d._isTemplate)return;var dt=parseDate(d.due_date);if(dt&&dt>=todayStart)allUpcoming.push({date:parseDateISO(d.due_date),color:'red',label:d.name,link:'termene',_dlId:d.id})});
+  allDocs.forEach(d=>{if(!d.date_expiry)return;var dt=parseDate(d.date_expiry);if(dt&&dt>=todayStart)allUpcoming.push({date:parseDateISO(d.date_expiry),color:'yellow',label:d.name,link:'documente'})});
+  allEvts.forEach(e=>{if(!e.date)return;var dt=parseDate(e.date);if(dt&&dt>=todayStart)allUpcoming.push({date:parseDateISO(e.date),color:'blue',label:e.title,link:'calendar'})});
+  allTr.forEach(t=>{if(!t.date)return;var dt=parseDate(t.date);if(dt&&dt>=todayStart)allUpcoming.push({date:parseDateISO(t.date),color:'green',label:t.topic||'Instruire',link:'instruire'})});
+  allAud.forEach(a=>{if(!a.date)return;var dt=parseDate(a.date);if(dt&&dt>=todayStart)allUpcoming.push({date:parseDateISO(a.date),color:'teal',label:a.type||'Audit',link:'audituri'})});
+  (CFG.biocide_products||[]).forEach(p=>{(p.avize||[]).forEach(a=>{if(!a.date_expiry)return;var dt=parseDate(a.date_expiry);if(dt&&dt>=todayStart)allUpcoming.push({date:parseDateISO(a.date_expiry),color:'yellow',label:(p.name||'Biocid')+' — Aviz '+(a.nr||''),link:'biocide'})})});
   allUpcoming.sort((a,b)=>a.date.localeCompare(b.date));
 
   var todayStr=now.toISOString().slice(0,10);
   var tomorrowD=new Date(now);tomorrowD.setDate(tomorrowD.getDate()+1);var tomorrowStr=tomorrowD.toISOString().slice(0,10);
   var dotTitles={red:isEN?'Deadline':'Termen',yellow:isEN?'Document expiry':'Expirare document',blue:isEN?'Event':'Eveniment',green:isEN?'Training':'Instruire',teal:isEN?'Audit':'Audit'};
 
-  // Filter by period
+  // Filter by period (ev.date este deja ISO YYYY-MM-DD normalizat)
   function filterByDays(days){
     var end=new Date(todayStart.getTime()+(days+1)*864e5);
-    return allUpcoming.filter(function(ev){var dt=new Date(ev.date+'T00:00:00');return dt<end});
+    return allUpcoming.filter(function(ev){var dt=parseDate(ev.date);return dt&&dt<end});
   }
   // Period tabs: Azi, Maine, 7, 30, 90
   var periods=[
@@ -12491,13 +12528,13 @@ async function renderDashCalendar(){
     var h='',lastGrp='';
     items.forEach(function(ev){
       var grp=ev.date===todayStr?(isEN?'Today':'Astazi'):ev.date===tomorrowStr?(isEN?'Tomorrow':'Maine'):'';
-      if(!grp){var d2=new Date(ev.date+'T00:00:00');var dz=Math.ceil((d2-todayStart)/864e5);grp=dz<=7?(isEN?'This week':'Saptamana aceasta'):dz<=30?(isEN?'This month':'Luna aceasta'):(isEN?'Later':'Mai tarziu')}
+      if(!grp){var d2=parseDate(ev.date)||todayStart;var dz=Math.ceil((d2-todayStart)/864e5);grp=dz<=7?(isEN?'This week':'Saptamana aceasta'):dz<=30?(isEN?'This month':'Luna aceasta'):(isEN?'Later':'Mai tarziu')}
       if(grp!==lastGrp){
         var bg=grp===(isEN?'Today':'Astazi')?'background:rgba(99,102,241,.08);border-radius:8px;padding:4px 8px;margin:2px -8px':'padding:4px 8px;margin:2px -8px';
         h+='<div style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-top:'+(lastGrp?'8':'0')+'px;'+bg+'">'+grp+'</div>';
         lastGrp=grp;
       }
-      var d3=new Date(ev.date);var dayStr=d3.getDate()+' '+mNames[d3.getMonth()];
+      var d3=parseDate(ev.date)||new Date();var dayStr=d3.getDate()+' '+mNames[d3.getMonth()];
       var isToday=ev.date===todayStr;
       var dashNav=ev._dlId!=null?'_calNavToEvent(\''+ev.link+'\','+ev._dlId+')':'nav(\''+ev.link+'\')';
       h+='<div class="dash-up-item" onclick="'+dashNav+'" style="'+(isToday?'font-weight:600':'')+'">'+
@@ -18703,6 +18740,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.12',date:'2026-04-28',notes:'(1) FIX CRITICAL date parsing in calendar - records vechi cu format ISO complet (YYYY-MM-DDTHH:MM:SS[.ms][Z]), format RO (DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY) sau timestamp ms (10+ cifre) erau pierdute la afisare. Bug cumulativ in 4 locuri necovered de fix-ul v13.7-v13.9 care s-a aplicat doar la cardurile KPI dashboard: (a) calendar.js getCalendarEvents (linia 406-435) - punctele colorate pe grid-ul lunar foloseau new Date(d.due_date) naive care esua silentios; (b) calendar.js buildMonthGrid (linia 442) - evMap construit cu parseInt(ev.date.slice(-2)) presupunea YYYY-MM-DD, sparge pe DD/MM/YYYY (extrage 26 ca zi din 30/04/2026); (c) calendar.js renderDashCalendar (linia 612-617, 627, 645, 651) - lista Upcoming din mini-calendar dashboard cu 6 surse separate (deadlines, docs, events, trainings, audits, biocide_avize) toate folosind new Date(d+T00:00:00) care esueaza cand d e deja ISO complet sau RO; (d) dashboard.js urgent banner (linia 110-123) - alerte expirat/depasit/aviz biocid foloseau new Date(s)<new Date() naive in 4 forEach. Solutie: helper global parseDate(s) in helpers.js cu 5 patterns ordonate (YYYY-MM-DD scurt, ISO complet cu T, RO cu separator . / -, timestamp ms 10+, fallback nativ) returnand Date la 00:00 local; plus parseDateISO(s) care returneaza YYYY-MM-DD din orice format. event.date din getCalendarEvents acum normalizat la ISO inainte de push, deci downstream buildMonthGrid + filterByDays + grouping primesc format consistent. Banner urgente foloseste _parseDate local (deja existent in dashboard.js) pentru toate cele 4 cazuri. Comportament: toate evenimentele apar acum indiferent de cum a fost salvata data initiala (manual, import, sync de la alt PC, format vechi pre-v12).'},
+  {version:'13.12',date:'2026-04-28',notes:'(2) Autocontrol Planificare reordonare logica - sectiunile A si B au fost interschimbate. Inainte: A Nerecoltat (rosu) -> B Cu neconformitati (portocaliu) -> C >6 luni (galben). Acum: B Cu neconformitati (portocaliu, prioritate maxima) -> A Nerecoltat in perioada curenta (rosu) -> C >6 luni (galben). Argumentul: NC = risc CONFIRMAT (proba deja recoltata, esuata, problema reala pe sectie) in timp ce Nerecoltat = risc POTENTIAL (probabil OK dar n-avem date). Plus volumul mare la Nerecoltat (370 items intr-un sample real) ar fi ingropat cele 2 NC critice mai jos, scrolled-down si ignorate. Logica IPC ECDC/INSP: trateaza ce e dovedit ca problema inainte de a cauta probleme noi. Vizibil in summary B: subtitlu (prioritate — risc confirmat) / (priority — confirmed risk) font-size 10px opacity .75 langa titlu, ca utilizatorul sa inteleaga de ce e prima. Numerotarea interna a checkbox-urilor (acp-0, acp-1, ...) ramane consecutiva indiferent de ordine pentru ca idx se incrementeaza in ordinea HTML, deci saveAutoPlanning() functioneaza neschimbata.'},
   {version:'13.11',date:'2026-04-28',notes:'UX Autocontrol -> Planificare: cele 3 sectiuni (Nerecoltat in perioada curenta / Cu neconformitati - re-testare necesara / Nerecoltat de >6 luni) sunt acum INCHISE default (inainte erau open default, deci la intrarea pe tab user-ul vedea toate sutele de probe expandate si trebuia sa scrolleze mult). Acum vede doar 3 headere compacte cu count badge si decide singur ce sa exploreze. Indicator vizual de expand: chevron triunghi (▶) la inceputul fiecarui header care se roteste 90° (▼) cand sectiunea e deschisa - feedback clar ca header-ul e clickabil. Plus hint text "click pentru detalii" / "click to expand" (font-size 11px, opacity .7) afisat la dreapta count badge-ului ca sa nu existe ambiguitate. Hover pe summary aplica filter:brightness(.97) - efect subtil de lift. CSS in styles.css: .ac-plan-section[open]>summary .ac-plan-chev{transform:rotate(90deg)} cu transition .15s smooth. WebKit details-marker hidden cu ::-webkit-details-marker{display:none} ca sa nu apara duplicat alaturi de chevron-ul nostru.'},
   {version:'13.10',date:'2026-04-24',notes:'UX Autocontrol -> Planificare: cele 3 sectiuni (Nerecoltat in perioada curenta cu emoji rosu, Cu neconformitati - re-testare necesara cu emoji portocaliu, Nerecoltat de >6 luni cu emoji galben) sunt acum elemente HTML details/summary collapsible (deschise default). Click pe header inchide / deschide sectiunea, util pentru liste lungi cand vrei sa te concentrezi doar pe una. Fiecare summary contine: emoji punct colorat, titlul sectiunii, badge count la dreapta cu numarul total de probe in sectiune (background colorat in tonul sectiunii). Backgrounds: A rosu deschis (#FEE2E2 + text #7C0A0A), B portocaliu (#FED7AA + text #7C2D12), C galben (#FEF3C7 + text #854F0B). Padding 10px 14px in summary, 8px 14px in continut. Border-radius 8px pe details, overflow hidden pentru round corners.'},
   {version:'13.9',date:'2026-04-24',notes:'FIX FINAL dashboard cardurile 30-zile - parser robust _parseDate care accepta TOATE formatele de data salvate de-a lungul timpului. Cauza pe care v13.7 nu o acoperea: records vechi pot avea format ISO complet (2026-04-28T00:00:00.000Z), format RO (28.04.2026, 30/04/2026), sau timestamp ms - parser-ul scurt new Date(s+T00:00:00) esua pe ele si returna NaN, deci filtrul excludea. Parser-ul nou foloseste 5 patterns ordonate: (1) /^\\d{4}-\\d{2}-\\d{2}$/ regex pentru format scurt YYYY-MM-DD - parseaza direct cu T00:00:00 ca sa fie local time; (2) /^\\d{4}-\\d{2}-\\d{2}T/ pentru ISO complet - parseaza nativ + reconstructie local din getFullYear/Month/Date la 00:00 (asta evita shift-ul TZ care ar muta data cu o zi inainte/dupa cand timezone-ul user-ului difera de UTC); (3) /^(\\d{1,2})[.\\/](\\d{1,2})[.\\/](\\d{4})$/ pentru DD.MM.YYYY si DD/MM/YYYY format RO; (4) /^\\d{10,}$/ pentru timestamp ms numeric (10+ cifre); (5) Fallback la new Date(s) nativ. Returneaza null pentru date invalide. Aplicat in _isInDays (folosit pentru events/trainings/audits/deadlines) si in cele 3 calcule docsValid/docsExpSoon/docsExpired. Sterse cele 4 console.log debug v13.8 (rolul lor a fost confirmat: codul functioneaza, formatul vechi era cauza). TESTAT in preview server cu 6 formate simultan - fiecare card primeste numar corect distribuit pe categorii (4 events general/other/meeting + 1 audit ISO + 1 training ISO).'},

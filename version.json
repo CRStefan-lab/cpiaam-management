@@ -1,8 +1,8 @@
 {
-  "version": "13.11",
+  "version": "13.12",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "UX Autocontrol -> Planificare: cele 3 sectiuni (Nerecoltat in perioada curenta / Cu neconformitati / Nerecoltat de >6 luni) sunt acum INCHISE default. Userul vede doar headerele cu count badge si decide singur ce sectiune sa exploreze.",
-    "Indicator vizual de expand: chevron triunghi (▶) la inceputul fiecarui header care se roteste 90° cand sectiunea e deschisa + hint text 'click pentru detalii' la dreapta count-ului. Mai usor de inteles ca sunt clickabile."
+    "FIX CRITICAL date parsing in calendar - records vechi cu format ISO complet (YYYY-MM-DDTHH:MM:SS), RO (DD.MM.YYYY, DD/MM/YYYY) sau timestamp ms erau pierdute in 4 locuri: (1) grid lunar getCalendarEvents, (2) buildMonthGrid evMap, (3) renderDashCalendar lista Upcoming, (4) dashboard banner urgente. Helper global parseDate() si parseDateISO() in helpers.js, normalizeaza event.date la ISO YYYY-MM-DD pentru ca toate filtrele si grid-urile sa functioneze identic indiferent de cum e salvata data sursa.",
+    "Autocontrol Planificare: reordonare cele 3 sectiuni - Cu neconformitati (portocaliu, risc confirmat) MUTAT deasupra Nerecoltat in perioada curenta (rosu, risc potential). Plus subtitlu '(prioritate — risc confirmat)' la NC ca sa fie clar de ce e prima. Logica IPC standard: trateaza ce e dovedit ca problema inainte de a cauta probleme noi."
   ]
 }

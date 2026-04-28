@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.7</title>
+<title>CPIAAM Management v13.8</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2200,7 +2200,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.7';
+const APP_VERSION='13.8';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -4000,6 +4000,14 @@ async function rDash(el){
   const _allEvts=await ga('events');
   const _allTrains=await ga('trainings');
   const _allAudits=await ga('audits');
+  // v13.8 DEBUG: log counts si exemple in console pentru diagnoza dashboard 30zile cards
+  try{
+    console.log('[CPIAAM dashboard] events:'+_allEvts.length+' trainings:'+_allTrains.length+' audits:'+_allAudits.length);
+    if(_allEvts.length>0)console.log('[CPIAAM dashboard] first event sample:',JSON.stringify({date:_allEvts[0].date,title:_allEvts[0].title,category:_allEvts[0].category}));
+    var todayStr=new Date().toISOString().slice(0,10);
+    var inRange=_allEvts.filter(e=>_isInDays(e.date,30));
+    console.log('[CPIAAM dashboard] events in next 30d: '+inRange.length+' (today='+todayStr+')');
+  }catch(e){console.error('[CPIAAM dashboard debug error]',e)}
   // Sedinte/evenimente generale (nu audit, nu training): general + meeting + inspection + other + deadline (manual)
   const evtsUp=_allEvts.filter(e=>{
     if(!_isInDays(e.date,30))return false;
@@ -18646,6 +18654,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.8',date:'2026-04-24',notes:'DEBUG temporar dashboard: 4 mesaje console.log adaugate dupa await ga(events/trainings/audits) pentru a diagnostica de ce cardurile EVENIMENTE/INSTRUIRI/AUDITURI <= 30 ZILE arata 0 in screenshot-uri user dupa fix v13.7. Mesaje: counts totale per store, sample primul event (date+title+category), count events in next 30d cu data curenta. Logging-ul nu afecteaza UI - doar in browser console (F12). Va fi sters dupa diagnoza in v13.9. Plus fix pentru cazul cand SW serveste versiune cached - user trebuie hard refresh (Ctrl+Shift+R) sau click verifica update.'},
   {version:'13.7',date:'2026-04-24',notes:'FIX CRITICAL dashboard - cardurile EVENIMENTE/SEDINTE, INSTRUIRI PLANIFICATE si AUDITURI PLANIFICATE <= 30 zile aratau 0 desi calendar avea evenimente. Cauza dubla. (1) Bug timezone parsing: new Date(string) parseaza format YYYY-MM-DD ca UTC (deci 00:00 UTC = 03:00 EET local). Cand timpul curent e seara, comparare cu now() in local time devenea negativa cu o zi sau NaN, iar Math.ceil pe NaN dadea NaN, deci filtrul d>=0 excludea record-urile valide. Calendar.js folosea pattern corect new Date(d+T00:00:00) - asta forteaza interpretarea LOCAL time. Refactorat dashboard cu aceeasi logica + helper _isInDays(dStr,days) cu _todayStart.setHours(0,0,0,0) si end calculat din _todayStart.getTime() + days*86400000. (2) Categorii events mixate: store events contine TOATE intrarile manuale din calendar cu category in [general, meeting, training, audit, deadline, inspection, other]. Cardul EVENIMENTE numara doar events cu category != audit && != training. Cardul INSTRUIRI numara events.category==training PLUS store trainings cu data viitoare (cumulativ planificate manual + structurate in modul Instruire). Cardul AUDITURI similar pentru audit. Plus fix paralel pentru docsValid/docsExpSoon/docsExpired care aveau acelasi bug timezone - toate folosesc acum _parseDate(s) helper care returneaza null pentru date invalide.'},
   {version:'13.6',date:'2026-04-24',notes:'FIX UX Avertismente in editor produs biocid: chips erau taiate vizual (IN... COR... SP IN OB... RESTRI LEGALE UTILIZ PROFE...). Cauza: linia 847-848 avea Avertismente in acelasi <div class="fr"> (flex row) cu Cerinte apa preparare - cele 2 elemente impart latimea modalului 50/50, deci Avertismente primea doar jumatate. Cum chip-urile sunt grid cu minmax(180px, 1fr), in spatiul redus apareau pe 1-2 coloane cu text rupt urat. Solutie: Avertismente mutat pe rand propriu sub Cerinte apa preparare, full width modal (1100px bio-wide-modal). Acum chips au spatiu pentru 4-5 coloane uniform, vizibil complet. Cerinte apa max-width crescut de la 240px la 280px (mai aerisit).'},
   {version:'13.5',date:'2026-04-24',notes:'FIX UX dialogul Inregistrare Noua biocid (2 imbunatatiri raportate de user). (1) Textul info de jos (atasamentele - se gestioneaza la nivel de produs) era afisat amestecat - cuvintele aparau pe pozitii separate vizual ciudat (Documente, produs, alte aparand in alta ordine). Cauza: clasa .ib din styles.css linia 271 are display:flex;align-items:flex-start;gap:8px - asta trateaza toate copiii directi ca flex items separate, deci elementele strong (Documente, produs) erau pozitionate ca coloane separate in flex container, rupand textul. Solutie: wrap intregul continut text intr-un singur span cu flex:1 - acum exista un singur flex item, textul curge natural ca paragraph. Plus reformulare „atasamentele se gestioneaza acum la nivel de produs" -> „Documente: atasamentele se gestioneaza la nivel de produs" pentru claritate. (2) Butonul + Produs nou (langa dropdown Selecteaza produs) avea clasa btn bo bsm - era outline transparent, indistinct. Schimb la background:linear-gradient(135deg,#059669,#0F7B6C) gradient verde-teal cu color:#fff text alb, font-weight:700, padding marit (6px 14px), box-shadow subtil. Iese clar in evidenta ca actiune principala vs dropdown-ul de selectie. Pastreaza accesibilitatea cu title si aceeasi functie bioQuickAddProduct().'},

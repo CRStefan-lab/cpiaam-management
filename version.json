@@ -1,10 +1,8 @@
 {
-  "version": "13.7",
+  "version": "13.8",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX CRITICAL dashboard - cardurile EVENIMENTE/INSTRUIRI/AUDITURI <= 30 zile aratau 0 desi calendar avea evenimente. Cauza dubla.",
-    "1. Parsing data: new Date('2026-04-28') interpreta string-ul ca UTC (00:00 UTC = 03:00 EET local), iar new Date() era local time. Cand user e seara, diferenta devenea negativa cu o zi sau NaN. Calendar.js folosea new Date(d+'T00:00:00') pentru parse local. Acum dashboard foloseste aceeasi logica.",
-    "2. Categoriile mixate: events store contine evenimente cu category='audit', 'training', 'meeting', 'general', 'inspection', 'other', 'deadline'. Cardul EVENIMENTE numara doar non-audit/non-training. Cardul INSTRUIRI numara events.category=='training' + store trainings. Cardul AUDITURI similar.",
-    "Plus fix similar pentru DOCUMENTE VALABILE / EXPIRA / EXPIRATE - foloseau new Date() direct cu acelasi bug timezone."
+    "DEBUG temporar dashboard: logging in console pentru carduri 30zile (events/trainings/audits planificate). Cand deschizi dashboard si apesi F12 (Console tab), apar mesaje cu cate records sunt in fiecare store si daca filtrul pe 30 zile le include.",
+    "Verificare: dupa upload, deschide dashboard, apasa F12 si copiaza textul din Console (incepe cu [CPIAAM dashboard]). Asa stiu daca problema e ca events sunt in alt store, daca categoriile au alta forma, sau daca filtrul de data esueaza."
   ]
 }

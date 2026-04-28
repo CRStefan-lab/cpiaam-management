@@ -1,8 +1,10 @@
 {
-  "version": "13.6",
+  "version": "13.7",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX UX Avertismente in editor produs: chips erau taiate (IN..., COR..., RESTRI LEGALE UTILIZ PROFE...). Cauza: Avertismente era pe acelasi rand cu Cerinte apa preparare (flex row), deci primea doar jumatate din latimea modal - nu era suficient pentru chips de minim 180px.",
-    "Solutie: Avertismente acum pe rand propriu (full width modal), sub Cerinte apa preparare. Chips au spatiu sa apara complet, 4-5 coloane in loc de 1-2 stricate."
+    "FIX CRITICAL dashboard - cardurile EVENIMENTE/INSTRUIRI/AUDITURI <= 30 zile aratau 0 desi calendar avea evenimente. Cauza dubla.",
+    "1. Parsing data: new Date('2026-04-28') interpreta string-ul ca UTC (00:00 UTC = 03:00 EET local), iar new Date() era local time. Cand user e seara, diferenta devenea negativa cu o zi sau NaN. Calendar.js folosea new Date(d+'T00:00:00') pentru parse local. Acum dashboard foloseste aceeasi logica.",
+    "2. Categoriile mixate: events store contine evenimente cu category='audit', 'training', 'meeting', 'general', 'inspection', 'other', 'deadline'. Cardul EVENIMENTE numara doar non-audit/non-training. Cardul INSTRUIRI numara events.category=='training' + store trainings. Cardul AUDITURI similar.",
+    "Plus fix similar pentru DOCUMENTE VALABILE / EXPIRA / EXPIRATE - foloseau new Date() direct cu acelasi bug timezone."
   ]
 }

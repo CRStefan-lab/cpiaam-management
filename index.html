@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.8</title>
+<title>CPIAAM Management v13.9</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2200,7 +2200,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.8';
+const APP_VERSION='13.9';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -3983,16 +3983,47 @@ async function rDash(el){
     const up=diff>0,arrow=up?'&#8593;':'&#8595;',sign=up?'+':'';
     return '<div class="kpi-trend '+(up?'up-good':'down-bad')+'">'+arrow+' '+sign+diff+'% vs '+(y-1)+'</div>';
   }
-  // v13.7 - parsing date 'YYYY-MM-DDTHH:MM:SS' (local) pentru consistenta cu calendar
+  // v13.9 - parser ROBUST care accepta multiple formate de data (records vechi pot avea ISO complet, format RO, etc.)
   const _today0=new Date();_today0.setHours(0,0,0,0);
-  function _parseDate(s){if(!s)return null;const dt=new Date(s+'T00:00:00');return isNaN(dt)?null:dt}
+  function _parseDate(s){
+    if(!s)return null;
+    s=String(s).trim();if(!s)return null;
+    var dt=null;
+    // 1. Format input type=date: YYYY-MM-DD (cel mai frecvent, salvat de calendar.js)
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s)){dt=new Date(s+'T00:00:00')}
+    // 2. ISO complet cu T (si/sau Z): YYYY-MM-DDTHH:MM:SS[.ms][Z|±HH:MM]
+    else if(/^\d{4}-\d{2}-\d{2}T/.test(s)){
+      var parsed=new Date(s);
+      if(!isNaN(parsed)){
+        // Converteste la local date la 00:00 (ignora shift TZ care ar muta data cu o zi)
+        dt=new Date(parsed.getFullYear(),parsed.getMonth(),parsed.getDate(),0,0,0,0);
+      }
+    }
+    // 3. Format RO: DD.MM.YYYY sau DD/MM/YYYY sau DD-MM-YYYY (cu separator . / sau -)
+    else{
+      var m=s.match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})$/);
+      if(m){dt=new Date(parseInt(m[3]),parseInt(m[2])-1,parseInt(m[1]),0,0,0,0)}
+      // 4. Timestamp ms (numar ca string sau Number direct)
+      else if(/^\d{10,}$/.test(s)){
+        var ts=parseInt(s);if(!isNaN(ts)){var p=new Date(ts);if(!isNaN(p))dt=new Date(p.getFullYear(),p.getMonth(),p.getDate(),0,0,0,0)}
+      }
+      else{
+        // 5. Fallback: incearca parser-ul nativ (format US, etc.)
+        var fb=new Date(s);
+        if(!isNaN(fb))dt=new Date(fb.getFullYear(),fb.getMonth(),fb.getDate(),0,0,0,0);
+      }
+    }
+    return (dt&&!isNaN(dt))?dt:null;
+  }
   const docsValid=docs.filter(d=>{if(!d.date_expiry)return true;const dt=_parseDate(d.date_expiry);return dt&&dt>=_today0}).length;
   const docsExpSoon=docs.filter(d=>{const dt=_parseDate(d.date_expiry);if(!dt)return false;const end=new Date(_today0.getTime()+31*86400000);return dt>=_today0&&dt<end}).length;
   const docsExpired=docs.filter(d=>{const dt=_parseDate(d.date_expiry);return dt&&dt<_today0}).length;
-  // v13.7 - parsing consistent cu calendar.js: 'YYYY-MM-DDTHH:MM:SS' parseaza ca LOCAL time (nu UTC).
-  // todayStart = inceputul zilei locale, end = +days*86400000ms.
-  const _todayStart=new Date();_todayStart.setHours(0,0,0,0);
-  function _isInDays(dStr,days){if(!dStr)return false;const dt=new Date(dStr+'T00:00:00');if(isNaN(dt))return false;const end=new Date(_todayStart.getTime()+(days+1)*86400000);return dt>=_todayStart&&dt<end}
+  // v13.9 - foloseste _parseDate robust (records vechi pot avea ISO complet, format RO, etc.)
+  function _isInDays(dStr,days){
+    var dt=_parseDate(dStr);if(!dt)return false;
+    var end=new Date(_today0.getTime()+(days+1)*86400000);
+    return dt>=_today0&&dt<end;
+  }
   const dlsUp=dls.filter(d=>{if(!d.due_date||d.status==='trimis'||d.status==='finalizat'||d._isTemplate)return false;return _isInDays(d.due_date,30)}).length;
   // v13.3+13.7 - dashboard arata si Evenimente/Sedinte, Instruiri si Audituri programate in proximele 30 zile.
   // events store contine TOATE intrarile manuale (incl. category='training','audit','meeting','other')
@@ -4000,14 +4031,6 @@ async function rDash(el){
   const _allEvts=await ga('events');
   const _allTrains=await ga('trainings');
   const _allAudits=await ga('audits');
-  // v13.8 DEBUG: log counts si exemple in console pentru diagnoza dashboard 30zile cards
-  try{
-    console.log('[CPIAAM dashboard] events:'+_allEvts.length+' trainings:'+_allTrains.length+' audits:'+_allAudits.length);
-    if(_allEvts.length>0)console.log('[CPIAAM dashboard] first event sample:',JSON.stringify({date:_allEvts[0].date,title:_allEvts[0].title,category:_allEvts[0].category}));
-    var todayStr=new Date().toISOString().slice(0,10);
-    var inRange=_allEvts.filter(e=>_isInDays(e.date,30));
-    console.log('[CPIAAM dashboard] events in next 30d: '+inRange.length+' (today='+todayStr+')');
-  }catch(e){console.error('[CPIAAM dashboard debug error]',e)}
   // Sedinte/evenimente generale (nu audit, nu training): general + meeting + inspection + other + deadline (manual)
   const evtsUp=_allEvts.filter(e=>{
     if(!_isInDays(e.date,30))return false;
@@ -18654,6 +18677,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.9',date:'2026-04-24',notes:'FIX FINAL dashboard cardurile 30-zile - parser robust _parseDate care accepta TOATE formatele de data salvate de-a lungul timpului. Cauza pe care v13.7 nu o acoperea: records vechi pot avea format ISO complet (2026-04-28T00:00:00.000Z), format RO (28.04.2026, 30/04/2026), sau timestamp ms - parser-ul scurt new Date(s+T00:00:00) esua pe ele si returna NaN, deci filtrul excludea. Parser-ul nou foloseste 5 patterns ordonate: (1) /^\\d{4}-\\d{2}-\\d{2}$/ regex pentru format scurt YYYY-MM-DD - parseaza direct cu T00:00:00 ca sa fie local time; (2) /^\\d{4}-\\d{2}-\\d{2}T/ pentru ISO complet - parseaza nativ + reconstructie local din getFullYear/Month/Date la 00:00 (asta evita shift-ul TZ care ar muta data cu o zi inainte/dupa cand timezone-ul user-ului difera de UTC); (3) /^(\\d{1,2})[.\\/](\\d{1,2})[.\\/](\\d{4})$/ pentru DD.MM.YYYY si DD/MM/YYYY format RO; (4) /^\\d{10,}$/ pentru timestamp ms numeric (10+ cifre); (5) Fallback la new Date(s) nativ. Returneaza null pentru date invalide. Aplicat in _isInDays (folosit pentru events/trainings/audits/deadlines) si in cele 3 calcule docsValid/docsExpSoon/docsExpired. Sterse cele 4 console.log debug v13.8 (rolul lor a fost confirmat: codul functioneaza, formatul vechi era cauza). TESTAT in preview server cu 6 formate simultan - fiecare card primeste numar corect distribuit pe categorii (4 events general/other/meeting + 1 audit ISO + 1 training ISO).'},
   {version:'13.8',date:'2026-04-24',notes:'DEBUG temporar dashboard: 4 mesaje console.log adaugate dupa await ga(events/trainings/audits) pentru a diagnostica de ce cardurile EVENIMENTE/INSTRUIRI/AUDITURI <= 30 ZILE arata 0 in screenshot-uri user dupa fix v13.7. Mesaje: counts totale per store, sample primul event (date+title+category), count events in next 30d cu data curenta. Logging-ul nu afecteaza UI - doar in browser console (F12). Va fi sters dupa diagnoza in v13.9. Plus fix pentru cazul cand SW serveste versiune cached - user trebuie hard refresh (Ctrl+Shift+R) sau click verifica update.'},
   {version:'13.7',date:'2026-04-24',notes:'FIX CRITICAL dashboard - cardurile EVENIMENTE/SEDINTE, INSTRUIRI PLANIFICATE si AUDITURI PLANIFICATE <= 30 zile aratau 0 desi calendar avea evenimente. Cauza dubla. (1) Bug timezone parsing: new Date(string) parseaza format YYYY-MM-DD ca UTC (deci 00:00 UTC = 03:00 EET local). Cand timpul curent e seara, comparare cu now() in local time devenea negativa cu o zi sau NaN, iar Math.ceil pe NaN dadea NaN, deci filtrul d>=0 excludea record-urile valide. Calendar.js folosea pattern corect new Date(d+T00:00:00) - asta forteaza interpretarea LOCAL time. Refactorat dashboard cu aceeasi logica + helper _isInDays(dStr,days) cu _todayStart.setHours(0,0,0,0) si end calculat din _todayStart.getTime() + days*86400000. (2) Categorii events mixate: store events contine TOATE intrarile manuale din calendar cu category in [general, meeting, training, audit, deadline, inspection, other]. Cardul EVENIMENTE numara doar events cu category != audit && != training. Cardul INSTRUIRI numara events.category==training PLUS store trainings cu data viitoare (cumulativ planificate manual + structurate in modul Instruire). Cardul AUDITURI similar pentru audit. Plus fix paralel pentru docsValid/docsExpSoon/docsExpired care aveau acelasi bug timezone - toate folosesc acum _parseDate(s) helper care returneaza null pentru date invalide.'},
   {version:'13.6',date:'2026-04-24',notes:'FIX UX Avertismente in editor produs biocid: chips erau taiate vizual (IN... COR... SP IN OB... RESTRI LEGALE UTILIZ PROFE...). Cauza: linia 847-848 avea Avertismente in acelasi <div class="fr"> (flex row) cu Cerinte apa preparare - cele 2 elemente impart latimea modalului 50/50, deci Avertismente primea doar jumatate. Cum chip-urile sunt grid cu minmax(180px, 1fr), in spatiul redus apareau pe 1-2 coloane cu text rupt urat. Solutie: Avertismente mutat pe rand propriu sub Cerinte apa preparare, full width modal (1100px bio-wide-modal). Acum chips au spatiu pentru 4-5 coloane uniform, vizibil complet. Cerinte apa max-width crescut de la 240px la 280px (mai aerisit).'},

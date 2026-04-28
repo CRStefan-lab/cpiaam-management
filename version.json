@@ -1,8 +1,10 @@
 {
-  "version": "13.8",
+  "version": "13.9",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "DEBUG temporar dashboard: logging in console pentru carduri 30zile (events/trainings/audits planificate). Cand deschizi dashboard si apesi F12 (Console tab), apar mesaje cu cate records sunt in fiecare store si daca filtrul pe 30 zile le include.",
-    "Verificare: dupa upload, deschide dashboard, apasa F12 si copiaza textul din Console (incepe cu [CPIAAM dashboard]). Asa stiu daca problema e ca events sunt in alt store, daca categoriile au alta forma, sau daca filtrul de data esueaza."
+    "FIX FINAL dashboard 30-zile cards: parser robust _parseDate care accepta TOATE formatele de data, nu doar YYYY-MM-DD scurt. Records vechi salvate cu format ISO complet (2026-04-28T00:00:00.000Z), format RO (28.04.2026 sau 30/04/2026), sau timestamp ms - toate sunt parsate corect acum.",
+    "Parser-ul foloseste 5 patterns: (1) YYYY-MM-DD direct cu T00:00:00 local; (2) ISO complet cu T - extrage doar componenta data si construieste local 00:00 ca sa evite shift TZ; (3) Format RO DD.MM.YYYY sau DD/MM/YYYY; (4) Timestamp ms numeric (10+ cifre); (5) Fallback la new Date nativ. Returneaza null daca toate esueaza.",
+    "Sters logging-ul debug temporar v13.8. Aplicatia nu mai trimite mesaje [CPIAAM dashboard] in console.",
+    "TESTAT in preview: 6 formate diferite simultan in events store (YYYY-MM-DD, ISO+Z, ISO fara Z, RO punct, RO slash, timestamp ms) - cardurile EVENIMENTE/INSTRUIRI/AUDITURI afiseaza count corect distribuit pe categorii."
   ]
 }

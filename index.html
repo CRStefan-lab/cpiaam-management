@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.16</title>
+<title>CPIAAM Management v13.17</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2247,7 +2247,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.16';
+const APP_VERSION='13.17';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -7402,6 +7402,24 @@ async function rBio(el){
     if(!groups[key])groups[key]={pid:r.product_id||null,pname:r.product_id?rBioProd(r.product_id):(r.product_name||'—'),rows:[]};
     groups[key].rows.push(r);
   });
+  // v13.17 - Include si produsele din catalog care NU au miscari inca (apar ca produse goale, fara records)
+  // Inainte: pagina arata "Nicio inregistrare" cand user crea produse in catalog dar fara miscari.
+  // Filtreaza produse din catalog dupa filter bar (TP, search) - sa fie consistent cu records filtrate.
+  if(!bf.type&&!bf.month){ // doar daca nu sunt filtre care exclud explicit produsele fara miscari
+    (CFG.biocide_products||[]).forEach(function(p){
+      if(groups[p.id])return; // are deja miscari, skip
+      // Aplica filtru TP daca activ
+      if(bf.tp&&p.product_type!==bf.tp)return;
+      // Aplica filtru search daca activ (nume + cod + producator + distribuitor + TP)
+      if(bf.search){
+        var q=bf.search.toLowerCase();
+        var hay=[p.name||'',p.code||'',p.manufacturer||'',p.distributor||'',p.product_type||''].join(' ').toLowerCase();
+        var terms=q.split(/\s+/).filter(Boolean);
+        if(!terms.every(function(t){return hay.indexOf(t)>=0}))return;
+      }
+      groups[p.id]={pid:p.id,pname:p.name||p.id,rows:[]};
+    });
+  }
   // v12.97 - TABEL SUMAR STOCURI (deasupra cards, sortabil, color-coded status)
   // v12.100 - Construire date sumar din TOATE records-urile (nu doar filtrate) cand _bioSumarShowAll=true.
   // Toggle prin buton in header - default arata toate produsele indiferent de filtre.
@@ -18838,6 +18856,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.17',date:'2026-04-28',notes:'FIX critic pagina Biocide - cand user avea produse in catalog (CFG.biocide_products) dar fara miscari (records biocide gol), pagina afisa empty state „Nicio inregistrare biocide" si cardurile lipseau complet. Cauza: rBio() construia obiectul groups[] doar prin data.forEach (records din IndexedDB), produsele din catalog fara records nu erau incluse. Asta facea catalogul invizibil pana la prima miscare introdusa - confuzie majora pentru user-ul care a creat produs prin „+ Produs nou", import Excel, sau template wizard. Solutie: dupa data.forEach, iterez prin CFG.biocide_products si pentru fiecare produs care NU e deja in groups (groups[p.id] inca undefined), adaug un grup nou cu rows:[] gol. Filtrele aplicate consistent - bf.tp filtreaza dupa product_type, bf.search dupa nume+cod+producator+distribuitor+TP. Filtrele type (stoc_initial/intrare/iesire) si month exclud automat produsele fara miscari prin if(!bf.type&&!bf.month) - logic, n-au miscari sa filtrezi. Cardurile goale rezultate au Stoc 0, 0 miscari, dar toate butoanele functioneaza (creion edit produs, fuzioneaza, sterge, adauga miscare prin click). Avizele si documentele atasate la nivel de produs sunt vizibile imediat fara a astepta prima miscare.'},
   {version:'13.16',date:'2026-04-28',notes:'FIX dashboard lista Upcoming din mini-calendar (panoul dreapta cu tab-urile Azi/Maine/7 zile/30 zile/90 zile) - evenimentele multi-day care au inceput in trecut dar inca sunt in desfasurare NU apareau in lista. Cauza: filtrul allEvts.forEach in renderDashCalendar se uita doar la e.date (start) cu conditia dt>=todayStart, deci un Audit ISO inregistrat cu date=2026-04-25 si date_end=2026-04-30 era exclus din Upcoming pe data de 28 aprilie desi era inca in desfasurare. User vedea doar deadline-uri viitoare (4 Mai IACRS+POLIO) si nimic pentru azi/maine cand de fapt avea evenimente active. Fix: detectie ongoing prin start<todayStart && end>=todayStart (cu end fallback la start daca date_end lipseste sau parseDate esueaza). Daca ongoing, displayISO devine ziua de azi (apar in grupul Astazi din lista) si label-ul primeste sufix (în desfășurare) / (ongoing). Daca start>=today (eveniment viitor normal) nu se schimba nimic. Aplicabil doar pentru store events (deadlines/docs/trainings/audits/biocide_avize sunt single-date prin natura, nu au date_end). Filtru identic refactorizat in 4 forEach-uri ramase pentru consistenta cu acelasi pattern.'},
   {version:'13.15',date:'2026-04-28',notes:'FIX UX dashboard mini-calendar - evenimentele DIN TRECUT erau de fapt afisate corect in cod (parsate prin parseDate v13.12, dot-uri prezente in DOM) DAR practic invizibile vizual din 2 motive cumulative: (a) .mini-cal .cal-dot avea width/height:5px ceea ce e prea mic ca sa fie observat usor mai ales pentru daltonisti sau pe ecrane de 1080p+, (b) .cal-day.cal-has-evt-past avea background:transparent deci celula cu evenimente trecute arata identic cu o celula goala fara niciun indicator. User raporta repetat „evenimentele vechi nu apar" - bug-ul era pur vizual, nu functional (diagnostic confirmat 0 INVALID + 14 events parse OK in datele lui). Fix aplicat: (1) Dot-uri marite 5x5 -> 7x7 px (40% mai vizibile, dar inca compacte). (2) Background subtil gri #F1F5F9 (sau dark theme rgba(148,163,184,.08)) pentru .mini-cal .cal-day.cal-has-evt-past + hover #E2E8F0 - celula primeste un indicator vizual clar ca a avut evenimente. (3) Min-height celule mini-cal 28 -> 34px ca sa incapa count badge in colt fara overlap pe dot-uri. (4) Count badge activat si in compact mode prin eliminarea conditiei „&&!compact" din buildMonthGrid - cand o zi are 2+ evenimente apare cerc teal in coltul dreapta-sus cu numarul (8.5px font, padding 0 4px, border-radius 8px). Pentru zile in trecut badge-ul devine gri #94A3B8 (decorative, nu critic) iar pentru viitor ramane teal #0D9488 (atentie). Position absolute top:1px right:2px relative la cell. Pe Calendar full page badge-ul a fost intotdeauna activ - acum e consistent in ambele view-uri.'},
   {version:'13.14',date:'2026-04-28',notes:'(1) Dashboard - butonul Personalizeaza dashboard redesignat din ghost-button text in card-button cu icon gear ⚙ care se roteste 60° la hover/open, badge teal cu count widget-uri active (ex 8/8), caret jos care se rotește la deschidere. La open primeste background pal teal #F0FDFA si border #0D9488. Panoul de configurare schimbat fundamental: in loc de checkbox-uri native inline, acum 3 grupuri logice (Indicatori cu KPI/docsKpi/audKpi/atpKpi, Calendar & Activitate cu miniCal/activity, Grafice cu charts/desChart) - fiecare grup cu titlu uppercase, fiecare item cu mini-icon Unicode (📊 KPI, 📅 Documente, ✅ Audituri, 💧 ATP, 🗓 Calendar, 🔔 Activity, 📈 IAAM, 📋 Deseuri) plus toggle switch stil iOS (32x18px, glisor cu shadow, animatie .2s) in loc de checkbox native ce era cu accent-color teal. Hover pe fiecare toggle ridica box-shadow subtila si schimba border in teal. Focus visible cu outline teal pentru accesibilitate. toggleWidget() in ui.js sincronizeaza acum starea toggle-ului + recalculeaza badge-ul count. Dark theme handled cu overrides specifice pentru background si border.'},

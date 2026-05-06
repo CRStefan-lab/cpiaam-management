@@ -1,8 +1,8 @@
 {
-  "version": "13.16",
+  "version": "13.17",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX dashboard lista Upcoming - evenimentele multi-day care au inceput in trecut dar inca sunt in desfasurare (date_end >= today) NU apareau pentru ca filtrul se uita doar la date (start). Ex: Audit ISO 25-30 Apr cand astazi e 28 Apr - nu aparea desi inca e in desfasurare.",
-    "Acum apar cu eticheta '(în desfășurare)' / '(ongoing)' atasata la titlu, grupate sub 'Astazi' (sau ce zi e azi). Tab-urile Azi/Maine/7 zile/30 zile/90 zile primesc count-urile actualizate."
+    "FIX critic Biocide: pagina afisa 'Nicio inregistrare biocide' cand aveai produse in catalog dar fara miscari inca. Cauza: cardurile se construiau DOAR din records (miscari) - produsele din CFG.biocide_products fara records erau invizibile.",
+    "Acum: dupa grupare records, sunt adaugate si produsele din catalog care nu au miscari inca - apar ca cards goale (Stoc 0, 0 miscari) cu toate butoanele functionale (edit produs, sterge, adauga miscare). Filtrele TP/search le ignora consistent. Filtrele type='miscare' (intrare/iesire) sau month le exclud (logic - n-au miscari)."
   ]
 }

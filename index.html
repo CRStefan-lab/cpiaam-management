@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.21</title>
+<title>CPIAAM Management v13.22</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2247,7 +2247,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.21';
+const APP_VERSION='13.22';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -12452,7 +12452,22 @@ async function _genInstancesForTemplate(t){
     var stale=existing.filter(function(d){return d._parentName===t.name&&d.due_date&&new Date(d.due_date+'T00:00:00')>hardLimit});
     for(var si=0;si<stale.length;si++){await dl('deadlines',stale[si].id);deleted++}
   }
-  if(dedupedDup>0&&typeof showToast==='function')showToast('Curatare automata: '+dedupedDup+' duplicate sterse pentru '+t.name);
+  // v13.22 - cleanup luni inactive: cand user editeaza template si elimina luni din active_months,
+  // instantele din lunile excluse trebuie sterse. Re-iau lista existing dupa cleanup-uri anterioare.
+  var fresh=await ga('deadlines');
+  var ownAfter=fresh.filter(function(d){return d._parentName===t.name&&d.due_date});
+  if(t.frequency==='saptamanal'){
+    var amSat=t.active_months||[];
+    if(amSat.length>0){ // doar daca user a bifat luni specific (nu toate)
+      for(var ai=0;ai<ownAfter.length;ai++){
+        var inst=ownAfter[ai];
+        var month=parseInt(inst.due_date.substring(5,7));
+        if(amSat.indexOf(month)<0){await dl('deadlines',inst.id);deleted++}
+      }
+    }
+  }
+  // Pentru lunar/trimestrial/anual: lunile sunt fixe (nu user-bifate), deci nu aplic.
+  if(dedupedDup>0&&typeof showToast==='function')showToast('Curatare automata: '+dedupedDup+' duplicate, '+deleted+' din luni inactive/peste termen sterse pentru '+t.name);
   return cnt;
 }
 
@@ -18936,6 +18951,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.22',date:'2026-04-28',notes:'FIX cleanup luni inactive in template raportare repetitiva. Scenariu user: a salvat IACRS initial fara sa bifeze nicio luna in active_months (sistemul intelege gol = TOATE lunile, deci a generat instante pentru tot anul 2026 IAN-DEC). Apoi a editat template si a bifat doar APR+MAI, dar codul vechi nu stergea instantele din lunile NEBIFATE acum (IAN, FEB, MAR, IUN-DEC ramaneau in calendar). Fix v13.22: dupa generare si dupa cleanup hardLimit, scaneaza din nou ga(deadlines), filtreaza instantele cu _parentName===t.name si parseaza luna din due_date.substring(5,7). Daca active_months e setat (length>0) si luna instantei NU e in active_months, sterge instanta. Aplicabil doar pentru frequency=saptamanal (lunar/trimestrial/anual au luni fixe predefinite, nu user-bifate). Toast updated cu ambele counters: N duplicate, M din luni inactive/peste termen sterse pentru NUME.'},
   {version:'13.21',date:'2026-04-28',notes:'FIX critic: la editare/salvare template raportare repetitiva, instantele se DUPLICAU la fiecare salvare in calendar. Cauza: linia 371 din _genInstancesForTemplate folosea var exists=existing.find(d=>d.name===t.name && d.due_date===due) - dar numele instantelor au sufix (IACRS — S19 2026 vs IACRS template) deci d.name === t.name returna FALSE pentru orice instanta deja generata. Rezultat: la fiecare Salveaza pe template, codul nu detecta instantele existente si crea NOI duplicate cu acelasi due_date. Plus de la v13.18 bug-ul a generat 4-5 duplicate pentru fiecare saptamana (dupa cate edituri facuse user-ul). Fix v13.21: dedup acum prin camp invizibil _parentName (setat la generare = t.name). Plus pre-build index byDue al instantelor existente apartinand template-ului curent (filter d._parentName===t.name) - daca due_date apare de mai multe ori, prima e pastrata, restul sterse automat (cleanup duplicate generate de bug). Toast Curatare automata: N duplicate sterse pentru NUME afisat. Cleanup hard limit (peste due_date) pastrat din v13.18. Dupa upload v13.21 si hard refresh, user trebuie editeze fiecare template repetitiv si click Salveaza - automat se sterg duplicatele si instantele peste termen.'},
   {version:'13.20',date:'2026-04-28',notes:'UX banner Migreaza la produs (documente legacy de pe miscari) repozitionat SUS deasupra documentelor individuale si redesign vizibil. Inainte aparea jos dupa toate cele 4 sectiuni de documente, usor de ratat. Acum: imediat dupa header-ul Documente produs, banner cu gradient galben-portocaliu (linear-gradient 135deg #FEF3C7 -> #FDE68A) cu border 2px solid #F59E0B, icon avertisment 24px, text de explicatie ce face migrarea (deduplicare, mutare la nivel produs, rezultat mai curat), buton portocaliu vibrant (background #F59E0B color #fff font-weight 700 box-shadow) cu icon refresh emoji 1F504. Banner aparare doar daca legacyCount>0 SI prod este definit (nu si la documente fara product_id - cazuri rare). Pastreaza functionalitatea bioMigrateDocsToProduct neschimbata.'},
   {version:'13.19',date:'2026-04-28',notes:'FIX bug pop-up blocat „about:blank#blocked" la vizualizare documente biocide cand apesi iconita ochi 👁 (afecta in special documente legacy migrate de pe miscari). Cauza: in 5 functii view (viewBioAttModal, bioViewAttByRec, bioViewProductDoc, viewBioAttIdx, viewBioAtt) apelul window.open(URL.createObjectURL(f)) se facea ASYNC dupa await attReadFile - browser-ul interpreteaza ca nu vine direct dintr-un user gesture sync (click handler) si il blocheaza ca pop-up potential periculos. Solutie clasica: pre-open trick - deschidem fereastra IMEDIAT (sync, in handler-ul de click) cu about:blank ca sa fie permisa, apoi populam location-ul cu URL-ul fisierului dupa ce file-ul e citit async. Daca user nu a permis pop-ups, alert clar. Daca rec/file lipseste sau eroare la citire, w.close() pentru a curata. Helper nou _bioOpenInNewTab(promiseOrUrl) reutilizabil. Aplicat la toate cele 5 functii view + verificare ca download-urile (saveAs) raman OK pentru ca nu folosesc window.open. Plus explicat in alert daca pop-ups blocate.'},

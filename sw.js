@@ -1,5 +1,5 @@
-// CPIAAM Service Worker — v13.20
-const CACHE_NAME = 'cpiaam-v13.20';
+// CPIAAM Service Worker — v13.21
+const CACHE_NAME = 'cpiaam-v13.21';
 const CDN_CACHE = 'cpiaam-cdn-v1';
 
 // CDN resources — cached permanently (versions pinned)

@@ -1,8 +1,9 @@
 {
-  "version": "13.20",
+  "version": "13.21",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "UX: banner 'Migreaza la produs' mutat SUS (deasupra documentelor individuale) si redesign mai prominent. Inainte aparea jos, dupa toate sectiunile - usor de ratat. Acum: gradient galben/portocaliu cu border 2px, icon mare avertisment, text descriptiv (ce face migrarea), buton portocaliu vibrant cu icon refresh.",
-    "Banner aparare doar daca exista legacy si ai produs in catalog (nu si la documente fara product_id)."
+    "FIX critic: la editare/salvare template raportare repetitiva, instantele se DUPLICAU la fiecare salvare. Cauza: dedup folosea d.name===t.name dar instantele au nume cu sufix (IACRS - S19 2026 != IACRS) - asa NICIODATA nu se gasea match si crea instante noi de fiecare data.",
+    "Fix v13.21: dedup acum prin _parentName (camp invizibil setat la generare). Plus cleanup automat la salvare: detecteaza si sterge duplicatele existente cu acelasi due_date (rezultat al bug-ului v13.18). Toast 'Curatare automata: N duplicate sterse'.",
+    "Dupa upload v13.21: editeaza fiecare template repetitiv, click Salveaza - duplicatele si instantele peste termen vor fi sterse automat."
   ]
 }

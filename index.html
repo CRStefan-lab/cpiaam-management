@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.20</title>
+<title>CPIAAM Management v13.21</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2247,7 +2247,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.20';
+const APP_VERSION='13.21';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -12398,10 +12398,18 @@ async function updateDeadlineStatus(id,status){
 function _localDateStr(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
 
 async function _genInstancesForTemplate(t){
-  var y=A.year;var existing=await ga('deadlines');var cnt=0,deleted=0;
+  var y=A.year;var existing=await ga('deadlines');var cnt=0,deleted=0,dedupedDup=0;
   // v13.18 - termen limita HARD pe template: t.due_date opreste generarea cand instantele depasesc
-  // Plus cleanup: stergem instante existente care depasesc termenul (utile cand user EDITEAZA termenul mai devreme)
+  // v13.21 - FIX: dedup pe _parentName (nu name - care difera prin sufix S19/Mai/etc), plus stergere duplicate existente
   var hardLimit=t.due_date?new Date(t.due_date+'T23:59:59'):null;
+  // Index instante existente ale acestui template, dupa due_date. Daca exista mai multe pentru acelasi due_date, pastram prima si stergem restul (cleanup duplicate generate de bug v13.18)
+  var ownInsts=existing.filter(function(d){return d._parentName===t.name});
+  var byDue={};
+  for(var oi=0;oi<ownInsts.length;oi++){
+    var inst=ownInsts[oi];var due=inst.due_date||'';
+    if(!byDue[due])byDue[due]=inst;
+    else{await dl('deadlines',inst.id);dedupedDup++}
+  }
   if(t.frequency==='saptamanal'){
     var targetDow=t.day_of_week||0;
     var jsDow=(targetDow+1)%7; // 0=Luni→JS1, ..., 6=Duminica→JS0
@@ -12413,10 +12421,13 @@ async function _genInstancesForTemplate(t){
       if(hardLimit&&dt>hardLimit)break;
       var mo=dt.getMonth()+1;
       if(allMonths||am.includes(mo)){
-        var due=_localDateStr(dt);
+        var dueW=_localDateStr(dt);
         var wk=Math.ceil(((dt-new Date(y,0,1))/86400000+1)/7);
-        var exists=existing.find(d=>d.name===t.name&&d.due_date===due);
-        if(!exists){await pt('deadlines',{name:t.name+' — S'+wk+' '+y,recipient:t.recipient,frequency:'singulara',due_date:due,status:'neinceput',_parentName:t.name});cnt++}
+        // v13.21 dedup pe _parentName (corect)
+        if(!byDue[dueW]){
+          await pt('deadlines',{name:t.name+' — S'+wk+' '+y,recipient:t.recipient,frequency:'singulara',due_date:dueW,status:'neinceput',_parentName:t.name});
+          cnt++;
+        }
       }
       dt.setDate(dt.getDate()+7);
     }
@@ -12426,18 +12437,22 @@ async function _genInstancesForTemplate(t){
     for(var mi=0;mi<months.length;mi++){
       var m=months[mi];
       var maxDay=new Date(y,m,0).getDate();var clampedDom=Math.min(dom,maxDay);
-      var due=y+'-'+String(m).padStart(2,'0')+'-'+String(clampedDom).padStart(2,'0');
+      var dueM=y+'-'+String(m).padStart(2,'0')+'-'+String(clampedDom).padStart(2,'0');
       // v13.18 - oprire la termen limita
-      if(hardLimit&&new Date(due+'T00:00:00')>hardLimit)continue;
-      var exists=existing.find(d=>d.name===t.name&&d.due_date===due);
-      if(!exists){await pt('deadlines',{name:t.name+' — '+(MO[m-1]||'')+' '+y,recipient:t.recipient,frequency:'singulara',due_date:due,status:'neinceput',_parentName:t.name});cnt++}
+      if(hardLimit&&new Date(dueM+'T00:00:00')>hardLimit)continue;
+      // v13.21 dedup pe _parentName (corect)
+      if(!byDue[dueM]){
+        await pt('deadlines',{name:t.name+' — '+(MO[m-1]||'')+' '+y,recipient:t.recipient,frequency:'singulara',due_date:dueM,status:'neinceput',_parentName:t.name});
+        cnt++;
+      }
     }
   }
   // v13.18 - cleanup: sterg instante deja generate (parent=t.name) care depasesc termenul curent
   if(hardLimit){
-    var stale=existing.filter(d=>d._parentName===t.name&&d.due_date&&new Date(d.due_date+'T00:00:00')>hardLimit);
-    for(var i=0;i<stale.length;i++){await dl('deadlines',stale[i].id);deleted++}
+    var stale=existing.filter(function(d){return d._parentName===t.name&&d.due_date&&new Date(d.due_date+'T00:00:00')>hardLimit});
+    for(var si=0;si<stale.length;si++){await dl('deadlines',stale[si].id);deleted++}
   }
+  if(dedupedDup>0&&typeof showToast==='function')showToast('Curatare automata: '+dedupedDup+' duplicate sterse pentru '+t.name);
   return cnt;
 }
 
@@ -18921,6 +18936,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.21',date:'2026-04-28',notes:'FIX critic: la editare/salvare template raportare repetitiva, instantele se DUPLICAU la fiecare salvare in calendar. Cauza: linia 371 din _genInstancesForTemplate folosea var exists=existing.find(d=>d.name===t.name && d.due_date===due) - dar numele instantelor au sufix (IACRS — S19 2026 vs IACRS template) deci d.name === t.name returna FALSE pentru orice instanta deja generata. Rezultat: la fiecare Salveaza pe template, codul nu detecta instantele existente si crea NOI duplicate cu acelasi due_date. Plus de la v13.18 bug-ul a generat 4-5 duplicate pentru fiecare saptamana (dupa cate edituri facuse user-ul). Fix v13.21: dedup acum prin camp invizibil _parentName (setat la generare = t.name). Plus pre-build index byDue al instantelor existente apartinand template-ului curent (filter d._parentName===t.name) - daca due_date apare de mai multe ori, prima e pastrata, restul sterse automat (cleanup duplicate generate de bug). Toast Curatare automata: N duplicate sterse pentru NUME afisat. Cleanup hard limit (peste due_date) pastrat din v13.18. Dupa upload v13.21 si hard refresh, user trebuie editeze fiecare template repetitiv si click Salveaza - automat se sterg duplicatele si instantele peste termen.'},
   {version:'13.20',date:'2026-04-28',notes:'UX banner Migreaza la produs (documente legacy de pe miscari) repozitionat SUS deasupra documentelor individuale si redesign vizibil. Inainte aparea jos dupa toate cele 4 sectiuni de documente, usor de ratat. Acum: imediat dupa header-ul Documente produs, banner cu gradient galben-portocaliu (linear-gradient 135deg #FEF3C7 -> #FDE68A) cu border 2px solid #F59E0B, icon avertisment 24px, text de explicatie ce face migrarea (deduplicare, mutare la nivel produs, rezultat mai curat), buton portocaliu vibrant (background #F59E0B color #fff font-weight 700 box-shadow) cu icon refresh emoji 1F504. Banner aparare doar daca legacyCount>0 SI prod este definit (nu si la documente fara product_id - cazuri rare). Pastreaza functionalitatea bioMigrateDocsToProduct neschimbata.'},
   {version:'13.19',date:'2026-04-28',notes:'FIX bug pop-up blocat „about:blank#blocked" la vizualizare documente biocide cand apesi iconita ochi 👁 (afecta in special documente legacy migrate de pe miscari). Cauza: in 5 functii view (viewBioAttModal, bioViewAttByRec, bioViewProductDoc, viewBioAttIdx, viewBioAtt) apelul window.open(URL.createObjectURL(f)) se facea ASYNC dupa await attReadFile - browser-ul interpreteaza ca nu vine direct dintr-un user gesture sync (click handler) si il blocheaza ca pop-up potential periculos. Solutie clasica: pre-open trick - deschidem fereastra IMEDIAT (sync, in handler-ul de click) cu about:blank ca sa fie permisa, apoi populam location-ul cu URL-ul fisierului dupa ce file-ul e citit async. Daca user nu a permis pop-ups, alert clar. Daca rec/file lipseste sau eroare la citire, w.close() pentru a curata. Helper nou _bioOpenInNewTab(promiseOrUrl) reutilizabil. Aplicat la toate cele 5 functii view + verificare ca download-urile (saveAs) raman OK pentru ca nu folosesc window.open. Plus explicat in alert daca pop-ups blocate.'},
   {version:'13.18',date:'2026-04-28',notes:'FIX raportari repetitive in calendar - termenul limita (due_date) pe template-ul parinte acum opreste HARD generarea instantelor saptamanale/lunare/trimestriale/anuale. Bug raportat: IACRS saptamanal cu lunile bifate APR+MAI si termen limita 15.05.2026 generau si instante S20 (18.05.2026) si S21 (25.05.2026) - depasind termenul. Cauza: in _genInstancesForTemplate, while-loop pentru saptamanal genera pana la sfarsitul anului in lunile active, iar for-loop pentru lunar genera in toate lunile fara verificare termen limita. Solutie: hardLimit = new Date(t.due_date + T23:59:59) calculat o data, apoi (1) saptamanal: break din while cand dt > hardLimit; (2) lunar/trimestrial/anual: continue cand due > hardLimit. Plus cleanup automat: dupa generare, instantele existente cu _parentName==t.name si due_date > hardLimit sunt sterse - util cand user EDITEAZA termenul mai devreme pe un template existent (ex: extinde sau scurteaza perioada de raportare), instantele acum-invalide dispar automat. Counter deleted urmarit pentru log eventual.'},

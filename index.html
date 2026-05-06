@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.17</title>
+<title>CPIAAM Management v13.20</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2247,7 +2247,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.17';
+const APP_VERSION='13.20';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -7671,6 +7671,17 @@ async function rBio(el){
           '<span style="font-size:10px;color:var(--txtL)">\u25BE gestioneaza</span>'+
         '</summary>'+
         '<div style="padding:8px 14px;background:var(--card);border-top:1px solid var(--brd);font-size:11px">';
+      // v13.20 - banner migratie SUS, mai prominent, sa atraga atentia inainte de a vedea documentele individuale
+      if(legacyCount>0&&prod){
+        docsPanel+='<div style="margin-bottom:10px;padding:10px 14px;background:linear-gradient(135deg,#FEF3C7,#FDE68A);border:2px solid #F59E0B;border-radius:8px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 6px rgba(245,158,11,.2)">'+
+          '<span style="font-size:24px">&#9888;</span>'+
+          '<div style="flex:1">'+
+            '<div style="font-weight:700;color:#92400E;font-size:13px;margin-bottom:2px">Documente vechi pe miscari (legacy): '+legacyCount+'</div>'+
+            '<div style="font-size:10px;color:#78350F">Documentele apar pe fiecare miscare individual (vechiul mod). Click pentru a le muta la nivel de produs (deduplicat) - rezultat mai curat si mai usor de gestionat.</div>'+
+          '</div>'+
+          '<button class="btn bp bsm" style="background:#F59E0B;color:#fff;border:none;padding:8px 16px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 4px rgba(245,158,11,.3)" onclick="bioMigrateDocsToProduct(\''+String(prod.id).replace(/\x27/g,"\\x27")+'\')">&#x1F504; Migreaza la produs</button>'+
+        '</div>';
+      }
       BIO_ATT_TYPES.forEach(function(t){
         var items=docsAgg[t.key];
         docsPanel+='<div style="margin-bottom:8px;padding:6px 8px;border-left:3px solid '+t.color+';background:'+t.bg+';border-radius:4px">'+
@@ -7698,7 +7709,7 @@ async function rBio(el){
         });
         docsPanel+='</div>';
       });
-      if(legacyCount>0){docsPanel+='<div style="margin-top:6px;padding:6px 8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;font-size:11px"><strong>&#9888; Documente pe miscari (legacy): '+legacyCount+'</strong><br><button class="btn bp bsm" style="margin-top:4px;font-size:10px" onclick="bioMigrateDocsToProduct('+(prod?'\''+String(prod.id).replace(/\x27/g,"\\x27")+'\'':'null')+')">Migreaza la produs</button></div>'}
+      // v13.20 - banner-ul de migratie a fost mutat SUS (deasupra documentelor) pentru vizibilitate
       docsPanel+='</div></details>';
     }
     // v12.90 — Header redesign: background gradient din culoarea TP (stanga 40%) → slate-800 (dreapta),
@@ -7901,22 +7912,46 @@ function downloadBioAttModal(key,idx){
   }
   if(att.data){const a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
 }
+// v13.19 - helper: deschide blob/URL in tab nou. Fereastra e deschisa SYNC in user gesture
+// (evita blocarea de pop-up). Apoi async populam location-ul cand fisierul e gata.
+function _bioOpenInNewTab(promiseOrUrl){
+  // Deschidem fereastra IMEDIAT (sync, user gesture - browser-ul nu blocheaza)
+  var w=window.open('about:blank','_blank');
+  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie si reincearca.');return}
+  if(typeof promiseOrUrl==='string'){w.location=promiseOrUrl;return}
+  // Promise care returneaza URL string sau blob
+  promiseOrUrl.then(function(res){
+    if(!res){w.close();return}
+    var url=typeof res==='string'?res:URL.createObjectURL(res);
+    w.location=url;
+  }).catch(function(e){
+    try{w.close()}catch(_){}
+    alert('Nu pot citi fisierul: '+(e&&e.message||e));
+  });
+}
 function viewBioAttModal(key,idx){
   if(!_editBioRec||!_editBioRec.attachments)return;
   const files=_getBioAttFiles(_editBioRec,key);
   const att=files[idx];if(!att)return;
-  if(att.on_disk&&att.filename){
-    attReadFile('biocide',att.filename).then(file=>{var url=URL.createObjectURL(file);window.open(url,'_blank')}).catch(()=>alert('Nu pot citi fisierul de pe disc.'));return;
-  }
-  if(att.data){window.open(att.data,'_blank')}
+  if(att.on_disk&&att.filename){_bioOpenInNewTab(attReadFile('biocide',att.filename));return}
+  if(att.data)_bioOpenInNewTab(att.data);
 }
 // v12.79 — view/download standalone (din dropdown „Documente produs", fara sa deschida record-ul)
-async function bioViewAttByRec(recId,key,idx){
-  try{var rec=(await ga('biocide')).find(function(r){return r.id===recId});if(!rec)return alert('Inregistrarea nu mai exista.');
-    var att=(_getBioAttFiles(rec,key)||[])[idx];if(!att)return alert('Fisierul nu mai este disponibil.');
-    if(att.on_disk&&att.filename){var f=await attReadFile('biocide',att.filename);window.open(URL.createObjectURL(f),'_blank');return}
-    if(att.data)window.open(att.data,'_blank');
-  }catch(e){alert('Eroare vizualizare: '+e.message)}
+function bioViewAttByRec(recId,key,idx){
+  // v13.19 - sync user gesture: deschide fereastra imediat, populeaza async dupa
+  var w=window.open('about:blank','_blank');
+  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.');return}
+  (async()=>{
+    try{
+      var rec=(await ga('biocide')).find(function(r){return r.id===recId});
+      if(!rec){w.close();return alert('Inregistrarea nu mai exista.')}
+      var att=(_getBioAttFiles(rec,key)||[])[idx];
+      if(!att){w.close();return alert('Fisierul nu mai este disponibil.')}
+      if(att.on_disk&&att.filename){var f=await attReadFile('biocide',att.filename);w.location=URL.createObjectURL(f);return}
+      if(att.data){w.location=att.data;return}
+      w.close();
+    }catch(e){try{w.close()}catch(_){}alert('Eroare vizualizare: '+e.message)}
+  })();
 }
 async function bioDownloadAttByRec(recId,key,idx){
   try{var rec=(await ga('biocide')).find(function(r){return r.id===recId});if(!rec)return alert('Inregistrarea nu mai exista.');
@@ -8373,13 +8408,19 @@ function bioAddProductDoc(pid,key){
     await saveCfg();bioEditProduct(pid);render();
   };inp.click();
 }
-async function bioViewProductDoc(pid,key,fi){
+function bioViewProductDoc(pid,key,fi){
+  // v13.19 - sync user gesture
   var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p||!p.documents||!p.documents[key])return;
   var att=p.documents[key][fi];if(!att)return;
-  try{
-    if(att.on_disk&&att.filename){var f=await attReadFile('biocide',att.filename);window.open(URL.createObjectURL(f),'_blank');return}
-    if(att.data)window.open(att.data,'_blank');
-  }catch(e){alert('Eroare vizualizare: '+e.message)}
+  var w=window.open('about:blank','_blank');
+  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.');return}
+  (async()=>{
+    try{
+      if(att.on_disk&&att.filename){var f=await attReadFile('biocide',att.filename);w.location=URL.createObjectURL(f);return}
+      if(att.data){w.location=att.data;return}
+      w.close();
+    }catch(e){try{w.close()}catch(_){}alert('Eroare vizualizare: '+e.message)}
+  })();
 }
 async function bioDownloadProductDoc(pid,key,fi){
   var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p||!p.documents||!p.documents[key])return;
@@ -8501,11 +8542,19 @@ function showBioAttPopup(evt,id,key){
     setTimeout(function(){document.addEventListener('click',function _cl(e){if(!el.contains(e.target)){el.remove();document.removeEventListener('click',_cl)}})},100);
   });
 }
-async function viewBioAttIdx(id,key,idx){
-  var data=await ga('biocide');var rec=data.find(function(x){return String(x.id)===String(id)});if(!rec)return;
-  var files=_getBioAttFiles(rec,key);var att=files[idx];if(!att)return;
-  if(att.on_disk&&att.filename){try{var file=await attReadFile('biocide',att.filename);window.open(URL.createObjectURL(file),'_blank');return}catch(e){alert('Nu pot citi fisierul de pe disc.')};return}
-  if(att.data)window.open(att.data,'_blank');
+function viewBioAttIdx(id,key,idx){
+  // v13.19 - sync user gesture
+  var w=window.open('about:blank','_blank');
+  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.');return}
+  (async()=>{
+    try{
+      var data=await ga('biocide');var rec=data.find(function(x){return String(x.id)===String(id)});if(!rec){w.close();return}
+      var files=_getBioAttFiles(rec,key);var att=files[idx];if(!att){w.close();return}
+      if(att.on_disk&&att.filename){var file=await attReadFile('biocide',att.filename);w.location=URL.createObjectURL(file);return}
+      if(att.data){w.location=att.data;return}
+      w.close();
+    }catch(e){try{w.close()}catch(_){}alert('Nu pot citi fisierul: '+e.message)}
+  })();
 }
 async function downloadBioAttIdx(id,key,idx){
   var data=await ga('biocide');var rec=data.find(function(x){return String(x.id)===String(id)});if(!rec)return;
@@ -8553,16 +8602,20 @@ async function downloadBioAtt(id,key){
   }
   if(att.data){const a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
 }
-async function viewBioAtt(id,key){
-  const data=await ga('biocide');const rec=data.find(x=>String(x.id)===String(id));
-  const files=_getBioAttFiles(rec,key);if(!files.length)return;
-  const att=files[0];
-  if(att.on_disk&&att.filename){
-    try{const file=await attReadFile('biocide',att.filename);
-      const url=URL.createObjectURL(file);window.open(url,'_blank');return}catch(e){alert('Nu pot citi fisierul de pe disc. Reconecteaza folderul de atasamente din Configurare.')}
-    return;
-  }
-  if(att.data){window.open(att.data,'_blank')}
+function viewBioAtt(id,key){
+  // v13.19 - sync user gesture
+  var w=window.open('about:blank','_blank');
+  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.');return}
+  (async()=>{
+    try{
+      const data=await ga('biocide');const rec=data.find(x=>String(x.id)===String(id));
+      const files=_getBioAttFiles(rec,key);if(!files||!files.length){w.close();return}
+      const att=files[0];
+      if(att.on_disk&&att.filename){const file=await attReadFile('biocide',att.filename);w.location=URL.createObjectURL(file);return}
+      if(att.data){w.location=att.data;return}
+      w.close();
+    }catch(e){try{w.close()}catch(_){}alert('Nu pot citi fisierul de pe disc. Reconecteaza folderul de atasamente din Configurare.')}
+  })();
 }
 
 // ── Avize Biocide (C3+C4) ──
@@ -12345,7 +12398,10 @@ async function updateDeadlineStatus(id,status){
 function _localDateStr(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
 
 async function _genInstancesForTemplate(t){
-  var y=A.year;var existing=await ga('deadlines');var cnt=0;
+  var y=A.year;var existing=await ga('deadlines');var cnt=0,deleted=0;
+  // v13.18 - termen limita HARD pe template: t.due_date opreste generarea cand instantele depasesc
+  // Plus cleanup: stergem instante existente care depasesc termenul (utile cand user EDITEAZA termenul mai devreme)
+  var hardLimit=t.due_date?new Date(t.due_date+'T23:59:59'):null;
   if(t.frequency==='saptamanal'){
     var targetDow=t.day_of_week||0;
     var jsDow=(targetDow+1)%7; // 0=Luni→JS1, ..., 6=Duminica→JS0
@@ -12353,6 +12409,8 @@ async function _genInstancesForTemplate(t){
     var dt=new Date(y,0,1);
     while(dt.getDay()!==jsDow)dt.setDate(dt.getDate()+1);
     while(dt.getFullYear()===y){
+      // v13.18 - oprire la termen limita
+      if(hardLimit&&dt>hardLimit)break;
       var mo=dt.getMonth()+1;
       if(allMonths||am.includes(mo)){
         var due=_localDateStr(dt);
@@ -12369,9 +12427,16 @@ async function _genInstancesForTemplate(t){
       var m=months[mi];
       var maxDay=new Date(y,m,0).getDate();var clampedDom=Math.min(dom,maxDay);
       var due=y+'-'+String(m).padStart(2,'0')+'-'+String(clampedDom).padStart(2,'0');
+      // v13.18 - oprire la termen limita
+      if(hardLimit&&new Date(due+'T00:00:00')>hardLimit)continue;
       var exists=existing.find(d=>d.name===t.name&&d.due_date===due);
       if(!exists){await pt('deadlines',{name:t.name+' — '+(MO[m-1]||'')+' '+y,recipient:t.recipient,frequency:'singulara',due_date:due,status:'neinceput',_parentName:t.name});cnt++}
     }
+  }
+  // v13.18 - cleanup: sterg instante deja generate (parent=t.name) care depasesc termenul curent
+  if(hardLimit){
+    var stale=existing.filter(d=>d._parentName===t.name&&d.due_date&&new Date(d.due_date+'T00:00:00')>hardLimit);
+    for(var i=0;i<stale.length;i++){await dl('deadlines',stale[i].id);deleted++}
   }
   return cnt;
 }
@@ -18856,6 +18921,9 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.20',date:'2026-04-28',notes:'UX banner Migreaza la produs (documente legacy de pe miscari) repozitionat SUS deasupra documentelor individuale si redesign vizibil. Inainte aparea jos dupa toate cele 4 sectiuni de documente, usor de ratat. Acum: imediat dupa header-ul Documente produs, banner cu gradient galben-portocaliu (linear-gradient 135deg #FEF3C7 -> #FDE68A) cu border 2px solid #F59E0B, icon avertisment 24px, text de explicatie ce face migrarea (deduplicare, mutare la nivel produs, rezultat mai curat), buton portocaliu vibrant (background #F59E0B color #fff font-weight 700 box-shadow) cu icon refresh emoji 1F504. Banner aparare doar daca legacyCount>0 SI prod este definit (nu si la documente fara product_id - cazuri rare). Pastreaza functionalitatea bioMigrateDocsToProduct neschimbata.'},
+  {version:'13.19',date:'2026-04-28',notes:'FIX bug pop-up blocat „about:blank#blocked" la vizualizare documente biocide cand apesi iconita ochi 👁 (afecta in special documente legacy migrate de pe miscari). Cauza: in 5 functii view (viewBioAttModal, bioViewAttByRec, bioViewProductDoc, viewBioAttIdx, viewBioAtt) apelul window.open(URL.createObjectURL(f)) se facea ASYNC dupa await attReadFile - browser-ul interpreteaza ca nu vine direct dintr-un user gesture sync (click handler) si il blocheaza ca pop-up potential periculos. Solutie clasica: pre-open trick - deschidem fereastra IMEDIAT (sync, in handler-ul de click) cu about:blank ca sa fie permisa, apoi populam location-ul cu URL-ul fisierului dupa ce file-ul e citit async. Daca user nu a permis pop-ups, alert clar. Daca rec/file lipseste sau eroare la citire, w.close() pentru a curata. Helper nou _bioOpenInNewTab(promiseOrUrl) reutilizabil. Aplicat la toate cele 5 functii view + verificare ca download-urile (saveAs) raman OK pentru ca nu folosesc window.open. Plus explicat in alert daca pop-ups blocate.'},
+  {version:'13.18',date:'2026-04-28',notes:'FIX raportari repetitive in calendar - termenul limita (due_date) pe template-ul parinte acum opreste HARD generarea instantelor saptamanale/lunare/trimestriale/anuale. Bug raportat: IACRS saptamanal cu lunile bifate APR+MAI si termen limita 15.05.2026 generau si instante S20 (18.05.2026) si S21 (25.05.2026) - depasind termenul. Cauza: in _genInstancesForTemplate, while-loop pentru saptamanal genera pana la sfarsitul anului in lunile active, iar for-loop pentru lunar genera in toate lunile fara verificare termen limita. Solutie: hardLimit = new Date(t.due_date + T23:59:59) calculat o data, apoi (1) saptamanal: break din while cand dt > hardLimit; (2) lunar/trimestrial/anual: continue cand due > hardLimit. Plus cleanup automat: dupa generare, instantele existente cu _parentName==t.name si due_date > hardLimit sunt sterse - util cand user EDITEAZA termenul mai devreme pe un template existent (ex: extinde sau scurteaza perioada de raportare), instantele acum-invalide dispar automat. Counter deleted urmarit pentru log eventual.'},
   {version:'13.17',date:'2026-04-28',notes:'FIX critic pagina Biocide - cand user avea produse in catalog (CFG.biocide_products) dar fara miscari (records biocide gol), pagina afisa empty state „Nicio inregistrare biocide" si cardurile lipseau complet. Cauza: rBio() construia obiectul groups[] doar prin data.forEach (records din IndexedDB), produsele din catalog fara records nu erau incluse. Asta facea catalogul invizibil pana la prima miscare introdusa - confuzie majora pentru user-ul care a creat produs prin „+ Produs nou", import Excel, sau template wizard. Solutie: dupa data.forEach, iterez prin CFG.biocide_products si pentru fiecare produs care NU e deja in groups (groups[p.id] inca undefined), adaug un grup nou cu rows:[] gol. Filtrele aplicate consistent - bf.tp filtreaza dupa product_type, bf.search dupa nume+cod+producator+distribuitor+TP. Filtrele type (stoc_initial/intrare/iesire) si month exclud automat produsele fara miscari prin if(!bf.type&&!bf.month) - logic, n-au miscari sa filtrezi. Cardurile goale rezultate au Stoc 0, 0 miscari, dar toate butoanele functioneaza (creion edit produs, fuzioneaza, sterge, adauga miscare prin click). Avizele si documentele atasate la nivel de produs sunt vizibile imediat fara a astepta prima miscare.'},
   {version:'13.16',date:'2026-04-28',notes:'FIX dashboard lista Upcoming din mini-calendar (panoul dreapta cu tab-urile Azi/Maine/7 zile/30 zile/90 zile) - evenimentele multi-day care au inceput in trecut dar inca sunt in desfasurare NU apareau in lista. Cauza: filtrul allEvts.forEach in renderDashCalendar se uita doar la e.date (start) cu conditia dt>=todayStart, deci un Audit ISO inregistrat cu date=2026-04-25 si date_end=2026-04-30 era exclus din Upcoming pe data de 28 aprilie desi era inca in desfasurare. User vedea doar deadline-uri viitoare (4 Mai IACRS+POLIO) si nimic pentru azi/maine cand de fapt avea evenimente active. Fix: detectie ongoing prin start<todayStart && end>=todayStart (cu end fallback la start daca date_end lipseste sau parseDate esueaza). Daca ongoing, displayISO devine ziua de azi (apar in grupul Astazi din lista) si label-ul primeste sufix (în desfășurare) / (ongoing). Daca start>=today (eveniment viitor normal) nu se schimba nimic. Aplicabil doar pentru store events (deadlines/docs/trainings/audits/biocide_avize sunt single-date prin natura, nu au date_end). Filtru identic refactorizat in 4 forEach-uri ramase pentru consistenta cu acelasi pattern.'},
   {version:'13.15',date:'2026-04-28',notes:'FIX UX dashboard mini-calendar - evenimentele DIN TRECUT erau de fapt afisate corect in cod (parsate prin parseDate v13.12, dot-uri prezente in DOM) DAR practic invizibile vizual din 2 motive cumulative: (a) .mini-cal .cal-dot avea width/height:5px ceea ce e prea mic ca sa fie observat usor mai ales pentru daltonisti sau pe ecrane de 1080p+, (b) .cal-day.cal-has-evt-past avea background:transparent deci celula cu evenimente trecute arata identic cu o celula goala fara niciun indicator. User raporta repetat „evenimentele vechi nu apar" - bug-ul era pur vizual, nu functional (diagnostic confirmat 0 INVALID + 14 events parse OK in datele lui). Fix aplicat: (1) Dot-uri marite 5x5 -> 7x7 px (40% mai vizibile, dar inca compacte). (2) Background subtil gri #F1F5F9 (sau dark theme rgba(148,163,184,.08)) pentru .mini-cal .cal-day.cal-has-evt-past + hover #E2E8F0 - celula primeste un indicator vizual clar ca a avut evenimente. (3) Min-height celule mini-cal 28 -> 34px ca sa incapa count badge in colt fara overlap pe dot-uri. (4) Count badge activat si in compact mode prin eliminarea conditiei „&&!compact" din buildMonthGrid - cand o zi are 2+ evenimente apare cerc teal in coltul dreapta-sus cu numarul (8.5px font, padding 0 4px, border-radius 8px). Pentru zile in trecut badge-ul devine gri #94A3B8 (decorative, nu critic) iar pentru viitor ramane teal #0D9488 (atentie). Position absolute top:1px right:2px relative la cell. Pe Calendar full page badge-ul a fost intotdeauna activ - acum e consistent in ambele view-uri.'},

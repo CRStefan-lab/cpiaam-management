@@ -1,8 +1,8 @@
 {
-  "version": "13.17",
+  "version": "13.20",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX critic Biocide: pagina afisa 'Nicio inregistrare biocide' cand aveai produse in catalog dar fara miscari inca. Cauza: cardurile se construiau DOAR din records (miscari) - produsele din CFG.biocide_products fara records erau invizibile.",
-    "Acum: dupa grupare records, sunt adaugate si produsele din catalog care nu au miscari inca - apar ca cards goale (Stoc 0, 0 miscari) cu toate butoanele functionale (edit produs, sterge, adauga miscare). Filtrele TP/search le ignora consistent. Filtrele type='miscare' (intrare/iesire) sau month le exclud (logic - n-au miscari)."
+    "UX: banner 'Migreaza la produs' mutat SUS (deasupra documentelor individuale) si redesign mai prominent. Inainte aparea jos, dupa toate sectiunile - usor de ratat. Acum: gradient galben/portocaliu cu border 2px, icon mare avertisment, text descriptiv (ce face migrarea), buton portocaliu vibrant cu icon refresh.",
+    "Banner aparare doar daca exista legacy si ai produs in catalog (nu si la documente fara product_id)."
   ]
 }

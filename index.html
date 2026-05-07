@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.30</title>
+<title>CPIAAM Management v13.31</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2247,7 +2247,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.30';
+const APP_VERSION='13.31';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6193,6 +6193,45 @@ function renderAutoChart(data,probeTypes,sections,matrix,isEN){
 }
 
 // ═══ TAB 2 — PLANIFICARE ═══
+// v13.31 - helper: grupeaza items planificare dupa categoria sectiei (Spital / Spitalizare zi / Ambulatoriu)
+function _renderPlanGroup(items,levelType,isEN){
+  if(!items||items.length===0)return '';
+  // Determin grupul fiecarui item dupa CFG.sections[].type
+  function getGroup(secId){
+    var s=(CFG.sections||[]).find(function(x){return x.id===secId});
+    if(!s)return 'altele';
+    if(s.type==='cabinet')return 'ambulatoriu';
+    if(s.type==='spitalizare_zi')return 'spzi';
+    return 'spital';
+  }
+  // Sortez intai dupa grup (Spital, SpZi, Ambul, altele), apoi alfabetic dupa secName + ptName
+  var grouped={spital:[],spzi:[],ambulatoriu:[],altele:[]};
+  items.forEach(function(it){grouped[getGroup(it.secId)].push(it)});
+  Object.keys(grouped).forEach(function(g){grouped[g].sort(function(a,b){var d=String(a.secName||'').localeCompare(b.secName||'');return d!==0?d:String(a.ptName||'').localeCompare(b.ptName||'')})});
+  var groupLabels={
+    spital:isEN?'Hospital — Sections / Structures':'Spital — Sectii / Structuri',
+    spzi:isEN?'Day Hospital':'Spitalizare de Zi',
+    ambulatoriu:isEN?'Outpatient — Cabinets':'Ambulatoriu — Cabinete',
+    altele:isEN?'Others':'Altele'
+  };
+  var groupColors={spital:'#1E40AF',spzi:'#7C3AED',ambulatoriu:'#059669',altele:'#6B7280'};
+  var out='';
+  var idx=window._planItemIdx||0;
+  ['spital','spzi','ambulatoriu','altele'].forEach(function(g){
+    if(!grouped[g].length)return;
+    out+='<div style="margin:6px 0 4px 0;padding:4px 10px;background:'+groupColors[g]+';color:#fff;font-size:11px;font-weight:700;border-radius:4px">'+groupLabels[g]+' <span style="opacity:.85;font-weight:400">('+grouped[g].length+')</span></div>';
+    grouped[g].forEach(function(p){
+      var note;
+      if(levelType==='neconformitate')note=(isEN?'NC ':'NC ')+p.ncPct+'% — '+(isEN?'retest recommended':'re-testare recomandata');
+      else if(levelType==='nerecoltat')note=p._note||'';
+      else if(levelType==='vechi')note=(isEN?'Last sampled: ':'Ultima recoltare: ')+p.last;
+      else note='';
+      out+=renderPlanItem(idx++,p.ptName,p.secName,levelType,note,isEN);
+    });
+  });
+  window._planItemIdx=idx;
+  return out;
+}
 function renderAutoTab2(data,allData,matrix,probeTypes,sections,isEN,qLabel){
   let h='';
   const qi=_autoQ==='all'||_autoQ==='year'?Math.ceil((new Date().getMonth()+1)/3):+_autoQ;
@@ -6245,7 +6284,7 @@ function renderAutoTab2(data,allData,matrix,probeTypes,sections,isEN,qLabel){
     '<span style="font-size:11px;font-weight:500;opacity:.7;margin-left:6px">'+(isEN?'click to expand':'click pentru detalii')+'</span>'+
     '</summary><div style="padding:8px 14px">';
   if(planB.length===0) h+='<div style="font-size:12px;color:var(--txtL);padding:8px 0">'+(isEN?'No non-conformities':'Fara neconformitati')+'</div>';
-  else planB.forEach(p=>{h+=renderPlanItem(idx++,p.ptName,p.secName,'neconformitate',(isEN?'NC ':'NC ')+p.ncPct+'% — '+(isEN?'retest recommended':'re-testare recomandata'),isEN)});
+  else{window._planItemIdx=idx;h+=_renderPlanGroup(planB,'neconformitate',isEN);idx=window._planItemIdx}
   h+='</div></details>';
 
   // Section A - Nerecoltat in perioada curenta (PRIORITATE 2: risc potential, conform plan)
@@ -6258,7 +6297,11 @@ function renderAutoTab2(data,allData,matrix,probeTypes,sections,isEN,qLabel){
     '<span style="font-size:11px;font-weight:500;opacity:.7;margin-left:6px">'+(isEN?'click to expand':'click pentru detalii')+'</span>'+
     '</summary><div style="padding:8px 14px">';
   if(planA.length===0) h+='<div style="font-size:12px;color:var(--txtL);padding:8px 0">'+(isEN?'All combinations tested!':'Toate combinatiile testate!')+'</div>';
-  else planA.forEach(p=>{h+=renderPlanItem(idx++,p.ptName,p.secName,'nerecoltat',isEN?'Not sampled in '+qLabel:'Nerecoltat in '+qLabel,isEN)});
+  else{
+    var noteA=isEN?'Not sampled in '+qLabel:'Nerecoltat in '+qLabel;
+    planA.forEach(function(p){p._note=noteA});
+    window._planItemIdx=idx;h+=_renderPlanGroup(planA,'nerecoltat',isEN);idx=window._planItemIdx;
+  }
   h+='</div></details>';
 
   // Section C - Nerecoltat de >6 luni
@@ -6271,7 +6314,7 @@ function renderAutoTab2(data,allData,matrix,probeTypes,sections,isEN,qLabel){
     '<span style="font-size:11px;font-weight:500;opacity:.7;margin-left:6px">'+(isEN?'click to expand':'click pentru detalii')+'</span>'+
     '</summary><div style="padding:8px 14px">';
   if(planCFiltered.length===0) h+='<div style="font-size:12px;color:var(--txtL);padding:8px 0">'+(isEN?'No old gaps':'Fara lacune vechi')+'</div>';
-  else planCFiltered.forEach(p=>{h+=renderPlanItem(idx++,p.ptName,p.secName,'vechi',(isEN?'Last sampled: ':'Ultima recoltare: ')+p.last,isEN)});
+  else{window._planItemIdx=idx;h+=_renderPlanGroup(planCFiltered,'vechi',isEN);idx=window._planItemIdx}
   h+='</div></details>';
 
   const totalItems=planA.length+planB.length+planCFiltered.length;
@@ -19083,6 +19126,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.31',date:'2026-04-28',notes:'Planificare probe autocontrol (renderAutoTab2) - item-urile din cele 3 sectiuni (B Cu neconformitati / A Nerecoltat curent / C Nerecoltat >6 luni) acum grupate in interior dupa categoria sectiei (Spital - Sectii / Structuri | Spitalizare de Zi | Ambulatoriu - Cabinete | Altele) cu mini-headers colorate (#1E40AF / #7C3AED / #059669 / #6B7280) si count per grup. Helper nou _renderPlanGroup(items, levelType, isEN) - sorteaza items in 4 buckets dupa CFG.sections[].type, sortare alfabetica in fiecare grup (secName apoi ptName), randeaza cu separator color + label + count. Indexes (idx) pastrate prin window._planItemIdx pentru continuitate intre grupuri si sectiuni. Pastrate functionalitatea originala (click planificare in calendar, status, etc).'},
   {version:'13.30',date:'2026-04-28',notes:'Probe aplicabile per sectie (Configurare Sistem - tab Date introducere/Tipuri Probe) - matrice grupata pe 3 categorii cu header-uri colorate (rand sticky color): I. Spital - Sectii / Structuri (#1E40AF albastru), II. Spitalizare de Zi (#7C3AED mov), III. Ambulatoriu - Cabinete (#059669 verde). Inainte randurile erau sortate alfabetic plat (Cab. Urologie, SpZi Chirurgie, Chirurgie Generala, Farmacie, etc) si era confuz. Acum: filter pe type, sortare alfabetica in fiecare grup. Helper-i renderGroupHeader si renderSecRow refactorizati. Daca un grup e gol nu apare. Pastrate functionalitatea checkbox + buton Toate.'},
   {version:'13.29',date:'2026-04-28',notes:'2 fix-uri din raport user. (1) Matrice Autocontrol microbiologic: Spitalizare de Zi acum afisata ca a 3-a matrice separata sub Spital si deasupra Ambulatoriu. Inainte filtru AMBUL_TYPES=[cabinet] grupa toate non-cabinet impreuna inclusiv spitalizare_zi - amestec confuz. Acum 3 categorii: secSpital (sectie+compartiment+structuri), secSpZi (spitalizare_zi), secAmbul (cabinet). Ifs cu length>0 inainte de a randa fiecare matrice (daca grupul e gol, sectiunea nu apare). (2) Dropdown sectie consistent peste tot cu cele 3 grupuri optgroup (Spital - Sectii / Structuri | Spitalizare de Zi | Ambulatoriu - Cabinete). Sed replace pe 5 fisiere transformand secOpts in secOptsGrouped (NU si in helpers.js care defineste functia): atp.js (introducere proba), uvcheck.js (introducere proba), autocontrol.js filtru probe, pps.js (anchete PPS), consum_atb.js (3 dropdown-uri DDD), audituri.js (4 dropdown-uri inclusiv IGM si custom), instruire.js (2 dropdown-uri). Total 14 selectoare upgraded.'},
   {version:'13.28',date:'2026-04-28',notes:'FIX auto-corectare an cu 2 cifre la inputuri date in autocontrol. Bug raportat user: la introducere data manual zz/ll/aa (ex 12/05/22), browser-ul accepta an 0022 fara corectie - rezultand date in trecut indepartat (anul 22 d.Hr.). min/max attribute din v13.24 nu impune corectia automata in timpul tastat (doar la submit). Solutie helper _autoFixYear(input) care la onchange parseaza valoarea (split pe -), verifica daca year < 1000, si adauga 2000 (sau 1000 daca e in range 100-999). Clamp max 2099. Aplicat la 3 inputs: filtru DE LA, filtru PANA LA, autoDateChanged in editare proba (corecteaza inainte de a calcula trimestru/luna). Functioneaza si cand user tasteaza in ordine inversa (an primul) - n-a fost niciodata afectata.'},

@@ -1,8 +1,9 @@
 {
-  "version": "13.30",
+  "version": "13.31",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Probe aplicabile per sectie (Configurare Sistem) - acum sectiile sunt grupate in 3 categorii cu header-uri colorate: I. Spital - Sectii / Structuri (albastru), II. Spitalizare de Zi (mov), III. Ambulatoriu - Cabinete (verde). Sortate alfabetic in fiecare grup.",
-    "Daca un grup e gol (ex. nu ai cabinete sau spit zi), header-ul nu apare. Mai usor de scanat tabelul - eviti sa amesteci accidental probe care nu sunt potrivite pentru ambulatoriu cu sectii de internare."
+    "Planificare probe autocontrol (cele 3 sectiuni: NC re-testare, Nerecoltat curent, Nerecoltat >6 luni) - acum item-urile din interior sunt grupate dupa categoria sectiei (Spital - Sectii / Structuri | Spitalizare de Zi | Ambulatoriu - Cabinete) cu mini-headers colorate.",
+    "Inainte item-urile erau listate alfabetic plat, amestecand sectii cu cabinete. Acum vezi clar cate combinatii probe×sectie sunt netestate per categorie.",
+    "Sortare in cadrul fiecarui grup: alfabetic dupa sectie, apoi tip proba. Mini-headers cu count: 'Spital (12)', 'Spitalizare de Zi (3)', 'Ambulatoriu (5)'."
   ]
 }

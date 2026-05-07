@@ -1,10 +1,10 @@
 {
-  "version": "13.35",
+  "version": "13.36",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Configurare → Introducere date: cele 12 secțiuni (Categorii IPC, Profesionale, Tipuri Probe, Probe/Secții, Probe Laborator, Categorii IAAM, Factori Risc, Comorbidități, Dispozitive, Biocide, Coduri Deșeuri, Suprafețe ATP/UV) sunt acum colapsabile.",
-    "Default toate închise — vezi doar headerele cu chevron ▶. Click pe titlu sau pe quick-link buton → expandare + scroll.",
-    "Butoanele din header (ex „+ Adaugă categorie IPC”) funcționează normal — click pe ele NU toggleează panoul.",
-    "Aspect identic cu v13.34, doar comportament adăugat (în spirit cu UI freeze: fix comportament, păstrează layout)."
+    "Pagina Versiuni rescrisă: vezi un rezumat scurt user-friendly pentru fiecare versiune; detaliile tehnice rămân ascunse sub buton „🔧 Detalii tehnice”.",
+    "Implicit afișează ultimele 20 versiuni — buton „Arată toate cele 206 versiuni” pentru istoric complet.",
+    "Configurare → Introducere date: secțiunile sunt acum grupate logic (IAAM → Autocontrol → Laborator → Calitate → Biocide → Deșeuri).",
+    "Denumiri uniforme între butoanele rapide de sus și header-ele secțiunilor (același text peste tot, cu diacritice corecte și context clar)."
   ]
 }

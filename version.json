@@ -1,7 +1,8 @@
 {
-  "version": "13.27",
+  "version": "13.30",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Salveaza+Noua autocontrol pastreaza ACUM acelasi nr inregistrare (nu il mai incrementeaza). Cazul tipic: pe un buletin de analiza ai 4-5 probe diferite cu ACELASI nr inregistrare. Inainte se incrementa cu +1 (1234 -> 1235), acum ramane fix (1234 -> 1234)."
+    "Probe aplicabile per sectie (Configurare Sistem) - acum sectiile sunt grupate in 3 categorii cu header-uri colorate: I. Spital - Sectii / Structuri (albastru), II. Spitalizare de Zi (mov), III. Ambulatoriu - Cabinete (verde). Sortate alfabetic in fiecare grup.",
+    "Daca un grup e gol (ex. nu ai cabinete sau spit zi), header-ul nu apare. Mai usor de scanat tabelul - eviti sa amesteci accidental probe care nu sunt potrivite pentru ambulatoriu cu sectii de internare."
   ]
 }

@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.27</title>
+<title>CPIAAM Management v13.30</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2247,7 +2247,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.27';
+const APP_VERSION='13.30';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6021,8 +6021,11 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
   }
 
   // B. MATRICE ACOPERIRE — Split Spital / Ambulatoriu
+  // v13.29 - 3 grupuri matrice: Spital sectii/structuri | Spitalizare de Zi | Ambulatoriu cabinete
   var AMBUL_TYPES=['cabinet'];
-  var secSpital=sections.filter(function(s){return AMBUL_TYPES.indexOf(s.type)<0});
+  var SPZI_TYPES=['spitalizare_zi'];
+  var secSpital=sections.filter(function(s){return AMBUL_TYPES.indexOf(s.type)<0&&SPZI_TYPES.indexOf(s.type)<0});
+  var secSpZi=sections.filter(function(s){return SPZI_TYPES.indexOf(s.type)>=0});
   var secAmbul=sections.filter(function(s){return AMBUL_TYPES.indexOf(s.type)>=0});
 
   function renderMatrix(secList,title){
@@ -6080,8 +6083,9 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
   }
 
   if(sections.length>0&&probeTypes.length>0){
-    h+=renderMatrix(secSpital,isEN?'Hospital':'Spital');
-    if(secAmbul.length>0) h+=renderMatrix(secAmbul,isEN?'Outpatient':'Ambulatoriu');
+    if(secSpital.length>0)h+=renderMatrix(secSpital,isEN?'Hospital':'Spital');
+    if(secSpZi.length>0)h+=renderMatrix(secSpZi,isEN?'Day Hospital':'Spitalizare de Zi');
+    if(secAmbul.length>0)h+=renderMatrix(secAmbul,isEN?'Outpatient':'Ambulatoriu');
 
     // C. LEGENDA
     h+='<div class="ac-legend">';
@@ -6350,7 +6354,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
 
   // Filters
   h+='<div class="ac-filters">';
-  h+='<div class="fg"><label>'+(isEN?'Section':'Sectie')+'</label><select onchange="_autoProbeFilters.sec=this.value;_autoPage=0;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+secOpts(_autoProbeFilters.sec)+'</select></div>';
+  h+='<div class="fg"><label>'+(isEN?'Section':'Sectie')+'</label><select onchange="_autoProbeFilters.sec=this.value;_autoPage=0;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+secOptsGrouped(_autoProbeFilters.sec)+'</select></div>';
   h+='<div class="fg"><label>'+(isEN?'Sample Type':'Tip Proba')+'</label><select onchange="_autoProbeFilters.type=this.value;_autoPage=0;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+optsId(CFG.probe_types,_autoProbeFilters.type)+'</select></div>';
   h+='<div class="fg"><label>'+(isEN?'Result':'Rezultat')+'</label><select onchange="_autoProbeFilters.result=this.value;_autoPage=0;render()"><option value="">'+(isEN?'All':'Toate')+'</option><option value="conform"'+ (_autoProbeFilters.result==='conform'?' selected':'')+'>Conforme</option><option value="neconform"'+(_autoProbeFilters.result==='neconform'?' selected':'')+'>Neconforme</option></select></div>';
   h+='<div class="fg"><label>DSP</label><select onchange="_autoProbeFilters.dsp=this.value;_autoPage=0;render()">'+
@@ -6358,9 +6362,9 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
     '<option value="yes"'+(_autoProbeFilters.dsp==='yes'?' selected':'')+'>'+(isEN?'Only with DSP':'Doar cu DSP')+'</option>'+
     '<option value="no"'+(_autoProbeFilters.dsp==='no'?' selected':'')+'>'+(isEN?'Only without DSP':'Doar fara DSP')+'</option>'+
   '</select></div>';
-  // v13.26 - min/max date range (browser-ul native limita anii la 4 cifre, prevenind salvari cu an gresit ca 26 in loc de 2026)
-  h+='<div class="fg"><label>'+(isEN?'From':'De la')+'</label><input type="date" min="2000-01-01" max="2099-12-31" value="'+(_autoProbeFilters.dateFrom||'')+'" onchange="_autoProbeFilters.dateFrom=this.value;_autoPage=0;render()"></div>';
-  h+='<div class="fg"><label>'+(isEN?'To':'Pana la')+'</label><input type="date" min="2000-01-01" max="2099-12-31" value="'+(_autoProbeFilters.dateTo||'')+'" onchange="_autoProbeFilters.dateTo=this.value;_autoPage=0;render()"></div>';
+  // v13.28 - auto-fix an cu 2 cifre (0022 -> 2022). Browser-ul nu corecteaza automat cand user tasteaza zz/ll/aa.
+  h+='<div class="fg"><label>'+(isEN?'From':'De la')+'</label><input type="date" min="2000-01-01" max="2099-12-31" value="'+(_autoProbeFilters.dateFrom||'')+'" onchange="_autoFixYear(this);_autoProbeFilters.dateFrom=this.value;_autoPage=0;render()"></div>';
+  h+='<div class="fg"><label>'+(isEN?'To':'Pana la')+'</label><input type="date" min="2000-01-01" max="2099-12-31" value="'+(_autoProbeFilters.dateTo||'')+'" onchange="_autoFixYear(this);_autoProbeFilters.dateTo=this.value;_autoPage=0;render()"></div>';
   h+='</div>';
 
   // Action buttons
@@ -6456,11 +6460,28 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
 // Autocontrol germeni predefiniti (pentru neconform)
 const AUTO_GERMENI=['Staphylococcus spp.','Pseudomonas spp.','Enterobacter spp.','Coliformi','E. coli','Klebsiella spp.','Mucegaiuri / Fungi','Bacillus spp.'];
 function autoDateChanged(){
-  const dt=document.getElementById('f-auto-dt')?.value;if(!dt)return;
+  // v13.28 - auto-fix year inainte de a calcula trimestru/luna
+  var inp=document.getElementById('f-auto-dt');if(inp)_autoFixYear(inp);
+  const dt=inp?.value;if(!dt)return;
   const d=new Date(dt);if(isNaN(d))return;
   const mo=d.getMonth()+1,q=Math.ceil(mo/3);
   const selMo=document.getElementById('f-auto-mo');if(selMo)selMo.value=mo;
   const selQ=document.getElementById('f-auto-q');if(selQ)selQ.value=q;
+}
+// v13.28 - auto-fix year cu 2 cifre. Browser-ul accepta "12/05/0022" tasted manual fara a corecta.
+// Detectam an < 100 si adaugam 2000 (0022 -> 2022).
+function _autoFixYear(input){
+  if(!input||!input.value)return;
+  var parts=input.value.split('-');
+  if(parts.length!==3)return;
+  var y=parseInt(parts[0]);
+  if(isNaN(y)||y>=1000)return;
+  // Year cu 1-3 cifre - corectie automata la 2000+
+  // 22 -> 2022, 0026 -> 2026, 100 -> 2100 (clamped la max 2099)
+  var fixed=y<100?(y+2000):(y<1000?y+1000:y);
+  if(fixed>2099)fixed=2099;
+  parts[0]=String(fixed).padStart(4,'0');
+  input.value=parts.join('-');
 }
 function autoResChanged(){
   const res=document.getElementById('f-auto-res')?.value;
@@ -6651,7 +6672,7 @@ async function editAtp(id){
   const surfOpts=surfaces.map(s=>'<option value="'+s.id+'"'+(r.surface_type===s.id?' selected':'')+'>'+s.name+' (prag \u2264'+s.threshold+' RLU)</option>').join('');
   openM(id?(isEN?'Edit ATP Probe':'Editare Proba ATP'):(isEN?'New ATP Probe':'Proba ATP Noua'),
     '<div class="fr"><div class="fg"><label>'+(isEN?'Date':'Data')+'</label><input type="date" id="f-atp-date" value="'+(r.date||'')+'"></div>'+
-    '<div class="fg"><label>'+(isEN?'Section':'Sec\u021Bia')+'</label><select id="f-atp-sec"><option value="">\u2014</option>'+secOpts(r.section)+'</select></div></div>'+
+    '<div class="fg"><label>'+(isEN?'Section':'Sec\u021Bia')+'</label><select id="f-atp-sec"><option value="">\u2014</option>'+secOptsGrouped(r.section)+'</select></div></div>'+
     '<div class="fr"><div class="fg"><label>'+(isEN?'Surface type':'Tip suprafa\u021B\u0103')+'</label><select id="f-atp-surf" onchange="updateAtpResult()">'+surfOpts+'</select></div>'+
     '<div class="fg"><label>'+(isEN?'Location detail':'Locatie detaliu')+'</label><input id="f-atp-loc" value="'+((r.location||'').replace(/"/g,'&quot;'))+'" placeholder="'+(isEN?'e.g. Room 3, bed 2':'ex. Salon 3, pat 2')+'"></div></div>'+
     '<div class="fr"><div class="fg"><label>RLU '+(isEN?'(initial reading)':'(citire ini\u021Bial\u0103)')+' *</label><input type="number" id="f-atp-rlu" value="'+(r.rlu_value||'')+'" min="0" step="1" oninput="updateAtpResult()"></div>'+
@@ -6790,7 +6811,7 @@ async function editUv(id){
   const uvSurfOpts=uvSurfaces.map(s=>'<option value="'+s.id+'"'+(r.surface===s.id||r.surface===s.name?' selected':'')+'>'+s.name+'</option>').join('');
   openM(id?(isEN?'Edit UV Check':'Editare Verificare UV'):(isEN?'New UV Check':'Verificare UV Nou\u0103'),
     '<div class="fr"><div class="fg"><label>'+(isEN?'Date':'Data')+'</label><input type="date" id="f-uv-date" value="'+(r.date||'')+'"></div>'+
-    '<div class="fg"><label>'+(isEN?'Section':'Sec\u021Bia')+'</label><select id="f-uv-sec"><option value="">\u2014</option>'+secOpts(r.section)+'</select></div></div>'+
+    '<div class="fg"><label>'+(isEN?'Section':'Sec\u021Bia')+'</label><select id="f-uv-sec"><option value="">\u2014</option>'+secOptsGrouped(r.section)+'</select></div></div>'+
     '<div class="fr"><div class="fg"><label>'+(isEN?'Surface type':'Tip suprafa\u021B\u0103')+'</label><select id="f-uv-surf"><option value="">\u2014</option>'+uvSurfOpts+'</select></div>'+
     '<div class="fg"><label>'+(isEN?'Result':'Rezultat')+'</label><select id="f-uv-res"><option value="pass"'+(r.result==='pass'?' selected':'')+'>Pass (marker '+( isEN?'removed':'\u00EEndep\u0103rtat')+')</option><option value="fail"'+(r.result==='fail'?' selected':'')+'>Fail (marker '+(isEN?'visible':'vizibil')+')</option></select></div></div>'+
     '<div class="fg"><label>'+(isEN?'Notes':'Observa\u021Bii')+'</label><textarea id="f-uv-notes" rows="2">'+((r.notes||'').replace(/</g,'&lt;'))+'</textarea></div>',
@@ -10452,7 +10473,7 @@ async function editPPS(id){
   let r=id?(await ga('pps')).find(x=>x.id===id):{year:A.year};
   if(!r)r={year:A.year};
   openM(id?'Editare PPS':'Sectie PPS Noua',
-    '<div class="fr"><div class="fg"><label>Sectie</label><select id="f-sec"><option value="">—</option>'+secOpts(r.section)+'</select></div>'+
+    '<div class="fr"><div class="fg"><label>Sectie</label><select id="f-sec"><option value="">—</option>'+secOptsGrouped(r.section)+'</select></div>'+
     '<div class="fg"><label>Data PPS</label><input type="date" id="f-dt" value="'+(r.date_pps||'')+'"></div></div>'+
     '<div class="fr3"><div class="fg"><label>Nr. pacienti evaluati</label><input type="number" id="f-pat" value="'+(r.patients||'')+'" min="0"></div>'+
     '<div class="fg"><label>Pacienti cu antibiotice</label><input type="number" id="f-au" value="'+(r.patients_au||'')+'" min="0"></div>'+
@@ -11393,7 +11414,7 @@ async function rConsumATB(el){
 
   // Filters row
   h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0">';
-  h+='<select id="ddd-sec" onchange="dddRefresh()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-family:var(--f)"><option value="">'+T('ddd_section')+': '+T('ddd_all_months').replace('lunile','sectiile')+'</option>'+secOpts('')+'</select>';
+  h+='<select id="ddd-sec" onchange="dddRefresh()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-family:var(--f)"><option value="">'+T('ddd_section')+': '+T('ddd_all_months').replace('lunile','sectiile')+'</option>'+secOptsGrouped('')+'</select>';
   h+='<select id="ddd-mo" onchange="dddRefresh()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-family:var(--f)"><option value="">'+T('ddd_month')+': '+T('ddd_all_months')+'</option>';
   const mo=getMO();for(let i=0;i<12;i++)h+='<option value="'+(i+1)+'">'+mo[i]+'</option>';
   h+='</select>';
@@ -11536,7 +11557,7 @@ async function editConsumATB(id){
   const routeH=ATB_ROUTES.map(rt=>'<option value="'+rt.v+'" '+(rt.v===r.route?'selected':'')+'>'+rt.n+'</option>').join('');
 
   openM(id?'Editare Consum':'Adauga Consum Antibiotic',
-    '<div class="fr"><div class="fg"><label>'+T('ddd_section')+'</label><select id="f-sec"><option value="">—</option>'+secOpts(r.section)+'</select></div>'+
+    '<div class="fr"><div class="fg"><label>'+T('ddd_section')+'</label><select id="f-sec"><option value="">—</option>'+secOptsGrouped(r.section)+'</select></div>'+
     '<div class="fg"><label>'+T('ddd_month')+'</label><select id="f-mo">'+moH+'</select></div></div>'+
     '<div class="fg"><label>'+T('ddd_substance')+'</label><select id="f-atc" onchange="dddUpdatePreview()">'+atbH+'</select></div>'+
     '<div class="fr"><div class="fg"><label>'+T('ddd_quantity')+' (grame)</label><input type="number" id="f-qty" value="'+(r.quantity_g||'')+'" min="0" step="0.1" oninput="dddUpdatePreview()"></div>'+
@@ -11768,7 +11789,7 @@ function _dddRefreshPreview(){
     var sh='';
     if(unmatched.length>0){
       sh+='<div class="ib wrn" style="margin-bottom:10px"><strong>'+unmatched.length+' randuri fara sectie potrivita.</strong> Selecteaza o sectie implicita sau corecteaza numele in fisier:<br>'+
-        '<select id="ddd-imp-fallback-sec" style="margin-top:6px;padding:4px;font-size:12px"><option value="">— Lasa fara sectie —</option>'+secOpts('')+'</select>'+
+        '<select id="ddd-imp-fallback-sec" style="margin-top:6px;padding:4px;font-size:12px"><option value="">— Lasa fara sectie —</option>'+secOptsGrouped('')+'</select>'+
         ' <button class="btn bo bsm" onclick="_dddApplyFallbackSec()">Aplica</button></div>';
     }
     sh+='<div style="display:flex;gap:8px;justify-content:flex-end">'+
@@ -13345,7 +13366,7 @@ async function _renderIgmAudit(el,id){
 
   // Add section row
   h+='<div style="display:flex;gap:8px;align-items:center;margin:12px 0">'+
-    '<select id="igm-sec-sel"><option value="">— '+T('aud_sectie')+' —</option>'+secOpts('')+'</select>'+
+    '<select id="igm-sec-sel"><option value="">— '+T('aud_sectie')+' —</option>'+secOptsGrouped('')+'</select>'+
     '<button class="btn bp bsm" onclick="_igmAddSec()">'+T('aud_igm_adauga_sec')+'</button>'+
   '</div>';
 
@@ -13575,7 +13596,7 @@ async function _renderGenericAudit(el,id){
   h+='<div class="pn"><div class="ph"><h3>Date identificare</h3></div><div class="pb">'+
     '<div class="fr">'+
       '<div class="fg"><label>'+T('aud_data')+'</label><input type="date" id="f-gen-date" value="'+(r.date||'')+'"></div>'+
-      '<div class="fg"><label>'+T('aud_sectie')+'</label><select id="f-gen-sec"><option value="">—</option>'+secOpts(r.section)+'</select></div>'+
+      '<div class="fg"><label>'+T('aud_sectie')+'</label><select id="f-gen-sec"><option value="">—</option>'+secOptsGrouped(r.section)+'</select></div>'+
       '<div class="fg"><label>'+T('aud_auditor')+'</label><select id="f-gen-auditor"><option value="">—</option>'+_persOpts(r.auditor)+'</select></div>'+
     '</div>'+
   '</div></div>';
@@ -13943,7 +13964,7 @@ async function _renderCustomAudit(el,id){
   h+='<div class="pn"><div class="ph"><h3>Date identificare</h3></div><div class="pb">'+
     '<div class="fr">'+
       '<div class="fg"><label>'+T('aud_data')+'</label><input type="date" id="f-cust-date" value="'+(r.date||'')+'"></div>'+
-      '<div class="fg"><label>'+T('aud_sectie')+'</label><select id="f-cust-sec"><option value="">—</option>'+secOpts(r.section)+'</select></div>'+
+      '<div class="fg"><label>'+T('aud_sectie')+'</label><select id="f-cust-sec"><option value="">—</option>'+secOptsGrouped(r.section)+'</select></div>'+
       '<div class="fg"><label>'+T('aud_auditor')+'</label><select id="f-cust-auditor"><option value="">—</option>'+_persOpts(r.auditor)+'</select></div>'+
     '</div>'+
   '</div></div>';
@@ -14095,7 +14116,7 @@ async function genAuditWordIgm(r){
 // ── IGM Filtered Report Dialog & Generator ──
 function _showIgmReportDialog(){
   var isEN=CFG.lang==='en';
-  var secOps='<option value="">'+(isEN?'All sections':'Toate sectiile')+'</option>'+secOpts('');
+  var secOps='<option value="">'+(isEN?'All sections':'Toate sectiile')+'</option>'+secOptsGrouped('');
   var catOps='<option value="">'+(isEN?'All categories':'Toate categoriile')+'</option>'+(CFG.audit_prof_categories||[]).map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>'}).join('');
   var momOps='<option value="">'+(isEN?'All moments':'Toate momentele')+'</option>'+WHO_MOM.map(function(m){return '<option value="'+m.id+'">'+m.id.toUpperCase()+' — '+(isEN?m.label_en:m.label_ro)+'</option>'}).join('');
   var today=new Date().toISOString().slice(0,10);
@@ -15131,7 +15152,7 @@ async function rInstr(el){
   h+='<div class="ac-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">'+
     '<input type="text" placeholder="Cauta..." value="'+esc(f.search)+'" oninput="_instrFilters.search=this.value;render()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px">'+
     '<select onchange="_instrFilters.sec=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
-      '<option value="">Toate sectiile</option>'+secOpts(f.sec)+'</select>'+
+      '<option value="">Toate sectiile</option>'+secOptsGrouped(f.sec)+'</select>'+
     '<input type="date" value="'+esc(f.dateFrom)+'" onchange="_instrFilters.dateFrom=this.value;render()" title="De la" style="padding:5px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
     '<input type="date" value="'+esc(f.dateTo)+'" onchange="_instrFilters.dateTo=this.value;render()" title="Pana la" style="padding:5px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
     '<button class="btn bo bsm" onclick="_instrFilters={sec:\'\',dateFrom:\'\',dateTo:\'\',search:\'\'};render()">Reset</button>'+
@@ -15184,7 +15205,7 @@ async function editTraining(id){
     '<div class="fr"><div class="fg"><label>Data</label><input type="date" id="f-tdate" value="'+(r.date||'')+'"></div>'+
     '<div class="fg"><label>Durata (ore)</label><input type="number" id="f-tdur" value="'+(r.duration_hours||1)+'" min="0.5" step="0.5"></div></div>'+
     '<div class="fg"><label>Tema / Subiect</label><input id="f-ttopic" value="'+esc(r.topic||'')+'"></div>'+
-    '<div class="fr"><div class="fg"><label>Sectia</label><select id="f-tsec"><option value="">— Toate / General —</option>'+secOpts(r.section)+'</select></div>'+
+    '<div class="fr"><div class="fg"><label>Sectia</label><select id="f-tsec"><option value="">— Toate / General —</option>'+secOptsGrouped(r.section)+'</select></div>'+
     '<div class="fg"><label>Formator(i)</label>'+
     '<select id="f-trainers" multiple size="3" style="min-height:60px;width:100%;padding:4px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+trainerOpts+'</select>'+
     '<span style="font-size:10px;color:var(--txtL)">Ctrl+click pentru selectie multipla</span>'+fallbackNote+
@@ -17055,26 +17076,45 @@ const SEC_TYPES=[
 function _secTypeOpts(sel){return SEC_TYPES.map(function(t){return '<option value="'+t.v+'"'+(sel===t.v?' selected':'')+'>'+t.n+'</option>'}).join('')}
 
 // ── Probe Applicability Matrix ──
+// v13.30 - grupare 3 categorii (Spital / Spitalizare de Zi / Ambulatoriu) ca in restul app-ului
 function _renderProbeApplicabilityUI(){
   var isEN=CFG.lang==='en';
   var pts=(CFG.probe_types||[]).slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'')});
-  var secs=(CFG.sections||[]).slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'')});
-  if(!pts.length||!secs.length)return '<div style="color:var(--txtL);font-size:12px">'+(isEN?'Add sections and probe types first.':'Adauga mai intai sectii si tipuri de probe.')+'</div>';
-  var h='<div class="ib inf" style="margin-bottom:10px;font-size:12px">'+(isEN?'Check the sample types that apply to each section. Unchecked types will NOT appear as "untested" in autocontrol analysis.':'Bifeaza tipurile de probe microbiologice care se aplica fiecarei sectii. Probele nebifate NU vor aparea ca &quot;netestate&quot; in analiza autocontrol.')+'</div>';
+  if(!pts.length||!(CFG.sections||[]).length)return '<div style="color:var(--txtL);font-size:12px">'+(isEN?'Add sections and probe types first.':'Adauga mai intai sectii si tipuri de probe.')+'</div>';
+  // 3 grupuri sortate alfabetic in fiecare
+  var spitalSec=(CFG.sections||[]).filter(function(s){return s.type!=='cabinet'&&s.type!=='spitalizare_zi'}).slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'')});
+  var spziSec=(CFG.sections||[]).filter(function(s){return s.type==='spitalizare_zi'}).slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'')});
+  var ambulSec=(CFG.sections||[]).filter(function(s){return s.type==='cabinet'}).slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'')});
+  var h='<div class="ib inf" style="margin-bottom:10px;font-size:12px">'+(isEN?'Check the sample types that apply to each section. Unchecked types will NOT appear as "untested" in autocontrol analysis. Sections grouped: Hospital / Day Hospital / Outpatient.':'Bifeaza tipurile de probe microbiologice care se aplica fiecarei sectii. Probele nebifate NU vor aparea ca &quot;netestate&quot; in analiza autocontrol. Sectiile sunt grupate: Spital / Spitalizare de Zi / Ambulatoriu.')+'</div>';
   h+='<div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table class="dt" style="font-size:11px"><thead style="position:sticky;top:0;z-index:3"><tr><th style="position:sticky;left:0;background:var(--navy);color:#fff;z-index:4">'+(isEN?'Section':'Sectie')+'</th>';
   pts.forEach(function(pt){h+='<th style="writing-mode:vertical-lr;transform:rotate(180deg);white-space:nowrap;padding:4px 2px;font-size:10px;background:var(--navy);color:#fff">'+sn(pt)+'</th>'});
   h+='<th style="font-size:10px;background:var(--navy);color:#fff">'+(isEN?'All':'Toate')+'</th></tr></thead><tbody>';
-  secs.forEach(function(s,si){
-    si=CFG.sections.indexOf(s);
+  function renderGroupHeader(label,bg){
+    return '<tr style="background:'+bg+'"><td colspan="'+(pts.length+2)+'" style="position:sticky;left:0;background:'+bg+';font-weight:700;color:#fff;padding:6px 10px;font-size:12px">'+label+'</td></tr>';
+  }
+  function renderSecRow(s){
+    var si=CFG.sections.indexOf(s);
     var ap=s.applicable_probes;var allChecked=!ap||!ap.length;
-    h+='<tr><td style="position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;font-weight:600;font-size:11px">'+_secDisplayName(s)+'</td>';
+    var row='<tr><td style="position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;font-weight:600;font-size:11px">'+_secDisplayName(s)+'</td>';
     pts.forEach(function(pt){
       var checked=allChecked||ap.includes(pt.id);
-      h+='<td style="text-align:center"><input type="checkbox" data-sec="'+si+'" data-pt="'+pt.id+'" '+(checked?'checked':'')+' onchange="toggleProbeApplicability('+si+',\''+pt.id+'\',this.checked)" style="accent-color:var(--teal);width:14px;height:14px;cursor:pointer"></td>';
+      row+='<td style="text-align:center"><input type="checkbox" data-sec="'+si+'" data-pt="'+pt.id+'" '+(checked?'checked':'')+' onchange="toggleProbeApplicability('+si+',\''+pt.id+'\',this.checked)" style="accent-color:var(--teal);width:14px;height:14px;cursor:pointer"></td>';
     });
-    h+='<td style="text-align:center"><button class="btn bsm" style="font-size:9px;padding:2px 6px" onclick="toggleAllProbes('+si+')">&#8645;</button></td>';
-    h+='</tr>';
-  });
+    row+='<td style="text-align:center"><button class="btn bsm" style="font-size:9px;padding:2px 6px" onclick="toggleAllProbes('+si+')">&#8645;</button></td></tr>';
+    return row;
+  }
+  if(spitalSec.length>0){
+    h+=renderGroupHeader((isEN?'I. Hospital — Sections / Structures':'I. Spital — Sectii / Structuri'),'#1E40AF');
+    spitalSec.forEach(function(s){h+=renderSecRow(s)});
+  }
+  if(spziSec.length>0){
+    h+=renderGroupHeader((isEN?'II. Day Hospital':'II. Spitalizare de Zi'),'#7C3AED');
+    spziSec.forEach(function(s){h+=renderSecRow(s)});
+  }
+  if(ambulSec.length>0){
+    h+=renderGroupHeader((isEN?'III. Outpatient — Cabinets':'III. Ambulatoriu — Cabinete'),'#059669');
+    ambulSec.forEach(function(s){h+=renderSecRow(s)});
+  }
   h+='</tbody></table></div>';
   h+='<div style="margin-top:8px;display:flex;gap:8px"><button class="btn bp" onclick="saveCfg();showToast(CFG.lang===\'en\'?\'Saved!\':\'Salvat!\')">'+(isEN?'Save':'Salveaza')+'</button>'+
     '<button class="btn bo bsm" onclick="resetAllProbeApplicability()">'+(isEN?'Reset all (all checked)':'Reseteaza tot (toate bifate)')+'</button></div>';
@@ -19043,6 +19083,9 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.30',date:'2026-04-28',notes:'Probe aplicabile per sectie (Configurare Sistem - tab Date introducere/Tipuri Probe) - matrice grupata pe 3 categorii cu header-uri colorate (rand sticky color): I. Spital - Sectii / Structuri (#1E40AF albastru), II. Spitalizare de Zi (#7C3AED mov), III. Ambulatoriu - Cabinete (#059669 verde). Inainte randurile erau sortate alfabetic plat (Cab. Urologie, SpZi Chirurgie, Chirurgie Generala, Farmacie, etc) si era confuz. Acum: filter pe type, sortare alfabetica in fiecare grup. Helper-i renderGroupHeader si renderSecRow refactorizati. Daca un grup e gol nu apare. Pastrate functionalitatea checkbox + buton Toate.'},
+  {version:'13.29',date:'2026-04-28',notes:'2 fix-uri din raport user. (1) Matrice Autocontrol microbiologic: Spitalizare de Zi acum afisata ca a 3-a matrice separata sub Spital si deasupra Ambulatoriu. Inainte filtru AMBUL_TYPES=[cabinet] grupa toate non-cabinet impreuna inclusiv spitalizare_zi - amestec confuz. Acum 3 categorii: secSpital (sectie+compartiment+structuri), secSpZi (spitalizare_zi), secAmbul (cabinet). Ifs cu length>0 inainte de a randa fiecare matrice (daca grupul e gol, sectiunea nu apare). (2) Dropdown sectie consistent peste tot cu cele 3 grupuri optgroup (Spital - Sectii / Structuri | Spitalizare de Zi | Ambulatoriu - Cabinete). Sed replace pe 5 fisiere transformand secOpts in secOptsGrouped (NU si in helpers.js care defineste functia): atp.js (introducere proba), uvcheck.js (introducere proba), autocontrol.js filtru probe, pps.js (anchete PPS), consum_atb.js (3 dropdown-uri DDD), audituri.js (4 dropdown-uri inclusiv IGM si custom), instruire.js (2 dropdown-uri). Total 14 selectoare upgraded.'},
+  {version:'13.28',date:'2026-04-28',notes:'FIX auto-corectare an cu 2 cifre la inputuri date in autocontrol. Bug raportat user: la introducere data manual zz/ll/aa (ex 12/05/22), browser-ul accepta an 0022 fara corectie - rezultand date in trecut indepartat (anul 22 d.Hr.). min/max attribute din v13.24 nu impune corectia automata in timpul tastat (doar la submit). Solutie helper _autoFixYear(input) care la onchange parseaza valoarea (split pe -), verifica daca year < 1000, si adauga 2000 (sau 1000 daca e in range 100-999). Clamp max 2099. Aplicat la 3 inputs: filtru DE LA, filtru PANA LA, autoDateChanged in editare proba (corecteaza inainte de a calcula trimestru/luna). Functioneaza si cand user tasteaza in ordine inversa (an primul) - n-a fost niciodata afectata.'},
   {version:'13.27',date:'2026-04-28',notes:'Salveaza+Noua autocontrol - schimbare comportament: nu mai incrementeaza cu +1 numarul de inregistrare, ci pastreaza acelasi numar. Cazul de utilizare: pe un buletin de analiza fizico-microbiologica sunt 4-5 probe diferite (suprafete, instrumentar, etc) cu acelasi nr inregistrare. User vrea sa introduca rapid toate probele cu acelasi numar fara a-l retasta. v13.24 incrementa (1234 -> 1235) - util pentru numerotare unica de inregistrare in registru, dar nu corespunde realitatii buletinelor de laborator. Solutie: in saveAutoAndNew, keep.reg_number=rec.reg_number (fara regex incrementare). Restul campurilor (data, sectie, tip, trimestru, luna, DSP) ramane pastrat la fel ca inainte. User poate edita manual nr inregistrare cand schimba buletinul.'},
   {version:'13.26',date:'2026-04-28',notes:'Configurare Sistem - 3 sectiuni vizuale separate (era 2 in v13.23 - doar tipul fusese adaugat in dropdown, nu si UI structurat). Acum: I. Spital - Sectii si Structuri (sectie/compartiment/CPU/UPU/blocuri/lab/etc), II. Spitalizare de Zi (tip nou separat), III. Ambulatoriu - Cabinete. Modificat config_page.js liniile 130-170: AMBUL_TYPES + SPZI_TYPES filtre, 3 array-uri spitalSec/spziSec/ambulSec, secRow accepta parametru fixedType (cabinet|spitalizare_zi|null) - daca null afiseaza dropdown tip pentru schimbare libera; daca fixed, randul nu are dropdown (locked in sectiunea curenta). Sectiunea II are mesaj informativ: poti avea unitati separate per specialitate (chirurgie, medicina interna) sau comune. Empty state daca lipsesc unitati. addSection() updated cu kind=spitalizare_zi creand SPZ type+code. Tip-ul ramane sortat in dropdown SEC_TYPES intre Compartiment si CPU/UPU pentru consistenta.'},
   {version:'13.25',date:'2026-04-28',notes:'Bug 8 si Audit 9 din lista user. (Bug 8) Dropdown-urile IAAM cu sectia raportoare si sectia de dobandire (precum si filtru cazuri pe tabel) folosesc acum secOptsGrouped() consistent cu Autocontrol - 3 grupuri optgroup: Spital - Sectii / Structuri, Spitalizare de Zi, Ambulatoriu - Cabinete. Inainte foloseau secOpts() plat alfabetic, mixand sectii cu cabinete. Modificate 3 locuri in iaam.js (linii 275, 378, 379). (Audit 9) Helper generic renameCfgItem(arrName, idx, labelFriendly) in config_page.js care suporta atat array de string cat si array de obiect cu .name. Validare duplicate case-insensitive cu .some + .name extraction. Aplicat creion albastru ✎ (cu margin-right 4px inainte de X stergere) in 3 tag-list-uri: audit_prof_categories (Medic/Asistent/...), iaam_custom_cats, uv_surface_types. Probe_types deja avea (din v13.24). lab_sample_types ramas pe viitor pentru ca are cod mai complex cu default array inline (CFG.lab_sample_types || ["hemocultura",...] fallback).'},

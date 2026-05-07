@@ -1,9 +1,9 @@
 {
-  "version": "13.22",
+  "version": "13.25",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX cleanup luni inactive: la editare template raportare repetitiva, cand modifici active_months (bifezi/debifezi luni), instantele din lunile NEBIFATE sunt sterse automat.",
-    "Scenariu user: a salvat initial fara luni bifate (genera tot anul), apoi a editat si a bifat doar APR+MAI, dar instantele din IAN-MAR si IUN-DEC ramaneau in calendar. Acum se sterg automat la salvare.",
-    "Toast actualizat sa arate ambele counters: N duplicate, M din luni inactive/peste termen sterse."
+    "Bug 8 FIX: Dropdown sectii in IAAM acum grupat (Spital - Sectii / Structuri | Spitalizare de Zi | Ambulatoriu - Cabinete) - foloseste secOptsGrouped consistent cu Autocontrol. Aplicat in: filtru tabel cazuri (linie 275), formular Pasul 1 sectia raportoare (378), sectia de dobandire (379).",
+    "Audit 9 - rename in-place pentru entitati similare (toate folosesc helper nou renameCfgItem(arrName, idx, label)): (1) categorii profesionale audit igiena maini, (2) categorii IAAM custom, (3) tipuri suprafete UV. Plus probe_types deja avea (din v13.24). lab_sample_types lasat pe viitor (cod mai complex cu default array inline).",
+    "Toate creioanele albastre ✎ apar inainte de X (sterge). Click → prompt cu nume actual → validare duplicate (case-insensitive) → update + saveCfg + toast + logActivity."
   ]
 }

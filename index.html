@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.22</title>
+<title>CPIAAM Management v13.25</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2247,7 +2247,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.22';
+const APP_VERSION='13.25';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -3688,7 +3688,7 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 
 // Resolve ID→name for each config type. Returns name or '(dezactivat)' if not found.
 function rSec(id){if(!id)return '—';const s=CFG.sections.find(x=>x.id===id)||CFG.sections.find(x=>x.name===id);return s?_secDisplayName(s):id}
-function secLabel(secId){const sec=CFG.sections.find(s=>s.id===secId)||CFG.sections.find(s=>s.name===secId);if(!sec)return 'Sectia —';const t=sec.type||'sectie';const prefixes={sectie:'Sectia',compartiment:'Compartimentul',cpu_upu:'CPU/UPU',bloc_operator:'Bloc Operator',bloc_alimentar:'Bloc Alimentar',spalatorie:'Spalatoria',laborator:'Laboratorul',cabinet:'Cabinetul',explorari:'Explorari Functionale',radiologie:'Radiologie/Imagistica',serviciu:'Serviciul',altul:''};return (prefixes[t]||'Sectia')+' '+(sec.name||sec.id)}
+function secLabel(secId){const sec=CFG.sections.find(s=>s.id===secId)||CFG.sections.find(s=>s.name===secId);if(!sec)return 'Sectia —';const t=sec.type||'sectie';const prefixes={sectie:'Sectia',compartiment:'Compartimentul',spitalizare_zi:'Spitalizare de Zi',cpu_upu:'CPU/UPU',bloc_operator:'Bloc Operator',bloc_alimentar:'Bloc Alimentar',spalatorie:'Spalatoria',laborator:'Laboratorul',cabinet:'Cabinetul',explorari:'Explorari Functionale',radiologie:'Radiologie/Imagistica',serviciu:'Serviciul',altul:''};return (prefixes[t]||'Sectia')+' '+(sec.name||sec.id)}
 const ROLE_MAP={coordinator:'Coordonator CPIAAM',medic_bi:'Medic Boli Infectioase',asistent_igiena:'Asistent Igiena',director_medical:'Director medical',manager:'Manager',sef_sectie:'Sef Sectie',asistent_sef:'Asistent Sef',administrator:'Administrator',responsabil_deseuri:'Responsabil deseuri',other:'Altul'};
 const ROLE_HIDDEN_FROM_USER_MENU=['director_medical','manager'];
 function roleOpts(sel){return Object.entries(ROLE_MAP).map(([v,n])=>'<option value="'+v+'"'+(sel===v?' selected':'')+'>'+n+'</option>').join('')}
@@ -3715,9 +3715,24 @@ function getApplicableCombinations(probeTypes,sections){
   return count;
 }
 
-function _secDisplayName(s){var n=sn(s);if(s.type==='cabinet'&&!n.startsWith('Cab.'))return 'Cab. '+n;return n}
+function _secDisplayName(s){var n=sn(s);if(s.type==='cabinet'&&!n.startsWith('Cab.'))return 'Cab. '+n;if(s.type==='spitalizare_zi'&&!n.startsWith('SpZi'))return 'SpZi '+n;return n}
 function secOpts(selId){return CFG.sections.slice().sort(function(a,b){return _secDisplayName(a).localeCompare(_secDisplayName(b))}).map(s=>'<option value="'+s.id+'" '+(s.id===selId?'selected':'')+'>'+_secDisplayName(s)+'</option>').join('')}
-function secOptsGrouped(selId){var sp=[],am=[];CFG.sections.forEach(function(s){if(s.type==='cabinet')am.push(s);else sp.push(s)});sp.sort(function(a,b){return sn(a).localeCompare(sn(b))});am.sort(function(a,b){return sn(a).localeCompare(sn(b))});var h='<optgroup label="Spital">'+sp.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+sn(s)+'</option>'}).join('')+'</optgroup>';if(am.length)h+='<optgroup label="Ambulatoriu">'+am.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+_secDisplayName(s)+'</option>'}).join('')+'</optgroup>';return h}
+// v13.23 - 3 grupuri: Spital sectii/structuri, Spitalizare de Zi, Ambulatoriu cabinete
+function secOptsGrouped(selId){
+  var sp=[],sz=[],am=[];
+  CFG.sections.forEach(function(s){
+    if(s.type==='cabinet')am.push(s);
+    else if(s.type==='spitalizare_zi')sz.push(s);
+    else sp.push(s);
+  });
+  sp.sort(function(a,b){return sn(a).localeCompare(sn(b))});
+  sz.sort(function(a,b){return sn(a).localeCompare(sn(b))});
+  am.sort(function(a,b){return sn(a).localeCompare(sn(b))});
+  var h='<optgroup label="Spital - Sectii / Structuri">'+sp.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+sn(s)+'</option>'}).join('')+'</optgroup>';
+  if(sz.length)h+='<optgroup label="Spitalizare de Zi">'+sz.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+_secDisplayName(s)+'</option>'}).join('')+'</optgroup>';
+  if(am.length)h+='<optgroup label="Ambulatoriu - Cabinete">'+am.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+_secDisplayName(s)+'</option>'}).join('')+'</optgroup>';
+  return h;
+}
 
 // Generic opts from array of {id,name}
 function optsId(arr,selId){return (arr||[]).slice().sort(function(a,b){var na=typeof a==='string'?a:(a.name||a.id||'');var nb=typeof b==='string'?b:(b.name||b.id||'');return na.localeCompare(nb)}).map(v=>{const id=v.id||v.name||v;const nm=v.name||v.id||v;const sel=id===selId||nm===selId;return '<option value="'+id+'" '+(sel?'selected':'')+'>'+nm+'</option>'}).join('')}
@@ -4614,7 +4629,7 @@ async function rIAAM(el){
   h+='<div class="ac-filters" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">'+
     '<input type="text" placeholder="'+(isEN?'Search...':'Cauta...')+'" value="'+esc(f.search)+'" oninput="_iaamFilters.search=this.value;render()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px">'+
     '<select onchange="_iaamFilters.sec=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
-      '<option value="">'+(isEN?'All sections':'Toate sectiile')+'</option>'+secOpts(f.sec)+'</select>'+
+      '<option value="">'+(isEN?'All sections':'Toate sectiile')+'</option>'+secOptsGrouped(f.sec)+'</select>'+
     '<select onchange="_iaamFilters.month=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
       '<option value="">'+(isEN?'All months':'Toate lunile')+'</option>'+MO.map((m,i)=>'<option value="'+(i+1)+'"'+(f.month===''+(i+1)?' selected':'')+'>'+m+'</option>').join('')+'</select>'+
     '<select onchange="_iaamFilters.compl=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
@@ -4717,8 +4732,8 @@ function renderIaamSection(step){
       '<div class="fg"><label>'+T('iaam_domiciliu')+'</label><input id="f-dom" value="'+esc(d.domiciliu||'')+'" placeholder="Oras, strada (optional)"></div>';
     break;
   case 1: // Hospitalization
-    h='<div class="fg"><label>'+(isEN?'Reporting section':'Sectia raportoare')+'</label><select id="f-sec"><option value="">—</option>'+secOpts(d.section)+'</select></div>'+
-      '<div class="fg"><label>'+(isEN?'Attribution section (epidemiological)':'Sectia de dobandire (atribuire epidemiologica)')+'</label><select id="f-sec-attr"><option value="">'+(isEN?'— Same as reporting —':'— Identica cu raportoarea —')+'</option>'+secOpts(d.section_attribution||'')+'</select><small style="color:var(--txtL);font-size:10px;display:block;margin-top:2px">'+(isEN?'Section where infection was acquired. Leave empty if same as reporting section.':'Sectia unde s-a dobandit infectia. Lasati gol daca e aceeasi cu raportoarea.')+'</small></div>'+
+    h='<div class="fg"><label>'+(isEN?'Reporting section':'Sectia raportoare')+'</label><select id="f-sec"><option value="">—</option>'+secOptsGrouped(d.section)+'</select></div>'+
+      '<div class="fg"><label>'+(isEN?'Attribution section (epidemiological)':'Sectia de dobandire (atribuire epidemiologica)')+'</label><select id="f-sec-attr"><option value="">'+(isEN?'— Same as reporting —':'— Identica cu raportoarea —')+'</option>'+secOptsGrouped(d.section_attribution||'')+'</select><small style="color:var(--txtL);font-size:10px;display:block;margin-top:2px">'+(isEN?'Section where infection was acquired. Leave empty if same as reporting section.':'Sectia unde s-a dobandit infectia. Lasati gol daca e aceeasi cu raportoarea.')+'</small></div>'+
       '<div class="fr"><div class="fg"><label>Nr. inregistrare (registru)</label><input id="f-regn" value="'+esc(d.reg_number||'')+'" placeholder="optional"></div>'+
       '<div class="fg"><label>Nr. foaie observatie (FO)</label><input id="f-fon" value="'+esc(d.fo_number||'')+'" placeholder="optional"></div></div>'+
       '<div class="fg"><label>Medic curant</label><input id="f-doc" value="'+esc(d.doctor||'')+'"></div>'+
@@ -6343,8 +6358,9 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
     '<option value="yes"'+(_autoProbeFilters.dsp==='yes'?' selected':'')+'>'+(isEN?'Only with DSP':'Doar cu DSP')+'</option>'+
     '<option value="no"'+(_autoProbeFilters.dsp==='no'?' selected':'')+'>'+(isEN?'Only without DSP':'Doar fara DSP')+'</option>'+
   '</select></div>';
-  h+='<div class="fg"><label>'+(isEN?'From':'De la')+'</label><input type="date" value="'+(_autoProbeFilters.dateFrom||'')+'" onchange="_autoProbeFilters.dateFrom=this.value;_autoPage=0;render()"></div>';
-  h+='<div class="fg"><label>'+(isEN?'To':'Pana la')+'</label><input type="date" value="'+(_autoProbeFilters.dateTo||'')+'" onchange="_autoProbeFilters.dateTo=this.value;_autoPage=0;render()"></div>';
+  // v13.26 - min/max date range (browser-ul native limita anii la 4 cifre, prevenind salvari cu an gresit ca 26 in loc de 2026)
+  h+='<div class="fg"><label>'+(isEN?'From':'De la')+'</label><input type="date" min="2000-01-01" max="2099-12-31" value="'+(_autoProbeFilters.dateFrom||'')+'" onchange="_autoProbeFilters.dateFrom=this.value;_autoPage=0;render()"></div>';
+  h+='<div class="fg"><label>'+(isEN?'To':'Pana la')+'</label><input type="date" min="2000-01-01" max="2099-12-31" value="'+(_autoProbeFilters.dateTo||'')+'" onchange="_autoProbeFilters.dateTo=this.value;_autoPage=0;render()"></div>';
   h+='</div>';
 
   // Action buttons
@@ -6370,7 +6386,14 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
     else if(sc==='type'){va=rProbe(a.probe_type);vb=rProbe(b.probe_type)}
     else if(sc==='section'){va=rSec(a.section);vb=rSec(b.section)}
     else if(sc==='result'){va=a.result;vb=b.result}
-    else if(sc==='reg'){va=a.reg_number||'';vb=b.reg_number||''}
+    else if(sc==='reg'){
+      // v13.25 - sortare numerica nr inregistrare. Extrage prima secventa de cifre din "1234/2025" -> 1234. Fallback string daca egale/lipsa.
+      var ea=String(a.reg_number||'').match(/\d+/),eb=String(b.reg_number||'').match(/\d+/);
+      var na=ea?parseInt(ea[0]):-1,nb=eb?parseInt(eb[0]):-1;
+      va=na;vb=nb;
+      // tie-break alfabetic complet
+      if(na===nb){va=a.reg_number||'';vb=b.reg_number||''}
+    }
     else if(sc==='organism'){va=a.organism||'';vb=b.organism||''}
     else if(sc==='dsp'){va=a.dsp_parallel?1:0;vb=b.dsp_parallel?1:0}
     else{va=a.date||'';vb=b.date||''}
@@ -6471,7 +6494,10 @@ async function editAuto(id){
     '<div class="fg"><label>'+(isEN?'Notes':'Observatii')+'</label><textarea id="f-auto-n" rows="2">'+(r.notes||'')+'</textarea></div>',
   '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaza')+'</button>'+(!id?'<button class="btn bp" style="background:var(--teal);opacity:.85" onclick="saveAutoAndNew()">'+(isEN?'Save + New':'Salveaza + Noua')+'</button>':'')+
   '<button class="btn bp" onclick="saveAuto('+(id||'null')+')">'+(isEN?'Save & Close':'Salveaza')+'</button>');
-  setTimeout(()=>{addDatePreview('f-auto-dt');attachDirtyTracking()},50);
+  setTimeout(()=>{addDatePreview('f-auto-dt');attachDirtyTracking();
+    // v13.27 - in modul EDIT, marcheaza form-ul ca dirty implicit pentru ca user sa primeasca avertisment la click in afara (consistent cu introducerea de probe noi - data e oricum incarcata, click pe overlay nu trebuie sa inchida silentios fara confirm)
+    if(id)markFormDirty();
+  },50);
 }
 async function _collectAutoRec(id){
   const mc=document.getElementById('mdc');
@@ -6490,10 +6516,17 @@ async function saveAuto(id){
 async function saveAutoAndNew(){
   const rec=await _collectAutoRec(null);if(!rec)return;
   await pt('autocontrol',rec);logActivity('Adaugat proba autocontrol — '+rSec(rec.section));
-  // Keep ALL common fields so user introduces series of similar probes fast (typical: all with DSP in a quarter)
-  const keep={probe_type:rec.probe_type,section:rec.section,date:rec.date,quarter:rec.quarter,month:rec.month,dsp_parallel:rec.dsp_parallel};
+  // v13.28 - pastreaza si reg_number incrementat (ex 1234 -> 1235, 1234/2025 -> 1235/2025)
+  var nextReg='';
+  if(rec.reg_number){
+    var m=String(rec.reg_number).match(/^(\D*)(\d+)(.*)$/);
+    if(m){nextReg=m[1]+(parseInt(m[2])+1)+m[3]}
+    else nextReg=rec.reg_number; // fallback
+  }
+  // Keep ALL common fields so user introduces series of similar probes fast
+  const keep={probe_type:rec.probe_type,section:rec.section,date:rec.date,quarter:rec.quarter,month:rec.month,dsp_parallel:rec.dsp_parallel,reg_number:nextReg};
   closeM();render();
-  setTimeout(()=>{editAuto(null);setTimeout(()=>{const mc=document.getElementById('mdc');if(!mc)return;const s=(id,val)=>{const el=mc.querySelector('#'+id);if(el)el.value=val};s('f-auto-tp',keep.probe_type);s('f-auto-sec',keep.section);s('f-auto-dt',keep.date);s('f-auto-q',keep.quarter);s('f-auto-mo',keep.month);s('f-auto-dsp',String(!!keep.dsp_parallel))},100)},100);
+  setTimeout(()=>{editAuto(null);setTimeout(()=>{const mc=document.getElementById('mdc');if(!mc)return;const s=(id,val)=>{const el=mc.querySelector('#'+id);if(el)el.value=val};s('f-auto-tp',keep.probe_type);s('f-auto-sec',keep.section);s('f-auto-dt',keep.date);s('f-auto-q',keep.quarter);s('f-auto-mo',keep.month);s('f-auto-dsp',String(!!keep.dsp_parallel));s('f-auto-reg',keep.reg_number)},100)},100);
 }
 function expAutoCSV(){ga('autocontrol').then(d=>{const rows=d.filter(r=>r.year===A.year);if(!rows.length){alert('Nimic de exportat.');return}
   const csv='\uFEFF'+'Trimestru,Luna,Data,Tip Proba,Sectie,Rezultat,Germen,UFC,Detalii,DSP,Obs\n'+rows.map(r=>r.quarter+','+r.month+',"'+(r.date||'')+'","'+rProbe(r.probe_type)+'","'+rSec(r.section)+'",'+r.result+',"'+(r.organism||'')+'","'+(r.ufc_count||'')+'","'+(r.details||'')+'",'+( r.dsp_parallel?'Da':'Nu')+',"'+(r.notes||'')+'"').join('\n');
@@ -6915,7 +6948,8 @@ async function rStatistici(el){
 
   // ── SECTION B: Date per Sectie (colapsabil) — doar sectii si compartimente ──
   var allSecs=CFG.sections||[];
-  var internareSecs=allSecs.filter(function(s){return s.type==='sectie'||s.type==='compartiment'});
+  // v13.23 - spitalizare_zi inclusa in internare (are paturi/om-zile/externati ca sectie/compartiment)
+  var internareSecs=allSecs.filter(function(s){return s.type==='sectie'||s.type==='compartiment'||s.type==='spitalizare_zi'});
   var ambulSecs=allSecs.filter(function(s){return s.type==='cabinet'});
 
   if(internareSecs.length>0){
@@ -7282,7 +7316,10 @@ var _bioFilters={search:'',type:'',month:'',tp:''};
 var _bioSumSort={key:'tp',dir:'asc'};
 // v12.100 - sumarul afiseaza implicit TOATE produsele (nu doar filtrate). Toggle din header.
 var _bioSumarShowAll=true;
+// v13.24 - state persist pentru collapse/expand sumar (era hardcodat 'open' la fiecare render)
+var _bioSumarOpen=true;
 function bioSumarToggle(){_bioSumarShowAll=!_bioSumarShowAll;render()}
+function bioSumarToggleOpen(e){_bioSumarOpen=e.target.open}
 function bioSortSumar(key){
   if(_bioSumSort.key===key)_bioSumSort.dir=(_bioSumSort.dir==='asc'?'desc':'asc');
   else{_bioSumSort.key=key;_bioSumSort.dir='asc'}
@@ -7478,7 +7515,7 @@ async function rBio(el){
   var toggleBtn=hasActiveFilter?'<button class="btn bo bsm" onclick="event.stopPropagation();event.preventDefault();bioSumarToggle()" style="margin-left:10px;font-size:10px;padding:2px 8px" title="Comuta intre toate produsele si doar cele din filtrul activ">'+(_bioSumarShowAll?'Arata: Toate':'Arata: Filtrate')+'</button>':'';
   var modeLabel=hasActiveFilter?(_bioSumarShowAll?'<span style="font-size:10px;color:var(--txtL);font-weight:400;margin-left:8px">(ignora filtrele)</span>':'<span style="font-size:10px;color:#B45309;font-weight:600;margin-left:8px">(doar filtrate)</span>'):'';
   if(sumar.length>0){
-    h+='<details open style="margin-bottom:14px;border:1px solid var(--brd);border-radius:8px;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.04)">'+
+    h+='<details'+(_bioSumarOpen?' open':'')+' ontoggle="bioSumarToggleOpen(event)" style="margin-bottom:14px;border:1px solid var(--brd);border-radius:8px;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.04)">'+
       '<summary style="cursor:pointer;padding:10px 14px;font-size:13px;font-weight:700;color:var(--navy);list-style:none;user-select:none;border-bottom:1px solid var(--brd);background:var(--bg)">'+
         '<span style="display:inline-block;margin-right:6px">▾</span>'+summaryHeaderText+modeLabel+toggleBtn+
         '<span style="float:right;font-size:11px;color:var(--txtL);font-weight:400">click rand pentru detalii</span>'+
@@ -17009,6 +17046,7 @@ var CHART_PALETTE_SOFT=['rgba(27,58,107,0.6)','rgba(15,123,108,0.6)','rgba(212,1
 const SEC_TYPES=[
   {v:'sectie',n:'Sectie'},
   {v:'compartiment',n:'Compartiment'},
+  {v:'spitalizare_zi',n:'Spitalizare de Zi'}, // v13.23 - structura noua (intre internare si ambulatoriu)
   {v:'cpu_upu',n:'CPU / UPU'},
   {v:'bloc_operator',n:'Bloc Operator'},
   {v:'bloc_alimentar',n:'Bloc Alimentar'},
@@ -17203,12 +17241,13 @@ async function rCfg(el){
 
   '<div class="pn" id="cfg-prof"><div class="ph"><h3>Categorii Profesionale (Audit Igien\u0103 M\u00e2ini)</h3></div><div class="pb">'+
     '<div class="ib inf">Categorii profesionale folosite la completarea calupurilor de observatie pentru auditul igienei mainilor.</div>'+
-    '<div class="tag-list">'+(CFG.audit_prof_categories||[]).map((c,i)=>'<span class="tag">'+esc(c)+'<span class="tag-x" onclick="CFG.audit_prof_categories.splice('+i+',1);saveCfg();render()">&#215;</span></span>').join('')+'</div>'+
+    '<div class="tag-list">'+(CFG.audit_prof_categories||[]).map((c,i)=>'<span class="tag">'+esc(c)+'<span class="tag-x" onclick="renameCfgItem(\'audit_prof_categories\','+i+',\'categoria profesionala\')" title="Redenumeste" style="color:#2563B0;margin-right:4px">&#9998;</span><span class="tag-x" onclick="CFG.audit_prof_categories.splice('+i+',1);saveCfg();render()" title="Sterge">&#215;</span></span>').join('')+'</div>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-prof-cat" placeholder="Categorie profesionala noua"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-prof-cat\').value.trim();if(v){if(!CFG.audit_prof_categories)CFG.audit_prof_categories=[];CFG.audit_prof_categories.push(v);saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
   '<div class="pn" id="cfg-probe"><div class="ph"><h3>Tipuri de Probe (Autocontrol)</h3></div><div class="pb">'+
-    '<div class="tag-list">'+CFG.probe_types.map((p,i)=>{const nm=typeof p==='string'?p:(p.name||p.id||'?');return '<span class="tag">'+nm+'<span class="tag-x" onclick="CFG.probe_types.splice('+i+',1);saveCfg();render()">&#215;</span></span>'}).join('')+'</div>'+
+    // v13.29 - editare in-place a numelui tipului de proba (click pe pencil ✎)
+    '<div class="tag-list">'+CFG.probe_types.map((p,i)=>{const nm=typeof p==='string'?p:(p.name||p.id||'?');return '<span class="tag">'+nm+'<span class="tag-x" onclick="renameProbe('+i+')" title="Redenumeste" style="cursor:pointer;color:#2563B0;margin-right:4px">&#9998;</span><span class="tag-x" onclick="CFG.probe_types.splice('+i+',1);saveCfg();render()" title="Sterge">&#215;</span></span>'}).join('')+'</div>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-probe" placeholder="Tip proba nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-probe\').value.trim();if(v){CFG.probe_types.push({id:genId(\'probe\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
@@ -17227,7 +17266,7 @@ async function rCfg(el){
     '<p style="font-size:12px;color:var(--txtL);margin-bottom:10px">Categoriile ECDC sunt predefinite si nu pot fi sterse. Poti adauga categorii personalizate.</p>'+
     '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">'+IAAM_CATS.map(g=>g.items.map(it=>'<span class="tag" style="background:#EEF2FF;border:1px solid #C7D2FE;color:var(--navy)">'+it.c+' — '+it.n+' <span style="font-size:9px;background:var(--navy);color:#fff;padding:1px 4px;border-radius:3px;margin-left:3px">ECDC</span></span>').join('')).join('')+'</div>'+
     '<h4 style="font-size:12px;color:var(--navy);margin-bottom:6px">Categorii personalizate</h4>'+
-    '<div class="tag-list">'+(CFG.iaam_custom_cats||[]).map((c,i)=>'<span class="tag">'+esc(c.name)+'<span class="tag-x" onclick="CFG.iaam_custom_cats.splice('+i+',1);saveCfg();render()">&#215;</span></span>').join('')+'</div>'+
+    '<div class="tag-list">'+(CFG.iaam_custom_cats||[]).map((c,i)=>'<span class="tag">'+esc(c.name)+'<span class="tag-x" onclick="renameCfgItem(\'iaam_custom_cats\','+i+',\'categoria IAAM\')" title="Redenumeste" style="color:#2563B0;margin-right:4px">&#9998;</span><span class="tag-x" onclick="CFG.iaam_custom_cats.splice('+i+',1);saveCfg();render()" title="Sterge">&#215;</span></span>').join('')+'</div>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-iaam-cat" placeholder="Categorie personalizata noua"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-iaam-cat\').value.trim();if(v){if(!CFG.iaam_custom_cats)CFG.iaam_custom_cats=[];CFG.iaam_custom_cats.push({id:genId(\'icat\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
@@ -17321,7 +17360,7 @@ async function rCfg(el){
   '<h4 style="color:var(--teal);margin-bottom:10px">Testare UV Check — Tipuri Suprafete</h4>'+
   '<div class="ib inf" style="margin-bottom:10px">Tipurile de suprafe\u021Be disponibile \u00EEn formularul UV Check. Rezultatul este doar Conform/Neconform (f\u0103r\u0103 valoare numeric\u0103).</div>'+
   '<div class="tag-list">'+(CFG.uv_surface_types||[]).map((s,i)=>
-    '<span class="tag">'+s.name+'<span class="tag-x" onclick="CFG.uv_surface_types.splice('+i+',1);saveCfg();render()">&#215;</span></span>').join('')+
+    '<span class="tag">'+s.name+'<span class="tag-x" onclick="renameCfgItem(\'uv_surface_types\','+i+',\'tip suprafata UV\')" title="Redenumeste" style="color:#2563B0;margin-right:4px">&#9998;</span><span class="tag-x" onclick="CFG.uv_surface_types.splice('+i+',1);saveCfg();render()" title="Sterge">&#215;</span></span>').join('')+
   '</div>'+
   '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-uv-name" placeholder="Tip suprafata UV"></div>'+
   '<div><button class="btn bp" onclick="var n=document.getElementById(\'new-uv-name\').value.trim();if(n){if(!CFG.uv_surface_types)CFG.uv_surface_types=[];CFG.uv_surface_types.push({id:genId(\'uv\'),name:n});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
@@ -17607,6 +17646,45 @@ function ipcCatName(id){
   var c=(CFG.ipc_categories||[]).find(function(x){return x.id===id});
   if(!c)return '—';
   return (CFG.lang==='en'&&c.name_en)?c.name_en:c.name_ro;
+}
+
+// v13.29 - rename inline pentru tipuri de probe (CFG.probe_types)
+async function renameProbe(idx){
+  var p=CFG.probe_types[idx];if(!p)return;
+  var oldName=typeof p==='string'?p:(p.name||p.id||'');
+  var newName=prompt('Redenumeste tipul de proba:',oldName);
+  if(!newName||newName.trim()===''||newName===oldName)return;
+  newName=newName.trim();
+  // Verific duplicate
+  if(CFG.probe_types.some(function(x,i){return i!==idx&&((typeof x==='string'?x:x.name)||'').toLowerCase()===newName.toLowerCase()})){
+    alert('Tipul de proba "'+newName+'" exista deja.');return;
+  }
+  if(typeof p==='string'){CFG.probe_types[idx]=newName} // legacy
+  else{CFG.probe_types[idx].name=newName}
+  await saveCfg();
+  if(typeof showToast==='function')showToast('Redenumit "'+oldName+'" -> "'+newName+'"');
+  if(typeof logActivity==='function')logActivity('Redenumit tip proba: '+oldName+' -> '+newName);
+  render();
+}
+
+// v13.25 - generic rename pentru entitati simple (string sau obj.name) din CFG arrays
+async function renameCfgItem(arrName,idx,labelFriendly){
+  var arr=CFG[arrName];if(!arr||!arr[idx])return;
+  var item=arr[idx];
+  var oldName=typeof item==='string'?item:(item.name||item.id||'');
+  var newName=prompt('Redenumeste '+labelFriendly+':',oldName);
+  if(!newName||newName.trim()===''||newName===oldName)return;
+  newName=newName.trim();
+  // Verific duplicate
+  if(arr.some(function(x,i){return i!==idx&&((typeof x==='string'?x:x.name)||'').toLowerCase()===newName.toLowerCase()})){
+    alert(labelFriendly+' "'+newName+'" exista deja.');return;
+  }
+  if(typeof item==='string')arr[idx]=newName;
+  else arr[idx].name=newName;
+  await saveCfg();
+  if(typeof showToast==='function')showToast('Redenumit "'+oldName+'" -> "'+newName+'"');
+  if(typeof logActivity==='function')logActivity('Redenumit '+arrName+': '+oldName+' -> '+newName);
+  render();
 }
 
 </script>
@@ -18951,6 +19029,9 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.25',date:'2026-04-28',notes:'Bug 8 si Audit 9 din lista user. (Bug 8) Dropdown-urile IAAM cu sectia raportoare si sectia de dobandire (precum si filtru cazuri pe tabel) folosesc acum secOptsGrouped() consistent cu Autocontrol - 3 grupuri optgroup: Spital - Sectii / Structuri, Spitalizare de Zi, Ambulatoriu - Cabinete. Inainte foloseau secOpts() plat alfabetic, mixand sectii cu cabinete. Modificate 3 locuri in iaam.js (linii 275, 378, 379). (Audit 9) Helper generic renameCfgItem(arrName, idx, labelFriendly) in config_page.js care suporta atat array de string cat si array de obiect cu .name. Validare duplicate case-insensitive cu .some + .name extraction. Aplicat creion albastru ✎ (cu margin-right 4px inainte de X stergere) in 3 tag-list-uri: audit_prof_categories (Medic/Asistent/...), iaam_custom_cats, uv_surface_types. Probe_types deja avea (din v13.24). lab_sample_types ramas pe viitor pentru ca are cod mai complex cu default array inline (CFG.lab_sample_types || ["hemocultura",...] fallback).'},
+  {version:'13.24',date:'2026-04-28',notes:'6 bug-uri/feature din lista user (in 1 bump pentru eficienta). (1) Sumar Stocuri biocide cu state persistent _bioSumarOpen + ontoggle event - inainte hardcodat open la fiecare render facand click in pagina sa dezvaluie sumarul automat. (2) Sortare nr inregistrare autocontrol numerica: extrage prima secventa cifre din reg_number cu match(/\\d+/), parseInt, sortare numeric (1234 < 11234), tie-break alfabetic complet daca numerele egale. Inainte string sort dadea 11<2<3. (3) Filtru data probe autocontrol cu min=2000-01-01 max=2099-12-31 - browser native limita 4 cifre an, prevenind salvari accidentale ca 0026. (4) Editare proba autocontrol marcheaza markFormDirty() la deschidere modal cu setTimeout 50ms (dupa attachDirtyTracking) cand id este definit (modul edit) - asa click in afara declanseaza showUnsavedWarning consistent cu adaugare. (5) saveAutoAndNew pastreaza si reg_number INCREMENTAT - regex /^(\\D*)(\\d+)(.*)$/ extrage prefix non-cifre, secventa cifre, suffix; incrementeaza secventa numerica si reasambleaza (1234/2025 -> 1235/2025). Plus s(f-auto-reg) inclus in setTimeout-ul de re-populare. (6) Feature renameProbe in config_page.js: tag tip proba primeste creion albastru ✎ langa X. Click → prompt cu numele actual, validare duplicate (case-insensitive), update CFG.probe_types[idx].name (sau string legacy), saveCfg + showToast + logActivity. Util pentru standardizare case (Apa sterile vs Apa Sterila).'},
+  {version:'13.23',date:'2026-04-28',notes:'Tip nou structura SPITALIZARE DE ZI in Configurare → Sectii. Audit confirmat: cabinet (ambulatoriu) ramane tip separat - schimbarea ar rupe statistici (split om-zile/consultatii) + UI autocontrol matrice + config tabs. Spitalizare_zi se adauga ca tip nou in SEC_TYPES, prefixes (helpers.js), _secDisplayName (sufix SpZi), secOptsGrouped (3 grupuri optgroup: Spital-Sectii/Structuri, Spitalizare de Zi, Ambulatoriu-Cabinete - daca grupul e gol nu apare). Statistici.js internareSecs include si spitalizare_zi (paturi, om-zile, externati - structurat ca sectia). Aplicabil automat in IAAM dropdown (foloseste secOptsGrouped), Autocontrol matrice (cade in "Spital" pentru ca AMBUL_TYPES=[cabinet] doar). Wizard.js initial nu il include (pentru wizard rapid sectie/compartiment) - se adauga manual din Configurare. Plus rapoarte: Word reports preiau secsions via rSec/_secDisplayName care acum recunosc spitalizare_zi cu prefix SpZi.'},
   {version:'13.22',date:'2026-04-28',notes:'FIX cleanup luni inactive in template raportare repetitiva. Scenariu user: a salvat IACRS initial fara sa bifeze nicio luna in active_months (sistemul intelege gol = TOATE lunile, deci a generat instante pentru tot anul 2026 IAN-DEC). Apoi a editat template si a bifat doar APR+MAI, dar codul vechi nu stergea instantele din lunile NEBIFATE acum (IAN, FEB, MAR, IUN-DEC ramaneau in calendar). Fix v13.22: dupa generare si dupa cleanup hardLimit, scaneaza din nou ga(deadlines), filtreaza instantele cu _parentName===t.name si parseaza luna din due_date.substring(5,7). Daca active_months e setat (length>0) si luna instantei NU e in active_months, sterge instanta. Aplicabil doar pentru frequency=saptamanal (lunar/trimestrial/anual au luni fixe predefinite, nu user-bifate). Toast updated cu ambele counters: N duplicate, M din luni inactive/peste termen sterse pentru NUME.'},
   {version:'13.21',date:'2026-04-28',notes:'FIX critic: la editare/salvare template raportare repetitiva, instantele se DUPLICAU la fiecare salvare in calendar. Cauza: linia 371 din _genInstancesForTemplate folosea var exists=existing.find(d=>d.name===t.name && d.due_date===due) - dar numele instantelor au sufix (IACRS — S19 2026 vs IACRS template) deci d.name === t.name returna FALSE pentru orice instanta deja generata. Rezultat: la fiecare Salveaza pe template, codul nu detecta instantele existente si crea NOI duplicate cu acelasi due_date. Plus de la v13.18 bug-ul a generat 4-5 duplicate pentru fiecare saptamana (dupa cate edituri facuse user-ul). Fix v13.21: dedup acum prin camp invizibil _parentName (setat la generare = t.name). Plus pre-build index byDue al instantelor existente apartinand template-ului curent (filter d._parentName===t.name) - daca due_date apare de mai multe ori, prima e pastrata, restul sterse automat (cleanup duplicate generate de bug). Toast Curatare automata: N duplicate sterse pentru NUME afisat. Cleanup hard limit (peste due_date) pastrat din v13.18. Dupa upload v13.21 si hard refresh, user trebuie editeze fiecare template repetitiv si click Salveaza - automat se sterg duplicatele si instantele peste termen.'},
   {version:'13.20',date:'2026-04-28',notes:'UX banner Migreaza la produs (documente legacy de pe miscari) repozitionat SUS deasupra documentelor individuale si redesign vizibil. Inainte aparea jos dupa toate cele 4 sectiuni de documente, usor de ratat. Acum: imediat dupa header-ul Documente produs, banner cu gradient galben-portocaliu (linear-gradient 135deg #FEF3C7 -> #FDE68A) cu border 2px solid #F59E0B, icon avertisment 24px, text de explicatie ce face migrarea (deduplicare, mutare la nivel produs, rezultat mai curat), buton portocaliu vibrant (background #F59E0B color #fff font-weight 700 box-shadow) cu icon refresh emoji 1F504. Banner aparare doar daca legacyCount>0 SI prod este definit (nu si la documente fara product_id - cazuri rare). Pastreaza functionalitatea bioMigrateDocsToProduct neschimbata.'},

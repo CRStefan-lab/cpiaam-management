@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.25</title>
+<title>CPIAAM Management v13.27</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2247,7 +2247,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.25';
+const APP_VERSION='13.27';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6516,15 +6516,9 @@ async function saveAuto(id){
 async function saveAutoAndNew(){
   const rec=await _collectAutoRec(null);if(!rec)return;
   await pt('autocontrol',rec);logActivity('Adaugat proba autocontrol — '+rSec(rec.section));
-  // v13.28 - pastreaza si reg_number incrementat (ex 1234 -> 1235, 1234/2025 -> 1235/2025)
-  var nextReg='';
-  if(rec.reg_number){
-    var m=String(rec.reg_number).match(/^(\D*)(\d+)(.*)$/);
-    if(m){nextReg=m[1]+(parseInt(m[2])+1)+m[3]}
-    else nextReg=rec.reg_number; // fallback
-  }
-  // Keep ALL common fields so user introduces series of similar probes fast
-  const keep={probe_type:rec.probe_type,section:rec.section,date:rec.date,quarter:rec.quarter,month:rec.month,dsp_parallel:rec.dsp_parallel,reg_number:nextReg};
+  // v13.27 - pastreaza ACELASI nr inregistrare (cazul tipic: pe un buletin sunt 4-5 probe diferite cu acelasi nr).
+  // Restul campurilor comune se pastreaza ca user-ul nu retasteaza la fiecare proba din serie.
+  const keep={probe_type:rec.probe_type,section:rec.section,date:rec.date,quarter:rec.quarter,month:rec.month,dsp_parallel:rec.dsp_parallel,reg_number:rec.reg_number||''};
   closeM();render();
   setTimeout(()=>{editAuto(null);setTimeout(()=>{const mc=document.getElementById('mdc');if(!mc)return;const s=(id,val)=>{const el=mc.querySelector('#'+id);if(el)el.value=val};s('f-auto-tp',keep.probe_type);s('f-auto-sec',keep.section);s('f-auto-dt',keep.date);s('f-auto-q',keep.quarter);s('f-auto-mo',keep.month);s('f-auto-dsp',String(!!keep.dsp_parallel));s('f-auto-reg',keep.reg_number)},100)},100);
 }
@@ -17170,17 +17164,25 @@ async function rCfg(el){
   '</div></div>';
 
   (function(){
+    // v13.26 - 3 sectiuni vizuale separate (era 2: Spital + Ambulatoriu).
     var AMBUL_TYPES=['cabinet'];
-    var spitalSec=[], ambulSec=[];
-    CFG.sections.forEach(function(s,i){s._idx=i;if(AMBUL_TYPES.indexOf(s.type)>=0)ambulSec.push(s);else spitalSec.push(s)});
-    function secRow(s){
+    var SPZI_TYPES=['spitalizare_zi'];
+    var spitalSec=[], spziSec=[], ambulSec=[];
+    CFG.sections.forEach(function(s,i){
+      s._idx=i;
+      if(AMBUL_TYPES.indexOf(s.type)>=0)ambulSec.push(s);
+      else if(SPZI_TYPES.indexOf(s.type)>=0)spziSec.push(s);
+      else spitalSec.push(s);
+    });
+    function secRow(s,fixedType){
       var i=s._idx,nPer=(s.bed_periods||[]).length,wb=nPer>0?getWeightedBeds(s.name,A.year).toFixed(1):'';
-      var isAmbul=AMBUL_TYPES.indexOf(s.type)>=0;
+      // fixedType: daca e setat (ex: 'cabinet' sau 'spitalizare_zi'), NU afisa dropdown tip (locked).
+      // Pentru sectiuni Spital, dropdown afisat sa permita schimbare intre tipuri compatibile.
       return '<tr>'+
       '<td><input value="'+s.name+'" onchange="CFG.sections['+i+'].name=this.value;if(!CFG.sections['+i+'].code)autoGenCode('+i+')" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px"></td>'+
       '<td><input value="'+(s.code||'')+'" onchange="CFG.sections['+i+'].code=this.value" placeholder="auto" style="border:1px solid var(--brd);border-radius:4px;padding:4px 6px;width:100%;font-size:12px;text-align:center"></td>'+
-      (isAmbul?'':
-      '<td><select onchange="CFG.sections['+i+'].type=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px;width:100%">'+_secTypeOpts(s.type)+'</select></td>')+
+      (fixedType?'':
+      '<td><select onchange="CFG.sections['+i+'].type=this.value;saveCfg();render()" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px;width:100%">'+_secTypeOpts(s.type)+'</select></td>')+
       '<td><div style="display:flex;align-items:center;gap:4px">'+
         '<input type="number" value="'+(s.beds||0)+'" min="0" onchange="CFG.sections['+i+'].beds=+this.value" style="width:60px;border:1px solid var(--brd);border-radius:4px;padding:4px 6px;font-size:12px;text-align:right">'+
         '<button class="btn bo bsm" onclick="editBedPeriods('+i+')" title="Perioade paturi">&#128197;</button>'+
@@ -17191,17 +17193,26 @@ async function rCfg(el){
     // I. SPITAL
     h+=
     '<div class="pn" id="cfg-sec-sp"><div class="ph"><h3>I. Spital — Sectii si Structuri</h3><button class="btn bp bsm" onclick="addSection(\'spital\')">+ Adauga sectie/structura</button></div><div class="pb">'+
-      '<div class="ib inf">Sectiile, compartimentele si structurile spitalului (bloc alimentar, spalatorie, laboratoare, explorari, radiologie, servicii auxiliare).</div>'+
+      '<div class="ib inf">Sectiile, compartimentele si structurile spitalului (sectie, compartiment, CPU/UPU, bloc operator, bloc alimentar, spalatorie, laboratoare, explorari, radiologie, servicii auxiliare).</div>'+
       '<table class="dt"><thead><tr><th>Denumire</th><th style="width:70px">Cod</th><th style="width:120px">Tip</th><th style="width:160px">Paturi</th><th style="width:50px">&#215;</th></tr></thead>'+
-      '<tbody>'+spitalSec.map(secRow).join('')+'</tbody></table>'+
+      '<tbody>'+spitalSec.map(function(s){return secRow(s,null)}).join('')+'</tbody></table>'+
       '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn bp" onclick="saveCfg();alert(\'Salvat!\')">Salveaza</button><button class="btn bp bsm" onclick="addSection(\'spital\')">+ Adauga sectie/structura</button></div>'+
     '</div></div>';
-    // II. AMBULATORIU
+    // II. SPITALIZARE DE ZI (v13.26)
     h+=
-    '<div class="pn" id="cfg-sec-am" style="margin-top:14px"><div class="ph"><h3>II. Ambulatoriu — Cabinete</h3><button class="btn bp bsm" onclick="addSection(\'ambulatoriu\')">+ Adauga cabinet</button></div><div class="pb">'+
+    '<div class="pn" id="cfg-sec-spzi" style="margin-top:14px"><div class="ph"><h3>II. Spitalizare de Zi</h3><button class="btn bp bsm" onclick="addSection(\'spitalizare_zi\')">+ Adauga unitate spitalizare zi</button></div><div class="pb">'+
+      '<div class="ib inf">Unitati de spitalizare de zi. Pot fi separate per specialitate (ex: x paturi chirurgie, y paturi medicina interna) sau comune. Sunt incluse in indicatori de internare (om-zile, paturi, externati).</div>'+
+      '<table class="dt"><thead><tr><th>Denumire</th><th style="width:70px">Cod</th><th style="width:160px">Paturi</th><th style="width:50px">&#215;</th></tr></thead>'+
+      '<tbody>'+spziSec.map(function(s){return secRow(s,'spitalizare_zi')}).join('')+'</tbody></table>'+
+      (spziSec.length===0?'<div style="font-size:11px;color:var(--txtL);font-style:italic;padding:8px 0">Nicio unitate de spitalizare de zi inregistrata. Click pe „+ Adauga unitate spitalizare zi" pentru a incepe.</div>':'')+
+      '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn bp" onclick="saveCfg();alert(\'Salvat!\')">Salveaza</button><button class="btn bp bsm" onclick="addSection(\'spitalizare_zi\')">+ Adauga unitate spitalizare zi</button></div>'+
+    '</div></div>';
+    // III. AMBULATORIU
+    h+=
+    '<div class="pn" id="cfg-sec-am" style="margin-top:14px"><div class="ph"><h3>III. Ambulatoriu — Cabinete</h3><button class="btn bp bsm" onclick="addSection(\'ambulatoriu\')">+ Adauga cabinet</button></div><div class="pb">'+
       '<div class="ib inf">Cabinetele din ambulatoriul spitalului. Fiecare cabinet apare separat in autocontrol pentru monitorizarea probelor microbiologice.<br><strong>Important:</strong> Foloseste prefixul "Cab." in denumire (ex: "Cab. Pediatrie") pentru a diferentia cabinetele de sectiile cu acelasi nume.</div>'+
       '<table class="dt"><thead><tr><th>Denumire cabinet</th><th style="width:70px">Cod</th><th style="width:160px">Paturi</th><th style="width:50px">&#215;</th></tr></thead>'+
-      '<tbody>'+ambulSec.map(secRow).join('')+'</tbody></table>'+
+      '<tbody>'+ambulSec.map(function(s){return secRow(s,'cabinet')}).join('')+'</tbody></table>'+
       '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn bp" onclick="saveCfg();alert(\'Salvat!\')">Salveaza</button><button class="btn bp bsm" onclick="addSection(\'ambulatoriu\')">+ Adauga cabinet</button></div>'+
     '</div></div>';
   })();
@@ -17508,6 +17519,9 @@ function autoGenCode(secIdx){
 function addSection(kind){
   if(kind==='ambulatoriu'){
     CFG.sections.push({id:genId('sec'),name:'Cab. ',beds:0,code:'AMB',type:'cabinet',bed_periods:[]});
+  } else if(kind==='spitalizare_zi'){
+    // v13.26 - tip explicit spitalizare_zi
+    CFG.sections.push({id:genId('sec'),name:'',beds:0,code:'SPZ',type:'spitalizare_zi',bed_periods:[]});
   } else {
     CFG.sections.push({id:genId('sec'),name:'',beds:0,code:'',type:'sectie',bed_periods:[]});
   }
@@ -19029,6 +19043,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.27',date:'2026-04-28',notes:'Salveaza+Noua autocontrol - schimbare comportament: nu mai incrementeaza cu +1 numarul de inregistrare, ci pastreaza acelasi numar. Cazul de utilizare: pe un buletin de analiza fizico-microbiologica sunt 4-5 probe diferite (suprafete, instrumentar, etc) cu acelasi nr inregistrare. User vrea sa introduca rapid toate probele cu acelasi numar fara a-l retasta. v13.24 incrementa (1234 -> 1235) - util pentru numerotare unica de inregistrare in registru, dar nu corespunde realitatii buletinelor de laborator. Solutie: in saveAutoAndNew, keep.reg_number=rec.reg_number (fara regex incrementare). Restul campurilor (data, sectie, tip, trimestru, luna, DSP) ramane pastrat la fel ca inainte. User poate edita manual nr inregistrare cand schimba buletinul.'},
+  {version:'13.26',date:'2026-04-28',notes:'Configurare Sistem - 3 sectiuni vizuale separate (era 2 in v13.23 - doar tipul fusese adaugat in dropdown, nu si UI structurat). Acum: I. Spital - Sectii si Structuri (sectie/compartiment/CPU/UPU/blocuri/lab/etc), II. Spitalizare de Zi (tip nou separat), III. Ambulatoriu - Cabinete. Modificat config_page.js liniile 130-170: AMBUL_TYPES + SPZI_TYPES filtre, 3 array-uri spitalSec/spziSec/ambulSec, secRow accepta parametru fixedType (cabinet|spitalizare_zi|null) - daca null afiseaza dropdown tip pentru schimbare libera; daca fixed, randul nu are dropdown (locked in sectiunea curenta). Sectiunea II are mesaj informativ: poti avea unitati separate per specialitate (chirurgie, medicina interna) sau comune. Empty state daca lipsesc unitati. addSection() updated cu kind=spitalizare_zi creand SPZ type+code. Tip-ul ramane sortat in dropdown SEC_TYPES intre Compartiment si CPU/UPU pentru consistenta.'},
   {version:'13.25',date:'2026-04-28',notes:'Bug 8 si Audit 9 din lista user. (Bug 8) Dropdown-urile IAAM cu sectia raportoare si sectia de dobandire (precum si filtru cazuri pe tabel) folosesc acum secOptsGrouped() consistent cu Autocontrol - 3 grupuri optgroup: Spital - Sectii / Structuri, Spitalizare de Zi, Ambulatoriu - Cabinete. Inainte foloseau secOpts() plat alfabetic, mixand sectii cu cabinete. Modificate 3 locuri in iaam.js (linii 275, 378, 379). (Audit 9) Helper generic renameCfgItem(arrName, idx, labelFriendly) in config_page.js care suporta atat array de string cat si array de obiect cu .name. Validare duplicate case-insensitive cu .some + .name extraction. Aplicat creion albastru ✎ (cu margin-right 4px inainte de X stergere) in 3 tag-list-uri: audit_prof_categories (Medic/Asistent/...), iaam_custom_cats, uv_surface_types. Probe_types deja avea (din v13.24). lab_sample_types ramas pe viitor pentru ca are cod mai complex cu default array inline (CFG.lab_sample_types || ["hemocultura",...] fallback).'},
   {version:'13.24',date:'2026-04-28',notes:'6 bug-uri/feature din lista user (in 1 bump pentru eficienta). (1) Sumar Stocuri biocide cu state persistent _bioSumarOpen + ontoggle event - inainte hardcodat open la fiecare render facand click in pagina sa dezvaluie sumarul automat. (2) Sortare nr inregistrare autocontrol numerica: extrage prima secventa cifre din reg_number cu match(/\\d+/), parseInt, sortare numeric (1234 < 11234), tie-break alfabetic complet daca numerele egale. Inainte string sort dadea 11<2<3. (3) Filtru data probe autocontrol cu min=2000-01-01 max=2099-12-31 - browser native limita 4 cifre an, prevenind salvari accidentale ca 0026. (4) Editare proba autocontrol marcheaza markFormDirty() la deschidere modal cu setTimeout 50ms (dupa attachDirtyTracking) cand id este definit (modul edit) - asa click in afara declanseaza showUnsavedWarning consistent cu adaugare. (5) saveAutoAndNew pastreaza si reg_number INCREMENTAT - regex /^(\\D*)(\\d+)(.*)$/ extrage prefix non-cifre, secventa cifre, suffix; incrementeaza secventa numerica si reasambleaza (1234/2025 -> 1235/2025). Plus s(f-auto-reg) inclus in setTimeout-ul de re-populare. (6) Feature renameProbe in config_page.js: tag tip proba primeste creion albastru ✎ langa X. Click → prompt cu numele actual, validare duplicate (case-insensitive), update CFG.probe_types[idx].name (sau string legacy), saveCfg + showToast + logActivity. Util pentru standardizare case (Apa sterile vs Apa Sterila).'},
   {version:'13.23',date:'2026-04-28',notes:'Tip nou structura SPITALIZARE DE ZI in Configurare → Sectii. Audit confirmat: cabinet (ambulatoriu) ramane tip separat - schimbarea ar rupe statistici (split om-zile/consultatii) + UI autocontrol matrice + config tabs. Spitalizare_zi se adauga ca tip nou in SEC_TYPES, prefixes (helpers.js), _secDisplayName (sufix SpZi), secOptsGrouped (3 grupuri optgroup: Spital-Sectii/Structuri, Spitalizare de Zi, Ambulatoriu-Cabinete - daca grupul e gol nu apare). Statistici.js internareSecs include si spitalizare_zi (paturi, om-zile, externati - structurat ca sectia). Aplicabil automat in IAAM dropdown (foloseste secOptsGrouped), Autocontrol matrice (cade in "Spital" pentru ca AMBUL_TYPES=[cabinet] doar). Wizard.js initial nu il include (pentru wizard rapid sectie/compartiment) - se adauga manual din Configurare. Plus rapoarte: Word reports preiau secsions via rSec/_secDisplayName care acum recunosc spitalizare_zi cu prefix SpZi.'},

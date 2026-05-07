@@ -1,10 +1,10 @@
 {
-  "version": "13.33",
+  "version": "13.34",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX UX filtru data autocontrol probe: revenire la un singur input type=date (calendar nativ, aspect curat) — fara mai mult input text + iconita mica.",
-    "Eliminat bug-ul cu anul partial: filtrul se aplica DOAR cand anul are 4 cifre (>=1000), deci render() nu se mai declanseaza la mijlocul tastarii anului si nu mai pierzi focus.",
-    "onblur fallback: daca iesi cu an scurt (ex 0026), _autoFixYear corecteaza automat la 2026 si aplica filtrul.",
-    "Colegii pot scrie data din tastatura SAU pot alege din calendar — aspect ca in v13.31, fara bug-ul cu 0002."
+    "Planificare probe (Autocontrol → Planificare): cele 3 grupuri (Spital / Spitalizare zi / Ambulatoriu) sunt acum colapsabile, default închise. Click pe header → expand. Util când sunt zeci de combinații nerecoltate și vrei să sari direct la Ambulatoriu.",
+    "Configurare → Probe aplicabile per secție: cele 3 grupuri (Spital / SpZi / Ambulatoriu) colapsabile. Click pe header. Default deschise — colapsezi ce nu te interesează.",
+    "Filtru date Autocontrol probe: buton mic × lângă DE LA / PANA LA pentru ștergere rapidă. Apare doar când inputul are valoare.",
+    "Filtre noi la Probe ATP și Testare UV: Secție / Suprafață / Rezultat / DE LA / PANA LA — cu același pattern (single date input, clear ×, KPIs neafectate de filtre)."
   ]
 }

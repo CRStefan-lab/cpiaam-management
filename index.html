@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.33</title>
+<title>CPIAAM Management v13.34</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -188,6 +188,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .ac-plan-section>summary:hover{filter:brightness(.97)}
 .ac-plan-section[open]>summary .ac-plan-chev{transform:rotate(90deg)}
 .ac-plan-section>summary::-webkit-details-marker{display:none}
+.ac-plan-grp[open]>summary .ac-plan-grp-chev{transform:rotate(90deg)}
+.ac-plan-grp>summary::-webkit-details-marker{display:none}
+.ac-plan-grp>summary:hover{filter:brightness(.92)}
 .ac-plan-item{padding:8px 0;border-bottom:1px solid var(--brd);font-size:12px}
 .ac-plan-item label{display:flex;align-items:flex-start;gap:8px;cursor:pointer}
 .ac-plan-item input[type=checkbox]{margin-top:3px;accent-color:var(--teal)}
@@ -2247,7 +2250,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.33';
+const APP_VERSION='13.34';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -6194,6 +6197,7 @@ function renderAutoChart(data,probeTypes,sections,matrix,isEN){
 
 // ═══ TAB 2 — PLANIFICARE ═══
 // v13.31 - helper: grupeaza items planificare dupa categoria sectiei (Spital / Spitalizare zi / Ambulatoriu)
+// v13.34 - cele 3 grupuri colapsabile (default: inchise) cu state persistent in window._autoPlanGroupOpen
 function _renderPlanGroup(items,levelType,isEN){
   if(!items||items.length===0)return '';
   // Determin grupul fiecarui item dupa CFG.sections[].type
@@ -6204,7 +6208,6 @@ function _renderPlanGroup(items,levelType,isEN){
     if(s.type==='spitalizare_zi')return 'spzi';
     return 'spital';
   }
-  // Sortez intai dupa grup (Spital, SpZi, Ambul, altele), apoi alfabetic dupa secName + ptName
   var grouped={spital:[],spzi:[],ambulatoriu:[],altele:[]};
   items.forEach(function(it){grouped[getGroup(it.secId)].push(it)});
   Object.keys(grouped).forEach(function(g){grouped[g].sort(function(a,b){var d=String(a.secName||'').localeCompare(b.secName||'');return d!==0?d:String(a.ptName||'').localeCompare(b.ptName||'')})});
@@ -6215,11 +6218,19 @@ function _renderPlanGroup(items,levelType,isEN){
     altele:isEN?'Others':'Altele'
   };
   var groupColors={spital:'#1E40AF',spzi:'#7C3AED',ambulatoriu:'#059669',altele:'#6B7280'};
+  if(!window._autoPlanGroupOpen)window._autoPlanGroupOpen={};
   var out='';
   var idx=window._planItemIdx||0;
   ['spital','spzi','ambulatoriu','altele'].forEach(function(g){
     if(!grouped[g].length)return;
-    out+='<div style="margin:6px 0 4px 0;padding:4px 10px;background:'+groupColors[g]+';color:#fff;font-size:11px;font-weight:700;border-radius:4px">'+groupLabels[g]+' <span style="opacity:.85;font-weight:400">('+grouped[g].length+')</span></div>';
+    var stateKey=levelType+'_'+g;
+    var isOpen=window._autoPlanGroupOpen[stateKey]===true; // default inchis
+    out+='<details '+(isOpen?'open':'')+' class="ac-plan-grp" data-grp="'+stateKey+'" style="margin:6px 0">'+
+      '<summary style="cursor:pointer;list-style:none;padding:5px 10px;background:'+groupColors[g]+';color:#fff;font-size:11px;font-weight:700;border-radius:4px;display:flex;align-items:center;gap:8px">'+
+      '<span class="ac-plan-grp-chev" style="display:inline-block;font-size:10px;width:10px;text-align:center;transition:transform .15s">&#9654;</span>'+
+      '<span style="flex:1">'+groupLabels[g]+' <span style="opacity:.85;font-weight:400">('+grouped[g].length+')</span></span>'+
+      '</summary>'+
+      '<div style="padding:6px 0 2px 0">';
     grouped[g].forEach(function(p){
       var note;
       if(levelType==='neconformitate')note=(isEN?'NC ':'NC ')+p.ncPct+'% — '+(isEN?'retest recommended':'re-testare recomandata');
@@ -6228,9 +6239,22 @@ function _renderPlanGroup(items,levelType,isEN){
       else note='';
       out+=renderPlanItem(idx++,p.ptName,p.secName,levelType,note,isEN);
     });
+    out+='</div></details>';
   });
   window._planItemIdx=idx;
   return out;
+}
+// v13.34 - persist state colaps grupuri planificare (delegated listener attached o singura data)
+if(typeof window!=='undefined' && !window._autoPlanGroupListenerAdded){
+  document.addEventListener('toggle',function(e){
+    var d=e.target;
+    if(d && d.classList && d.classList.contains('ac-plan-grp')){
+      var k=d.getAttribute('data-grp');
+      if(!window._autoPlanGroupOpen)window._autoPlanGroupOpen={};
+      window._autoPlanGroupOpen[k]=d.open;
+    }
+  },true);
+  window._autoPlanGroupListenerAdded=true;
 }
 function renderAutoTab2(data,allData,matrix,probeTypes,sections,isEN,qLabel){
   let h='';
@@ -6405,13 +6429,14 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
     '<option value="yes"'+(_autoProbeFilters.dsp==='yes'?' selected':'')+'>'+(isEN?'Only with DSP':'Doar cu DSP')+'</option>'+
     '<option value="no"'+(_autoProbeFilters.dsp==='no'?' selected':'')+'>'+(isEN?'Only without DSP':'Doar fara DSP')+'</option>'+
   '</select></div>';
-  // v13.33 - single type=date input (clean look + native picker). Aplica filtrul DOAR cand anul are 4 cifre (>=1000)
-  // ca render() sa nu se declanseze prematur si user-ul sa nu piarda focus la mijlocul tastarii anului.
-  // onblur ca fallback: aplica _autoFixYear daca user paraseste cu an scurt (0026 -> 2026).
-  h+='<div class="fg"><label>'+(isEN?'From':'De la')+'</label>'+
-    '<input type="date" min="2000-01-01" max="2099-12-31" value="'+(_autoProbeFilters.dateFrom||'')+'" oninput="_handleAutoDateInput(this,\'dateFrom\')" onblur="_handleAutoDateBlur(this,\'dateFrom\')"></div>';
-  h+='<div class="fg"><label>'+(isEN?'To':'Pana la')+'</label>'+
-    '<input type="date" min="2000-01-01" max="2099-12-31" value="'+(_autoProbeFilters.dateTo||'')+'" oninput="_handleAutoDateInput(this,\'dateTo\')" onblur="_handleAutoDateBlur(this,\'dateTo\')"></div>';
+  // v13.33/34 - single type=date input + buton mic × pentru clear (vizibil doar cand are valoare).
+  function _dtCell(field,label){
+    var val=_autoProbeFilters[field]||'';
+    var clr=val?'<button onclick="_clearAutoDateFilter(\''+field+'\')" title="'+(isEN?'Clear':'Sterge')+'" style="background:none;border:1px solid var(--brd);color:var(--txtL);font-size:14px;cursor:pointer;padding:0 6px;border-radius:4px;line-height:1;height:30px">&times;</button>':'';
+    return '<div class="fg"><label>'+label+'</label><div style="display:flex;align-items:center;gap:3px"><input type="date" min="2000-01-01" max="2099-12-31" value="'+val+'" oninput="_handleAutoDateInput(this,\''+field+'\')" onblur="_handleAutoDateBlur(this,\''+field+'\')" style="flex:1">'+clr+'</div></div>';
+  }
+  h+=_dtCell('dateFrom',isEN?'From':'De la');
+  h+=_dtCell('dateTo',isEN?'To':'Pana la');
   h+='</div>';
 
   // Action buttons
@@ -6535,6 +6560,13 @@ function _handleAutoDateBlur(input,field){
   var v=input.value||'';
   if(_autoProbeFilters[field]===v) return;
   _autoProbeFilters[field]=v;
+  _autoPage=0;
+  render();
+}
+// v13.34 - sterge filtrul data (DE LA / PANA LA) la click pe butonul ×
+function _clearAutoDateFilter(field){
+  if(!_autoProbeFilters[field])return;
+  _autoProbeFilters[field]='';
   _autoPage=0;
   render();
 }
@@ -6676,18 +6708,42 @@ function atpResult(rlu,surface){
   return rlu<=thr?'conform':'neconform';
 }
 
+// v13.34 - state filtre ATP (sec, surface, result, dateFrom, dateTo)
+var _atpFilters={sec:'',surface:'',result:'',dateFrom:'',dateTo:''};
+function _handleAtpDateInput(input,field){
+  var v=input.value||'';
+  if(v){var p=v.split('-');if(p.length===3 && parseInt(p[0],10)<1000) return}
+  if(_atpFilters[field]===v)return;
+  _atpFilters[field]=v;render();
+}
+function _handleAtpDateBlur(input,field){
+  if(typeof _autoFixYear==='function')_autoFixYear(input);
+  var v=input.value||'';
+  if(_atpFilters[field]===v)return;
+  _atpFilters[field]=v;render();
+}
+function _clearAtpDateFilter(field){if(!_atpFilters[field])return;_atpFilters[field]='';render()}
+
 async function renderAtpModule(isEN){
-  const allAtp=(await ga('atp')).filter(r=>r.year===A.year).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const allAtpRaw=(await ga('atp')).filter(r=>r.year===A.year).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const surfaces=getAtpSurfaces();
   const sections=CFG.sections;
 
-  // KPIs
-  const total=allAtp.length;
-  const conf=allAtp.filter(r=>atpResult(r.rlu_value,r.surface_type)==='conform').length;
+  // v13.34 - aplica filtre
+  let allAtp=allAtpRaw.slice();
+  if(_atpFilters.sec)allAtp=allAtp.filter(r=>r.section===_atpFilters.sec);
+  if(_atpFilters.surface)allAtp=allAtp.filter(r=>r.surface_type===_atpFilters.surface);
+  if(_atpFilters.result)allAtp=allAtp.filter(r=>atpResult(r.rlu_value,r.surface_type)===_atpFilters.result);
+  if(_atpFilters.dateFrom)allAtp=allAtp.filter(r=>r.date&&r.date>=_atpFilters.dateFrom);
+  if(_atpFilters.dateTo)allAtp=allAtp.filter(r=>r.date&&r.date<=_atpFilters.dateTo);
+
+  // KPIs (calculate pe TOATE datele anului, nu pe filtrate - KPI-urile reprezinta anul intreg)
+  const total=allAtpRaw.length;
+  const conf=allAtpRaw.filter(r=>atpResult(r.rlu_value,r.surface_type)==='conform').length;
   const nc=total-conf;
   const confPct=total>0?Math.round(conf/total*1000)/10:0;
   // Repetitions
-  const withRepeat=allAtp.filter(r=>r.rlu_repeat!=null&&r.rlu_repeat!=='');
+  const withRepeat=allAtpRaw.filter(r=>r.rlu_repeat!=null&&r.rlu_repeat!=='');
   const repeatConf=withRepeat.filter(r=>atpResult(r.rlu_repeat,r.surface_type)==='conform').length;
   const repeatPct=withRepeat.length>0?Math.round(repeatConf/withRepeat.length*1000)/10:0;
 
@@ -6699,6 +6755,21 @@ async function renderAtpModule(isEN){
     '<div class="kc bl"><div class="kl">'+(isEN?'Surfaces configured':'Suprafe\u021Be configurate')+'</div><div class="kv">'+surfaces.length+'</div></div>'+
   '</div>';
 
+  // v13.34 - filtre
+  h+='<div class="ac-filters">';
+  h+='<div class="fg"><label>'+(isEN?'Section':'Sectie')+'</label><select onchange="_atpFilters.sec=this.value;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+secOptsGrouped(_atpFilters.sec)+'</select></div>';
+  var surfOpts=surfaces.map(s=>'<option value="'+s.id+'"'+(_atpFilters.surface===s.id?' selected':'')+'>'+s.name+'</option>').join('');
+  h+='<div class="fg"><label>'+(isEN?'Surface':'Suprafata')+'</label><select onchange="_atpFilters.surface=this.value;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+surfOpts+'</select></div>';
+  h+='<div class="fg"><label>'+(isEN?'Result':'Rezultat')+'</label><select onchange="_atpFilters.result=this.value;render()"><option value="">'+(isEN?'All':'Toate')+'</option><option value="conform"'+(_atpFilters.result==='conform'?' selected':'')+'>Conform</option><option value="neconform"'+(_atpFilters.result==='neconform'?' selected':'')+'>Neconform</option></select></div>';
+  function _atpDt(field,label){
+    var val=_atpFilters[field]||'';
+    var clr=val?'<button onclick="_clearAtpDateFilter(\''+field+'\')" title="'+(isEN?'Clear':'Sterge')+'" style="background:none;border:1px solid var(--brd);color:var(--txtL);font-size:14px;cursor:pointer;padding:0 6px;border-radius:4px;line-height:1;height:30px">&times;</button>':'';
+    return '<div class="fg"><label>'+label+'</label><div style="display:flex;align-items:center;gap:3px"><input type="date" min="2000-01-01" max="2099-12-31" value="'+val+'" oninput="_handleAtpDateInput(this,\''+field+'\')" onblur="_handleAtpDateBlur(this,\''+field+'\')" style="flex:1">'+clr+'</div></div>';
+  }
+  h+=_atpDt('dateFrom',isEN?'From':'De la');
+  h+=_atpDt('dateTo',isEN?'To':'Pana la');
+  h+='</div>';
+
   // Buttons
   h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
   h+='<button class="btn bo bsm" onclick="editAtpSurfaces()">'+(isEN?'Configure surfaces':'Configureaza suprafete')+'</button>';
@@ -6706,7 +6777,8 @@ async function renderAtpModule(isEN){
 
   // Table
   if(allAtp.length===0){
-    h+='<div class="es"><p>'+(isEN?'No ATP probes for':'Nicio prob\u0103 ATP pentru')+' '+A.year+'.</p></div>';
+    var hasFilters=_atpFilters.sec||_atpFilters.surface||_atpFilters.result||_atpFilters.dateFrom||_atpFilters.dateTo;
+    h+='<div class="es"><p>'+(hasFilters?(isEN?'No ATP probes match the filters.':'Nicio prob\u0103 ATP nu corespunde filtrelor.'):(isEN?'No ATP probes for':'Nicio prob\u0103 ATP pentru')+' '+A.year)+'.</p></div>';
   }else{
     h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Section':'Sec\u021Bia')+'</th><th>'+(isEN?'Surface':'Suprafa\u021B\u0103')+'</th>'+
       '<th>RLU</th><th>'+(isEN?'Result':'Rezultat')+'</th><th>'+(isEN?'Repeat RLU':'RLU Repeti\u021Bie')+'</th><th>'+(isEN?'After repeat':'Dup\u0103 rep.')+'</th><th>'+(isEN?'Actions':'Ac\u021Biuni')+'</th></tr></thead><tbody>';
@@ -6829,16 +6901,40 @@ async function saveAtpSurfaces(){
 
 // UV CHECK MODULE
 // ═══════════════════════════════════════════════════════════════
+// v13.34 - state filtre UV (sec, surface, result, dateFrom, dateTo)
+var _uvFilters={sec:'',surface:'',result:'',dateFrom:'',dateTo:''};
+function _handleUvDateInput(input,field){
+  var v=input.value||'';
+  if(v){var p=v.split('-');if(p.length===3 && parseInt(p[0],10)<1000) return}
+  if(_uvFilters[field]===v)return;
+  _uvFilters[field]=v;render();
+}
+function _handleUvDateBlur(input,field){
+  if(typeof _autoFixYear==='function')_autoFixYear(input);
+  var v=input.value||'';
+  if(_uvFilters[field]===v)return;
+  _uvFilters[field]=v;render();
+}
+function _clearUvDateFilter(field){if(!_uvFilters[field])return;_uvFilters[field]='';render()}
+
 async function renderUvModule(isEN){
-  const allUv=(await ga('uvcheck')).filter(r=>r.year===A.year).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const allUvRaw=(await ga('uvcheck')).filter(r=>r.year===A.year).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const sections=CFG.sections;
 
-  // KPIs
-  const total=allUv.length;
-  const pass=allUv.filter(r=>r.result==='pass').length;
+  // v13.34 - aplica filtre
+  let allUv=allUvRaw.slice();
+  if(_uvFilters.sec)allUv=allUv.filter(r=>r.section===_uvFilters.sec);
+  if(_uvFilters.surface)allUv=allUv.filter(r=>r.surface===_uvFilters.surface);
+  if(_uvFilters.result)allUv=allUv.filter(r=>r.result===_uvFilters.result);
+  if(_uvFilters.dateFrom)allUv=allUv.filter(r=>r.date&&r.date>=_uvFilters.dateFrom);
+  if(_uvFilters.dateTo)allUv=allUv.filter(r=>r.date&&r.date<=_uvFilters.dateTo);
+
+  // KPIs (calculate pe TOATE datele anului, nu pe filtrate)
+  const total=allUvRaw.length;
+  const pass=allUvRaw.filter(r=>r.result==='pass').length;
   const fail=total-pass;
   const passPct=total>0?Math.round(pass/total*1000)/10:0;
-  const secsTested=new Set(allUv.map(r=>r.section)).size;
+  const secsTested=new Set(allUvRaw.map(r=>r.section)).size;
 
   let h='';
   h+='<div class="kg">'+
@@ -6847,13 +6943,30 @@ async function renderUvModule(isEN){
     '<div class="kc bl"><div class="kl">'+(isEN?'Sections Tested':'Sec\u021Bii testate')+'</div><div class="kv">'+secsTested+'/'+sections.length+'</div></div>'+
   '</div>';
 
+  // v13.34 - filtre
+  h+='<div class="ac-filters">';
+  h+='<div class="fg"><label>'+(isEN?'Section':'Sectie')+'</label><select onchange="_uvFilters.sec=this.value;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+secOptsGrouped(_uvFilters.sec)+'</select></div>';
+  var uvSurfaces=CFG.uv_surface_types||[];
+  var surfOpts=uvSurfaces.map(s=>'<option value="'+s.id+'"'+(_uvFilters.surface===s.id?' selected':'')+'>'+s.name+'</option>').join('');
+  h+='<div class="fg"><label>'+(isEN?'Surface':'Suprafata')+'</label><select onchange="_uvFilters.surface=this.value;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+surfOpts+'</select></div>';
+  h+='<div class="fg"><label>'+(isEN?'Result':'Rezultat')+'</label><select onchange="_uvFilters.result=this.value;render()"><option value="">'+(isEN?'All':'Toate')+'</option><option value="pass"'+(_uvFilters.result==='pass'?' selected':'')+'>Pass</option><option value="fail"'+(_uvFilters.result==='fail'?' selected':'')+'>Fail</option></select></div>';
+  function _uvDt(field,label){
+    var val=_uvFilters[field]||'';
+    var clr=val?'<button onclick="_clearUvDateFilter(\''+field+'\')" title="'+(isEN?'Clear':'Sterge')+'" style="background:none;border:1px solid var(--brd);color:var(--txtL);font-size:14px;cursor:pointer;padding:0 6px;border-radius:4px;line-height:1;height:30px">&times;</button>':'';
+    return '<div class="fg"><label>'+label+'</label><div style="display:flex;align-items:center;gap:3px"><input type="date" min="2000-01-01" max="2099-12-31" value="'+val+'" oninput="_handleUvDateInput(this,\''+field+'\')" onblur="_handleUvDateBlur(this,\''+field+'\')" style="flex:1">'+clr+'</div></div>';
+  }
+  h+=_uvDt('dateFrom',isEN?'From':'De la');
+  h+=_uvDt('dateTo',isEN?'To':'Pana la');
+  h+='</div>';
+
   // Buttons
   h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px">';
   h+='<button class="btn bp" onclick="editUv()">+ '+(isEN?'Add UV Check':'Adaug\u0103 Verificare UV')+'</button></div>';
 
   // Table
   if(allUv.length===0){
-    h+='<div class="es"><p>'+(isEN?'No UV checks for':'Nicio verificare UV pentru')+' '+A.year+'.</p></div>';
+    var hasFilters=_uvFilters.sec||_uvFilters.surface||_uvFilters.result||_uvFilters.dateFrom||_uvFilters.dateTo;
+    h+='<div class="es"><p>'+(hasFilters?(isEN?'No UV checks match the filters.':'Nicio verificare UV nu corespunde filtrelor.'):(isEN?'No UV checks for':'Nicio verificare UV pentru')+' '+A.year)+'.</p></div>';
   }else{
     h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Section':'Sec\u021Bia')+'</th><th>'+(isEN?'Surface / Location':'Suprafa\u021B\u0103 / Locatie')+'</th>'+
       '<th>'+(isEN?'Result':'Rezultat')+'</th><th>'+(isEN?'Notes':'Obs.')+'</th><th>'+(isEN?'Actions':'Ac\u021Biuni')+'</th></tr></thead><tbody>';
@@ -17159,13 +17272,19 @@ function _renderProbeApplicabilityUI(){
   h+='<div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table class="dt" style="font-size:11px"><thead style="position:sticky;top:0;z-index:3"><tr><th style="position:sticky;left:0;background:var(--navy);color:#fff;z-index:4">'+(isEN?'Section':'Sectie')+'</th>';
   pts.forEach(function(pt){h+='<th style="writing-mode:vertical-lr;transform:rotate(180deg);white-space:nowrap;padding:4px 2px;font-size:10px;background:var(--navy);color:#fff">'+sn(pt)+'</th>'});
   h+='<th style="font-size:10px;background:var(--navy);color:#fff">'+(isEN?'All':'Toate')+'</th></tr></thead><tbody>';
-  function renderGroupHeader(label,bg){
-    return '<tr style="background:'+bg+'"><td colspan="'+(pts.length+2)+'" style="position:sticky;left:0;background:'+bg+';font-weight:700;color:#fff;padding:6px 10px;font-size:12px">'+label+'</td></tr>';
+  // v13.34 - 3 grupuri colapsabile (default deschise) cu state persistent in window._cfgProbeAppOpen
+  if(!window._cfgProbeAppOpen)window._cfgProbeAppOpen={spital:true,spzi:true,ambulatoriu:true};
+  function renderGroupHeader(label,bg,groupKey,count){
+    var isOpen=window._cfgProbeAppOpen[groupKey]!==false;
+    var arrow=isOpen?'&#9660;':'&#9658;'; // triunghi jos vs dreapta
+    return '<tr class="cfg-pa-hdr" data-grp="'+groupKey+'" style="background:'+bg+';cursor:pointer" onclick="_toggleProbeAppGroup(\''+groupKey+'\')"><td colspan="'+(pts.length+2)+'" style="position:sticky;left:0;background:'+bg+';font-weight:700;color:#fff;padding:6px 10px;font-size:12px;user-select:none"><span class="cfg-pa-arrow" style="display:inline-block;width:14px">'+arrow+'</span> '+label+' <span style="font-weight:400;opacity:.85">('+count+')</span></td></tr>';
   }
-  function renderSecRow(s){
+  function renderSecRow(s,groupKey){
     var si=CFG.sections.indexOf(s);
     var ap=s.applicable_probes;var allChecked=!ap||!ap.length;
-    var row='<tr><td style="position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;font-weight:600;font-size:11px">'+_secDisplayName(s)+'</td>';
+    var isOpen=window._cfgProbeAppOpen[groupKey]!==false;
+    var hidden=isOpen?'':' style="display:none"';
+    var row='<tr class="cfg-pa-row cfg-pa-grp-'+groupKey+'"'+hidden+'><td style="position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;font-weight:600;font-size:11px">'+_secDisplayName(s)+'</td>';
     pts.forEach(function(pt){
       var checked=allChecked||ap.includes(pt.id);
       row+='<td style="text-align:center"><input type="checkbox" data-sec="'+si+'" data-pt="'+pt.id+'" '+(checked?'checked':'')+' onchange="toggleProbeApplicability('+si+',\''+pt.id+'\',this.checked)" style="accent-color:var(--teal);width:14px;height:14px;cursor:pointer"></td>';
@@ -17174,21 +17293,30 @@ function _renderProbeApplicabilityUI(){
     return row;
   }
   if(spitalSec.length>0){
-    h+=renderGroupHeader((isEN?'I. Hospital — Sections / Structures':'I. Spital — Sectii / Structuri'),'#1E40AF');
-    spitalSec.forEach(function(s){h+=renderSecRow(s)});
+    h+=renderGroupHeader((isEN?'I. Hospital — Sections / Structures':'I. Spital — Sectii / Structuri'),'#1E40AF','spital',spitalSec.length);
+    spitalSec.forEach(function(s){h+=renderSecRow(s,'spital')});
   }
   if(spziSec.length>0){
-    h+=renderGroupHeader((isEN?'II. Day Hospital':'II. Spitalizare de Zi'),'#7C3AED');
-    spziSec.forEach(function(s){h+=renderSecRow(s)});
+    h+=renderGroupHeader((isEN?'II. Day Hospital':'II. Spitalizare de Zi'),'#7C3AED','spzi',spziSec.length);
+    spziSec.forEach(function(s){h+=renderSecRow(s,'spzi')});
   }
   if(ambulSec.length>0){
-    h+=renderGroupHeader((isEN?'III. Outpatient — Cabinets':'III. Ambulatoriu — Cabinete'),'#059669');
-    ambulSec.forEach(function(s){h+=renderSecRow(s)});
+    h+=renderGroupHeader((isEN?'III. Outpatient — Cabinets':'III. Ambulatoriu — Cabinete'),'#059669','ambulatoriu',ambulSec.length);
+    ambulSec.forEach(function(s){h+=renderSecRow(s,'ambulatoriu')});
   }
   h+='</tbody></table></div>';
   h+='<div style="margin-top:8px;display:flex;gap:8px"><button class="btn bp" onclick="saveCfg();showToast(CFG.lang===\'en\'?\'Saved!\':\'Salvat!\')">'+(isEN?'Save':'Salveaza')+'</button>'+
     '<button class="btn bo bsm" onclick="resetAllProbeApplicability()">'+(isEN?'Reset all (all checked)':'Reseteaza tot (toate bifate)')+'</button></div>';
   return h;
+}
+// v13.34 - toggle vizibilitate grup in matricea Probe aplicabile per sectie. State persistent + DOM update direct (no full re-render).
+function _toggleProbeAppGroup(g){
+  if(!window._cfgProbeAppOpen)window._cfgProbeAppOpen={spital:true,spzi:true,ambulatoriu:true};
+  window._cfgProbeAppOpen[g]=!window._cfgProbeAppOpen[g];
+  var open=window._cfgProbeAppOpen[g];
+  document.querySelectorAll('.cfg-pa-grp-'+g).forEach(function(r){r.style.display=open?'':'none'});
+  var arr=document.querySelector('.cfg-pa-hdr[data-grp="'+g+'"] .cfg-pa-arrow');
+  if(arr)arr.innerHTML=open?'&#9660;':'&#9658;';
 }
 function toggleProbeApplicability(secIdx,ptId,checked){
   var s=CFG.sections[secIdx];if(!s)return;
@@ -19153,6 +19281,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.34',date:'2026-05-07',notes:'4 imbunatatiri UX. (1) Planificare probe (Autocontrol > Planificare): cele 3 grupuri Spital / Spitalizare de Zi / Ambulatoriu sunt acum colapsabile - default INCHISE - cu chevron rotativ, header colorat, count per grup. State persistent in window._autoPlanGroupOpen pe perioada sesiunii. Util cand sunt zeci de combinatii nerecoltate (ex 334) si vrei sa ajungi la Ambulatoriu fara scroll. Helper _renderPlanGroup folosit pentru cele 3 sectiuni A/B/C (NC, nerecoltat curent, vechi >6 luni). (2) Configurare > Introducere date > Probe aplicabile per sectie: cele 3 grupuri colapsabile cu click pe header colorat. Default DESCHISE - colapsezi ce nu iti trebuie. State in window._cfgProbeAppOpen. Helper _toggleProbeAppGroup face toggle direct DOM (clase cfg-pa-grp-* + arrow update) fara full re-render. (3) Filtru date Autocontrol probe DE LA / PANA LA: buton mic × langa input, vizibil DOAR cand are valoare. Click → sterge filtrul si re-render. Era posibil doar prin clear din calendar nativ sau editare manuala. (4) Filtre noi la Probe ATP si Testare UV (in modulul Autocontrol > tab-uri): Sectie / Suprafata / Rezultat / DE LA / PANA LA cu acelasi pattern UI ca probe microbiologice. State per modul (_atpFilters, _uvFilters). Reuse _autoFixYear din autocontrol.js pentru blur fallback. KPIs raman calculate pe anul intreg (nu pe filtrate) - filtrele afecteaza doar tabelul. Empty state arata mesaj "nu corespunde filtrelor" cand filtrele nu match.'},
   {version:'13.33',date:'2026-05-07',notes:'FIX UX filtru data autocontrol probe (DE LA / PANA LA). v13.32 schimbase la input text cu placeholder zz.ll.aaaa + picker mic 32px - rezolva bug-ul cu an partial dar arata urat si obliga utilizatorii sa tasteze separator . manual. v13.33 revine la un singur input type=date (calendar nativ, aspect curat ca in v13.31) DAR fara bug-ul cu valori partiale: filtrul se aplica DOAR cand anul are 4 cifre (parseInt >= 1000) prin handler nou _handleAutoDateInput - asa render() nu se mai declanseaza la mijlocul tastarii anului si user-ul nu mai pierde focus. Plus onblur fallback _handleAutoDateBlur care apeleaza _autoFixYear (existent din v13.28) - daca user iesea cu an scurt (0026), corectie automata la 2026 si aplicare filtru. Eliminate _parseDateRO si _setAutoDateFilter (nu mai sunt necesare). Eliminat _dateFilterDisplay local. UI: 2 inputuri normale type=date in loc de 2 perechi text+icon. Aspect identic cu pre-v13.32 (clean look + native picker), comportament robust ca in v13.32.'},
   {version:'13.32',date:'2026-04-28',notes:'FIX DEFINITIV bug data filtru autocontrol probe (DE LA / PANA LA). Cauza reala identificata: input type=date al browser-ului accepta valori partiale cand user tasta litera cu litera (0002 -> 0020 -> 0202 -> 2026). Daca user iesea din input cu valoare partiala 0002 sau valoare scurtata, _autoFixYear interpreta 02 -> 2002. Solutia v13.28 (auto-fix +2000) era o cale gresita pentru ca nu putea ghici intentia user-ului. Solutia DEFINITIVA v13.32: schimbare input din type=date in type=text cu placeholder zz.ll.aaaa si parser flexibil _parseDateRO care accepta multe formate (RO punct/slash/hyphen/spatiu, ISO YYYY-MM-DD). An cu 2 cifre interpretat fereastra Excel-style: 0-49 -> 2000-2049, 50-99 -> 1950-1999. Validare zi 1-31, luna 1-12, an 1900-2099. Helper _setAutoDateFilter(field, raw) parse + alert daca invalid. Plus un input type=date mic (32px lat) langa input text pentru picker calendar - cele 2 raman sincronizate prin onChange. _dateFilterDisplay converteste ISO din state la format RO pentru afisare. Testat cu 15 cazuri: toate formatele OK, invalide returneaza string gol.'},
   {version:'13.31',date:'2026-04-28',notes:'Planificare probe autocontrol (renderAutoTab2) - item-urile din cele 3 sectiuni (B Cu neconformitati / A Nerecoltat curent / C Nerecoltat >6 luni) acum grupate in interior dupa categoria sectiei (Spital - Sectii / Structuri | Spitalizare de Zi | Ambulatoriu - Cabinete | Altele) cu mini-headers colorate (#1E40AF / #7C3AED / #059669 / #6B7280) si count per grup. Helper nou _renderPlanGroup(items, levelType, isEN) - sorteaza items in 4 buckets dupa CFG.sections[].type, sortare alfabetica in fiecare grup (secName apoi ptName), randeaza cu separator color + label + count. Indexes (idx) pastrate prin window._planItemIdx pentru continuitate intre grupuri si sectiuni. Pastrate functionalitatea originala (click planificare in calendar, status, etc).'},

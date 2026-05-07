@@ -1,10 +1,10 @@
 {
-  "version": "13.32",
+  "version": "13.33",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "FIX DEFINITIV bug data filtru autocontrol: inputul a fost SCHIMBAT de la type=date (care permitea valori partiale tip 0002 in loc de 2026 cand tastai litera cu litera) la INPUT TEXT cu parser flexibil care accepta multe formate.",
-    "Formate acceptate: 28.04.2026 / 28/04/2026 / 28-04-2026 / 28 04 2026 / 2026-04-28. Plus an cu 2 cifre: 26 -> 2026, 49 -> 2049, 50 -> 1950, 99 -> 1999.",
-    "Langa input-ul text exista un picker mic (calendar) pentru cei care prefera selectie din popup. Cele 2 raman sincronizate.",
-    "Validare: data invalida (zi 32, luna 13, format gresit) → alert clar 'Format invalid. Foloseste zz.ll.aaaa'."
+    "FIX UX filtru data autocontrol probe: revenire la un singur input type=date (calendar nativ, aspect curat) — fara mai mult input text + iconita mica.",
+    "Eliminat bug-ul cu anul partial: filtrul se aplica DOAR cand anul are 4 cifre (>=1000), deci render() nu se mai declanseaza la mijlocul tastarii anului si nu mai pierzi focus.",
+    "onblur fallback: daca iesi cu an scurt (ex 0026), _autoFixYear corecteaza automat la 2026 si aplica filtrul.",
+    "Colegii pot scrie data din tastatura SAU pot alege din calendar — aspect ca in v13.31, fara bug-ul cu 0002."
   ]
 }

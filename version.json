@@ -1,9 +1,10 @@
 {
-  "version": "13.31",
+  "version": "13.32",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Planificare probe autocontrol (cele 3 sectiuni: NC re-testare, Nerecoltat curent, Nerecoltat >6 luni) - acum item-urile din interior sunt grupate dupa categoria sectiei (Spital - Sectii / Structuri | Spitalizare de Zi | Ambulatoriu - Cabinete) cu mini-headers colorate.",
-    "Inainte item-urile erau listate alfabetic plat, amestecand sectii cu cabinete. Acum vezi clar cate combinatii probe×sectie sunt netestate per categorie.",
-    "Sortare in cadrul fiecarui grup: alfabetic dupa sectie, apoi tip proba. Mini-headers cu count: 'Spital (12)', 'Spitalizare de Zi (3)', 'Ambulatoriu (5)'."
+    "FIX DEFINITIV bug data filtru autocontrol: inputul a fost SCHIMBAT de la type=date (care permitea valori partiale tip 0002 in loc de 2026 cand tastai litera cu litera) la INPUT TEXT cu parser flexibil care accepta multe formate.",
+    "Formate acceptate: 28.04.2026 / 28/04/2026 / 28-04-2026 / 28 04 2026 / 2026-04-28. Plus an cu 2 cifre: 26 -> 2026, 49 -> 2049, 50 -> 1950, 99 -> 1999.",
+    "Langa input-ul text exista un picker mic (calendar) pentru cei care prefera selectie din popup. Cele 2 raman sincronizate.",
+    "Validare: data invalida (zi 32, luna 13, format gresit) → alert clar 'Format invalid. Foloseste zz.ll.aaaa'."
   ]
 }

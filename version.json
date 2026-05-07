@@ -1,10 +1,10 @@
 {
-  "version": "13.34",
+  "version": "13.35",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Planificare probe (Autocontrol → Planificare): cele 3 grupuri (Spital / Spitalizare zi / Ambulatoriu) sunt acum colapsabile, default închise. Click pe header → expand. Util când sunt zeci de combinații nerecoltate și vrei să sari direct la Ambulatoriu.",
-    "Configurare → Probe aplicabile per secție: cele 3 grupuri (Spital / SpZi / Ambulatoriu) colapsabile. Click pe header. Default deschise — colapsezi ce nu te interesează.",
-    "Filtru date Autocontrol probe: buton mic × lângă DE LA / PANA LA pentru ștergere rapidă. Apare doar când inputul are valoare.",
-    "Filtre noi la Probe ATP și Testare UV: Secție / Suprafață / Rezultat / DE LA / PANA LA — cu același pattern (single date input, clear ×, KPIs neafectate de filtre)."
+    "Configurare → Introducere date: cele 12 secțiuni (Categorii IPC, Profesionale, Tipuri Probe, Probe/Secții, Probe Laborator, Categorii IAAM, Factori Risc, Comorbidități, Dispozitive, Biocide, Coduri Deșeuri, Suprafețe ATP/UV) sunt acum colapsabile.",
+    "Default toate închise — vezi doar headerele cu chevron ▶. Click pe titlu sau pe quick-link buton → expandare + scroll.",
+    "Butoanele din header (ex „+ Adaugă categorie IPC”) funcționează normal — click pe ele NU toggleează panoul.",
+    "Aspect identic cu v13.34, doar comportament adăugat (în spirit cu UI freeze: fix comportament, păstrează layout)."
   ]
 }

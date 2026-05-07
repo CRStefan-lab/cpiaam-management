@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.34</title>
+<title>CPIAAM Management v13.35</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -191,6 +191,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .ac-plan-grp[open]>summary .ac-plan-grp-chev{transform:rotate(90deg)}
 .ac-plan-grp>summary::-webkit-details-marker{display:none}
 .ac-plan-grp>summary:hover{filter:brightness(.92)}
+.pn-collapsed>.pb{display:none!important}
+.pn:not(.pn-collapsed)>.ph .pn-chev{transform:rotate(90deg)}
+.pn>.ph h3:hover .pn-chev{color:var(--teal)}
 .ac-plan-item{padding:8px 0;border-bottom:1px solid var(--brd);font-size:12px}
 .ac-plan-item label{display:flex;align-items:flex-start;gap:8px;cursor:pointer}
 .ac-plan-item input[type=checkbox]{margin-top:3px;accent-color:var(--teal)}
@@ -2250,7 +2253,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.34';
+const APP_VERSION='13.35';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -17722,6 +17725,58 @@ async function rCfg(el){
 
   el.innerHTML=h;
   if(_cfgTab==='ai')setTimeout(showAiFields,50);
+  if(_cfgTab==='dateintro')setTimeout(_setupCfgIntroCollapse,0);
+}
+
+// v13.35 - colaps runtime pentru toate sectiunile din tab-ul "Introducere date".
+// Default toate inchise; state persist in window._cfgIntroOpen (sesiune).
+// Click pe h3 (sau chevron) toggleaza. Click pe butoane din header NU toggleaza (sunt sibling cu h3, click pe ele nu propaga la h3).
+// Quick-link <a href="#cfg-XYZ"> expandeaza tinta inainte de scroll.
+function _setupCfgIntroCollapse(){
+  if(!window._cfgIntroOpen)window._cfgIntroOpen={};
+  var pns=document.querySelectorAll('.pn[id^="cfg-"]');
+  pns.forEach(function(pn){
+    var id=pn.id;
+    // Skip cele din alt tab (cfg-info, cfg-pers, cfg-sec-* sunt in tab "spital", cfg-lang/sync/bkp/loc/att in "date", cfg-ai in "ai")
+    if(['cfg-info','cfg-pers','cfg-sec-sp','cfg-sec-spzi','cfg-sec-am','cfg-lang','cfg-sync','cfg-bkp','cfg-loc','cfg-att','cfg-ai'].indexOf(id)>=0)return;
+    if(!window._cfgIntroOpen[id])pn.classList.add('pn-collapsed');
+    var h3=pn.querySelector(':scope > .ph > h3');
+    if(h3 && !h3.dataset.collapseWired){
+      h3.dataset.collapseWired='1';
+      h3.style.cursor='pointer';
+      h3.style.userSelect='none';
+      // Adauga chevron daca nu exista
+      if(!h3.querySelector('.pn-chev')){
+        var chev=document.createElement('span');
+        chev.className='pn-chev';
+        chev.innerHTML='&#9654;';
+        chev.style.cssText='display:inline-block;width:14px;text-align:center;font-size:11px;transition:transform .15s;margin-right:6px;color:var(--txtL)';
+        h3.insertBefore(chev,h3.firstChild);
+      }
+      h3.addEventListener('click',function(){_toggleCfgPn(id)});
+    }
+  });
+}
+function _toggleCfgPn(id){
+  var pn=document.getElementById(id);if(!pn)return;
+  if(!window._cfgIntroOpen)window._cfgIntroOpen={};
+  if(pn.classList.contains('pn-collapsed')){
+    pn.classList.remove('pn-collapsed');
+    window._cfgIntroOpen[id]=true;
+  }else{
+    pn.classList.add('pn-collapsed');
+    window._cfgIntroOpen[id]=false;
+  }
+}
+// Quick-link → expand target inainte de scroll
+if(typeof window!=='undefined' && !window._cfgQuickLinkWired){
+  document.addEventListener('click',function(e){
+    var a=e.target.closest('a[href^="#cfg-"]');if(!a)return;
+    var id=a.getAttribute('href').slice(1);
+    var pn=document.getElementById(id);
+    if(pn && pn.classList.contains('pn-collapsed')){_toggleCfgPn(id)}
+  },true);
+  window._cfgQuickLinkWired=true;
 }
 
 function _autoCode(name,isCabinet){
@@ -19281,6 +19336,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.35',date:'2026-05-07',notes:'Configurare > Introducere date: cele 12 sectiuni colapsabile (Categorii IPC, Profesionale, Tipuri Probe, Probe/Sectii, Probe Laborator, Categorii IAAM, Factori Risc, Comorbiditati, Dispozitive, Biocide, Coduri Deseuri, Suprafete ATP/UV). Default INCHISE - vezi doar header-ele cu chevron ▶. Click pe titlu (h3) sau pe quick-link buton de sus -> expandare + scroll. Implementare runtime via _setupCfgIntroCollapse() apelat dupa el.innerHTML=h cand _cfgTab==="dateintro" - NU modifica HTML-ul fiecarei sectiuni, doar adauga clase + event listeners. State persistent in window._cfgIntroOpen pe sesiune. Butoanele din header (ex "+ Adauga categorie IPC") sunt sibling cu h3, deci click pe ele nu se propaga la toggle. Adaugat handler global pentru <a href="#cfg-*"> (quick-links) sa expandeze tinta inainte de scroll. CSS: .pn-collapsed>.pb{display:none}; .pn-chev rotire 90deg cand expandat. Aplicat doar in dateintro tab (lista skip pentru cfg-info, cfg-pers, cfg-sec-*, cfg-lang, cfg-sync, etc).'},
   {version:'13.34',date:'2026-05-07',notes:'4 imbunatatiri UX. (1) Planificare probe (Autocontrol > Planificare): cele 3 grupuri Spital / Spitalizare de Zi / Ambulatoriu sunt acum colapsabile - default INCHISE - cu chevron rotativ, header colorat, count per grup. State persistent in window._autoPlanGroupOpen pe perioada sesiunii. Util cand sunt zeci de combinatii nerecoltate (ex 334) si vrei sa ajungi la Ambulatoriu fara scroll. Helper _renderPlanGroup folosit pentru cele 3 sectiuni A/B/C (NC, nerecoltat curent, vechi >6 luni). (2) Configurare > Introducere date > Probe aplicabile per sectie: cele 3 grupuri colapsabile cu click pe header colorat. Default DESCHISE - colapsezi ce nu iti trebuie. State in window._cfgProbeAppOpen. Helper _toggleProbeAppGroup face toggle direct DOM (clase cfg-pa-grp-* + arrow update) fara full re-render. (3) Filtru date Autocontrol probe DE LA / PANA LA: buton mic × langa input, vizibil DOAR cand are valoare. Click → sterge filtrul si re-render. Era posibil doar prin clear din calendar nativ sau editare manuala. (4) Filtre noi la Probe ATP si Testare UV (in modulul Autocontrol > tab-uri): Sectie / Suprafata / Rezultat / DE LA / PANA LA cu acelasi pattern UI ca probe microbiologice. State per modul (_atpFilters, _uvFilters). Reuse _autoFixYear din autocontrol.js pentru blur fallback. KPIs raman calculate pe anul intreg (nu pe filtrate) - filtrele afecteaza doar tabelul. Empty state arata mesaj "nu corespunde filtrelor" cand filtrele nu match.'},
   {version:'13.33',date:'2026-05-07',notes:'FIX UX filtru data autocontrol probe (DE LA / PANA LA). v13.32 schimbase la input text cu placeholder zz.ll.aaaa + picker mic 32px - rezolva bug-ul cu an partial dar arata urat si obliga utilizatorii sa tasteze separator . manual. v13.33 revine la un singur input type=date (calendar nativ, aspect curat ca in v13.31) DAR fara bug-ul cu valori partiale: filtrul se aplica DOAR cand anul are 4 cifre (parseInt >= 1000) prin handler nou _handleAutoDateInput - asa render() nu se mai declanseaza la mijlocul tastarii anului si user-ul nu mai pierde focus. Plus onblur fallback _handleAutoDateBlur care apeleaza _autoFixYear (existent din v13.28) - daca user iesea cu an scurt (0026), corectie automata la 2026 si aplicare filtru. Eliminate _parseDateRO si _setAutoDateFilter (nu mai sunt necesare). Eliminat _dateFilterDisplay local. UI: 2 inputuri normale type=date in loc de 2 perechi text+icon. Aspect identic cu pre-v13.32 (clean look + native picker), comportament robust ca in v13.32.'},
   {version:'13.32',date:'2026-04-28',notes:'FIX DEFINITIV bug data filtru autocontrol probe (DE LA / PANA LA). Cauza reala identificata: input type=date al browser-ului accepta valori partiale cand user tasta litera cu litera (0002 -> 0020 -> 0202 -> 2026). Daca user iesea din input cu valoare partiala 0002 sau valoare scurtata, _autoFixYear interpreta 02 -> 2002. Solutia v13.28 (auto-fix +2000) era o cale gresita pentru ca nu putea ghici intentia user-ului. Solutia DEFINITIVA v13.32: schimbare input din type=date in type=text cu placeholder zz.ll.aaaa si parser flexibil _parseDateRO care accepta multe formate (RO punct/slash/hyphen/spatiu, ISO YYYY-MM-DD). An cu 2 cifre interpretat fereastra Excel-style: 0-49 -> 2000-2049, 50-99 -> 1950-1999. Validare zi 1-31, luna 1-12, an 1900-2099. Helper _setAutoDateFilter(field, raw) parse + alert daca invalid. Plus un input type=date mic (32px lat) langa input text pentru picker calendar - cele 2 raman sincronizate prin onChange. _dateFilterDisplay converteste ISO din state la format RO pentru afisare. Testat cu 15 cazuri: toate formatele OK, invalide returneaza string gol.'},

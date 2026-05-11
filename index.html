@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.36</title>
+<title>CPIAAM Management v13.37</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2253,7 +2253,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.36';
+const APP_VERSION='13.37';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -15483,22 +15483,23 @@ async function genTrainingWord(id){
 async function rRap(el){
   const hasAI=!!CFG.ai_provider&&!!CFG.ai_api_key;
   const aiBtn=(fn)=>hasAI?'<button class="btn bo bsm" onclick="'+fn+'" style="margin-left:6px" title="'+T('ai_report_btn')+'">&#129302; '+T('ai_report_btn')+'</button>':'<button class="btn bo bsm" disabled style="margin-left:6px;opacity:.4" title="'+T('ai_not_configured')+'">&#129302; AI</button>';
-  el.innerHTML='<div class="ib inf">Rapoartele sunt generate local, format Word (.docx) profesionist — cover, tabele, KPI, semnaturi configurabile.</div>'+
+  // v13.37 - butoanele Word foloseste genWord(fn, label) care arata dialog confirmare semnatari inainte de generare.
+  el.innerHTML='<div class="ib inf">Rapoartele sunt generate local, format Word (.docx) profesionist — cover, tabele, KPI, semnaturi configurabile. Înainte de fiecare raport Word, confirmi cine semnează.</div>'+
   '<div class="rg">'+
     '<div class="rc"><h3>Raport Anual CPIAAM</h3><p><strong>Document tehnic detaliat</strong>: analize, tabele, indicatori. Include IAAM + Autocontrol + Deseuri + Biocide + ATB + Audituri + Instruire + Obiective. Pentru arhivare, ANMCS, DSP.</p>'+
-      '<div class="bg"><button class="btn bp" onclick="genRaportAnualWord()">Word Anual</button>'+aiBtn('genRaportAnualWordAI()')+'</div></div>'+
+      '<div class="bg"><button class="btn bp" onclick="genWord(genRaportAnualWord,\'Raport Anual\')">Word Anual</button>'+aiBtn('genWord(genRaportAnualWordAI,\'Raport Anual (AI)\')')+'</div></div>'+
     '<div class="rc"><h3>Rapoarte Trimestriale</h3><p><strong>Document tehnic trimestrial</strong>: 10 sectiuni + comparatie cu trimestrul anterior.</p>'+
-      '<div class="bg"><button class="btn bp" onclick="genTrimestrial(1)">T1</button><button class="btn bp" onclick="genTrimestrial(2)">T2</button><button class="btn bp" onclick="genTrimestrial(3)">T3</button><button class="btn bp" onclick="genTrimestrial(4)">T4</button></div></div>'+
+      '<div class="bg"><button class="btn bp" onclick="genWord(genTrimestrial,\'Raport T1\',[1])">T1</button><button class="btn bp" onclick="genWord(genTrimestrial,\'Raport T2\',[2])">T2</button><button class="btn bp" onclick="genWord(genTrimestrial,\'Raport T3\',[3])">T3</button><button class="btn bp" onclick="genWord(genTrimestrial,\'Raport T4\',[4])">T4</button></div></div>'+
     '<div class="rc"><h3>PV Sedinta CPIAAM</h3><p><strong>Act oficial al comitetului</strong> (diferit de Raport): ordine de zi, tabel participanti cu semnaturi, rezumate scurte cu trimitere la Raport ca anexa, <strong>tabel decizii cu Responsabil si Termen</strong>, semnaturi. Conform Ord. 1101/2016 — Comitetul de Prevenire IAAM.</p>'+
-      '<button class="btn bp" onclick="genPVCPIAAM()">PV Anual</button></div>'+
+      '<button class="btn bp" onclick="genWord(genPVCPIAAM,\'PV Anual CPIAAM\')">PV Anual</button></div>'+
     '<div class="rc"><h3>Analiza IAAM</h3><p>Analiza detaliata: sectii, germeni, origine, MDR.</p>'+
-      '<div class="bg"><button class="btn bp" onclick="genAnalizaIAAMWord()">Word</button>'+aiBtn('genAnalizaIAAMWordAI()')+'<button class="btn bs" onclick="genRegistruIAAMExcel()" style="margin-left:6px">'+T('rap_registru_iaam_excel')+'</button></div></div>'+
+      '<div class="bg"><button class="btn bp" onclick="genWord(genAnalizaIAAMWord,\'Analiza IAAM\')">Word</button>'+aiBtn('genWord(genAnalizaIAAMWordAI,\'Analiza IAAM (AI)\')')+'<button class="btn bs" onclick="genRegistruIAAMExcel()" style="margin-left:6px">'+T('rap_registru_iaam_excel')+'</button></div></div>'+
     '<div class="rc"><h3>Analiza Autocontrol</h3><p>Probe pe tipuri, sectii, neconformitati detaliate.</p>'+
-      '<div class="bg"><button class="btn bp" onclick="genAnalizaAutoWord()">Word</button>'+aiBtn('genAnalizaAutoWordAI()')+'<button class="btn bs" onclick="genAutoExcel()" style="margin-left:6px">Excel</button></div></div>'+
+      '<div class="bg"><button class="btn bp" onclick="genWord(genAnalizaAutoWord,\'Analiza Autocontrol\')">Word</button>'+aiBtn('genWord(genAnalizaAutoWordAI,\'Analiza Autocontrol (AI)\')')+'<button class="btn bs" onclick="genAutoExcel()" style="margin-left:6px">Excel</button></div></div>'+
     '<div class="rc"><h3>Analiza Deseuri</h3><p>Evolutie lunara, coduri, indicator kg/om-zi.</p>'+
-      '<div class="bg"><button class="btn bp" onclick="genAnalizaDesWord()">Word</button>'+aiBtn('genAnalizaDesWordAI()')+'</div></div>'+
+      '<div class="bg"><button class="btn bp" onclick="genWord(genAnalizaDesWord,\'Analiza Deseuri\')">Word</button>'+aiBtn('genWord(genAnalizaDesWordAI,\'Analiza Deseuri (AI)\')')+'</div></div>'+
     '<div class="rc"><h3>Consum Antibiotice DDD/AWaRe</h3><p>DDD/100 zile-pat, clasificare AWaRe, comparatie ESAC-Net.</p>'+
-      '<div class="bg"><button class="btn bp" onclick="genConsumATBWord()">Word</button>'+aiBtn('genConsumATBWordAI()')+'</div></div>'+
+      '<div class="bg"><button class="btn bp" onclick="genWord(genConsumATBWord,\'Consum ATB\')">Word</button>'+aiBtn('genWord(genConsumATBWordAI,\'Consum ATB (AI)\')')+'</div></div>'+
     '<div class="rc"><h3>Ghid Utilizare Biocide</h3><p><strong>HTML imprimabil A4 landscape</strong> conform Ord. MS 1761/2021. Wizard de selectie TP-uri si optiuni layout (risk score, legenda, precautii, referinte). Output deschide in fereastra noua, salvabil ca PDF din browser.</p>'+
       '<div class="bg"><button class="btn bp" onclick="genGhidBiocideOpenWizard()">Genereaza Ghid</button></div></div>'+
     '<div class="rc"><h3>Anchete Epidemiologice</h3><p>Din modulul IAAM — butonul pe fiecare caz.</p>'+
@@ -15536,8 +15537,96 @@ function wCover(title,subtitle,color){color=color||WC.navy;return[wSp(400),new P
   new Paragraph({children:[wTR('Coordonator: ',{size:18,color:WC.gray}),wTR(getCoord().name,{size:18,bold:true,color:WC.dark})],alignment:AlignmentType.CENTER}),
   new Paragraph({children:[wTR('Manager: ',{size:18,color:WC.gray}),wTR(getMgr().name,{size:18,bold:true,color:WC.dark})],alignment:AlignmentType.CENTER}),wPB()]}
 
+// v13.37 - wSigBlock foloseste window._reportSignersOverride (Set de nume) daca e setat (per-raport).
+// Altfel fallback la CFG.personnel.filter(p=>p.sign) (comportament istoric).
+// Override-ul e setat de _pickSignersAndRun() inainte sa apeleze functia de generare si resetat dupa.
 function wSigBlock(){const items=[wSp(200),new Paragraph({children:[],border:{bottom:{style:BorderStyle.SINGLE,size:2,color:WC.navy,space:4}}}),wSp(100)];
-  CFG.personnel.filter(p=>p.sign).forEach(p=>{items.push(wP([wTR(p.title||p.role,{bold:true,size:20,color:WC.navy})]));items.push(wP(p.name,{size:20}));items.push(wSp(80))});return items}
+  var signers;
+  if(window._reportSignersOverride instanceof Set){
+    signers=(CFG.personnel||[]).filter(p=>window._reportSignersOverride.has(p.name));
+  }else{
+    signers=(CFG.personnel||[]).filter(p=>p.sign);
+  }
+  signers.forEach(p=>{items.push(wP([wTR(p.title||p.role,{bold:true,size:20,color:WC.navy})]));items.push(wP(p.name,{size:20}));items.push(wSp(80))});return items}
+
+// v13.37 - wrapper pre-generare Word: dialog confirmare semnatari, apoi apeleaza functia de generare.
+// `fnOrName` poate fi o functie sau un nume de functie globala (string). `label` apare in titlul dialogului.
+// `args` (opțional) = array de argumente pentru functia de generare (ex: pentru genTrimestrial(q) → args=[q]).
+function genWord(fnOrName,label,args){
+  var fn=(typeof fnOrName==='function')?fnOrName:window[fnOrName];
+  if(typeof fn!=='function'){alert('Functie de generare invalida: '+fnOrName);return}
+  args=args||[];
+  var isEN=CFG.lang==='en';
+  var personnel=CFG.personnel||[];
+  if(personnel.length===0){
+    // Nici un personal configurat - genereaza fara semnatari
+    return fn.apply(null,args);
+  }
+  // Dialog: checkbox pe fiecare persoana, default=p.sign
+  var rows=personnel.map(function(p,i){
+    var checked=p.sign?'checked':'';
+    var titleStr=p.title?' — '+esc(p.title):'';
+    return '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--brd);cursor:pointer">'+
+      '<input type="checkbox" id="gws-'+i+'" data-name="'+esc(p.name)+'" '+checked+' style="accent-color:var(--teal);width:16px;height:16px">'+
+      '<span style="flex:1;font-size:13px"><strong>'+esc(p.name||'—')+'</strong><span style="color:var(--txtL);font-weight:400">'+titleStr+'</span></span>'+
+      '</label>';
+  }).join('');
+  openM(
+    (isEN?'Confirm signers for ':'Confirmă semnatarii pentru ')+(label||(isEN?'this report':'acest raport')),
+    '<p style="font-size:12px;color:var(--txtL);margin-bottom:8px">'+(isEN
+      ?'Choose who will sign THIS report. Default = persons marked „Sign" in Settings → Hospital → Personnel.'
+      :'Alege cine semnează ACEST raport. Default = persoanele cu „Semnează" bifat din Configurare → Spital → Personal.')+'</p>'+
+    '<div id="gws-quick" style="display:flex;gap:6px;margin-bottom:8px">'+
+      '<button class="btn bo bsm" onclick="_genWordToggleAll(true)">'+(isEN?'Check all':'Bifează toți')+'</button>'+
+      '<button class="btn bo bsm" onclick="_genWordToggleAll(false)">'+(isEN?'Uncheck all':'Debifează toți')+'</button>'+
+      (CFG.current_user?'<button class="btn bo bsm" onclick="_genWordOnlyMe()">'+(isEN?'Only me':'Doar eu')+' ('+esc(CFG.current_user)+')</button>':'')+
+    '</div>'+
+    '<div style="max-height:300px;overflow-y:auto;border:1px solid var(--brd);border-radius:6px">'+rows+'</div>'+
+    '<label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;color:var(--txtL);cursor:pointer">'+
+      '<input type="checkbox" id="gws-savedefault" style="accent-color:var(--teal)"> '+
+      (isEN?'Also save as default (modifies „Sign" flags in Settings)':'Salvează și ca default (modifică „Semnează" în Configurare)')+
+    '</label>',
+    '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anulează')+'</button>'+
+    '<button class="btn bp" onclick="_genWordConfirm()">'+(isEN?'Generate':'Generează')+'</button>'
+  );
+  // Atasam datele in variabile globale temporare pentru handler-ul confirm
+  window._genWordFn=fn;
+  window._genWordArgs=args;
+}
+function _genWordToggleAll(state){
+  document.querySelectorAll('#mdc input[type="checkbox"][id^="gws-"]').forEach(function(cb){
+    if(cb.id==='gws-savedefault')return;
+    cb.checked=!!state;
+  });
+}
+function _genWordOnlyMe(){
+  var me=CFG.current_user;if(!me)return;
+  document.querySelectorAll('#mdc input[type="checkbox"][id^="gws-"]').forEach(function(cb){
+    if(cb.id==='gws-savedefault')return;
+    cb.checked=(cb.dataset.name===me);
+  });
+}
+function _genWordConfirm(){
+  var selected=new Set();
+  document.querySelectorAll('#mdc input[type="checkbox"][id^="gws-"]').forEach(function(cb){
+    if(cb.id==='gws-savedefault')return;
+    if(cb.checked && cb.dataset.name)selected.add(cb.dataset.name);
+  });
+  var saveDefault=document.getElementById('gws-savedefault')?.checked;
+  if(saveDefault){
+    (CFG.personnel||[]).forEach(function(p){p.sign=selected.has(p.name)});
+    saveCfg();
+  }
+  window._reportSignersOverride=selected;
+  var fn=window._genWordFn;
+  var args=window._genWordArgs||[];
+  safeCloseM();
+  // Apel async, apoi reset override (chiar daca esueaza)
+  Promise.resolve().then(function(){return fn.apply(null,args)}).finally(function(){
+    window._reportSignersOverride=null;
+    window._genWordFn=null;window._genWordArgs=null;
+  });
+}
 
 function wHeader(title){return new Header({children:[new Paragraph({children:[wTR(CFG.cpiaam_name+' — '+CFG.hospital_name,{size:16,color:WC.gray}),wTR('    |    '+title,{size:16,color:WC.gray,italic:true})],border:{bottom:{style:BorderStyle.SINGLE,size:2,color:WC.navy,space:4}}})]})}
 
@@ -17397,9 +17486,14 @@ async function rCfg(el){
     '<div class="fr"><div class="fg"><label>'+(isEN?'Biocide budget limit (lei/year)':'Limita bugetara biocide (lei/an)')+'</label><input type="number" id="c-bb" value="'+(CFG.biocide_budget||'')+'"></div>'+
     '<div class="fg"></div></div>'+
     '<div class="fr" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--brd)"><div class="fg"><label>&#128100; '+(isEN?'Current user':'Utilizator curent')+' <span style="font-size:10px;color:var(--txtL)">('+(isEN?'who is working now on this computer':'cine lucreaza acum pe acest calculator')+')</span></label>'+
-    '<select id="c-curuser" onchange="CFG.current_user=this.value;saveCfg()"><option value="">— '+esc(CFG.author_name||(isEN?'Default author':'Autor implicit'))+' —</option>'+
+    // v13.37 - opțiune fallback generică (nu mai expune CFG.author_name în UI; era confuz când utilizatorul schimba fișiere cu colege).
+    // Buton ✎ alături permite editare/ștergere CFG.author_name manual.
+    '<div style="display:flex;gap:6px;align-items:stretch">'+
+    '<select id="c-curuser" onchange="CFG.current_user=this.value;saveCfg()" style="flex:1"><option value="">— '+(isEN?'Not selected':'Nu este selectat')+' —</option>'+
     (CFG.personnel||[]).map(function(p){return '<option value="'+esc(p.name)+'"'+(CFG.current_user===p.name?' selected':'')+'>'+esc(p.name)+(p.title?' ('+esc(p.title)+')':'')+'</option>'}).join('')+
     '</select>'+
+    '<button class="btn bo bsm" onclick="editAuthorName()" title="'+(isEN?'Edit/clear stored author name (CFG.author_name = '+esc(CFG.author_name||'(empty)')+')':'Editează/șterge numele autorului salvat (CFG.author_name = '+esc(CFG.author_name||'(gol)')+')')+'" style="padding:0 10px">&#9998;</button>'+
+    '</div>'+
     '<span style="font-size:11px;color:var(--txtL);display:block;margin-top:4px">'+(isEN?'Used for tracking who made changes in multi-user sync.':'Folosit pentru urmarirea modificarilor in sincronizarea multi-utilizator.')+'</span></div></div>'+
     '<button class="btn bp" onclick="saveCfgForm()" style="margin-top:8px">'+T('btn_save')+'</button>'+
   '</div></div>'+
@@ -17845,6 +17939,22 @@ async function fullReset(){
   indexedDB.deleteDatabase(DB);
   localStorage.removeItem('cpiaam_had_data');
   location.reload();
+}
+
+// v13.37 - editare manuala CFG.author_name (numele original setat in setup wizard).
+// Util cand utilizatorul a schimbat fisiere cu un coleg si a ramas numele celuilalt salvat.
+function editAuthorName(){
+  var isEN=CFG.lang==='en';
+  var current=CFG.author_name||'';
+  var msg=isEN
+    ? 'Author name (saved at setup, used as fallback identity in some places).\nLeave empty to clear.\nCurrent: '+(current||'(empty)')
+    : 'Numele autorului (salvat la setup, folosit ca identitate fallback in unele locuri).\nLasă gol pentru a șterge.\nActual: '+(current||'(gol)');
+  var v=prompt(msg, current);
+  if(v===null)return; // cancel
+  CFG.author_name=v.trim();
+  saveCfg();
+  showToast(isEN?'Author name updated':'Numele autorului actualizat');
+  render();
 }
 
 async function saveCfgForm(){
@@ -19354,6 +19464,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.37',date:'2026-05-08',summary:'Fix: dropdown „Utilizator curent" nu mai afișează numele colegei rămas din swap de fișiere. Adăugat dialog „Cine semnează?" înainte de fiecare raport Word — alegi pe loc semnatarii pentru raportul curent.',notes:'2 fix-uri legate de gestionarea autorilor/semnatarilor. (1) Dropdown "Utilizator curent" din Configurare → Spital nu mai expune CFG.author_name ca optiune fallback (era confuz cand utilizatorul schimba fisiere cu colege — apareau "— Mircea Daniela —"). Inlocuit cu "— Nu este selectat —". CFG.author_name ramane salvat pentru fallback istoric (getCurrentUser) dar nu mai e vizibil in UI. Buton ✎ adaugat alaturi pentru editare/stergere manuala via editAuthorName() prompt. (2) Wrapper nou genWord(fn, label, args) in rapoarte.js: arata dialog confirmare semnatari inainte de a apela functia de generare. Dialog cu checkbox pe fiecare persoana din CFG.personnel, default bifat = p.sign actual. Quick actions: "Bifează/Debifează toți", "Doar eu" (CFG.current_user). Checkbox "Salvează ca default" optional — daca bifat, modifica si CFG.personnel.sign. Bifările active in dialog se salveaza in window._reportSignersOverride (Set de nume), folosit de wSigBlock() pentru raportul curent, apoi resetat. Modificate butoanele din pagina Generare Rapoarte (Word Anual, Trimestriale T1-T4, PV CPIAAM, Analiza IAAM/Auto/Deseuri, Consum ATB, plus variantele AI) sa foloseasca genWord wrapper. Restul de 22+ apeluri wSigBlock (audituri, biocide, instruire, etc) continua sa foloseasca CFG.personnel.sign — modifica din Configurare → Personal daca trebuie.'},
   {version:'13.36',date:'2026-05-08',summary:'Pagina Versiuni rescrisă: rezumat scurt user-friendly + detalii tehnice ascunse sub expand. Configurare → Introducere date: secțiuni grupate logic (IAAM/Autocontrol/Laborator/Calitate/Biocide/Deșeuri) cu denumiri uniforme între butoanele rapide și headere.',notes:'2 modificari principale. (1) Pagina Versiuni (rChangelog in ajutor.js) rescrisa: foloseste 2 campuri — summary (1-2 propozitii user-facing) afisat prominent, plus buton 🔧 Detalii tehnice care expandeaza notes (text tehnic complet). Default afiseaza doar ultimele 20 versiuni; buton "Arata toate cele N versiuni" pentru istoric complet. (2) Tot CHANGELOG-ul (206 entries) primit camp summary adaugat — agent dedicat a generat 1-2 propozitii user-facing per entry. (3) Configurare → Introducere date refactorizat: cele 12 sectiuni reordonate in 6 grupuri logice (IAAM: ecdc/risk/comorb/disp; Autocontrol: probe/probe-map/atp; Laborator: lab; Calitate: ipc/prof; Biocide: bio; Deseuri: des). Quick-link-urile (_qj.dateintro) si headerele h3 sincronizate — acelasi text peste tot. Denumiri uniformizate cu diacritice corecte si context clar. Toate sectiunile devenite bilingve via (isEN?...:...) — anterior unele aveau doar text RO hardcodat.'},
   {version:'13.35',date:'2026-05-07',summary:'Configurare → Introducere date: cele 12 secțiuni sunt acum colapsabile (închise default). Click pe titlu pentru a expanda.',notes:'Configurare > Introducere date: cele 12 sectiuni colapsabile (Categorii IPC, Profesionale, Tipuri Probe, Probe/Sectii, Probe Laborator, Categorii IAAM, Factori Risc, Comorbiditati, Dispozitive, Biocide, Coduri Deseuri, Suprafete ATP/UV). Default INCHISE - vezi doar header-ele cu chevron ▶. Click pe titlu (h3) sau pe quick-link buton de sus -> expandare + scroll. Implementare runtime via _setupCfgIntroCollapse() apelat dupa el.innerHTML=h cand _cfgTab==="dateintro" - NU modifica HTML-ul fiecarei sectiuni, doar adauga clase + event listeners. State persistent in window._cfgIntroOpen pe sesiune. Butoanele din header (ex "+ Adauga categorie IPC") sunt sibling cu h3, deci click pe ele nu se propaga la toggle. Adaugat handler global pentru <a href="#cfg-*"> (quick-links) sa expandeze tinta inainte de scroll. CSS: .pn-collapsed>.pb{display:none}; .pn-chev rotire 90deg cand expandat. Aplicat doar in dateintro tab (lista skip pentru cfg-info, cfg-pers, cfg-sec-*, cfg-lang, cfg-sync, etc).'},
   {version:'13.34',date:'2026-05-07',summary:'Planificare probe Autocontrol și matricea Probe aplicabile sunt acum colapsabile pe grupuri (Spital / Spitalizare de Zi / Ambulatoriu). Filtre noi la ATP și UV: secție, suprafață, rezultat, interval date. Buton × pentru curățare rapidă filtre dată.',notes:'4 imbunatatiri UX. (1) Planificare probe (Autocontrol > Planificare): cele 3 grupuri Spital / Spitalizare de Zi / Ambulatoriu sunt acum colapsabile - default INCHISE - cu chevron rotativ, header colorat, count per grup. State persistent in window._autoPlanGroupOpen pe perioada sesiunii. Util cand sunt zeci de combinatii nerecoltate (ex 334) si vrei sa ajungi la Ambulatoriu fara scroll. Helper _renderPlanGroup folosit pentru cele 3 sectiuni A/B/C (NC, nerecoltat curent, vechi >6 luni). (2) Configurare > Introducere date > Probe aplicabile per sectie: cele 3 grupuri colapsabile cu click pe header colorat. Default DESCHISE - colapsezi ce nu iti trebuie. State in window._cfgProbeAppOpen. Helper _toggleProbeAppGroup face toggle direct DOM (clase cfg-pa-grp-* + arrow update) fara full re-render. (3) Filtru date Autocontrol probe DE LA / PANA LA: buton mic × langa input, vizibil DOAR cand are valoare. Click → sterge filtrul si re-render. Era posibil doar prin clear din calendar nativ sau editare manuala. (4) Filtre noi la Probe ATP si Testare UV (in modulul Autocontrol > tab-uri): Sectie / Suprafata / Rezultat / DE LA / PANA LA cu acelasi pattern UI ca probe microbiologice. State per modul (_atpFilters, _uvFilters). Reuse _autoFixYear din autocontrol.js pentru blur fallback. KPIs raman calculate pe anul intreg (nu pe filtrate) - filtrele afecteaza doar tabelul. Empty state arata mesaj "nu corespunde filtrelor" cand filtrele nu match.'},

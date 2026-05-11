@@ -1,10 +1,10 @@
 {
-  "version": "13.36",
+  "version": "13.37",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Pagina Versiuni rescrisă: vezi un rezumat scurt user-friendly pentru fiecare versiune; detaliile tehnice rămân ascunse sub buton „🔧 Detalii tehnice”.",
-    "Implicit afișează ultimele 20 versiuni — buton „Arată toate cele 206 versiuni” pentru istoric complet.",
-    "Configurare → Introducere date: secțiunile sunt acum grupate logic (IAAM → Autocontrol → Laborator → Calitate → Biocide → Deșeuri).",
-    "Denumiri uniforme între butoanele rapide de sus și header-ele secțiunilor (același text peste tot, cu diacritice corecte și context clar)."
+    "Fix: dropdown „Utilizator curent” din Configurare nu mai expune numele autorului salvat (CFG.author_name). Buton ✎ alături permite editare/ștergere manuală.",
+    "Adăugat: înainte de fiecare raport Word din Generare Rapoarte apare un dialog „Cine semnează acest raport?” cu checkbox pe fiecare persoană.",
+    "Default bifați = cei marcați „Semnează” în Configurare → Personal. Modifici pe loc pentru raportul curent — opțional „Salvează ca default”.",
+    "Quick actions în dialog: „Bifează/Debifează toți”, „Doar eu” (auto-bifare doar utilizatorul curent)."
   ]
 }

@@ -1,10 +1,9 @@
 {
-  "version": "13.37",
+  "version": "13.38",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Fix: dropdown „Utilizator curent” din Configurare nu mai expune numele autorului salvat (CFG.author_name). Buton ✎ alături permite editare/ștergere manuală.",
-    "Adăugat: înainte de fiecare raport Word din Generare Rapoarte apare un dialog „Cine semnează acest raport?” cu checkbox pe fiecare persoană.",
-    "Default bifați = cei marcați „Semnează” în Configurare → Personal. Modifici pe loc pentru raportul curent — opțional „Salvează ca default”.",
-    "Quick actions în dialog: „Bifează/Debifează toți”, „Doar eu” (auto-bifare doar utilizatorul curent)."
+    "Pagina Versiuni — detaliile tehnice nu mai apar în versiunea publică. Vezi doar rezumatul scurt pentru fiecare update.",
+    "Aspectul devine curat: fără jargon dev, fără buton „🔧 Detalii tehnice”.",
+    "Arhiva tehnică se păstrează local pe disk (în dev-tools/CHANGELOG_TECHNICAL_NOTES.md + sursa pe Google Drive) pentru noi când debugăm."
   ]
 }

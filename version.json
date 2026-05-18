@@ -1,9 +1,8 @@
 {
-  "version": "13.38",
+  "version": "13.39",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Pagina Versiuni — detaliile tehnice nu mai apar în versiunea publică. Vezi doar rezumatul scurt pentru fiecare update.",
-    "Aspectul devine curat: fără jargon dev, fără buton „🔧 Detalii tehnice”.",
-    "Arhiva tehnică se păstrează local pe disk (în dev-tools/CHANGELOG_TECHNICAL_NOTES.md + sursa pe Google Drive) pentru noi când debugăm."
+    "Calendar → Raportări/Termene: raportările complet finalizate (100%) dispar automat când filtrul „Doar nefinalizate” e activ.",
+    "Hint la final cu numărul de raportări ascunse + link „arată toate” pentru a le revedea."
   ]
 }

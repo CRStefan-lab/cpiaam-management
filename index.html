@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.38</title>
+<title>CPIAAM Management v13.39</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2253,7 +2253,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.38';
+const APP_VERSION='13.39';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -12356,6 +12356,7 @@ async function rTerm(el){
 
   // ── Section: Recurring reports (grouped by template) ──
   if(templates.length>0){
+    _termHiddenCompletedCount=0; // v13.39 - reset counter pentru hint
     h+='<div class="pn"><div class="ph"><h3>'+(isEN?'Recurring Reports':'Raportari Repetitive')+'</h3></div><div class="pb" style="padding:0">';
     templates.forEach(t=>{
       // Filter template by search/recipient (but NOT by status — template itself has no status)
@@ -12370,6 +12371,12 @@ async function rTerm(el){
       const allInstances=instancesByParent[t.name]||[];
       const done=allInstances.filter(i=>i.status==='finalizat'||i.status==='trimis').length;
       const pending=allInstances.length-done;
+      // v13.39 - ascunde template-ul daca filtrul "Doar nefinalizate" e activ SI toate instantele sunt done (100%).
+      // Pastreaza templates fara instante (ex: singulara cu 0/0) pentru ca user-ul poate vrea sa le vada.
+      if(tf.status==='active' && allInstances.length>0 && pending===0){
+        _termHiddenCompletedCount=(_termHiddenCompletedCount||0)+1;
+        return; // skip — toate done
+      }
       const overdueCnt=allInstances.filter(i=>i.status!=='finalizat'&&i.status!=='trimis'&&i.due_date&&new Date(i.due_date)<new Date()).length;
       const expanded=_termExpanded[t.name]===true;
       const freqLabel=t.frequency==='saptamanal'?(isEN?'Weekly':'Saptamanal'):t.frequency==='lunar'?(isEN?'Monthly':'Lunar'):t.frequency==='trimestrial'?(isEN?'Quarterly':'Trimestrial'):t.frequency==='anual'?(isEN?'Yearly':'Anual'):t.frequency;
@@ -12419,6 +12426,13 @@ async function rTerm(el){
       }
       h+='</div>';
     });
+    // v13.39 - hint la final daca filtrul a ascuns template-uri 100% finalizate
+    if(_termHiddenCompletedCount>0){
+      h+='<div style="padding:10px 14px;background:var(--bg2,#f0fdf4);border-top:1px solid var(--brd);font-size:11px;color:var(--green,#16A34A);text-align:center">'+
+        '&#10003; '+_termHiddenCompletedCount+' '+(isEN?'completed report(s) hidden by filter':'raportari complet finalizate (ascunse de filtru)')+
+        ' · <a href="#" onclick="event.preventDefault();_termFilters.status=\'\';render()" style="color:var(--teal);text-decoration:underline">'+(isEN?'show all':'arata toate')+'</a>'+
+        '</div>';
+    }
     h+='</div></div>';
   }
 
@@ -19464,6 +19478,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.39',date:'2026-05-08',summary:'Calendar → Raportări/Termene: raportările complet finalizate (100%) dispar automat când filtrul „Doar nefinalizate" e activ. Hint la final cu numărul de raportări ascunse + link pentru a le revedea.'},
   {version:'13.38',date:'2026-05-08',summary:'Pagina Versiuni — detaliile tehnice nu mai apar în versiunea publică. Vezi doar rezumatul scurt pentru fiecare update. Arhiva tehnică se păstrează local pentru debugging.'},
   {version:'13.37',date:'2026-05-08',summary:'Fix: dropdown „Utilizator curent" nu mai afișează numele colegei rămas din swap de fișiere. Adăugat dialog „Cine semnează?" înainte de fiecare raport Word — alegi pe loc semnatarii pentru raportul curent.'},
   {version:'13.36',date:'2026-05-08',summary:'Pagina Versiuni rescrisă: rezumat scurt user-friendly + detalii tehnice ascunse sub expand. Configurare → Introducere date: secțiuni grupate logic (IAAM/Autocontrol/Laborator/Calitate/Biocide/Deșeuri) cu denumiri uniforme între butoanele rapide și headere.'},

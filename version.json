@@ -1,9 +1,8 @@
 {
-  "version": "13.43",
+  "version": "13.44",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "IAAM → pas 10: Originea infecției revizuită conform ECDC. Variante: internare curentă / internare anterioară același spital / alt spital (transfer) / centru de îngrijire pe termen lung (LTCF) / comunitară / origine necunoscută.",
-    "Eliminat termenul „readmisie” (timpul dintre internări sau secția/patologia nu contează — legătura e spitalul).",
-    "Fix: Fișa cazului (Figura 2) bifează acum corect căsuța de origine pentru toate variantele. Etichetele apar corect și în Anchetă."
+    "IAAM → pas 2 Spitalizare: câmpurile de diagnostic (internare, externare principal, secundare) sunt acum mai mari (textarea cu wrap) — vezi tot textul fără să muți cursorul.",
+    "Codurile rămân câmpuri mici alături. Toate se redimensionează vertical dacă ai nevoie de mai mult spațiu."
   ]
 }

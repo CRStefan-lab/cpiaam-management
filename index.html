@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.43</title>
+<title>CPIAAM Management v13.44</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2253,7 +2253,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.43';
+const APP_VERSION='13.44';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -4761,9 +4761,10 @@ function renderIaamSection(step){
       '<div class="fg"><label>Data externarii</label><input type="date" id="f-dext" value="'+(d.date_discharge||'')+'" onchange="autoCalcDays()" oninput="autoCalcDays()"></div>'+
       '<div class="fg"><label>Nr. zile internare</label><input type="number" id="f-nzi" value="'+(d.days||'')+'" min="0" style="background:var(--bg)"><div id="f-days-info" style="font-size:11px;color:var(--txtL);margin-top:2px">'+(d.date_admission&&d.date_discharge?'Calculat automat: '+calcDays(d.date_admission,d.date_discharge)+' zile (editabil)':'')+'</div></div></div>'+
       // v13.40 - diagnostice structurate: internare (text+cod), externare principal (text+cod), secundare (lista cu cod)
-      '<div class="fr"><div class="fg" style="flex:4"><label>Diagnostic internare</label><input id="f-dgi" value="'+esc(d.diag_admission||'')+'"></div>'+
+      // v13.44 - textarea (nu input) ca textul lung de diagnostic sa se vada complet (wrap)
+      '<div class="fr" style="align-items:flex-start"><div class="fg" style="flex:4"><label>Diagnostic internare</label><textarea id="f-dgi" rows="2" style="resize:vertical;font-family:inherit">'+esc(d.diag_admission||'')+'</textarea></div>'+
       '<div class="fg" style="flex:1"><label>Cod</label><input id="f-dgi-cod" value="'+esc(d.diag_admission_code||'')+'" placeholder="ex: M66.5"></div></div>'+
-      '<div class="fr"><div class="fg" style="flex:4"><label>Diagnostic externare — principal</label><input id="f-dge" value="'+esc(d.diag_discharge||'')+'"></div>'+
+      '<div class="fr" style="align-items:flex-start"><div class="fg" style="flex:4"><label>Diagnostic externare — principal</label><textarea id="f-dge" rows="2" style="resize:vertical;font-family:inherit">'+esc(d.diag_discharge||'')+'</textarea></div>'+
       '<div class="fg" style="flex:1"><label>Cod</label><input id="f-dge-cod" value="'+esc(d.diag_discharge_code||'')+'" placeholder="ex: M66.5"></div></div>'+
       '<div class="fg"><label>Diagnostice secundare</label>'+
       (()=>{if(!Array.isArray(_iaamDraft.diag_secondary)){_iaamDraft.diag_secondary=[]}return ''})()+
@@ -5235,9 +5236,10 @@ function removePrevAdm(i){
 function renderDiagSecRows(){
   const arr=_iaamDraft.diag_secondary;
   if(!Array.isArray(arr)||arr.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun diagnostic secundar</div>';
+  // v13.44 - textarea pentru diagnostic (wrap text lung), input pentru cod
   return arr.map((a,i)=>
-    '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+
-    '<input placeholder="Diagnostic secundar" value="'+esc(a.diag||'')+'" oninput="_iaamDraft.diag_secondary['+i+'].diag=this.value" style="flex:4">'+
+    '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:flex-start">'+
+    '<textarea placeholder="Diagnostic secundar" rows="2" oninput="_iaamDraft.diag_secondary['+i+'].diag=this.value" style="flex:4;resize:vertical;font-family:inherit">'+esc(a.diag||'')+'</textarea>'+
     '<input placeholder="Cod (ex: R52.0)" value="'+esc(a.code||'')+'" oninput="_iaamDraft.diag_secondary['+i+'].code=this.value" style="flex:1">'+
     '<button class="contact-del" onclick="removeDiagSec('+i+')">&times;</button></div>'
   ).join('');
@@ -19603,6 +19605,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.44',date:'2026-05-08',summary:'IAAM → pas 2 Spitalizare: câmpurile de diagnostic (internare, externare principal, secundare) sunt acum textarea cu wrap — vezi tot textul fără să muți cursorul. Codurile rămân câmpuri mici alături.'},
   {version:'13.43',date:'2026-05-08',summary:'IAAM → pas 10: Originea infecției revizuită conform ECDC (internare curentă / anterioară același spital / alt spital / LTCF / comunitară / necunoscută). Eliminat termenul „readmisie". Fix: Fișa cazului bifează corect căsuța de origine pentru toate variantele.'},
   {version:'13.42',date:'2026-05-08',summary:'IAAM → pas 9 Măsuri: Biocide utilizate restructurat — checkbox „Conform PO intern" + denumire PO, plus poți adăuga mai multe biocide specifice din listă. IAAM → pas 7: câmpul Proceduri/Intervenții e acum textarea mai mare (vezi tot textul fără să muți cursorul).'},
   {version:'13.41',date:'2026-05-08',summary:'IAAM → pas 7 Istoric clinic: Procedurile invazive / Intervențiile chirurgicale sunt acum listă cu data intervenției. Poți adăuga mai multe (buton „+ Adaugă") cu 🗑 pe fiecare. Datele apar și în rapoartele Word.'},

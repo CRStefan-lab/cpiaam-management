@@ -1,8 +1,9 @@
 {
-  "version": "13.39",
+  "version": "13.43",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Calendar → Raportări/Termene: raportările complet finalizate (100%) dispar automat când filtrul „Doar nefinalizate” e activ.",
-    "Hint la final cu numărul de raportări ascunse + link „arată toate” pentru a le revedea."
+    "IAAM → pas 10: Originea infecției revizuită conform ECDC. Variante: internare curentă / internare anterioară același spital / alt spital (transfer) / centru de îngrijire pe termen lung (LTCF) / comunitară / origine necunoscută.",
+    "Eliminat termenul „readmisie” (timpul dintre internări sau secția/patologia nu contează — legătura e spitalul).",
+    "Fix: Fișa cazului (Figura 2) bifează acum corect căsuța de origine pentru toate variantele. Etichetele apar corect și în Anchetă."
   ]
 }

@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.39</title>
+<title>CPIAAM Management v13.43</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2253,7 +2253,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.39';
+const APP_VERSION='13.43';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -2332,9 +2332,12 @@ var CFG={
     {id:'w10',code:'20 01 01',name:'Hartie si carton',category:'reciclabil',standard:true,active:true},
     {id:'w11',code:'20 01 08',name:'Deseuri biodegradabile din bucatarii',category:'nepericulos',standard:true,active:true},
     {id:'w12',code:'20 03 01',name:'Deseuri municipale amestecate (menajere)',category:'nepericulos',standard:true,active:true}],
-  origins:{internare_curenta:'Internarea curenta (din spital)',alt_spital:'Internare anterioara — alt spital',
-    acelasi_spital:'Internare anterioara — acelasi spital',nespecificat:'Internare anterioara — nespecificat',
-    comunitara:'Infectie comunitara'},
+  origins:{internare_curenta:'Internarea curentă (în acest spital)',
+    acelasi_spital:'Internare anterioară — același spital',
+    alt_spital:'Alt spital de îngrijire acută (transfer/import)',
+    ltcf:'Centru de îngrijire pe termen lung (LTCF/cămin)',
+    comunitara:'Infecție comunitară (non-IAAM)',
+    nespecificat:'Origine necunoscută / nespecificată'},
   biocide_budget:0, biocide_products:[],
   ai_provider:'', ai_api_key:'', ai_model:'', ai_endpoint:'',
   backup_interval_days:7, last_backup:null, setup_complete:false, tutorial_shown:false, lang:'ro',
@@ -2376,6 +2379,17 @@ async function loadCfg(){
   if(!CFG.uv_surface_types||!CFG.uv_surface_types.length){
     CFG.uv_surface_types=_DEFAULT_UV_SURFACES.map(s=>({...s}));
   }
+  // v13.43 - migrare origini IAAM la lista ECDC-aliniata (relabel + adauga LTCF, ordine logica).
+  // Origini nu sunt user-editabile (fara UI), deci inlocuim complet pentru a forta ordinea corecta.
+  // Datele vechi pastreaza cheia (ex 'nespecificat' → eticheta noua "Origine necunoscuta"); cheile inca rezolva in Word.
+  CFG.origins={
+    internare_curenta:'Internarea curentă (în acest spital)',
+    acelasi_spital:'Internare anterioară — același spital',
+    alt_spital:'Alt spital de îngrijire acută (transfer/import)',
+    ltcf:'Centru de îngrijire pe termen lung (LTCF/cămin)',
+    comunitara:'Infecție comunitară (non-IAAM)',
+    nespecificat:'Origine necunoscută / nespecificată'
+  };
   // Migrate: populate ipc_categories if missing
   if(!CFG.ipc_categories||!CFG.ipc_categories.length){
     CFG.ipc_categories=[
@@ -4746,8 +4760,15 @@ function renderIaamSection(step){
       '<div class="fr3"><div class="fg"><label>Data internarii</label><input type="date" id="f-dint" value="'+(d.date_admission||'')+'" onchange="autoCalcDays()" oninput="autoCalcDays()"></div>'+
       '<div class="fg"><label>Data externarii</label><input type="date" id="f-dext" value="'+(d.date_discharge||'')+'" onchange="autoCalcDays()" oninput="autoCalcDays()"></div>'+
       '<div class="fg"><label>Nr. zile internare</label><input type="number" id="f-nzi" value="'+(d.days||'')+'" min="0" style="background:var(--bg)"><div id="f-days-info" style="font-size:11px;color:var(--txtL);margin-top:2px">'+(d.date_admission&&d.date_discharge?'Calculat automat: '+calcDays(d.date_admission,d.date_discharge)+' zile (editabil)':'')+'</div></div></div>'+
-      '<div class="fg"><label>Diagnostic internare</label><textarea id="f-dgi" rows="2">'+esc(d.diag_admission||'')+'</textarea></div>'+
-      '<div class="fg"><label>Diagnostic externare</label><textarea id="f-dge" rows="2">'+esc(d.diag_discharge||'')+'</textarea></div>'+
+      // v13.40 - diagnostice structurate: internare (text+cod), externare principal (text+cod), secundare (lista cu cod)
+      '<div class="fr"><div class="fg" style="flex:4"><label>Diagnostic internare</label><input id="f-dgi" value="'+esc(d.diag_admission||'')+'"></div>'+
+      '<div class="fg" style="flex:1"><label>Cod</label><input id="f-dgi-cod" value="'+esc(d.diag_admission_code||'')+'" placeholder="ex: M66.5"></div></div>'+
+      '<div class="fr"><div class="fg" style="flex:4"><label>Diagnostic externare — principal</label><input id="f-dge" value="'+esc(d.diag_discharge||'')+'"></div>'+
+      '<div class="fg" style="flex:1"><label>Cod</label><input id="f-dge-cod" value="'+esc(d.diag_discharge_code||'')+'" placeholder="ex: M66.5"></div></div>'+
+      '<div class="fg"><label>Diagnostice secundare</label>'+
+      (()=>{if(!Array.isArray(_iaamDraft.diag_secondary)){_iaamDraft.diag_secondary=[]}return ''})()+
+      '<div id="f-dgsec-list">'+renderDiagSecRows()+'</div>'+
+      '<button class="btn bo bsm" onclick="addDiagSecRow()" style="margin-top:6px">+ Adauga diagnostic secundar</button></div>'+
       '<div class="fg"><label>'+T('iaam_prev_admissions')+'</label>'+
       (()=>{let pa=d.prev_admissions;if(typeof pa==='string'&&pa){_iaamDraft.prev_admissions=[{hospital:pa,section:'',interval:''}]}else if(!Array.isArray(pa)){_iaamDraft.prev_admissions=[]}return ''})()+
       '<div id="f-prev-list">'+renderPrevAdmRows()+'</div>'+
@@ -4790,7 +4811,11 @@ function renderIaamSection(step){
   case 6: // Clinical history
     h='<div class="fg"><label>Istoric clinic (narativ)</label><textarea id="f-hist" rows="4">'+esc(d.clinical_history||'')+'</textarea></div>'+
       '<div class="fg"><label>'+T('iaam_comorbidities')+'</label>'+renderComorbSection()+'</div>'+
-      '<div class="fg"><label>'+T('iaam_procedures_label')+'</label><textarea id="f-proc" rows="3">'+esc(d.procedures||'')+'</textarea></div>'+
+      // v13.41 - proceduri/interventii ca lista cu data interventiei + buton de adaugat mai multe
+      '<div class="fg"><label>'+T('iaam_procedures_label')+'</label>'+
+      (()=>{var pl=_iaamDraft.procedures_list;if(!Array.isArray(pl)){if(typeof d.procedures==='string'&&d.procedures.trim()){_iaamDraft.procedures_list=[{proc:d.procedures.trim(),date:''}]}else{_iaamDraft.procedures_list=[]}}return ''})()+
+      '<div id="f-proc-list">'+renderProcRows()+'</div>'+
+      '<button class="btn bo bsm" onclick="addProcRow()" style="margin-top:6px">+ '+(isEN?'Add procedure':'Adauga procedura / interventie')+'</button></div>'+
       '<div class="fg"><label>'+T('iaam_invasive_devices')+'</label>'+renderDevicesSection()+'</div>';
     break;
   case 7: // Contacts & outbreak
@@ -4804,14 +4829,28 @@ function renderIaamSection(step){
       '<div class="fg"><label>Detalii focar (daca DA)</label><textarea id="f-foc-det" rows="2">'+esc(d.outbreak_details||'')+'</textarea></div>';}
     break;
   case 8: // Measures & causality
-    {var bioProds=(CFG.biocide_products||[]).map(function(p){return '<option value="'+esc(p.name||p.id)+'"'+(d.biocide_used===(p.name||p.id)?' selected':'')+'>'+esc(p.name||p.id)+'</option>'}).join('');
+    {var bioProds=(CFG.biocide_products||[]).map(function(p){return '<option value="'+esc(p.name||p.id)+'">'+esc(p.name||p.id)+'</option>'}).join('');
+    // v13.42 - migration biocide_used (string vechi) -> biocides_used (array) + biocide_conform_po
+    if(!Array.isArray(_iaamDraft.biocides_used)){
+      var _bu=d.biocide_used;
+      if(_bu==='Conform PO intern'){_iaamDraft.biocides_used=[];if(d.biocide_conform_po===undefined)_iaamDraft.biocide_conform_po=true}
+      else if(_bu&&_bu!=='Altul'){_iaamDraft.biocides_used=[_bu]}
+      else{_iaamDraft.biocides_used=[]}
+    }
     h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
       '<div class="fg"><label>Izolare pacient</label><div style="margin-top:4px"><label style="cursor:pointer;display:flex;align-items:center;gap:6px"><input type="checkbox" id="f-izolare" '+(d.isolation?'checked':'')+' style="accent-color:var(--teal);width:16px;height:16px"> DA — pacient izolat</label></div></div>'+
       '<div class="fg"><label>Precautiuni implementate</label><select id="f-precautiuni"><option value="">— selecteaza —</option><option value="Standard"'+(d.precautions==='Standard'?' selected':'')+'>Standard</option><option value="Contact"'+((d.precautions==='Contact'||d.precautions==='Precautiuni de contact')?' selected':'')+'>Precautiuni de contact</option><option value="Aeriene"'+((d.precautions==='Aeriene'||d.precautions==='Precautiuni aeriene')?' selected':'')+'>Precautiuni aeriene</option><option value="Picatura"'+((d.precautions==='Picatura'||d.precautions==='Precautiuni de picatura')?' selected':'')+'>Precautiuni de picatura</option><option value="Contact+Aeriene"'+((d.precautions==='Contact+Aeriene'||d.precautions==='Contact + Aeriene')?' selected':'')+'>Contact + Aeriene</option><option value="Contact+Picatura"'+((d.precautions==='Contact+Picatura'||d.precautions==='Contact + Picatura')?' selected':'')+'>Contact + Picatura</option></select></div>'+
       '<div class="fg"><label>Echipamente protectie utilizate</label><div style="margin-top:4px"><label style="cursor:pointer;display:flex;align-items:center;gap:6px"><input type="checkbox" id="f-epp" '+(d.ppe_used?'checked':'')+' style="accent-color:var(--teal);width:16px;height:16px"> DA</label></div></div>'+
       '<div class="fg"><label>Curatenie terminala efectuata</label><div style="margin-top:4px"><label style="cursor:pointer;display:flex;align-items:center;gap:6px"><input type="checkbox" id="f-curatenie" '+(d.terminal_cleaning?'checked':'')+' style="accent-color:var(--teal);width:16px;height:16px"> DA</label></div></div>'+
-      '<div class="fg"><label>Biocide utilizate</label><select id="f-biocid"><option value="">— selecteaza —</option><option value="Conform PO intern"'+(d.biocide_used==='Conform PO intern'?' selected':'')+'>Conform PO intern</option>'+bioProds+'<option value="Altul"'+(d.biocide_used==='Altul'?' selected':'')+'>Altul</option></select></div>'+
       '<div class="fg"><label>Reinstruire personal</label><select id="f-reinstruire"><option value="">— selecteaza —</option><option'+(d.retraining==='Nu este necesara'?' selected':'')+'>Nu este necesara</option><option'+(d.retraining==='Da - efectuata'?' selected':'')+'>Da - efectuata</option><option'+(d.retraining==='Da - programata'?' selected':'')+'>Da - programata</option></select></div>'+
+    '</div>'+
+    // v13.42 - Biocide utilizate: checkbox Conform PO (+ denumire PO) + lista de biocide (poti adauga mai multe)
+    '<div class="fg" style="margin-top:12px;padding:12px;background:var(--bg);border:1px solid var(--brd);border-radius:8px"><label style="font-weight:700">Biocide utilizate</label>'+
+      '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:8px 0"><input type="checkbox" id="f-bio-po" '+(d.biocide_conform_po?'checked':'')+' onchange="toggleBioPo(this.checked)" style="accent-color:var(--teal);width:16px;height:16px"> <span style="font-weight:600">Conform PO intern</span> <span style="font-size:11px;color:var(--txtL)">(procedura operationala — nu mai e nevoie sa selectezi biocidul manual)</span></label>'+
+      '<div id="f-bio-po-name-wrap" style="'+(d.biocide_conform_po?'':'display:none')+';margin-bottom:10px"><input id="f-bio-po-name" value="'+esc(d.biocide_po_name||'')+'" placeholder="Denumire PO (ex: PO 1, PO 2, PO-CPIAAM-04)"></div>'+
+      '<div style="font-size:11px;color:var(--txtL);margin-bottom:4px">Biocide specifice (optional — poti adauga mai multe):</div>'+
+      '<div style="display:flex;gap:6px;margin-bottom:8px"><select id="f-bio-sel" style="flex:1"><option value="">— selecteaza biocid —</option>'+bioProds+'<option value="Altul">Altul</option></select><button class="btn bo bsm" onclick="addBiocideUsed()">+ Adauga</button></div>'+
+      '<div id="f-bio-list">'+renderBiocideUsedRows()+'</div>'+
     '</div>'+
     '<div class="fg" style="margin-top:12px"><label>Sursa suspectata</label><textarea id="f-src" rows="2">'+esc(d.suspected_source||'')+'</textarea></div>'+
     '<div class="fg"><label>Alte masuri de control (optional)</label><textarea id="f-ms" rows="2">'+(d.measures||[]).join('\n')+'</textarea></div>';}
@@ -4873,6 +4912,10 @@ function collectIaamSection(step){
     d.section=v('f-sec');d.section_attribution=v('f-sec-attr')||'';d.reg_number=v('f-regn').trim();d.fo_number=v('f-fon').trim();
     d.doctor=v('f-doc').trim();d.date_admission=v('f-dint');d.date_discharge=v('f-dext');
     d.days=+v('f-nzi')||null;d.diag_admission=v('f-dgi').trim();d.diag_discharge=v('f-dge').trim();
+    // v13.40 - coduri diagnostic + diagnostice secundare (array deja in _iaamDraft via oninput)
+    d.diag_admission_code=(_el('f-dgi-cod')?v('f-dgi-cod').trim():(d.diag_admission_code||''));
+    d.diag_discharge_code=(_el('f-dge-cod')?v('f-dge-cod').trim():(d.diag_discharge_code||''));
+    if(Array.isArray(d.diag_secondary))d.diag_secondary=d.diag_secondary.filter(x=>x&&((x.diag||'').trim()||(x.code||'').trim()));
     break;
   case 2:
     if(!_el('f-iaam-cat'))break;
@@ -4900,7 +4943,9 @@ function collectIaamSection(step){
     if(!_el('f-hist'))break;
     d.clinical_history=v('f-hist').trim();
     // comorbidities collected via toggle/add/remove handlers — already in _iaamDraft
-    d.procedures=v('f-proc').trim();
+    // v13.41 - proceduri din lista (filtrate de randuri goale) + string backward-compat pentru rapoarte
+    d.procedures_list=Array.isArray(_iaamDraft.procedures_list)?_iaamDraft.procedures_list.filter(p=>p&&((p.proc||'').trim()||(p.date||''))):[];
+    d.procedures=d.procedures_list.map(p=>(p.proc||'').trim()+(p.date?' ('+fmtDate(p.date)+')':'')).filter(Boolean).join('; ');
     break;
   case 7:
     if(!_el('f-foc'))break;
@@ -4911,7 +4956,12 @@ function collectIaamSection(step){
   case 8:
     if(!_el('f-izolare'))break;
     d.isolation=_el('f-izolare').checked;d.precautions=v('f-precautiuni');d.ppe_used=_el('f-epp').checked;
-    d.terminal_cleaning=_el('f-curatenie').checked;d.biocide_used=v('f-biocid');d.retraining=v('f-reinstruire');
+    d.terminal_cleaning=_el('f-curatenie').checked;d.retraining=v('f-reinstruire');
+    // v13.42 - biocide: conform PO (+denumire) + lista biocide; string backward-compat
+    d.biocide_conform_po=_el('f-bio-po')?_el('f-bio-po').checked:false;
+    d.biocide_po_name=(_el('f-bio-po-name')?v('f-bio-po-name').trim():'');
+    d.biocides_used=Array.isArray(_iaamDraft.biocides_used)?_iaamDraft.biocides_used.slice():[];
+    d.biocide_used=[(d.biocide_conform_po?('Conform PO intern'+(d.biocide_po_name?' ('+d.biocide_po_name+')':'')):''),d.biocides_used.join('; ')].filter(Boolean).join('; ');
     d.suspected_source=v('f-src').trim();d.measures=v('f-ms').split('\n').map(s=>s.trim()).filter(Boolean);
     break;
   case 9:
@@ -5181,6 +5231,71 @@ function removePrevAdm(i){
   _iaamDraft.prev_admissions.splice(i,1);markFormDirty();
   const el=document.getElementById('f-prev-list');if(el)el.innerHTML=renderPrevAdmRows();
 }
+// v13.40 - diagnostice secundare (text + cod), buton de adaugat mai multe
+function renderDiagSecRows(){
+  const arr=_iaamDraft.diag_secondary;
+  if(!Array.isArray(arr)||arr.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun diagnostic secundar</div>';
+  return arr.map((a,i)=>
+    '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">'+
+    '<input placeholder="Diagnostic secundar" value="'+esc(a.diag||'')+'" oninput="_iaamDraft.diag_secondary['+i+'].diag=this.value" style="flex:4">'+
+    '<input placeholder="Cod (ex: R52.0)" value="'+esc(a.code||'')+'" oninput="_iaamDraft.diag_secondary['+i+'].code=this.value" style="flex:1">'+
+    '<button class="contact-del" onclick="removeDiagSec('+i+')">&times;</button></div>'
+  ).join('');
+}
+function addDiagSecRow(){
+  if(!Array.isArray(_iaamDraft.diag_secondary))_iaamDraft.diag_secondary=[];
+  _iaamDraft.diag_secondary.push({diag:'',code:''});markFormDirty();
+  const el=document.getElementById('f-dgsec-list');if(el)el.innerHTML=renderDiagSecRows();
+}
+function removeDiagSec(i){
+  if(!Array.isArray(_iaamDraft.diag_secondary))return;
+  _iaamDraft.diag_secondary.splice(i,1);markFormDirty();
+  const el=document.getElementById('f-dgsec-list');if(el)el.innerHTML=renderDiagSecRows();
+}
+// v13.41 - proceduri invazive / interventii chirurgicale (text + data), buton de adaugat mai multe
+function renderProcRows(){
+  const arr=_iaamDraft.procedures_list;
+  if(!Array.isArray(arr)||arr.length===0)return '<div style="color:var(--txtL);font-size:12px">Nicio procedura / interventie</div>';
+  // v13.42 - textarea (nu input) ca textul lung sa se vada complet (wrap pe mai multe randuri)
+  return arr.map((a,i)=>
+    '<div style="display:flex;gap:6px;margin-bottom:6px;align-items:flex-start">'+
+    '<textarea placeholder="Procedura / interventie chirurgicala" rows="2" oninput="_iaamDraft.procedures_list['+i+'].proc=this.value" style="flex:4;resize:vertical;font-family:inherit">'+esc(a.proc||'')+'</textarea>'+
+    '<input type="date" value="'+(a.date||'')+'" oninput="_iaamDraft.procedures_list['+i+'].date=this.value" title="Data interventiei" style="width:150px">'+
+    '<button class="contact-del" onclick="removeProc('+i+')">&times;</button></div>'
+  ).join('');
+}
+function addProcRow(){
+  if(!Array.isArray(_iaamDraft.procedures_list))_iaamDraft.procedures_list=[];
+  _iaamDraft.procedures_list.push({proc:'',date:''});markFormDirty();
+  const el=document.getElementById('f-proc-list');if(el)el.innerHTML=renderProcRows();
+}
+function removeProc(i){
+  if(!Array.isArray(_iaamDraft.procedures_list))return;
+  _iaamDraft.procedures_list.splice(i,1);markFormDirty();
+  const el=document.getElementById('f-proc-list');if(el)el.innerHTML=renderProcRows();
+}
+// v13.42 - biocide utilizate: checkbox Conform PO + lista de biocide (mai multe)
+function toggleBioPo(checked){
+  var w=document.getElementById('f-bio-po-name-wrap');if(w)w.style.display=checked?'':'none';
+  markFormDirty();
+}
+function renderBiocideUsedRows(){
+  var arr=_iaamDraft.biocides_used;
+  if(!Array.isArray(arr)||arr.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun biocid specific adaugat</div>';
+  return arr.map(function(b,i){return '<div style="display:flex;gap:6px;margin-bottom:4px;align-items:center"><span style="flex:1;font-size:13px;padding:5px 8px;background:var(--card,#fff);border:1px solid var(--brd);border-radius:4px">'+esc(b)+'</span><button class="contact-del" onclick="removeBiocideUsed('+i+')">&times;</button></div>'}).join('');
+}
+function addBiocideUsed(){
+  var sel=document.getElementById('f-bio-sel');if(!sel||!sel.value)return;
+  if(!Array.isArray(_iaamDraft.biocides_used))_iaamDraft.biocides_used=[];
+  if(_iaamDraft.biocides_used.indexOf(sel.value)<0){_iaamDraft.biocides_used.push(sel.value);markFormDirty()}
+  sel.value='';
+  var el=document.getElementById('f-bio-list');if(el)el.innerHTML=renderBiocideUsedRows();
+}
+function removeBiocideUsed(i){
+  if(!Array.isArray(_iaamDraft.biocides_used))return;
+  _iaamDraft.biocides_used.splice(i,1);markFormDirty();
+  var el=document.getElementById('f-bio-list');if(el)el.innerHTML=renderBiocideUsedRows();
+}
 
 // ═══ Bulletin rows ═══
 function renderBulletinRows(){
@@ -5244,7 +5359,7 @@ async function editIAAM(id){
     _iaamDraft={year:A.year,month:new Date().getMonth()+1,section:'',mediu:'Urban',
       detection:'activa',active_type:'infectie',risk_factors:[],measures:[],
       germeni:[],antibiotics:[],contacts:'Fara contacti de salon',outbreak:'nu',
-      prev_admissions:[],bulletins:[],bulletins_neg:[],comorbidities:[]};
+      prev_admissions:[],bulletins:[],bulletins_neg:[],comorbidities:[],diag_secondary:[],procedures_list:[],biocides_used:[]};
     _iaamEditId=null;
     _iaamDraft.reg_number=await calcRegNumber(A.year);
   }
@@ -5280,7 +5395,9 @@ async function duplicateIAAM(id){
   _iaamDraft.age=null;_iaamDraft.sex='';_iaamDraft.fo_number='';_iaamDraft.reg_number='';
   _iaamDraft.germeni=[];_iaamDraft.antibiotics=[];_iaamDraft.organism='';_iaamDraft.mdr=false;
   _iaamDraft.diag_admission='';_iaamDraft.diag_discharge='';_iaamDraft.clinical_history='';
-  _iaamDraft.comorbidities=[];_iaamDraft.procedures='';_iaamDraft.prev_admissions=[];
+  _iaamDraft.diag_admission_code='';_iaamDraft.diag_discharge_code='';_iaamDraft.diag_secondary=[];
+  _iaamDraft.comorbidities=[];_iaamDraft.procedures='';_iaamDraft.procedures_list=[];_iaamDraft.prev_admissions=[];
+  _iaamDraft.biocides_used=[];_iaamDraft.biocide_conform_po=false;_iaamDraft.biocide_po_name='';
   _iaamDraft.invasive_devices='';_iaamDraft.domiciliu='';
   _iaamDraft.classification='';_iaamDraft.conclusions='';_iaamDraft.date_deces='';_iaamDraft.cauza_deces='';
   _iaamDraft.date_confirmed='';_iaamDraft.bulletin_nr='';_iaamDraft.bulletins=[];
@@ -15710,7 +15827,9 @@ async function genAnchetaWord(id){
       kvRow('Data internarii',fmtDate(r.date_admission)),
       kvRow('Data externarii',r.date_discharge?fmtDate(r.date_discharge):'Pacient inca internat'),
       kvRow('Nr. zile internare',r.days?r.days+' zile':'—'),
-      kvRow('Dg. internare',r.diag_admission||'—'),kvRow('Dg. externare',r.diag_discharge||'—')]}),
+      kvRow('Dg. internare',(r.diag_admission||'—')+(r.diag_admission_code?' ('+r.diag_admission_code+')':'')),
+      kvRow('Dg. externare principal',(r.diag_discharge||'—')+(r.diag_discharge_code?' ('+r.diag_discharge_code+')':'')),
+      kvRow('Dg. secundare',(Array.isArray(r.diag_secondary)&&r.diag_secondary.length?r.diag_secondary.map(function(s){return (s.diag||'')+(s.code?' ('+s.code+')':'')}).join('; '):'—'))]}),
     // Prev admissions
     ...(()=>{
       const pa=r.prev_admissions;
@@ -15817,11 +15936,12 @@ async function genFisaIAAM(id){
   const cdFara=cauzaDec==='Fara legatura'||cauzaDec.indexOf('legatur')>=0?'X':' ';
   const cdNec=cauzaDec==='Necunoscut'||cauzaDec.indexOf('necunoscut')>=0?'X':' ';
   // Origine
+  // v13.43 - mapare chei origine (dropdown) → 4 casute oficiale Figura 2. Pastreaza compat cu chei vechi.
   const orig=r.origin||'';
-  const origSR=orig==='spital_raportor'||orig.indexOf('raportor')>=0?'X':' ';
-  const origAS=orig==='alt_spital'||orig.indexOf('alt ')>=0?'X':' ';
-  const origCr=orig==='cronici'||orig.indexOf('cronici')>=0||orig.indexOf('vârstnici')>=0?'X':' ';
-  const origAlt=orig==='alte'||orig.indexOf('alte')>=0?'X':' ';
+  const origSR=(orig==='internare_curenta'||orig==='acelasi_spital'||orig==='spital_raportor'||orig.indexOf('raportor')>=0||orig.indexOf('acest spital')>=0)?'X':' ';
+  const origAS=(orig==='alt_spital'||orig.indexOf('alt spital')>=0||orig.indexOf('alt ')>=0)?'X':' ';
+  const origCr=(orig==='ltcf'||orig.indexOf('cronici')>=0||orig.indexOf('vârstnici')>=0||orig.indexOf('LTCF')>=0||orig.indexOf('termen lung')>=0)?'X':' ';
+  const origAlt=(orig==='comunitara'||orig==='nespecificat'||orig.indexOf('comunitar')>=0||orig.indexOf('necunoscut')>=0||orig.indexOf('alte')>=0)?'X':' ';
   // ATB info
   const atbStr=aList.length>0?aList.map(a=>{
     const routeObj=ATB_ROUTES.find(x=>x.v===a.route);
@@ -15838,7 +15958,10 @@ async function genFisaIAAM(id){
 
   // Diagnistic IAAM
   const diagIaam=r.iaam_category?iaamCatLabel(r.iaam_category):(r.infection_type?rInf(r.infection_type):'');
-  const diagAdm=r.diag_admission||'';
+  const diagAdm=(r.diag_admission||'')+(r.diag_admission_code?' ('+r.diag_admission_code+')':'');
+  // v13.40 - diagnostic externare principal + cod + diagnostice secundare
+  const diagDisch=(r.diag_discharge||'')+(r.diag_discharge_code?' ('+r.diag_discharge_code+')':'');
+  const diagSecStr=(Array.isArray(r.diag_secondary)&&r.diag_secondary.length)?r.diag_secondary.map(function(s){return (s.diag||'')+(s.code?' ('+s.code+')':'')}).join('; '):'';
   const tipInterventie=r.intervention_type||r.procedures||'';
   // Germeni + rezistenta
   const germStr=gList.map(g=>g.name||'').join(', ')||'';
@@ -15872,6 +15995,8 @@ async function genFisaIAAM(id){
     cP(' '+box()),
     cP(' '+boxL('Data intern\u0103rii '+admStr+'  Data extern\u0103rii '+extStr)),
     cP(' '+boxL('Diagnosticul la internare '+pad(diagAdm,47))),
+    cP(' '+boxL('Diagnosticul la externare '+pad(diagDisch,47))),
+    cP(' '+boxL('Diagnostice secundare: '+padS(diagSecStr||dots(40),LN-23))),
     cP(' '+boxL('Diagnosticul infec\u021Biei asociate asisten\u021Bei medicale (IAAM)')),
     cP(' '+boxL(padS(diagIaam,LN))),
     cP(' '+boxL('Data aplic\u0103rii dispozitivului medical/interven\u021Biei chirurgicale '+devStr)),
@@ -19478,6 +19603,10 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.43',date:'2026-05-08',summary:'IAAM → pas 10: Originea infecției revizuită conform ECDC (internare curentă / anterioară același spital / alt spital / LTCF / comunitară / necunoscută). Eliminat termenul „readmisie". Fix: Fișa cazului bifează corect căsuța de origine pentru toate variantele.'},
+  {version:'13.42',date:'2026-05-08',summary:'IAAM → pas 9 Măsuri: Biocide utilizate restructurat — checkbox „Conform PO intern" + denumire PO, plus poți adăuga mai multe biocide specifice din listă. IAAM → pas 7: câmpul Proceduri/Intervenții e acum textarea mai mare (vezi tot textul fără să muți cursorul).'},
+  {version:'13.41',date:'2026-05-08',summary:'IAAM → pas 7 Istoric clinic: Procedurile invazive / Intervențiile chirurgicale sunt acum listă cu data intervenției. Poți adăuga mai multe (buton „+ Adaugă") cu 🗑 pe fiecare. Datele apar și în rapoartele Word.'},
+  {version:'13.40',date:'2026-05-08',summary:'IAAM → pas 2 Spitalizare: diagnostice structurate. Diagnostic internare + cod, Diagnostic externare principal + cod, plus listă de diagnostice secundare cu buton de adăugare (fiecare cu cod separat). Rapoartele Word afișează codurile + secundarele.'},
   {version:'13.39',date:'2026-05-08',summary:'Calendar → Raportări/Termene: raportările complet finalizate (100%) dispar automat când filtrul „Doar nefinalizate" e activ. Hint la final cu numărul de raportări ascunse + link pentru a le revedea.'},
   {version:'13.38',date:'2026-05-08',summary:'Pagina Versiuni — detaliile tehnice nu mai apar în versiunea publică. Vezi doar rezumatul scurt pentru fiecare update. Arhiva tehnică se păstrează local pentru debugging.'},
   {version:'13.37',date:'2026-05-08',summary:'Fix: dropdown „Utilizator curent" nu mai afișează numele colegei rămas din swap de fișiere. Adăugat dialog „Cine semnează?" înainte de fiecare raport Word — alegi pe loc semnatarii pentru raportul curent.'},
@@ -20166,7 +20295,8 @@ function analyzeIAAM(ia,prevIa,deseuri){
     const sc={};ia.forEach(r=>{const sn=rSec(r.section);sc[sn]=(sc[sn]||0)+1});
     const sorted=Object.entries(sc).sort((a,b)=>b[1]-a[1]);const topSec=sorted[0];
     if(topSec&&topSec[1]>1){const tp=pct(topSec[1],n);R.narrative.push('Sectia cu cel mai mare numar de cazuri: '+topSec[0]+' ('+topSec[1]+' cazuri, '+tp.toFixed(1).replace('.',',')+' % din total).');}
-    const importN=ia.filter(r=>r.origin&&r.origin!=='internare_curenta'&&r.origin!=='comunitara').length;
+    // v13.43 - import = dobandit in afara internarii curente, EXCLUDE comunitara + necunoscut/nespecificat (nu sunt import confirmat)
+    const importN=ia.filter(r=>r.origin&&r.origin!=='internare_curenta'&&r.origin!=='comunitara'&&r.origin!=='nespecificat').length;
     const importPct=pct(importN,n);
     if(importPct>50){R.narrative.push(importPct.toFixed(1).replace('.',',')+' % din cazuri sunt asociate internarilor anterioare — import de risc.');R.insights.push('Majoritatea IAAM = import de risc.');}
     const oc={};ia.forEach(r=>{if(r.organism)oc[r.organism]=(oc[r.organism]||0)+1});

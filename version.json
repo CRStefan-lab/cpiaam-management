@@ -1,10 +1,9 @@
 {
-  "version": "13.45",
+  "version": "13.47",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Antibiotice: adăugate în lista standard Oxacilina, Cefadroxil, Ceftibuten, Spiramicina, Josamicina, Pivmecilinam, Dicloxacilina + grup nou intestinal/local (Rifaximina, Nistatina orală, Vancomicina orală, Colistina orală, Fidaxomicina).",
-    "Nou: Configurare → Introducere date → Antibiotice Personalizate. Poți adăuga orice antibiotic (nume + cod ATC + grupă + clasa AWaRe + DDD).",
-    "Antibioticele personalizate apar automat în Tratament IAAM, Consum Antibiotice (DDD/AWaRe) și Antibiograma.",
-    "Codificarea rămâne WHO ATC + AWaRe 2023 (standard ECDC/INSP)."
+    "IAAM pas 3 Infecție: câmpuri noi „Data debut simptomatologie” (așezată înaintea datei de confirmare, pentru că debutul precede laboratorul) și „Descriere simptomatologie”.",
+    "IAAM pas 8 Contacți: intervalul de contact se introduce acum cu calendar (de la / până la), în loc de text liber. Pas necesar pentru corelarea epidemiologică între cazuri.",
+    "Intervalele scrise ca text în versiunile anterioare rămân vizibile pe rând (badge portocaliu) — nu se pierde nimic, le poți reintroduce ca date când ai timp."
   ]
 }

@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.45</title>
+<title>CPIAAM Management v13.47</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -286,6 +286,8 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .contact-row{display:flex;gap:6px;align-items:center;padding:8px 10px;background:var(--bg);border:1px solid var(--brd);border-radius:8px;margin-bottom:6px;flex-wrap:wrap}
 .contact-row input{padding:5px 8px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:var(--f)}
 .contact-row .ci{width:80px}.contact-row .cfo{width:100px}.contact-row .cint{width:150px}.contact-row .crm{flex:1;min-width:120px}
+.contact-row .cdt{width:140px}
+.ctc-legacy{font-size:10px;color:var(--amber);background:transparent;border:1px solid var(--amber);border-radius:4px;padding:2px 6px;white-space:nowrap;align-self:center}
 .contact-del{background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:0 4px;line-height:1}
 .rf-add-row{display:flex;gap:6px;align-items:center;margin-top:6px}
 .rf-add-row select{flex:1;padding:6px 8px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:var(--f)}
@@ -2253,7 +2255,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.45';
+const APP_VERSION='13.47';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -4001,7 +4003,9 @@ async function buildNotifications(){
 async function autoAdvanceRecurring(terms){
   const now=new Date();
   for(const t of terms){
-    if(!t.due_date||t.status==='trimis')continue;
+    // v13.46 FIX - inainte doar 'trimis' bloca auto-avansarea; un termen 'finalizat' si depasit
+    // genera totusi instanta urmatoare (duplicate). Acum ambele statusuri "done" opresc generarea.
+    if(!t.due_date||t.status==='trimis'||t.status==='finalizat')continue;
     if(t.frequency==='singulara'||!t.frequency)continue;
     const dl=new Date(t.due_date);if(dl>=now)continue;
     // This recurring deadline is overdue — check if next instance exists
@@ -4792,9 +4796,12 @@ function renderIaamSection(step){
     break;
   case 2: // Infection
     h='<div class="fg"><label>Categorie IAAM (Anexa 9 ECDC)</label><select id="f-iaam-cat">'+iaamCatOpts(d.iaam_category||d.infection_type||'')+'</select></div>'+
-      '<div class="fr3"><div class="fg"><label>Data confirmarii</label><input type="date" id="f-dconf" value="'+(d.date_confirmed||'')+'"></div>'+
-      '<div class="fg"><label>Data raportarii CPIAAM</label><input type="date" id="f-drap" value="'+(d.date_reported||new Date().toISOString().slice(0,10))+'"><small style="color:var(--txtL);font-size:10px;display:block;margin-top:2px">Data la care CPIAAM a fost notificat</small></div>'+
-      '<div class="fg"><label>Localizare infectie</label><input id="f-loc" value="'+esc(d.localization||'')+'"></div></div>'+
+      // v13.47 - debutul simptomatologiei precede confirmarea de laborator, deci sta primul in rand
+      '<div class="fr3"><div class="fg"><label>Data debut simptomatologie</label><input type="date" id="f-dsimpt" value="'+(d.date_symptom_onset||'')+'"><small style="color:var(--txtL);font-size:10px;display:block;margin-top:2px">Prima zi cu semne clinice</small></div>'+
+      '<div class="fg"><label>Data confirmarii</label><input type="date" id="f-dconf" value="'+(d.date_confirmed||'')+'"><small style="color:var(--txtL);font-size:10px;display:block;margin-top:2px">Confirmare laborator</small></div>'+
+      '<div class="fg"><label>Data raportarii CPIAAM</label><input type="date" id="f-drap" value="'+(d.date_reported||new Date().toISOString().slice(0,10))+'"><small style="color:var(--txtL);font-size:10px;display:block;margin-top:2px">Data la care CPIAAM a fost notificat</small></div></div>'+
+      '<div class="fg"><label>Localizare infectie</label><input id="f-loc" value="'+esc(d.localization||'')+'"></div>'+
+      '<div class="fg"><label>Descriere simptomatologie</label><textarea id="f-simpt-desc" rows="3" placeholder="Semne si simptome observate (ex: febra 38.5C, diaree apoasa 5 scaune/zi, secretie purulenta plaga)">'+esc(d.symptoms||'')+'</textarea></div>'+
       '<div class="fg"><label>'+T('iaam_bulletins')+'</label>'+
       (()=>{if(d.bulletin_nr&&typeof d.bulletin_nr==='string'&&!d.bulletins){_iaamDraft.bulletins=[{nr:d.bulletin_nr,date:''}]}if(!Array.isArray(_iaamDraft.bulletins))_iaamDraft.bulletins=[];return ''})()+
       '<div id="f-bul-list">'+renderBulletinRows()+'</div>'+
@@ -4901,7 +4908,7 @@ function renderIaamSection(step){
   setTimeout(()=>{
     if(step===0){addDatePreview('f-dob');checkIaamMatch(_iaamEditId)}
     if(step===1){addDatePreview('f-dint');addDatePreview('f-dext');addDatePreview('f-deces-date')}
-    if(step===2)addDatePreview('f-dconf');
+    if(step===2){addDatePreview('f-dsimpt');addDatePreview('f-dconf')}
     if(step===9)addDatePreview('f-deces-date');
     attachDirtyTracking();
   },50);
@@ -4937,6 +4944,8 @@ function collectIaamSection(step){
     if(!_el('f-iaam-cat'))break;
     d.iaam_category=v('f-iaam-cat');d.infection_type=v('f-iaam-cat');
     d.date_confirmed=v('f-dconf');d.date_reported=v('f-drap');d.localization=v('f-loc').trim();
+    // v13.47 - simptomatologie
+    d.date_symptom_onset=v('f-dsimpt');d.symptoms=(_el('f-simpt-desc')?v('f-simpt-desc').trim():(d.symptoms||''));
     d.bulletin_nr=(d.bulletins||[]).map(b=>b.nr).filter(Boolean).join(', ');
     d.detection=v('f-dep');d.active_type=v('f-act');
     d.date_negativare=v('f-dneg');
@@ -5188,20 +5197,40 @@ function _rerenderDevices(){
 }
 
 // ═══ Structured contacts section ═══
+// v13.47 - intervalul de contact devine 2 date calendaristice (date_start/date_stop).
+// `interval` (text) ramane populat automat din date pentru compatibilitate cu rapoartele existente
+// si pastreaza textul vechi introdus manual in versiunile anterioare.
+function _ctcInterval(c){
+  if(c.date_start&&c.date_stop)return fmtDate(c.date_start)+' — '+fmtDate(c.date_stop);
+  if(c.date_start)return 'din '+fmtDate(c.date_start);
+  if(c.date_stop)return 'pana la '+fmtDate(c.date_stop);
+  return c.interval||'';
+}
+function _ctcSetDate(i,field,val){
+  const arr=_iaamDraft.contacts;if(!arr||!arr[i])return;
+  arr[i][field]=val;
+  arr[i].interval=_ctcInterval(arr[i]);
+  markFormDirty();
+}
 function renderContactRows(){
   const arr=_iaamDraft.contacts||[];
   if(arr.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun contact adaugat.</div>';
-  return arr.map((c,i)=>
-    '<div class="contact-row"><input class="ci" value="'+esc(c.initials||'')+'" placeholder="'+T('iaam_contact_initials')+'" oninput="_iaamDraft.contacts['+i+'].initials=this.value">'+
+  return arr.map((c,i)=>{
+    // text vechi pastrat vizibil daca nu exista inca date calendaristice (nu se pierde nimic)
+    const legacy=(!c.date_start&&!c.date_stop&&c.interval)
+      ?'<span class="ctc-legacy" title="Interval introdus ca text intr-o versiune anterioara. Completeaza datele alaturi pentru a putea corela cazurile.">'+esc(c.interval)+'</span>':'';
+    return '<div class="contact-row"><input class="ci" value="'+esc(c.initials||'')+'" placeholder="'+T('iaam_contact_initials')+'" oninput="_iaamDraft.contacts['+i+'].initials=this.value">'+
     '<input class="cfo" value="'+esc(c.fo||'')+'" placeholder="'+T('iaam_contact_fo')+'" oninput="_iaamDraft.contacts['+i+'].fo=this.value">'+
-    '<input class="cint" value="'+esc(c.interval||'')+'" placeholder="'+T('iaam_contact_interval')+'" oninput="_iaamDraft.contacts['+i+'].interval=this.value">'+
+    '<input type="date" class="cdt" value="'+(c.date_start||'')+'" title="Contact de la" oninput="_ctcSetDate('+i+',\'date_start\',this.value)">'+
+    '<input type="date" class="cdt" value="'+(c.date_stop||'')+'" title="Contact pana la" oninput="_ctcSetDate('+i+',\'date_stop\',this.value)">'+
     '<input class="crm" value="'+esc(c.room||'')+'" placeholder="'+T('iaam_contact_room')+'" oninput="_iaamDraft.contacts['+i+'].room=this.value">'+
-    '<button class="contact-del" onclick="removeContactRow('+i+')">&times;</button></div>'
-  ).join('');
+    legacy+
+    '<button class="contact-del" onclick="removeContactRow('+i+')">&times;</button></div>';
+  }).join('');
 }
 function addContactRow(){
   if(!_iaamDraft.contacts)_iaamDraft.contacts=[];
-  _iaamDraft.contacts.push({initials:'',fo:'',interval:'',room:''});
+  _iaamDraft.contacts.push({initials:'',fo:'',date_start:'',date_stop:'',interval:'',room:''});
   markFormDirty();
   const el=document.getElementById('f-contacts-list');if(el)el.innerHTML=renderContactRows();
 }
@@ -5631,11 +5660,19 @@ function _renderTimeline(allData,isEN){
       var disD=r.date_discharge?new Date(r.date_discharge+'T00:00:00'):null;
       var confD=r.date_confirmed?new Date(r.date_confirmed+'T00:00:00'):null;
       var hS=admD&&admD.getFullYear()===yr?admD.getMonth()+1:(admD&&admD<new Date(yr,0,1)?1:null);
-      var hE=disD&&disD.getFullYear()===yr?disD.getMonth()+1:(disD&&disD>new Date(yr,11,31)?12:(hS!=null?todayM>0?todayM:12:null));
+      // v13.46 FIX - fara data externarii NU mai intindem bara pana in decembrie (an trecut) — ramane la luna internarii.
+      // Pentru anul curent pastram luna curenta (pacient inca internat), ceea ce e corect.
+      var hE=disD&&disD.getFullYear()===yr?disD.getMonth()+1:(disD&&disD>new Date(yr,11,31)?12:(hS!=null?(todayM>0?todayM:hS):null));
       if(hS==null&&r.month)hS=r.month;
       if(hE==null&&hS!=null)hE=hS;
-      var iS=confD&&confD.getFullYear()===yr?confD.getMonth()+1:(confD&&confD<new Date(yr,0,1)?1:(hS||null));
-      var iE=hE;
+      // v13.46 FIX - fallback consistent cu tabelul: date_confirmed → r.month (luna raportarii) → luna internarii.
+      // Inainte sarea peste r.month, deci tabelul si cronologia puteau arata luni diferite pentru acelasi caz.
+      var iS=confD&&confD.getFullYear()===yr?confD.getMonth()+1:(confD&&confD<new Date(yr,0,1)?1:(r.month||hS||null));
+      // v13.46 FIX - bara de infectie nu se mai intinde automat pana la externare/decembrie.
+      // Capat: data negativarii daca exista, altfel externarea reala, altfel luna infectiei (eveniment punctual).
+      var negD=r.date_negativare?new Date(r.date_negativare+'T00:00:00'):null;
+      var iE=negD&&negD.getFullYear()===yr?negD.getMonth()+1:(disD?hE:iS);
+      if(iE!=null&&iS!=null&&iE<iS)iE=iS;
       // Antibiotic month range
       var aS=null,aE=null;
       if(!r.no_antibiotic&&r.antibiotics&&r.antibiotics.length){
@@ -12421,8 +12458,8 @@ async function downloadDocFile(id){
 
 // ═══════════════════════════════════════════════════════════════
 function deadlineStatus(d){
-  if(d.status==='trimis')return{cls:'bdg-b',text:'Trimis',icon:'&#9989;'};
-  if(d.status==='finalizat')return{cls:'bdg-g',text:'Finalizat',icon:'&#128994;'};
+  // v13.46 - statusuri consolidate: 'trimis' (legacy) se afiseaza ca 'Finalizat'
+  if(d.status==='finalizat'||d.status==='trimis')return{cls:'bdg-g',text:'Finalizat',icon:'&#128994;'};
   if(!d.due_date)return{cls:'bdg-b',text:d.status||'—',icon:''};
   const due=new Date(d.due_date),now=new Date(),diff=Math.ceil((due-now)/864e5);
   if(diff<0)return{cls:'bdg-r',text:'Depasit ('+Math.abs(diff)+' zile)',icon:'&#9899;'};
@@ -12482,8 +12519,7 @@ async function rTerm(el){
       '<option value=""'+(tf.status===''?' selected':'')+'>'+(isEN?'All statuses':'Toate statusurile')+'</option>'+
       '<option value="neinceput"'+(tf.status==='neinceput'?' selected':'')+'>'+(isEN?'Not started':'Neinceput')+'</option>'+
       '<option value="in_lucru"'+(tf.status==='in_lucru'?' selected':'')+'>'+(isEN?'In progress':'In lucru')+'</option>'+
-      '<option value="finalizat"'+(tf.status==='finalizat'?' selected':'')+'>'+(isEN?'Completed':'Finalizat')+'</option>'+
-      '<option value="trimis"'+(tf.status==='trimis'?' selected':'')+'>'+(isEN?'Sent':'Trimis')+'</option></select>'+
+      '<option value="finalizat"'+(tf.status==='finalizat'||tf.status==='trimis'?' selected':'')+'>'+(isEN?'Completed':'Finalizat')+'</option></select>'+
     '<button class="btn bo bsm" onclick="_termFilters={search:\'\',dest:\'\',status:\'active\'};render()">Reset</button>'+
     '<button class="btn bo bsm" onclick="_termExpandAll(true)">'+(isEN?'Expand all':'Extinde tot')+'</button>'+
     '<button class="btn bo bsm" onclick="_termExpandAll(false)">'+(isEN?'Collapse all':'Restrange tot')+'</button>'+
@@ -12553,8 +12589,7 @@ async function rTerm(el){
               '<td><select onchange="updateDeadlineStatus('+d.id+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px">'+
                 '<option value="neinceput"'+(d.status==='neinceput'?' selected':'')+'>'+(isEN?'Not started':'Neinceput')+'</option>'+
                 '<option value="in_lucru"'+(d.status==='in_lucru'?' selected':'')+'>'+(isEN?'In progress':'In lucru')+'</option>'+
-                '<option value="finalizat"'+(d.status==='finalizat'?' selected':'')+'>'+(isEN?'Completed':'Finalizat')+'</option>'+
-                '<option value="trimis"'+(d.status==='trimis'?' selected':'')+'>'+(isEN?'Sent':'Trimis')+'</option></select></td>'+
+                '<option value="finalizat"'+(d.status==='finalizat'||d.status==='trimis'?' selected':'')+'>'+(isEN?'Completed':'Finalizat')+'</option></select></td>'+
               '<td class="act"><button onclick="editDeadline('+d.id+')">&#9998;</button><button onclick="delRec(\'deadlines\','+d.id+')">&#128465;</button></td></tr>';
           });
           h+='</tbody></table>';
@@ -12619,8 +12654,7 @@ async function rTerm(el){
           '<td><select onchange="updateDeadlineStatus('+d.id+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px">'+
             '<option value="neinceput"'+(d.status==='neinceput'?' selected':'')+'>'+(isEN?'Not started':'Neinceput')+'</option>'+
             '<option value="in_lucru"'+(d.status==='in_lucru'?' selected':'')+'>'+(isEN?'In progress':'In lucru')+'</option>'+
-            '<option value="finalizat"'+(d.status==='finalizat'?' selected':'')+'>'+(isEN?'Completed':'Finalizat')+'</option>'+
-            '<option value="trimis"'+(d.status==='trimis'?' selected':'')+'>'+(isEN?'Sent':'Trimis')+'</option></select></td>'+
+            '<option value="finalizat"'+(d.status==='finalizat'||d.status==='trimis'?' selected':'')+'>'+(isEN?'Completed':'Finalizat')+'</option></select></td>'+
           '<td class="act"><button onclick="editDeadline('+d.id+')">&#9998;</button><button onclick="delRec(\'deadlines\','+d.id+')">&#128465;</button></td></tr>';
       });
       h+='</tbody></table>';
@@ -12737,16 +12771,20 @@ async function editDeadline(id){
       '<option value="perioada"'+(r.frequency==='perioada'?' selected':'')+'>Perioada definita</option></select>'+
       '<div style="font-size:10px;color:var(--txtL);margin-top:2px">Perioada definita = termen unic cu date personalizate</div></div></div>'+
     _dlFreqExtra(r)+
-    '<div class="fr"><div class="fg"><label>Termen limita</label><input type="date" id="f-due" value="'+(r.due_date||'')+'"></div>'+
+    // v13.46 - data de inceput a perioadei de raportare. Fara ea generarea pornea mereu de la 1 ianuarie
+    // si producea termene inainte de perioada reala (ex: raportare 15.06-11.11 genera si S1-S2 din iunie).
+    '<div class="fr3"><div class="fg"><label>Data inceput</label><input type="date" id="f-start" value="'+(r.start_date||'')+'">'+
+      '<div style="font-size:10px;color:var(--txtL);margin-top:2px">Optional — nu se genereaza termene inainte de aceasta data</div></div>'+
+    '<div class="fg"><label>Termen limita</label><input type="date" id="f-due" value="'+(r.due_date||'')+'">'+
+      '<div style="font-size:10px;color:var(--txtL);margin-top:2px">Nu se genereaza termene dupa aceasta data</div></div>'+
     '<div class="fg"><label>Status</label><select id="f-st">'+
       '<option value="neinceput"'+(r.status==='neinceput'?' selected':'')+'>Neinceput</option>'+
       '<option value="in_lucru"'+(r.status==='in_lucru'?' selected':'')+'>In lucru</option>'+
-      '<option value="finalizat"'+(r.status==='finalizat'?' selected':'')+'>Finalizat</option>'+
-      '<option value="trimis"'+(r.status==='trimis'?' selected':'')+'>Trimis</option></select></div></div>'+
+      '<option value="finalizat"'+(r.status==='finalizat'||r.status==='trimis'?' selected':'')+'>Finalizat</option></select></div></div>'+
     '<div class="fg"><label>Link / URL extern (optional)</label><input id="f-url" value="'+(r.url||'')+'"></div>'+
     '<div class="fg"><label>Observatii</label><textarea id="f-obs" rows="2">'+(r.observations||'')+'</textarea></div>',
   '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveDeadline('+(id||'null')+')">Salveaza</button>');
-  setTimeout(()=>{addDatePreview('f-due');attachDirtyTracking()},50);
+  setTimeout(()=>{addDatePreview('f-start');addDatePreview('f-due');attachDirtyTracking()},50);
 }
 function _dlFreqChange(){
   var fe=document.getElementById('freq-extra');if(!fe)return;
@@ -12755,8 +12793,10 @@ function _dlFreqChange(){
 }
 async function saveDeadline(id){
   const v=s=>{var e=document.getElementById(s);return e?e.value:''};
-  const rec={name:v('f-name').trim(),recipient:v('f-dest').trim(),frequency:v('f-freq'),due_date:v('f-due'),status:v('f-st'),url:v('f-url').trim(),observations:v('f-obs').trim()};
+  const rec={name:v('f-name').trim(),recipient:v('f-dest').trim(),frequency:v('f-freq'),start_date:v('f-start'),due_date:v('f-due'),status:v('f-st'),url:v('f-url').trim(),observations:v('f-obs').trim()};
   if(!rec.name){alert('Completeaza denumirea.');return}
+  // v13.46 - validare interval: data de inceput nu poate fi dupa termenul limita
+  if(rec.start_date&&rec.due_date&&rec.start_date>rec.due_date){alert('Data de inceput este dupa termenul limita. Corecteaza intervalul.');return}
   // Save frequency-specific fields
   if(rec.frequency==='saptamanal'){
     rec.day_of_week=+(v('f-dow'))||0;
@@ -12791,6 +12831,8 @@ async function _genInstancesForTemplate(t){
   // v13.18 - termen limita HARD pe template: t.due_date opreste generarea cand instantele depasesc
   // v13.21 - FIX: dedup pe _parentName (nu name - care difera prin sufix S19/Mai/etc), plus stergere duplicate existente
   var hardLimit=t.due_date?new Date(t.due_date+'T23:59:59'):null;
+  // v13.46 - limita INFERIOARA (simetrica cu hardLimit): nu genereaza termene inainte de start_date
+  var softStart=t.start_date?new Date(t.start_date+'T00:00:00'):null;
   // Index instante existente ale acestui template, dupa due_date. Daca exista mai multe pentru acelasi due_date, pastram prima si stergem restul (cleanup duplicate generate de bug v13.18)
   var ownInsts=existing.filter(function(d){return d._parentName===t.name});
   var byDue={};
@@ -12808,6 +12850,8 @@ async function _genInstancesForTemplate(t){
     while(dt.getFullYear()===y){
       // v13.18 - oprire la termen limita
       if(hardLimit&&dt>hardLimit)break;
+      // v13.46 - sar peste saptamanile dinaintea datei de inceput (continue, nu break — inca urmeaza cele valide)
+      if(softStart&&dt<softStart){dt.setDate(dt.getDate()+7);continue}
       var mo=dt.getMonth()+1;
       if(allMonths||am.includes(mo)){
         var dueW=_localDateStr(dt);
@@ -12829,6 +12873,8 @@ async function _genInstancesForTemplate(t){
       var dueM=y+'-'+String(m).padStart(2,'0')+'-'+String(clampedDom).padStart(2,'0');
       // v13.18 - oprire la termen limita
       if(hardLimit&&new Date(dueM+'T00:00:00')>hardLimit)continue;
+      // v13.46 - sar peste lunile dinaintea datei de inceput
+      if(softStart&&new Date(dueM+'T00:00:00')<softStart)continue;
       // v13.21 dedup pe _parentName (corect)
       if(!byDue[dueM]){
         await pt('deadlines',{name:t.name+' — '+(MO[m-1]||'')+' '+y,recipient:t.recipient,frequency:'singulara',due_date:dueM,status:'neinceput',_parentName:t.name});
@@ -12840,6 +12886,12 @@ async function _genInstancesForTemplate(t){
   if(hardLimit){
     var stale=existing.filter(function(d){return d._parentName===t.name&&d.due_date&&new Date(d.due_date+'T00:00:00')>hardLimit});
     for(var si=0;si<stale.length;si++){await dl('deadlines',stale[si].id);deleted++}
+  }
+  // v13.46 - cleanup simetric: sterg instantele generate INAINTE de data de inceput.
+  // Asa se curata automat termenele gresite deja create (cazul raportarii 15.06 care generase si S1-S2 din iunie).
+  if(softStart){
+    var early=existing.filter(function(d){return d._parentName===t.name&&d.due_date&&new Date(d.due_date+'T00:00:00')<softStart});
+    for(var ei=0;ei<early.length;ei++){await dl('deadlines',early[ei].id);deleted++}
   }
   // v13.22 - cleanup luni inactive: cand user editeaza template si elimina luni din active_months,
   // instantele din lunile excluse trebuie sterse. Re-iau lista existing dupa cleanup-uri anterioare.
@@ -15867,7 +15919,9 @@ async function genAnchetaWord(id){
       kvRow('Comorbiditati',Array.isArray(r.comorbidities)?r.comorbidities.join(', '):(r.comorbidities||'—')),
       kvRow('Antibioterapie curenta',r.prev_antibiotics||'Nu'),
       kvRow('Proceduri invazive / Interventii chirurgicale',r.procedures||'Nu'),
-      kvRow('Dispozitive medicale invazive',r.invasive_devices||'Nu')]}),wSp(80),
+      // v13.46 FIX - invasive_devices e ARRAY; [] e truthy deci fallback-ul '||Nu' nu se declansa niciodata
+      // (celula ramanea goala), iar cu date se afisa String(array) fara spatii dupa virgula.
+      kvRow('Dispozitive medicale invazive',(Array.isArray(r.invasive_devices)?(r.invasive_devices.length?r.invasive_devices.join(', '):'—'):(r.invasive_devices||'—')))]}),wSp(80),
     wH1('IV. FACTORI DE RISC IDENTIFICATI'),wSp(40),
     ...(r.risk_factors||[]).map((f,i)=>wP((i+1)+'. '+f,{size:20,before:40})),wSp(80),
     wH1('V. DETALII INFECTIE'),wSp(40),
@@ -15972,8 +16026,13 @@ async function genFisaIAAM(id){
   // Izolat / Contacti
   const izolat=r.isolated||'';
   const izoStr=izolat==='da'?'da':(izolat==='nu'?'nu':'......');
-  const contacti=r.contacts||'';
-  const contStr=contacti?'da: '+contacti:'nu';
+  // v13.46 FIX - r.contacts e ARRAY de obiecte {initials,fo,interval,room}; concatenarea veche
+  // producea "[object Object]" in Fisa cazului. Acum se formateaza corect fiecare contact.
+  const _ctcArr=Array.isArray(r.contacts)?r.contacts.filter(function(c){return c&&(c.initials||c.fo)}):[];
+  const _ctcLegacy=(!Array.isArray(r.contacts)&&typeof r.contacts==='string')?r.contacts.trim():'';
+  const contStr=r.no_contacts?'nu':(_ctcArr.length
+    ?'da: '+_ctcArr.map(function(c){return (c.initials||'?')+(c.fo?' (FO '+c.fo+')':'')+(c.interval?', '+c.interval:'')}).join('; ')
+    :(_ctcLegacy&&_ctcLegacy!=='Fara contacti de salon'?'da: '+_ctcLegacy:'nu'));
   const atitudine=r.attitude||r.measures_text||'';
 
   // Diagnistic IAAM
@@ -19673,19 +19732,21 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
-  {version:'13.45',date:'2026-05-08',summary:'Antibiotice: adăugate în lista standard Oxacilina + altele comune RO și un grup intestinal/local (Rifaximina, Nistatina orală, Vancomicina orală, Fidaxomicina). NOU: Configurare → Antibiotice Personalizate — poți adăuga orice antibiotic (nume + ATC + grupă + AWaRe + DDD), apare automat în IAAM, Consum ATB și Antibiograma.'},
-  {version:'13.44',date:'2026-05-08',summary:'IAAM → pas 2 Spitalizare: câmpurile de diagnostic (internare, externare principal, secundare) sunt acum textarea cu wrap — vezi tot textul fără să muți cursorul. Codurile rămân câmpuri mici alături.'},
-  {version:'13.43',date:'2026-05-08',summary:'IAAM → pas 10: Originea infecției revizuită conform ECDC (internare curentă / anterioară același spital / alt spital / LTCF / comunitară / necunoscută). Eliminat termenul „readmisie". Fix: Fișa cazului bifează corect căsuța de origine pentru toate variantele.'},
-  {version:'13.42',date:'2026-05-08',summary:'IAAM → pas 9 Măsuri: Biocide utilizate restructurat — checkbox „Conform PO intern" + denumire PO, plus poți adăuga mai multe biocide specifice din listă. IAAM → pas 7: câmpul Proceduri/Intervenții e acum textarea mai mare (vezi tot textul fără să muți cursorul).'},
-  {version:'13.41',date:'2026-05-08',summary:'IAAM → pas 7 Istoric clinic: Procedurile invazive / Intervențiile chirurgicale sunt acum listă cu data intervenției. Poți adăuga mai multe (buton „+ Adaugă") cu 🗑 pe fiecare. Datele apar și în rapoartele Word.'},
-  {version:'13.40',date:'2026-05-08',summary:'IAAM → pas 2 Spitalizare: diagnostice structurate. Diagnostic internare + cod, Diagnostic externare principal + cod, plus listă de diagnostice secundare cu buton de adăugare (fiecare cu cod separat). Rapoartele Word afișează codurile + secundarele.'},
-  {version:'13.39',date:'2026-05-08',summary:'Calendar → Raportări/Termene: raportările complet finalizate (100%) dispar automat când filtrul „Doar nefinalizate" e activ. Hint la final cu numărul de raportări ascunse + link pentru a le revedea.'},
-  {version:'13.38',date:'2026-05-08',summary:'Pagina Versiuni — detaliile tehnice nu mai apar în versiunea publică. Vezi doar rezumatul scurt pentru fiecare update. Arhiva tehnică se păstrează local pentru debugging.'},
-  {version:'13.37',date:'2026-05-08',summary:'Fix: dropdown „Utilizator curent" nu mai afișează numele colegei rămas din swap de fișiere. Adăugat dialog „Cine semnează?" înainte de fiecare raport Word — alegi pe loc semnatarii pentru raportul curent.'},
-  {version:'13.36',date:'2026-05-08',summary:'Pagina Versiuni rescrisă: rezumat scurt user-friendly + detalii tehnice ascunse sub expand. Configurare → Introducere date: secțiuni grupate logic (IAAM/Autocontrol/Laborator/Calitate/Biocide/Deșeuri) cu denumiri uniforme între butoanele rapide și headere.'},
-  {version:'13.35',date:'2026-05-07',summary:'Configurare → Introducere date: cele 12 secțiuni sunt acum colapsabile (închise default). Click pe titlu pentru a expanda.'},
-  {version:'13.34',date:'2026-05-07',summary:'Planificare probe Autocontrol și matricea Probe aplicabile sunt acum colapsabile pe grupuri (Spital / Spitalizare de Zi / Ambulatoriu). Filtre noi la ATP și UV: secție, suprafață, rezultat, interval date. Buton × pentru curățare rapidă filtre dată.'},
-  {version:'13.33',date:'2026-05-07',summary:'Fix: la introducerea datei la filtrul Autocontrol probe, nu se mai pierde focusul când scrii anul, iar aspectul calendarului nativ revine la cel curat.'},
+  {version:'13.47',date:'2026-07-27',summary:'IAAM pas 3: câmpuri noi „Data debut simptomatologie” și „Descriere simptomatologie”. IAAM pas 8: intervalul de contact se introduce cu calendar (de la / până la) în loc de text liber — pas necesar pentru corelarea epidemiologică între cazuri. Textele vechi rămân vizibile, nu se pierde nimic.'},
+  {version:'13.46',date:'2026-07-27',summary:'Raportări repetitive: câmp nou „Data început” — gata cu termenele generate înainte de perioada reală (cele greșite se șterg automat). Statusuri simplificate la „Finalizat”. Fix Cronologie IAAM (luna infecției). Fix rapoarte Word: contacții apăreau ca „[object Object]”, dispozitivele invazive lipseau.'},
+  {version:'13.45',date:'2026-07-27',summary:'Antibiotice: adăugate în lista standard Oxacilina + altele comune RO și un grup intestinal/local (Rifaximina, Nistatina orală, Vancomicina orală, Fidaxomicina). NOU: Configurare → Antibiotice Personalizate — poți adăuga orice antibiotic (nume + ATC + grupă + AWaRe + DDD), apare automat în IAAM, Consum ATB și Antibiograma.'},
+  {version:'13.44',date:'2026-07-27',summary:'IAAM → pas 2 Spitalizare: câmpurile de diagnostic (internare, externare principal, secundare) sunt acum textarea cu wrap — vezi tot textul fără să muți cursorul. Codurile rămân câmpuri mici alături.'},
+  {version:'13.43',date:'2026-07-27',summary:'IAAM → pas 10: Originea infecției revizuită conform ECDC (internare curentă / anterioară același spital / alt spital / LTCF / comunitară / necunoscută). Eliminat termenul „readmisie". Fix: Fișa cazului bifează corect căsuța de origine pentru toate variantele.'},
+  {version:'13.42',date:'2026-07-27',summary:'IAAM → pas 9 Măsuri: Biocide utilizate restructurat — checkbox „Conform PO intern" + denumire PO, plus poți adăuga mai multe biocide specifice din listă. IAAM → pas 7: câmpul Proceduri/Intervenții e acum textarea mai mare (vezi tot textul fără să muți cursorul).'},
+  {version:'13.41',date:'2026-07-27',summary:'IAAM → pas 7 Istoric clinic: Procedurile invazive / Intervențiile chirurgicale sunt acum listă cu data intervenției. Poți adăuga mai multe (buton „+ Adaugă") cu 🗑 pe fiecare. Datele apar și în rapoartele Word.'},
+  {version:'13.40',date:'2026-07-27',summary:'IAAM → pas 2 Spitalizare: diagnostice structurate. Diagnostic internare + cod, Diagnostic externare principal + cod, plus listă de diagnostice secundare cu buton de adăugare (fiecare cu cod separat). Rapoartele Word afișează codurile + secundarele.'},
+  {version:'13.39',date:'2026-07-27',summary:'Calendar → Raportări/Termene: raportările complet finalizate (100%) dispar automat când filtrul „Doar nefinalizate" e activ. Hint la final cu numărul de raportări ascunse + link pentru a le revedea.'},
+  {version:'13.38',date:'2026-07-27',summary:'Pagina Versiuni — detaliile tehnice nu mai apar în versiunea publică. Vezi doar rezumatul scurt pentru fiecare update. Arhiva tehnică se păstrează local pentru debugging.'},
+  {version:'13.37',date:'2026-07-27',summary:'Fix: dropdown „Utilizator curent" nu mai afișează numele colegei rămas din swap de fișiere. Adăugat dialog „Cine semnează?" înainte de fiecare raport Word — alegi pe loc semnatarii pentru raportul curent.'},
+  {version:'13.36',date:'2026-07-27',summary:'Pagina Versiuni rescrisă: rezumat scurt user-friendly + detalii tehnice ascunse sub expand. Configurare → Introducere date: secțiuni grupate logic (IAAM/Autocontrol/Laborator/Calitate/Biocide/Deșeuri) cu denumiri uniforme între butoanele rapide și headere.'},
+  {version:'13.35',date:'2026-07-27',summary:'Configurare → Introducere date: cele 12 secțiuni sunt acum colapsabile (închise default). Click pe titlu pentru a expanda.'},
+  {version:'13.34',date:'2026-07-27',summary:'Planificare probe Autocontrol și matricea Probe aplicabile sunt acum colapsabile pe grupuri (Spital / Spitalizare de Zi / Ambulatoriu). Filtre noi la ATP și UV: secție, suprafață, rezultat, interval date. Buton × pentru curățare rapidă filtre dată.'},
+  {version:'13.33',date:'2026-07-27',summary:'Fix: la introducerea datei la filtrul Autocontrol probe, nu se mai pierde focusul când scrii anul, iar aspectul calendarului nativ revine la cel curat.'},
   {version:'13.32',date:'2026-04-28',summary:'Schimbare temporară a inputului de dată la filtrul Autocontrol — încercare de fix pentru pierderea focusului la tastarea anului. Înlocuită apoi în v13.33.'},
   {version:'13.31',date:'2026-04-28',summary:'Planificarea probelor Autocontrol — items grupate vizual pe categorii (Spital / Spitalizare de Zi / Ambulatoriu / Altele) cu mini-headere colorate și count per grup.'},
   {version:'13.30',date:'2026-04-28',summary:'Configurare → Probe aplicabile per secție: matricea e acum grupată pe 3 categorii cu headere colorate (Spital, Spitalizare de Zi, Ambulatoriu), nu mai e listă plată confuză.'},

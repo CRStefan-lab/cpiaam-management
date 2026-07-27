@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.44</title>
+<title>CPIAAM Management v13.45</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2253,7 +2253,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.44';
+const APP_VERSION='13.45';
 const _DEFAULT_ATP_SURFACES=[
   {id:'atp_001',name:'Apa barbotor',threshold:60},{id:'atp_002',name:'Apa potabila',threshold:50},
   {id:'atp_003',name:'Intrerupator',threshold:150},{id:'atp_004',name:'Noptiera',threshold:150},
@@ -2345,7 +2345,8 @@ var CFG={
   ipc_categories:[],
   audit_prof_categories:['Medic','Asistent medical','Infirmiera','Brancardier','Altul'],
   atp_surface_types:_DEFAULT_ATP_SURFACES.map(s=>({...s})),
-  uv_surface_types:_DEFAULT_UV_SURFACES.map(s=>({...s}))
+  uv_surface_types:_DEFAULT_UV_SURFACES.map(s=>({...s})),
+  custom_antibiotics:[]
 };
 
 // Section templates for wizard
@@ -2379,6 +2380,8 @@ async function loadCfg(){
   if(!CFG.uv_surface_types||!CFG.uv_surface_types.length){
     CFG.uv_surface_types=_DEFAULT_UV_SURFACES.map(s=>({...s}));
   }
+  // v13.45 - custom_antibiotics pentru utilizatori existenti (config salvat nu are cheia)
+  if(!Array.isArray(CFG.custom_antibiotics))CFG.custom_antibiotics=[];
   // v13.43 - migrare origini IAAM la lista ECDC-aliniata (relabel + adauga LTCF, ordine logica).
   // Origini nu sunt user-editabile (fara UI), deci inlocuim complet pentru a forta ordinea corecta.
   // Datele vechi pastreaza cheia (ex 'nespecificat' → eticheta noua "Origine necunoscuta"); cheile inca rezolva in Word.
@@ -2878,12 +2881,12 @@ const GERMENI_LIST=[
 const ATB_LIST=[
 {g:'Tetracicline (J01A)',items:[{a:'J01AA02',n:'Doxiciclina',ddd:0.1,aw:'A'},{a:'J01AA07',n:'Tetraciclina',ddd:1,aw:'A'},{a:'J01AA08',n:'Minociclina',ddd:0.2,aw:'W'},{a:'J01AA12',n:'Tigeciclina',ddd:0.1,aw:'R'}]},
 {g:'Amfenicoli (J01B)',items:[{a:'J01BA01',n:'Cloramfenicol',ddd:3,aw:'A'}]},
-{g:'Beta-lactamice: Penicilline (J01C)',items:[{a:'J01CA01',n:'Ampicilina',ddd:2,aw:'A'},{a:'J01CA04',n:'Amoxicilina',ddd:1.5,aw:'A'},{a:'J01CA12',n:'Piperacilina',ddd:14,aw:'W'},{a:'J01CE01',n:'Benzilpenicilina',ddd:3.6,aw:'A'},{a:'J01CE02',n:'Fenoximetilpenicilina',ddd:2,aw:'A'},{a:'J01CF02',n:'Cloxacilina',ddd:2,aw:'A'},{a:'J01CF05',n:'Flucloxacilina',ddd:2,aw:'A'},{a:'J01CR01',n:'Ampicilina+Sulbactam',ddd:6,aw:'A'},{a:'J01CR02',n:'Amoxicilina+Acid clavulanic',ddd:3,aw:'A'},{a:'J01CR05',n:'Piperacilina+Tazobactam',ddd:14,aw:'W'}]},
-{g:'Beta-lactamice: Cefalosporine (J01D)',items:[{a:'J01DB01',n:'Cefalexina',ddd:2,aw:'A'},{a:'J01DB04',n:'Cefazolina',ddd:3,aw:'A'},{a:'J01DC02',n:'Cefuroxima',ddd:3,aw:'W'},{a:'J01DC04',n:'Cefaclor',ddd:1,aw:'W'},{a:'J01DD01',n:'Cefotaxima',ddd:4,aw:'W'},{a:'J01DD02',n:'Ceftazidima',ddd:4,aw:'W'},{a:'J01DD04',n:'Ceftriaxona',ddd:2,aw:'W'},{a:'J01DD08',n:'Cefixima',ddd:0.4,aw:'W'},{a:'J01DD12',n:'Cefoperazona',ddd:4,aw:'W'},{a:'J01DD13',n:'Cefpodoxima',ddd:0.4,aw:'W'},{a:'J01DD52',n:'Ceftazidima+Avibactam',ddd:6,aw:'R'},{a:'J01DD62',n:'Ceftolozana+Tazobactam',ddd:3,aw:'R'},{a:'J01DE01',n:'Cefepima',ddd:4,aw:'W'},{a:'J01DI01',n:'Ceftobiprola',ddd:1.5,aw:'R'},{a:'J01DI02',n:'Ceftarolina',ddd:1.2,aw:'R'}]},
+{g:'Beta-lactamice: Penicilline (J01C)',items:[{a:'J01CA01',n:'Ampicilina',ddd:2,aw:'A'},{a:'J01CA04',n:'Amoxicilina',ddd:1.5,aw:'A'},{a:'J01CA08',n:'Pivmecilinam',ddd:0.6,aw:'A'},{a:'J01CA12',n:'Piperacilina',ddd:14,aw:'W'},{a:'J01CE01',n:'Benzilpenicilina',ddd:3.6,aw:'A'},{a:'J01CE02',n:'Fenoximetilpenicilina',ddd:2,aw:'A'},{a:'J01CF01',n:'Dicloxacilina',ddd:2,aw:'A'},{a:'J01CF02',n:'Cloxacilina',ddd:2,aw:'A'},{a:'J01CF04',n:'Oxacilina',ddd:2,aw:'A'},{a:'J01CF05',n:'Flucloxacilina',ddd:2,aw:'A'},{a:'J01CR01',n:'Ampicilina+Sulbactam',ddd:6,aw:'A'},{a:'J01CR02',n:'Amoxicilina+Acid clavulanic',ddd:3,aw:'A'},{a:'J01CR05',n:'Piperacilina+Tazobactam',ddd:14,aw:'W'}]},
+{g:'Beta-lactamice: Cefalosporine (J01D)',items:[{a:'J01DB01',n:'Cefalexina',ddd:2,aw:'A'},{a:'J01DB04',n:'Cefazolina',ddd:3,aw:'A'},{a:'J01DB05',n:'Cefadroxil',ddd:2,aw:'A'},{a:'J01DC02',n:'Cefuroxima',ddd:3,aw:'W'},{a:'J01DC04',n:'Cefaclor',ddd:1,aw:'W'},{a:'J01DD01',n:'Cefotaxima',ddd:4,aw:'W'},{a:'J01DD02',n:'Ceftazidima',ddd:4,aw:'W'},{a:'J01DD04',n:'Ceftriaxona',ddd:2,aw:'W'},{a:'J01DD08',n:'Cefixima',ddd:0.4,aw:'W'},{a:'J01DD12',n:'Cefoperazona',ddd:4,aw:'W'},{a:'J01DD13',n:'Cefpodoxima',ddd:0.4,aw:'W'},{a:'J01DD14',n:'Ceftibuten',ddd:0.4,aw:'W'},{a:'J01DD52',n:'Ceftazidima+Avibactam',ddd:6,aw:'R'},{a:'J01DD62',n:'Ceftolozana+Tazobactam',ddd:3,aw:'R'},{a:'J01DE01',n:'Cefepima',ddd:4,aw:'W'},{a:'J01DI01',n:'Ceftobiprola',ddd:1.5,aw:'R'},{a:'J01DI02',n:'Ceftarolina',ddd:1.2,aw:'R'}]},
 {g:'Beta-lactamice: Carbapeneme (J01DH)',items:[{a:'J01DH02',n:'Meropenem',ddd:3,aw:'W'},{a:'J01DH03',n:'Ertapenem',ddd:1,aw:'W'},{a:'J01DH04',n:'Doripenem',ddd:1.5,aw:'W'},{a:'J01DH51',n:'Imipenem+Cilastatina',ddd:2,aw:'W'},{a:'J01DH56',n:'Imipenem+Cilastatina+Relebactam',ddd:2,aw:'R'}]},
 {g:'Beta-lactamice: Monobactame (J01DF)',items:[{a:'J01DF01',n:'Aztreonam',ddd:4,aw:'R'}]},
 {g:'Sulfonamide si Trimetoprim (J01E)',items:[{a:'J01EA01',n:'Trimetoprim',ddd:0.4,aw:'A'},{a:'J01EE01',n:'Sulfametoxazol+Trimetoprim (Co-trimoxazol)',ddd:1.92,aw:'A'}]},
-{g:'Macrolide (J01FA)',items:[{a:'J01FA01',n:'Eritromicina',ddd:1,aw:'W'},{a:'J01FA06',n:'Roxitromicina',ddd:0.3,aw:'W'},{a:'J01FA09',n:'Claritromicina',ddd:0.5,aw:'W'},{a:'J01FA10',n:'Azitromicina',ddd:0.5,aw:'W'},{a:'J01FA15',n:'Telitromicina',ddd:0.8,aw:'W'}]},
+{g:'Macrolide (J01FA)',items:[{a:'J01FA01',n:'Eritromicina',ddd:1,aw:'W'},{a:'J01FA02',n:'Spiramicina',ddd:3,aw:'W'},{a:'J01FA06',n:'Roxitromicina',ddd:0.3,aw:'W'},{a:'J01FA07',n:'Josamicina',ddd:2,aw:'W'},{a:'J01FA09',n:'Claritromicina',ddd:0.5,aw:'W'},{a:'J01FA10',n:'Azitromicina',ddd:0.5,aw:'W'},{a:'J01FA15',n:'Telitromicina',ddd:0.8,aw:'W'}]},
 {g:'Lincosamide (J01FF)',items:[{a:'J01FF01',n:'Clindamicina',ddd:1.8,aw:'A'},{a:'J01FF02',n:'Lincomicina',ddd:1.8,aw:'W'}]},
 {g:'Aminoglicozide (J01G)',items:[{a:'J01GA01',n:'Streptomicina',ddd:1,aw:'W'},{a:'J01GB01',n:'Tobramicina',ddd:0.24,aw:'W'},{a:'J01GB03',n:'Gentamicina',ddd:0.24,aw:'A'},{a:'J01GB06',n:'Amikacina',ddd:1,aw:'A'},{a:'J01GB07',n:'Netilmicina',ddd:0.35,aw:'W'}]},
 {g:'Chinolone (J01M)',items:[{a:'J01MA01',n:'Ofloxacina',ddd:0.4,aw:'W'},{a:'J01MA02',n:'Ciprofloxacina',ddd:0.8,aw:'W'},{a:'J01MA06',n:'Norfloxacina',ddd:0.8,aw:'W'},{a:'J01MA12',n:'Levofloxacina',ddd:0.5,aw:'W'},{a:'J01MA14',n:'Moxifloxacina',ddd:0.4,aw:'W'}]},
@@ -2894,10 +2897,22 @@ const ATB_LIST=[
 {g:'Alte antibacteriene (J01XX)',items:[{a:'J01XX01',n:'Fosfomicina',ddd:8,aw:'R'},{a:'J01XX04',n:'Spectinomicina',ddd:3,aw:'A'},{a:'J01XX05',n:'Nitrofurantoina',ddd:0.2,aw:'A'}]},
 {g:'Antimicotice sistemice (J02)',items:[{a:'J02AA01',n:'Amfotericina B',ddd:0.035,aw:'X'},{a:'J02AB02',n:'Ketoconazol',ddd:0.2,aw:'X'},{a:'J02AC01',n:'Fluconazol',ddd:0.2,aw:'X'},{a:'J02AC02',n:'Itraconazol',ddd:0.2,aw:'X'},{a:'J02AC03',n:'Voriconazol',ddd:0.4,aw:'X'},{a:'J02AC04',n:'Posaconazol',ddd:0.3,aw:'X'},{a:'J02AC05',n:'Isavuconazol',ddd:0.2,aw:'X'},{a:'J02AX04',n:'Caspofungina',ddd:0.05,aw:'X'},{a:'J02AX05',n:'Micafungina',ddd:0.1,aw:'X'},{a:'J02AX06',n:'Anidulafungina',ddd:0.1,aw:'X'}]},
 {g:'Antivirale (J05)',items:[{a:'J05AB01',n:'Aciclovir',ddd:4,aw:'X'},{a:'J05AB06',n:'Ganciclovir',ddd:0.5,aw:'X'},{a:'J05AB11',n:'Valaciclovir',ddd:3,aw:'X'},{a:'J05AB14',n:'Valganciclovir',ddd:0.9,aw:'X'},{a:'J05AH02',n:'Oseltamivir',ddd:0.15,aw:'X'},{a:'J05AX09',n:'Remdesivir',ddd:0.1,aw:'X'}]},
-{g:'Antituberculoase (J04)',items:[{a:'J04AB02',n:'Rifampicina',ddd:0.6,aw:'A'},{a:'J04AC01',n:'Izoniazida',ddd:0.3,aw:'A'},{a:'J04AK01',n:'Pirazinamida',ddd:1.5,aw:'A'},{a:'J04AK02',n:'Etambutol',ddd:1.2,aw:'A'}]}
+{g:'Antituberculoase (J04)',items:[{a:'J04AB02',n:'Rifampicina',ddd:0.6,aw:'A'},{a:'J04AC01',n:'Izoniazida',ddd:0.3,aw:'A'},{a:'J04AK01',n:'Pirazinamida',ddd:1.5,aw:'A'},{a:'J04AK02',n:'Etambutol',ddd:1.2,aw:'A'}]},
+{g:'Anti-infectioase intestinale / locale (A07AA)',items:[{a:'A07AA02',n:'Nistatina (oral)',ddd:0,aw:'X'},{a:'A07AA09',n:'Vancomicina (oral)',ddd:2,aw:'W'},{a:'A07AA10',n:'Colistina (oral)',ddd:0.3,aw:'R'},{a:'A07AA11',n:'Rifaximina',ddd:0.6,aw:'X'},{a:'A07AA12',n:'Fidaxomicina',ddd:0.4,aw:'W'}]}
 ];
 const MDR_OPTS=['Nu','ESBL','CRE','CPE','MRSA','VRE','XDR','PDR'];
 const ATB_ROUTES=[{v:'PO',n:'Oral (PO)'},{v:'IV',n:'Intravenos (IV)'},{v:'IM',n:'Intramuscular (IM)'},{v:'INH',n:'Inhalator'},{v:'TOP',n:'Topic'}];
+
+// v13.45 - lista de antibiotice = statica (ATB_LIST) + personalizate (CFG.custom_antibiotics).
+// getAtbList() returneaza lista combinata; folosita in IAAM, Consum ATB, Antibiograma.
+// Custom items apar intr-un grup separat "★ Antibiotice personalizate" la final.
+function getAtbList(){
+  try{
+    if(typeof CFG==='undefined'||!CFG.custom_antibiotics||!CFG.custom_antibiotics.length)return ATB_LIST;
+    var items=CFG.custom_antibiotics.map(function(c){return {a:c.a||('CUSTOM_'+(c.n||'').replace(/\s+/g,'_')),n:c.n||'?',ddd:(typeof c.ddd==='number'?c.ddd:(parseFloat(c.ddd)||0)),aw:c.aw||'X',_custom:true}});
+    return ATB_LIST.concat([{g:'★ Antibiotice personalizate',items:items}]);
+  }catch(e){return ATB_LIST}
+}
 
 </script>
 <script>
@@ -3787,7 +3802,7 @@ function germeniOpts(){let h='<option value="">— Selecteaza germen —</option
 function needsMDRo(code){if(!code)return false;if(code.startsWith('VIR'))return false;if(code.startsWith('CAN')||code.startsWith('ASP')||code.startsWith('YEA')||code.startsWith('FUN')||code.startsWith('FIL'))return false;if(code==='PAROTH'||code.startsWith('_'))return false;return true}
 function needsCustomName(code){if(!code)return false;const item=germenName(code);return/Alt[eiă]|alt[eiă]|Other|spp\.,? ?alt|nespecificat|neidentificat/i.test(item)||code.startsWith('_')}
 function _allGermeniFlat(){const arr=[];GERMENI_LIST.forEach(g=>g.items.forEach(it=>arr.push({c:it.c,n:it.n,g:g.g})));return arr}
-function atbOpts(){let h='<option value="">— Selecteaza antibiotic —</option>';ATB_LIST.forEach(g=>{h+='<optgroup label="'+g.g+'">';g.items.forEach(it=>{h+='<option value="'+it.a+'">'+it.n+' ('+it.a+')</option>'});h+='</optgroup>'});return h}
+function atbOpts(){let h='<option value="">— Selecteaza antibiotic —</option>';(typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(g=>{h+='<optgroup label="'+g.g+'">';g.items.forEach(it=>{h+='<option value="'+it.a+'">'+it.n+' ('+it.a+')</option>'});h+='</optgroup>'});return h}
 
 function detLabel(v){return DET_LABELS[v]||v||'—'}
 function moOpts(s){return MO.map((m,i)=>'<option value="'+(i+1)+'" '+(i+1===s?'selected':'')+'>'+m+'</option>').join('')}
@@ -4479,7 +4494,7 @@ function openAbgModal(gIdx){
   h+='<div class="abg-quick"><button onclick="abgQuickFill(\'neg\')">'+T('abg_quick_gram_neg')+'</button><button onclick="abgQuickFill(\'poz\')">'+T('abg_quick_gram_poz')+'</button><button onclick="abgQuickFill(\'clear\')">'+T('abg_quick_all')+'</button></div>';
   h+='<div style="margin:8px 0"><input id="abg-search" placeholder="'+(CFG.lang==='en'?'Search antibiotic...':'Cauta antibiotic...')+'" oninput="abgFilterAtb(this.value)" style="width:100%;padding:7px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:var(--f)"></div>';
   h+='<div class="abg-atb-grid" id="abg-atb-grid"><span class="abg-hdr">Antibiotic</span><span class="abg-hdr" style="text-align:center">S</span><span class="abg-hdr" style="text-align:center">I</span><span class="abg-hdr" style="text-align:center">R</span>';
-  ATB_LIST.forEach(grp=>{
+  (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(grp=>{
     h+='<div class="abg-grp-hdr">'+esc(grp.g)+'</div>';
     grp.items.forEach(atb=>{
       const ex=g.susceptibility.find(s=>s.atb_code===atb.a);
@@ -10896,7 +10911,7 @@ function buildAntibiogramMatrixFromLab(isolates,filters){
   const atbSet=new Set();
   Object.values(gMap).forEach(gd=>{gd.isolates.forEach(sus=>{sus.forEach(s=>{if(s.atb_code)atbSet.add(s.atb_code)})})});
   const atbCols=[];
-  ATB_LIST.forEach(grp=>{grp.items.forEach(atb=>{if(atbSet.has(atb.a))atbCols.push({code:atb.a,name:atb.n,group:grp.g})})});
+  (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(grp=>{grp.items.forEach(atb=>{if(atbSet.has(atb.a))atbCols.push({code:atb.a,name:atb.n,group:grp.g})})});
 
   const germeni=Object.values(gMap).map(gd=>{
     const count=gd.isolates.length;
@@ -10928,7 +10943,7 @@ function buildAntibiogramMatrix(cases,year,secFilter){
   const atbSet=new Set();
   Object.values(gMap).forEach(gd=>{gd.isolates.forEach(sus=>{sus.forEach(s=>{atbSet.add(s.atb_code)})})});
   const atbCols=[];
-  ATB_LIST.forEach(grp=>{grp.items.forEach(atb=>{if(atbSet.has(atb.a))atbCols.push({code:atb.a,name:atb.n,group:grp.g})})});
+  (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(grp=>{grp.items.forEach(atb=>{if(atbSet.has(atb.a))atbCols.push({code:atb.a,name:atb.n,group:grp.g})})});
   const germeni=Object.values(gMap).map(gd=>{
     const count=gd.isolates.length;
     const atbs=atbCols.map(ac=>{
@@ -11341,7 +11356,7 @@ function assignSIR(org,atbLines){
       if(atbName){
         let atbCode='';
         if(typeof ATB_LIST!=='undefined'){
-          ATB_LIST.forEach(grp=>{grp.items.forEach(a=>{
+          (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(grp=>{grp.items.forEach(a=>{
             if(matchAtbName(a.n,atbName)||a.a.toLowerCase()===atbName.toLowerCase())atbCode=a.a;
           })});
         }
@@ -11453,7 +11468,7 @@ async function processLabCSV(){
       // Try matching ATB to ATB_LIST
       let atbCode='';
       if(typeof ATB_LIST!=='undefined'){
-        ATB_LIST.forEach(grp=>{grp.items.forEach(a=>{
+        (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(grp=>{grp.items.forEach(a=>{
           if(a.n.toLowerCase()===atbName.toLowerCase()||a.a===atbName)atbCode=a.a;
         })});
       }
@@ -11594,7 +11609,7 @@ async function genAntibiogramaWHONET(){
   }
 
   const atbCodes=[];
-  ATB_LIST.forEach(grp=>{grp.items.forEach(atb=>{if(atbSet.has(atb.a))atbCodes.push(atb.a)})});
+  (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(grp=>{grp.items.forEach(atb=>{if(atbSet.has(atb.a))atbCodes.push(atb.a)})});
   if(atbCodes.length===0){alert('Nu exista date de antibiograma.');return}
 
   const header=['PATIENT_ID','SPEC_DATE','ORGANISM','SPEC_TYPE','WARD',...atbCodes];
@@ -11620,8 +11635,10 @@ async function genAntibiogramaWHONET(){
 // ═══════════════════════════════════════════════════════════════
 
 // ATB_LIST lookup helpers for DDD/AWaRe (cached)
+// v13.45 - foloseste getAtbList() (static + custom). Cache invalidat prin _invalidateAtbCache() la modificarea antibioticelor custom.
 var _atbFlatCache=null;
-function _atbFlat(){if(_atbFlatCache)return _atbFlatCache;const m={};ATB_LIST.forEach(g=>g.items.forEach(it=>{m[it.a]=it}));_atbFlatCache=m;return m}
+function _invalidateAtbCache(){_atbFlatCache=null}
+function _atbFlat(){if(_atbFlatCache)return _atbFlatCache;const m={};(typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(g=>g.items.forEach(it=>{m[it.a]=it}));_atbFlatCache=m;return m}
 function atbDDD(atc){return _atbFlat()[atc]?.ddd||0}
 function atbAWaRe(atc){return _atbFlat()[atc]?.aw||'X'}
 function atbName(atc){return _atbFlat()[atc]?.n||atc}
@@ -11849,7 +11866,7 @@ async function editConsumATB(id){
   let moH='';for(let i=1;i<=12;i++)moH+='<option value="'+i+'" '+(i===r.month?'selected':'')+'>'+mo[i-1]+'</option>';
 
   let atbH='<option value="">— '+T('ddd_substance')+' —</option>';
-  ATB_LIST.forEach(g=>{
+  (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(g=>{
     // Only J01 antibacterials for consumption tracking (skip J02 antifungals, J04 TB, J05 antivirals)
     atbH+='<optgroup label="'+g.g+'">';
     g.items.forEach(it=>{
@@ -11945,12 +11962,13 @@ function _dddMatchATC(val){
   // Try by name
   var vl=val.trim().toLowerCase();
   var found=null;
-  ATB_LIST.forEach(function(g){g.items.forEach(function(it){
+  var _al=(typeof getAtbList==='function'?getAtbList():ATB_LIST);
+  _al.forEach(function(g){g.items.forEach(function(it){
     if(!found&&it.n.toLowerCase()===vl)found=it.a;
   })});
   if(found)return found;
   // Fuzzy name match (first 6 chars)
-  ATB_LIST.forEach(function(g){g.items.forEach(function(it){
+  _al.forEach(function(g){g.items.forEach(function(it){
     if(!found&&vl.length>=4&&it.n.toLowerCase().startsWith(vl.substring(0,6)))found=it.a;
   })});
   return found;
@@ -17603,6 +17621,7 @@ async function rCfg(el){
       ['cfg-probe-map',isEN?'Applicable Samples per Section':'Probe Aplicabile per Secție'],
       ['cfg-atp',isEN?'ATP/UV Surfaces':'Suprafețe ATP/UV'],
       ['cfg-lab',isEN?'Lab Samples (Antibiogram)':'Tipuri Probe Laborator (Antibiograma)'],
+      ['cfg-atb-custom',isEN?'Custom Antibiotics':'Antibiotice Personalizate'],
       ['cfg-ipc',isEN?'IPC Categories (Audits + SMART)':'Categorii IPC (Audituri + Obiective SMART)'],
       ['cfg-prof',isEN?'Professional Categories (Hand Hygiene)':'Categorii Profesionale (Audit Igienă Mâini)'],
       ['cfg-bio',isEN?'Biocide Products':'Produse Biocide'],
@@ -17798,6 +17817,28 @@ async function rCfg(el){
     '<p style="font-size:12px;color:var(--txtL);margin-bottom:10px">Tipuri de probe microbiologice folosite la importul CSV din laborator.</p>'+
     '<div class="tag-list">'+(CFG.lab_sample_types||['hemocultura','urocultura','coprocultura','exudat faringian','secretie plaga','aspirat traheal','lichid pleural','LCR','altele']).map((t,i)=>{const nm=typeof t==='string'?t:t.name;return '<span class="tag">'+esc(nm)+'<span class="tag-x" onclick="if(!CFG.lab_sample_types)CFG.lab_sample_types=[\'hemocultura\',\'urocultura\',\'coprocultura\',\'exudat faringian\',\'secretie plaga\',\'aspirat traheal\',\'lichid pleural\',\'LCR\',\'altele\'];CFG.lab_sample_types.splice('+i+',1);saveCfg();render()">&#215;</span></span>'}).join('')+'</div>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-lab-sample" placeholder="Tip proba laborator nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-lab-sample\').value.trim();if(v){if(!CFG.lab_sample_types)CFG.lab_sample_types=[\'hemocultura\',\'urocultura\',\'coprocultura\',\'exudat faringian\',\'secretie plaga\',\'aspirat traheal\',\'lichid pleural\',\'LCR\',\'altele\'];CFG.lab_sample_types.push(v);saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
+  '</div></div>'+
+
+  // v13.45 - Antibiotice personalizate (extind lista statica ATB_LIST). Apar in IAAM + Consum ATB + Antibiograma.
+  '<div class="pn" id="cfg-atb-custom"><div class="ph"><h3>'+(isEN?'Custom Antibiotics':'Antibiotice Personalizate')+'</h3></div><div class="pb">'+
+    '<div class="ib inf" style="margin-bottom:10px">'+(isEN?'Add antibiotics not in the standard WHO ATC list. They appear in IAAM treatment, ATB consumption (DDD/AWaRe) and Antibiogram. Fill name (required); ATC code, group, AWaRe class and DDD are optional but recommended for correct reports.':'Adauga antibiotice care nu sunt in lista standard WHO ATC (ex: Oxacilina exista deja, dar poti adauga orice altceva). Apar in Tratament IAAM, Consum ATB (DDD/AWaRe) si Antibiograma. Numele e obligatoriu; codul ATC, grupa, clasa AWaRe si DDD sunt optionale dar recomandate pentru rapoarte corecte.')+'</div>'+
+    '<table class="dt" style="font-size:12px"><thead><tr><th>Denumire</th><th style="width:110px">Cod ATC</th><th>Grupa</th><th style="width:70px">AWaRe</th><th style="width:70px">DDD (g)</th><th style="width:40px">&#215;</th></tr></thead><tbody>'+
+    (CFG.custom_antibiotics||[]).map(function(c,i){
+      return '<tr><td>'+esc(c.n||'')+'</td><td style="font-family:monospace;font-size:11px">'+esc(c.a||'—')+'</td><td style="font-size:11px">'+esc(c.g||'—')+'</td>'+
+      '<td style="text-align:center"><span class="bdg '+(c.aw==='A'?'bdg-g':c.aw==='W'?'bdg-b':c.aw==='R'?'bdg-r':'')+'" style="font-size:10px">'+esc(c.aw||'X')+'</span></td>'+
+      '<td style="text-align:center">'+(c.ddd?c.ddd:'—')+'</td>'+
+      '<td class="act"><button onclick="CFG.custom_antibiotics.splice('+i+',1);if(typeof _invalidateAtbCache===\'function\')_invalidateAtbCache();saveCfg();render()">&#128465;</button></td></tr>';
+    }).join('')+
+    '</tbody></table>'+
+    '<div style="margin-top:12px;padding:12px;background:var(--bg);border:1px solid var(--brd);border-radius:8px">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px">&#10133; Antibiotic nou</div>'+
+      '<div class="fr"><div class="fg"><label>Denumire *</label><input id="new-atb-name" placeholder="ex: Oxacilina"></div>'+
+      '<div class="fg"><label>Cod ATC (optional)</label><input id="new-atb-atc" placeholder="ex: J01CF04"></div></div>'+
+      '<div class="fr"><div class="fg"><label>Grupa (optional)</label><input id="new-atb-grp" placeholder="ex: Beta-lactamice: Penicilline (J01C)"></div>'+
+      '<div class="fg" style="max-width:130px"><label>Clasa AWaRe</label><select id="new-atb-aw"><option value="A">A (Access)</option><option value="W">W (Watch)</option><option value="R">R (Reserve)</option><option value="X" selected>X (Altul/antifungic)</option></select></div>'+
+      '<div class="fg" style="max-width:110px"><label>DDD (g, optional)</label><input type="number" id="new-atb-ddd" step="0.01" min="0" placeholder="ex: 2"></div></div>'+
+      '<button class="btn bp" style="margin-top:10px" onclick="addCustomAtb()">+ Adauga antibiotic</button>'+
+    '</div>'+
   '</div></div>'+
 
     // ═══ GRUPUL 4: AUDITURI & CALITATE ═══
@@ -18080,6 +18121,33 @@ async function fullReset(){
   indexedDB.deleteDatabase(DB);
   localStorage.removeItem('cpiaam_had_data');
   location.reload();
+}
+
+// v13.45 - adauga antibiotic personalizat in CFG.custom_antibiotics. Apare in toate modulele ATB.
+function addCustomAtb(){
+  var isEN=CFG.lang==='en';
+  var g=function(id){var e=document.getElementById(id);return e?e.value.trim():''};
+  var name=g('new-atb-name');
+  if(!name){alert(isEN?'Enter antibiotic name.':'Introdu denumirea antibioticului.');return}
+  if(!Array.isArray(CFG.custom_antibiotics))CFG.custom_antibiotics=[];
+  // Evita duplicate pe nume (case-insensitive) — inclusiv fata de lista standard
+  var lc=name.toLowerCase();
+  var dupStatic=(typeof ATB_LIST!=='undefined')&&ATB_LIST.some(function(grp){return grp.items.some(function(it){return it.n.toLowerCase()===lc})});
+  var dupCustom=CFG.custom_antibiotics.some(function(c){return (c.n||'').toLowerCase()===lc});
+  if(dupStatic){if(!confirm((isEN?'This antibiotic already exists in the standard list. Add anyway?':'Acest antibiotic exista deja in lista standard. Adaugi oricum?')))return}
+  if(dupCustom){alert(isEN?'Already in custom list.':'Exista deja in lista personalizata.');return}
+  var dddRaw=g('new-atb-ddd');
+  CFG.custom_antibiotics.push({
+    n:name,
+    a:g('new-atb-atc')||('CUSTOM_'+name.replace(/\s+/g,'_')),
+    g:g('new-atb-grp')||'',
+    aw:(document.getElementById('new-atb-aw')?document.getElementById('new-atb-aw').value:'X'),
+    ddd:dddRaw?parseFloat(dddRaw)||0:0
+  });
+  if(typeof _invalidateAtbCache==='function')_invalidateAtbCache();
+  saveCfg();
+  if(typeof logActivity==='function')logActivity('Adaugat antibiotic personalizat — '+name);
+  render();
 }
 
 // v13.37 - editare manuala CFG.author_name (numele original setat in setup wizard).
@@ -19605,6 +19673,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.45',date:'2026-05-08',summary:'Antibiotice: adăugate în lista standard Oxacilina + altele comune RO și un grup intestinal/local (Rifaximina, Nistatina orală, Vancomicina orală, Fidaxomicina). NOU: Configurare → Antibiotice Personalizate — poți adăuga orice antibiotic (nume + ATC + grupă + AWaRe + DDD), apare automat în IAAM, Consum ATB și Antibiograma.'},
   {version:'13.44',date:'2026-05-08',summary:'IAAM → pas 2 Spitalizare: câmpurile de diagnostic (internare, externare principal, secundare) sunt acum textarea cu wrap — vezi tot textul fără să muți cursorul. Codurile rămân câmpuri mici alături.'},
   {version:'13.43',date:'2026-05-08',summary:'IAAM → pas 10: Originea infecției revizuită conform ECDC (internare curentă / anterioară același spital / alt spital / LTCF / comunitară / necunoscută). Eliminat termenul „readmisie". Fix: Fișa cazului bifează corect căsuța de origine pentru toate variantele.'},
   {version:'13.42',date:'2026-05-08',summary:'IAAM → pas 9 Măsuri: Biocide utilizate restructurat — checkbox „Conform PO intern" + denumire PO, plus poți adăuga mai multe biocide specifice din listă. IAAM → pas 7: câmpul Proceduri/Intervenții e acum textarea mai mare (vezi tot textul fără să muți cursorul).'},

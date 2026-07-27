@@ -1,8 +1,10 @@
 {
-  "version": "13.44",
+  "version": "13.45",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "IAAM → pas 2 Spitalizare: câmpurile de diagnostic (internare, externare principal, secundare) sunt acum mai mari (textarea cu wrap) — vezi tot textul fără să muți cursorul.",
-    "Codurile rămân câmpuri mici alături. Toate se redimensionează vertical dacă ai nevoie de mai mult spațiu."
+    "Antibiotice: adăugate în lista standard Oxacilina, Cefadroxil, Ceftibuten, Spiramicina, Josamicina, Pivmecilinam, Dicloxacilina + grup nou intestinal/local (Rifaximina, Nistatina orală, Vancomicina orală, Colistina orală, Fidaxomicina).",
+    "Nou: Configurare → Introducere date → Antibiotice Personalizate. Poți adăuga orice antibiotic (nume + cod ATC + grupă + clasa AWaRe + DDD).",
+    "Antibioticele personalizate apar automat în Tratament IAAM, Consum Antibiotice (DDD/AWaRe) și Antibiograma.",
+    "Codificarea rămâne WHO ATC + AWaRe 2023 (standard ECDC/INSP)."
   ]
 }

@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.49</title>
+<title>CPIAAM Management v13.52</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -288,6 +288,21 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .contact-row .ci{width:80px}.contact-row .cfo{width:100px}.contact-row .cint{width:150px}.contact-row .crm{flex:1;min-width:120px}
 .contact-row .cdt{width:140px}
 .ctc-legacy{font-size:10px;color:var(--amber);background:transparent;border:1px solid var(--amber);border-radius:4px;padding:2px 6px;white-space:nowrap;align-self:center}
+/* v13.50 — modul focare: curba epidemica (histograma din div-uri) + randuri plan de masuri */
+.foc-curve{display:flex;align-items:flex-end;gap:3px;margin-top:6px;padding:8px 6px 2px;border:1px solid var(--brd);border-radius:6px;background:var(--bg);overflow-x:auto;min-height:88px}
+.foc-bar-wrap{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-width:22px;flex:1}
+.foc-bar{width:100%;max-width:22px;background:var(--red);border-radius:2px 2px 0 0}
+.foc-bar-val{font-size:9px;font-weight:700;color:var(--red);height:12px;line-height:12px}
+.foc-bar-lbl{font-size:8px;color:var(--txtL);margin-top:3px;white-space:nowrap;transform:rotate(-45deg);transform-origin:center;height:16px}
+.foc-act-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 8px;background:var(--bg);border:1px solid var(--brd);border-radius:6px;margin-bottom:5px}
+.foc-act-row input{padding:4px 7px;border:1px solid var(--brd);border-radius:5px;font-size:11px;font-family:var(--f)}
+.foc-act-row .fa-act{flex:1;min-width:170px}.foc-act-row .fa-resp{width:150px}.foc-act-row .fa-dl{width:130px}
+.dark .foc-curve,.dark .foc-act-row{background:#0F172A;border-color:#475569}
+.dark .foc-act-row input{background:#0F172A;border-color:#334155;color:#E2E8F0}
+.bdg-a{background:#FEF3C7;color:#854F0B}
+.dark .bdg-a{background:#78350F;color:#FDE68A}
+/* v13.50 — cluster care se intinde peste mai multe sectii: semnal mai slab, marcat vizual */
+.tl-cluster-link.cross-sec{border-style:dashed;opacity:.75}
 /* v13.48 — rand de detalii per factor de risc (durata + dispozitiv/molecula) */
 .rfd-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 8px;background:var(--bg);border:1px solid var(--brd);border-radius:6px;margin-bottom:5px}
 .rfd-row input{padding:4px 7px;border:1px solid var(--brd);border-radius:5px;font-size:11px;font-family:var(--f)}
@@ -1017,6 +1032,7 @@ body{display:block!important;background:#fff!important}
     <a class="ni a" data-p="dashboard" data-tooltip="Dashboard" onclick="nav('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span data-t="sb_dashboard">Dashboard</span></a>
     <div class="ns" data-t="sb_module">Module Date</div>
     <a class="ni" data-p="iaam" data-tooltip="IAAM / Anchete" onclick="nav('iaam')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span data-t="sb_iaam">IAAM / Anchete</span></a>
+    <a class="ni" data-p="focare" data-tooltip="Focare" onclick="nav('focare')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7.5" stroke-dasharray="3 3"/><path d="M12 1v2M12 21v2M1 12h2M21 12h2"/></svg><span data-t="sb_focare">Focare</span></a>
     <a class="ni" data-p="autocontrol" data-tooltip="Autocontrol" onclick="nav('autocontrol')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg><span data-t="sb_autocontrol">Autocontrol</span></a>
     <a class="ni" data-p="deseuri" data-tooltip="Deseuri" onclick="nav('deseuri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg><span data-t="sb_deseuri">Deseuri</span></a>
     <a class="ni" data-p="statistici" data-tooltip="Statistici Spital" onclick="nav('statistici')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="17" y="4" width="4" height="17" rx="1"/></svg><span>Statistici Spital</span></a>
@@ -1108,7 +1124,9 @@ body{display:block!important;background:#fff!important}
 // CPIAAM — Core — IndexedDB & ID System
 // ═════════════════════════════════════════════════════════════
 
-const DB='CPIAAM4',VER=8,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum','objectives','lab_isolates','hospital_activity'];
+// v13.50 - VER 8→9: store nou 'outbreaks' (modul focare). Upgrade-ul doar CREEAZA store-ul lipsa,
+// nu atinge datele existente (onupgradeneeded itereaza ST si sare peste cele care exista deja).
+const DB='CPIAAM4',VER=9,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum','objectives','lab_isolates','hospital_activity','outbreaks'];
 function odb(){return new Promise((ok,no)=>{const r=indexedDB.open(DB,VER);r.onupgradeneeded=e=>{const d=e.target.result;ST.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id',autoIncrement:true})})};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function ga(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result.filter(function(x){return!x._deleted}));r.onerror=()=>no(r.error)})}
 async function gaAll(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
@@ -1564,7 +1582,7 @@ async function _fileActionPreview(){
     if(d.version)h+='<br>'+('Versiune: ')+d.version;
     h+='</div>';
     h+='<table class="dt" style="font-size:12px"><thead><tr><th>'+(isEN?'Store':'Modul')+'</th><th style="text-align:right">'+(isEN?'Records':'Inregistrari')+'</th></tr></thead><tbody>';
-    var storeNames={iaam:'IAAM / Anchete',autocontrol:'Autocontrol',deseuri:'Deseuri',biocide:'Biocide',pps:'PPS',documents:'Documente',deadlines:'Termene/Raportari',events:'Evenimente',audits:'Audituri',trainings:'Instruiri',atp:'Probe ATP',uvcheck:'Testare UV',atb_consum:'Consum Antibiotice',objectives:'Obiective'};
+    var storeNames={iaam:'IAAM / Anchete',autocontrol:'Autocontrol',deseuri:'Deseuri',biocide:'Biocide',pps:'PPS',documents:'Documente',deadlines:'Termene/Raportari',events:'Evenimente',audits:'Audituri',trainings:'Instruiri',atp:'Probe ATP',uvcheck:'Testare UV',atb_consum:'Consum Antibiotice',objectives:'Obiective',outbreaks:'Focare'};
     var totalRecs=0;
     ST.forEach(function(s){
       if(s==='config')return;
@@ -1880,7 +1898,7 @@ function showSyncDetails(idx){
     h+='<th style="padding:6px 8px;color:#059669">+'+(isEN?' New':' Noi')+'</th>';
     h+='<th style="padding:6px 8px;color:#2563EB">&#9998;'+(isEN?' Updated':' Modif.')+'</th>';
     h+='<th style="padding:6px 8px;color:#DC2626">&#128465;'+(isEN?' Deleted':' Sterse')+'</th></tr></thead><tbody>';
-    var sNames={iaam:'IAAM',autocontrol:'Autocontrol',deseuri:'Deseuri',biocide:'Biocide',pps:'PPS',documents:'Documente',deadlines:'Termene',events:'Evenimente',audits:'Audituri',trainings:'Instruiri',atp:'ATP',uvcheck:'UV',atb_consum:'Consum ATB',objectives:'Obiective'};
+    var sNames={iaam:'IAAM',autocontrol:'Autocontrol',deseuri:'Deseuri',biocide:'Biocide',pps:'PPS',documents:'Documente',deadlines:'Termene',events:'Evenimente',audits:'Audituri',trainings:'Instruiri',atp:'ATP',uvcheck:'UV',atb_consum:'Consum ATB',objectives:'Obiective',outbreaks:'Focare'};
     for(var u=0;u<users.length;u++){
       var name=users[u];var us=report.byUser[name];
       var storeDetail='';
@@ -1957,7 +1975,7 @@ function showSyncLogDetail(idx){
     h+='<th style="padding:6px 8px;color:#059669">+'+(isEN?' New':' Noi')+'</th>';
     h+='<th style="padding:6px 8px;color:#2563EB">&#9998;'+(isEN?' Updated':' Modif.')+'</th>';
     h+='<th style="padding:6px 8px;color:#DC2626">&#128465;'+(isEN?' Deleted':' Sterse')+'</th></tr></thead><tbody>';
-    var sNames={iaam:'IAAM',autocontrol:'Autocontrol',deseuri:'Deseuri',biocide:'Biocide',pps:'PPS',documents:'Documente',deadlines:'Termene',events:'Evenimente',audits:'Audituri',trainings:'Instruiri',atp:'ATP',uvcheck:'UV',atb_consum:'Consum ATB',objectives:'Obiective'};
+    var sNames={iaam:'IAAM',autocontrol:'Autocontrol',deseuri:'Deseuri',biocide:'Biocide',pps:'PPS',documents:'Documente',deadlines:'Termene',events:'Evenimente',audits:'Audituri',trainings:'Instruiri',atp:'ATP',uvcheck:'UV',atb_consum:'Consum ATB',objectives:'Obiective',outbreaks:'Focare'};
     for(var u=0;u<users.length;u++){
       var name=users[u];var us=r.byUser[name];
       // Build store detail string
@@ -2264,7 +2282,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.49';
+const APP_VERSION='13.52';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -2976,7 +2994,7 @@ ro:{
   months_full:['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'],
   // Sidebar
   sb_principal:'PRINCIPAL',sb_module:'MODULE DATE',sb_rapoarte:'RAPOARTE',sb_sistem:'SISTEM',
-  sb_dashboard:'Dashboard',sb_iaam:'IAAM / Anchete',sb_autocontrol:'Autocontrol',sb_deseuri:'Deseuri',
+  sb_dashboard:'Dashboard',sb_iaam:'IAAM / Anchete',sb_focare:'Focare',sb_autocontrol:'Autocontrol',sb_deseuri:'Deseuri',
   sb_biocide:'Biocide',sb_pps:'PPS / Antibiotice',sb_documente:'Documente',sb_termene:'Raportari/Termene',
   sb_calendar:'Calendar',
   sb_gen_rapoarte:'Generare Rapoarte',sb_config:'Configurare',sb_despre:'Despre',sb_ajutor:'Ajutor / FAQ',
@@ -3155,7 +3173,7 @@ en:{
   months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
   months_full:['January','February','March','April','May','June','July','August','September','October','November','December'],
   sb_principal:'MAIN',sb_module:'DATA MODULES',sb_rapoarte:'REPORTS',sb_sistem:'SYSTEM',
-  sb_dashboard:'Dashboard',sb_iaam:'HAI / Investigations',sb_autocontrol:'Quality Control',sb_deseuri:'Medical Waste',
+  sb_dashboard:'Dashboard',sb_iaam:'HAI / Investigations',sb_focare:'Outbreaks',sb_autocontrol:'Quality Control',sb_deseuri:'Medical Waste',
   sb_biocide:'Biocides',sb_pps:'PPS / Antibiotics',sb_documente:'Documents',sb_termene:'Deadlines',
   sb_calendar:'Calendar',
   sb_gen_rapoarte:'Generate Reports',sb_config:'Settings',sb_despre:'About',sb_ajutor:'Help / FAQ',
@@ -3907,7 +3925,7 @@ async function delRec(store,id){if(!confirm(T('confirma_stergere')))return;await
 // ROUTER
 // ═══════════════════════════════════════════════════════════════
 async function renderPage(p){const el=document.getElementById('pc');dch();switch(p){
-  case'dashboard':return rDash(el);case'iaam':return rIAAM(el);case'autocontrol':return rAuto(el);
+  case'dashboard':return rDash(el);case'iaam':return rIAAM(el);case'focare':return rFocare(el);case'autocontrol':return rAuto(el);
   case'deseuri':return rDes(el);case'statistici':return rStatistici(el);case'biocide':return rBio(el);case'pps':return rPPS(el);case'consum_atb':return rConsumATB(el);
   case'antibiograma':return rAntibiograma(el);case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
   case'audituri':return rAudit(el);case'obiective':return rObiective(el);case'instruire':return rInstr(el);
@@ -4376,7 +4394,11 @@ function calcSPC(data){
   const mr=[];for(let i=1;i<vals.length;i++)mr.push(Math.abs(vals[i]-vals[i-1]));
   const mrBar=mr.length>0?mr.reduce((s,v)=>s+v,0)/mr.length:0;
   const ucl=mean+2.66*mrBar;const lcl=Math.max(0,mean-2.66*mrBar);
-  return{mean:Math.round(mean*100)/100,ucl:Math.round(ucl*100)/100,lcl:Math.round(lcl*100)/100};
+  // v13.50 - cand variatia dintre luni e zero (ex: toate lunile cu cazuri au exact 1 caz), mrBar=0
+  // si UCL=LCL=media → limitele de control nu au sens statistic. Le marcam degenerate ca sa nu fie desenate
+  // (inainte toate 3 liniile cadeau pe aceeasi valoare si etichetele se suprapuneau ilizibil).
+  return{mean:Math.round(mean*100)/100,ucl:Math.round(ucl*100)/100,lcl:Math.round(lcl*100)/100,
+    degenerate:!(mrBar>0),n:vals.length};
 }
 function initDashCharts(){
   const d=A._dashChartData;if(!d)return;
@@ -4389,12 +4411,19 @@ function initDashCharts(){
     if(spc){
       const lc=A.darkMode?'#94A3B8':'#64748B';
       var isEN=CFG.lang==='en';
+      // v13.50 - fiecare eticheta pe alta poziorizontala (start/end/center) ca sa nu se suprapuna
+      // nici cand valorile sunt apropiate. In cazul degenerat desenam DOAR media.
       spcAnnotations.meanLine={type:'line',yMin:spc.mean,yMax:spc.mean,borderColor:'#2563B0',borderWidth:2,borderDash:[6,4],
         label:{display:true,content:(isEN?'Mean':'Medie')+': '+spc.mean,position:'start',backgroundColor:'#2563B099',color:'#fff',font:{size:10}}};
-      spcAnnotations.uclLine={type:'line',yMin:spc.ucl,yMax:spc.ucl,borderColor:'#C0392B',borderWidth:2,borderDash:[4,4],
-        label:{display:true,content:(isEN?'Upper limit':'Limita sup.')+': '+spc.ucl,position:'end',backgroundColor:'#C0392B99',color:'#fff',font:{size:10}}};
-      if(spc.lcl>0)spcAnnotations.lclLine={type:'line',yMin:spc.lcl,yMax:spc.lcl,borderColor:'#27AE60',borderWidth:2,borderDash:[4,4],
-        label:{display:true,content:(isEN?'Lower limit':'Limita inf.')+': '+spc.lcl,position:'end',backgroundColor:'#27AE6099',color:'#fff',font:{size:10}}};
+      if(spc.degenerate){
+        // variatie zero intre luni → limitele coincid cu media si nu au valoare informativa
+        spcAnnotations.meanLine.label.content=(isEN?'Mean':'Medie')+': '+spc.mean+(isEN?' (no variation — control limits N/A)':' (variatie zero — limite inaplicabile)');
+      }else{
+        spcAnnotations.uclLine={type:'line',yMin:spc.ucl,yMax:spc.ucl,borderColor:'#C0392B',borderWidth:2,borderDash:[4,4],
+          label:{display:true,content:(isEN?'Upper limit':'Limita sup.')+': '+spc.ucl,position:'end',backgroundColor:'#C0392B99',color:'#fff',font:{size:10}}};
+        if(spc.lcl>0)spcAnnotations.lclLine={type:'line',yMin:spc.lcl,yMax:spc.lcl,borderColor:'#27AE60',borderWidth:2,borderDash:[4,4],
+          label:{display:true,content:(isEN?'Lower limit':'Limita inf.')+': '+spc.lcl,position:'center',backgroundColor:'#27AE6099',color:'#fff',font:{size:10}}};
+      }
     }
     A.charts.c1=new Chart(document.getElementById('c1'),{type:'bar',data:{labels:d.MO,datasets:[{label:'Cazuri',data:d.ibm,backgroundColor:bgColors,borderColor:brdColors,borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{stepSize:1,color:tc}},x:{ticks:{color:tc}}},plugins:{legend:{display:false},annotation:{annotations:spcAnnotations}}}});
     A._spcData=spc;
@@ -5679,7 +5708,13 @@ function _tlDetectClusters(rows){
     if(mem.size>0){
       var secs=new Set();mem.forEach(function(mid){var c=rows.find(function(f){return f.r.id===mid});if(c)secs.add(rSec(c.r.section))});
       var parts=k.split('|');
-      out.push({key:k,pathogen:parts[0]+(parts[1]?' '+parts[1]:''),ids:Array.from(mem),sections:Array.from(secs)});
+      // v13.50 - inainte gruparea se facea DOAR pe patogen, deci 2 cazuri fara nicio legatura
+      // epidemiologica (sectii diferite) erau raportate ca focar → fals-pozitiv.
+      // Acum marcam explicit clusterele care se intind peste mai multe sectii; cele din aceeasi
+      // sectie sunt semnalul puternic, restul sunt doar "de verificat".
+      var secIds=new Set();mem.forEach(function(mid){var c=rows.find(function(f){return f.r.id===mid});if(c&&c.r.section)secIds.add(c.r.section)});
+      out.push({key:k,pathogen:parts[0]+(parts[1]?' '+parts[1]:''),ids:Array.from(mem),sections:Array.from(secs),
+        crossSection:secIds.size>1,sameSection:secIds.size===1});
     }
   });
   return out;
@@ -5846,7 +5881,7 @@ function _renderTimeline(allData,isEN){
       h+='&#9888; <b>'+clusters.length+' '+T('tl_clustere_susp')+':</b> ';
       clusters.forEach(function(cl){
         var isA=_tlActiveCluster&&_tlActiveCluster.key===cl.key;
-        h+='<span class="tl-cluster-link'+(isA?' active-cluster':'')+'" onclick="_tlClickCluster(\''+cl.key.replace(/'/g,"\\'")+'\',\''+cl.ids.join(',')+'\')">'+esc(cl.pathogen)+' ('+cl.ids.length+')</span> ';
+        h+='<span class="tl-cluster-link'+(isA?' active-cluster':'')+(cl.crossSection?' cross-sec':'')+'" title="'+esc((cl.sections||[]).join(', '))+(cl.crossSection?' — sectii DIFERITE, verifica daca exista legatura epidemiologica reala':' — aceeasi sectie')+'" onclick="_tlClickCluster(\''+cl.key.replace(/'/g,"\\'")+'\',\''+cl.ids.join(',')+'\')">'+esc(cl.pathogen)+' ('+cl.ids.length+(cl.crossSection?', '+(cl.sections||[]).length+' sectii':'')+')</span> ';
       });
     }
     h+='</div>';
@@ -6023,7 +6058,7 @@ function _renderTimeline(allData,isEN){
     h+='&#9888; <b>'+clusters.length+' '+T('tl_clustere_susp')+':</b> ';
     clusters.forEach(function(cl){
       var isA=_tlActiveCluster&&_tlActiveCluster.key===cl.key;
-      h+='<span class="tl-cluster-link'+(isA?' active-cluster':'')+'" onclick="_tlClickCluster(\''+cl.key.replace(/'/g,"\\'")+'\',\''+cl.ids.join(',')+'\')">'+esc(cl.pathogen)+' ('+cl.ids.length+')</span> ';
+      h+='<span class="tl-cluster-link'+(isA?' active-cluster':'')+(cl.crossSection?' cross-sec':'')+'" title="'+esc((cl.sections||[]).join(', '))+(cl.crossSection?' — sectii DIFERITE, verifica daca exista legatura epidemiologica reala':' — aceeasi sectie')+'" onclick="_tlClickCluster(\''+cl.key.replace(/'/g,"\\'")+'\',\''+cl.ids.join(',')+'\')">'+esc(cl.pathogen)+' ('+cl.ids.length+(cl.crossSection?', '+(cl.sections||[]).length+' sectii':'')+')</span> ';
     });
   }
   h+='</div>';
@@ -6136,6 +6171,432 @@ function _renderTimeline(allData,isEN){
   }
 })()
 
+
+</script>
+<script>
+// ═════════════════════════════════════════════════════════════
+// CPIAAM — Modul Focare (v13.50)
+// Store: 'outbreaks'. Entitate focar + registru + curba epidemica + plan de masuri + raport Word.
+// Detectia automata de cluster tine cont de SECTIE (cea din Cronologie grupa doar pe patogen
+// si producea fals-pozitive intre sectii fara legatura epidemiologica).
+// ═════════════════════════════════════════════════════════════
+
+const FOC_STATUS=[
+  {v:'suspiciune',n:'Suspiciune',cls:'bdg-b',color:'#2563B0'},
+  {v:'confirmat',n:'Confirmat — activ',cls:'bdg-r',color:'#C0392B'},
+  {v:'sub_control',n:'Sub control',cls:'bdg-a',color:'#D4A017'},
+  {v:'inchis',n:'Inchis',cls:'bdg-g',color:'#27AE60'}
+];
+function focStatus(v){return FOC_STATUS.find(function(s){return s.v===v})||FOC_STATUS[0]}
+// Fereastra temporala (zile) in care 2 cazuri cu acelasi germen se considera legate epidemiologic
+const FOC_WINDOW_DAYS=30;
+
+var _focFilters={status:'',q:''};
+var _focOpen={};
+
+// Data de referinta a unui caz pentru cronologia focarului: confirmarea, altfel debutul, altfel internarea
+function focCaseDate(r){return r.date_confirmed||r.date_symptom_onset||r.date_admission||''}
+function focCaseGerms(r){
+  var g=(r.germeni||[]).map(function(x){return (x.name||'').trim()}).filter(Boolean);
+  if(!g.length&&r.organism)g=[String(r.organism).trim()];
+  return g;
+}
+
+// ═══ Detectie clustere nedeclarate (patogen + SECTIE + fereastra temporala) ═══
+function focDetectClusters(cases,declaredIds){
+  var declared=declaredIds||new Set();
+  var groups={};
+  cases.forEach(function(r){
+    if(declared.has(r.id))return;
+    var d=focCaseDate(r);if(!d)return;
+    focCaseGerms(r).forEach(function(gn){
+      var k=gn+'|||'+(r.section||'');
+      if(!groups[k])groups[k]=[];
+      groups[k].push({r:r,t:new Date(d+'T00:00:00').getTime()});
+    });
+  });
+  var out=[];
+  Object.keys(groups).forEach(function(k){
+    var arr=groups[k];if(arr.length<2)return;
+    arr.sort(function(a,b){return a.t-b.t});
+    // lanturi de cazuri consecutive aflate la <= FOC_WINDOW_DAYS unul de altul
+    var chain=[arr[0]];
+    for(var i=1;i<arr.length;i++){
+      var gap=(arr[i].t-chain[chain.length-1].t)/86400000;
+      if(gap<=FOC_WINDOW_DAYS){chain.push(arr[i])}
+      else{if(chain.length>=2)out.push(_focMkCluster(k,chain));chain=[arr[i]]}
+    }
+    if(chain.length>=2)out.push(_focMkCluster(k,chain));
+  });
+  return out.sort(function(a,b){return b.ids.length-a.ids.length});
+}
+// v13.50 - data locala YYYY-MM-DD. toISOString ar scadea o zi in fusul RO (UTC+2/+3),
+// deci intervalul focarului ar incepe cu o zi inaintea primului caz real.
+function _focLocalDate(ms){
+  var d=new Date(ms);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function _focMkCluster(key,chain){
+  var parts=key.split('|||');
+  return {pathogen:parts[0],section:parts[1],ids:chain.map(function(c){return c.r.id}),
+    date_start:_focLocalDate(chain[0].t),
+    date_stop:_focLocalDate(chain[chain.length-1].t),
+    mdr:(chain.map(function(c){return (c.r.germeni||[]).filter(function(g){return g.mdr&&g.mdr!=='Nu'}).map(function(g){return g.mdr})}).flat()[0]||'')};
+}
+
+// ═══ Pagina principala ═══
+async function rFocare(el){
+  const isEN=CFG.lang==='en';
+  const all=(await ga('outbreaks')).filter(function(f){return f.year===A.year});
+  const iaamAll=(await ga('iaam')).filter(function(r){return r.year===A.year});
+  const caseById={};iaamAll.forEach(function(r){caseById[r.id]=r});
+
+  // cazuri deja atribuite unui focar
+  const assigned=new Set();
+  all.forEach(function(f){(f.case_ids||[]).forEach(function(id){assigned.add(id)})});
+
+  // ── KPI ──
+  const active=all.filter(function(f){return f.status!=='inchis'});
+  const casesInvolved=assigned.size;
+  const lastCaseDays=(function(){
+    var ds=[];all.forEach(function(f){(f.case_ids||[]).forEach(function(id){var c=caseById[id];if(c){var d=focCaseDate(c);if(d)ds.push(new Date(d+'T00:00:00').getTime())}})});
+    if(!ds.length)return null;
+    return Math.floor((Date.now()-Math.max.apply(null,ds))/86400000);
+  })();
+
+  let h='<div class="kg">'+
+    '<div class="kc tl"><div class="kl">'+(isEN?'Total outbreaks':'Total focare')+'</div><div class="kv">'+all.length+'</div><div class="ks">'+A.year+'</div></div>'+
+    '<div class="kc '+(active.length>0?'rd':'gn')+'"><div class="kl">'+(isEN?'Active':'Active')+'</div><div class="kv">'+active.length+'</div><div class="ks">'+(active.length?'necesita monitorizare':'niciun focar activ')+'</div></div>'+
+    '<div class="kc bl"><div class="kl">'+(isEN?'Cases involved':'Cazuri implicate')+'</div><div class="kv">'+casesInvolved+'</div><div class="ks">din '+iaamAll.length+' cazuri IAAM</div></div>'+
+    '<div class="kc '+(lastCaseDays===null?'bl':lastCaseDays>=14?'gn':'am')+'"><div class="kl">'+(isEN?'Days since last case':'Zile de la ultimul caz')+'</div><div class="kv">'+(lastCaseDays===null?'—':lastCaseDays)+'</div><div class="ks">'+(lastCaseDays===null?'fara cazuri legate':(lastCaseDays>=14?'peste 2 perioade de incubatie':'monitorizare activa'))+'</div></div>'+
+  '</div>';
+
+  // ── Alerta clustere nedeclarate ──
+  const clusters=focDetectClusters(iaamAll,assigned);
+  if(clusters.length>0){
+    h+='<div class="pn" style="border-color:var(--amber);margin-bottom:14px"><div class="ph" style="background:rgba(245,158,11,.12)"><h3 style="color:var(--amber)">&#9888;&#65039; '+
+      (isEN?'Possible undeclared outbreaks':'Posibile focare nedeclarate')+' ('+clusters.length+')</h3></div><div class="pb">'+
+      '<div class="ib inf" style="margin-bottom:10px">Cazuri cu <strong>acelasi germen, in aceeasi sectie</strong>, aparute la mai putin de '+FOC_WINDOW_DAYS+' zile unul de altul. Verifica si declara focarul daca se confirma legatura epidemiologica.</div>';
+    clusters.forEach(function(cl,i){
+      h+='<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 10px;border:1px solid var(--brd);border-radius:6px;margin-bottom:6px">'+
+        '<div style="flex:1;min-width:220px"><strong>'+esc(cl.pathogen)+'</strong>'+(cl.mdr?' <span class="bdg bdg-r" style="font-size:9px">'+esc(cl.mdr)+'</span>':'')+
+          '<div style="font-size:11px;color:var(--txtL)">'+esc(rSec(cl.section))+' · '+cl.ids.length+' cazuri · '+fmtDate(cl.date_start)+' — '+fmtDate(cl.date_stop)+'</div></div>'+
+        '<button class="btn bp bsm" onclick="focFromCluster('+i+')">'+(isEN?'Declare outbreak':'Declara focar')+'</button>'+
+      '</div>';
+    });
+    h+='</div></div>';
+    window._focClusters=clusters;
+  } else { window._focClusters=[]; }
+
+  // ── Filtre + buton adaugare ──
+  h+='<div class="ac-filters">'+
+    '<div class="fg"><label>'+(isEN?'Search':'Cauta')+'</label><input value="'+esc(_focFilters.q)+'" placeholder="denumire sau germen" oninput="_focFilters.q=this.value;render()"></div>'+
+    '<div class="fg"><label>Status</label><select onchange="_focFilters.status=this.value;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+
+      FOC_STATUS.map(function(s){return '<option value="'+s.v+'"'+(_focFilters.status===s.v?' selected':'')+'>'+s.n+'</option>'}).join('')+'</select></div>'+
+  '</div>';
+  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn bp" onclick="editFocar()">+ '+(isEN?'New outbreak':'Focar nou')+'</button></div>';
+
+  // ── Lista focare ──
+  let list=all.slice();
+  if(_focFilters.status)list=list.filter(function(f){return f.status===_focFilters.status});
+  if(_focFilters.q){var q=_focFilters.q.toLowerCase();list=list.filter(function(f){return (f.name||'').toLowerCase().indexOf(q)>=0||(f.pathogen||'').toLowerCase().indexOf(q)>=0})}
+  list.sort(function(a,b){return (b.date_start||'').localeCompare(a.date_start||'')});
+
+  if(list.length===0){
+    h+='<div class="es"><p>'+(all.length===0?(isEN?'No outbreaks recorded for':'Niciun focar inregistrat pentru')+' '+A.year+'.':(isEN?'No outbreak matches the filters.':'Niciun focar nu corespunde filtrelor.'))+'</p></div>';
+  } else {
+    h+='<div class="pn"><div class="ph"><h3>'+(isEN?'Outbreak registry':'Registru focare')+'</h3></div><div class="pb" style="padding:0">';
+    list.forEach(function(f){
+      const st=focStatus(f.status);
+      const cs=(f.case_ids||[]).map(function(id){return caseById[id]}).filter(Boolean);
+      const open=_focOpen[f.id]===true;
+      const acts=(f.actions||[]);
+      const actDone=acts.filter(function(a){return a.status==='finalizat'}).length;
+      h+='<div style="border-bottom:1px solid var(--brd)">'+
+        '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;flex-wrap:wrap" onclick="_focToggle('+f.id+')">'+
+          '<span style="font-size:13px;width:12px;display:inline-block;transition:transform .2s;transform:rotate('+(open?'90':'0')+'deg)">&#9654;</span>'+
+          '<div style="flex:1;min-width:200px">'+
+            '<div style="font-weight:700;font-size:13px">'+esc(f.name||'(fara denumire)')+'</div>'+
+            '<div style="font-size:11px;color:var(--txtL);margin-top:2px">'+
+              esc(f.pathogen||'—')+(f.mdr?' · <span style="color:var(--red);font-weight:600">'+esc(f.mdr)+'</span>':'')+
+              ' · '+((f.sections||[]).map(function(s){return rSec(s)}).join(', ')||'—')+
+              ' · '+(f.date_start?fmtDate(f.date_start):'—')+(f.date_stop?' — '+fmtDate(f.date_stop):' — in desfasurare')+
+            '</div>'+
+          '</div>'+
+          '<span class="bdg bdg-b" style="font-size:10px">'+cs.length+' cazuri</span>'+
+          (acts.length?'<span class="bdg '+(actDone===acts.length?'bdg-g':'bdg-a')+'" style="font-size:10px">'+actDone+'/'+acts.length+' masuri</span>':'')+
+          '<span class="bdg '+st.cls+'" style="font-size:10px">'+st.n+'</span>'+
+          '<div onclick="event.stopPropagation()" style="display:flex;gap:4px">'+
+            '<button class="btn bo bsm" onclick="genFocarWord('+f.id+')" title="Raport Word">&#128196;</button>'+
+            '<button class="btn bo bsm" onclick="editFocar('+f.id+')" title="Editeaza">&#9998;</button>'+
+            '<button class="btn bo bsm" onclick="delFocar('+f.id+')" title="Sterge" style="color:var(--red)">&#128465;</button>'+
+          '</div>'+
+        '</div>';
+      if(open)h+='<div style="padding:4px 14px 16px 14px;background:var(--bg)">'+_focDetail(f,cs)+'</div>';
+      h+='</div>';
+    });
+    h+='</div></div>';
+  }
+  el.innerHTML=h;
+}
+
+// ═══ Detaliu focar: descriere + curba epidemica + cazuri + masuri ═══
+function _focDetail(f,cs){
+  let h='';
+  if(f.description)h+='<div class="ib inf" style="margin-bottom:10px">'+esc(f.description)+'</div>';
+  h+=focCurveHTML(cs);
+  // cazuri
+  if(cs.length){
+    h+='<div style="margin-top:12px;overflow-x:auto"><table class="dt" style="font-size:11px"><thead><tr>'+
+      '<th>Pacient</th><th>Nr. FO</th><th>Sectia</th><th>Data</th><th>Germen</th><th>Clasificare</th><th></th></tr></thead><tbody>';
+    cs.sort(function(a,b){return (focCaseDate(a)||'').localeCompare(focCaseDate(b)||'')});
+    cs.forEach(function(c){
+      h+='<tr><td>'+esc(c.patient||('P-'+c.id))+'</td><td>'+esc(c.fo_number||'—')+'</td><td>'+esc(rSec(c.section))+'</td>'+
+        '<td>'+(focCaseDate(c)?fmtDate(focCaseDate(c)):'—')+'</td>'+
+        '<td>'+esc(focCaseGerms(c).join(', ')||'—')+'</td>'+
+        '<td>'+esc(typeof classifLabel==='function'?classifLabel(c):(c.classification||'—'))+'</td>'+
+        '<td class="act"><button onclick="editIAAM('+c.id+')" title="Deschide cazul">&#9998;</button></td></tr>';
+    });
+    h+='</tbody></table></div>';
+  } else {
+    h+='<div style="font-size:11px;color:var(--txtL);font-style:italic;padding:8px 0">Niciun caz atribuit acestui focar. Editeaza focarul pentru a lega cazuri.</div>';
+  }
+  // masuri
+  const acts=f.actions||[];
+  h+='<div style="margin-top:14px"><strong style="font-size:12px">Plan de masuri</strong>';
+  if(acts.length===0){h+='<div style="font-size:11px;color:var(--txtL);font-style:italic;padding:6px 0">Nicio masura definita.</div>'}
+  else{
+    h+='<div style="overflow-x:auto;margin-top:6px"><table class="dt" style="font-size:11px"><thead><tr>'+
+      '<th>Masura</th><th style="width:150px">Responsabil</th><th style="width:110px">Termen</th><th style="width:130px">Status</th></tr></thead><tbody>';
+    acts.forEach(function(a,i){
+      const late=a.status!=='finalizat'&&a.deadline&&new Date(a.deadline+'T00:00:00')<new Date();
+      h+='<tr'+(late?' style="background:#fef2f2"':'')+'><td>'+esc(a.action||'—')+'</td><td>'+esc(a.responsible||'—')+'</td>'+
+        '<td>'+(a.deadline?fmtDate(a.deadline):'—')+(late?' <span style="color:var(--red);font-size:9px">depasit</span>':'')+'</td>'+
+        '<td><select onchange="focSetActionStatus('+f.id+','+i+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:2px;font-size:11px">'+
+          ['neinceput','in_lucru','finalizat'].map(function(s){return '<option value="'+s+'"'+((a.status||'neinceput')===s?' selected':'')+'>'+({neinceput:'Neinceput',in_lucru:'In lucru',finalizat:'Finalizat'})[s]+'</option>'}).join('')+
+        '</select></td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  h+='</div>';
+  if(f.conclusions)h+='<div style="margin-top:12px"><strong style="font-size:12px">Concluzii</strong><div style="font-size:11px;color:var(--txtL);margin-top:4px;white-space:pre-line">'+esc(f.conclusions)+'</div></div>';
+  return h;
+}
+
+// ═══ Curba epidemica — histograma pe zile (fara Chart.js: div-uri, zero lifecycle de curatat) ═══
+function focCurveHTML(cs){
+  const ds=cs.map(focCaseDate).filter(Boolean).sort();
+  if(ds.length<1)return '';
+  const t0=new Date(ds[0]+'T00:00:00').getTime(),t1=new Date(ds[ds.length-1]+'T00:00:00').getTime();
+  const days=Math.max(1,Math.round((t1-t0)/86400000)+1);
+  // grupare pe zi (sau pe saptamana daca intervalul e lung, ca sa rămână lizibil)
+  const byWeek=days>42;
+  const buckets={};
+  ds.forEach(function(d){
+    const t=new Date(d+'T00:00:00').getTime();
+    const idx=byWeek?Math.floor((t-t0)/(7*86400000)):Math.round((t-t0)/86400000);
+    buckets[idx]=(buckets[idx]||0)+1;
+  });
+  const n=byWeek?Math.floor((t1-t0)/(7*86400000))+1:days;
+  const max=Math.max.apply(null,Object.keys(buckets).map(function(k){return buckets[k]}));
+  let bars='';
+  for(let i=0;i<n;i++){
+    const v=buckets[i]||0;
+    const dt=new Date(t0+i*(byWeek?7:1)*86400000);
+    const lbl=byWeek?('S'+(i+1)):(dt.getDate()+'.'+(dt.getMonth()+1));
+    bars+='<div class="foc-bar-wrap" title="'+lbl+': '+v+' caz(uri)">'+
+      '<div class="foc-bar-val">'+(v||'')+'</div>'+
+      '<div class="foc-bar" style="height:'+(v?Math.max(6,Math.round(v/max*54)):0)+'px"></div>'+
+      '<div class="foc-bar-lbl">'+lbl+'</div></div>';
+  }
+  return '<div style="margin-top:10px"><strong style="font-size:12px">Curba epidemica</strong>'+
+    '<span style="font-size:10px;color:var(--txtL);margin-left:6px">'+(byWeek?'grupat pe saptamani':'cazuri pe zi')+' · '+cs.length+' cazuri</span>'+
+    '<div class="foc-curve">'+bars+'</div></div>';
+}
+
+// ═══ Actiuni ═══
+function _focToggle(id){_focOpen[id]=!_focOpen[id];render()}
+
+async function focSetActionStatus(fid,idx,st){
+  const all=await ga('outbreaks');const f=all.find(function(x){return x.id===fid});if(!f)return;
+  if(!Array.isArray(f.actions)||!f.actions[idx])return;
+  f.actions[idx].status=st;await pt('outbreaks',f);render();
+}
+
+async function delFocar(id){
+  if(!confirm('Stergi acest focar? Cazurile IAAM legate NU se sterg.'))return;
+  await dl('outbreaks',id);logActivity('Sters focar');render();
+}
+
+// Creare focar pre-completat dintr-un cluster detectat automat
+function focFromCluster(i){
+  const cl=(window._focClusters||[])[i];if(!cl)return;
+  editFocar(null,{
+    name:cl.pathogen+' — '+rSec(cl.section),
+    pathogen:cl.pathogen,mdr:cl.mdr||'',
+    sections:[cl.section],
+    date_start:cl.date_start,date_stop:'',
+    status:'suspiciune',
+    case_ids:cl.ids.slice(),
+    description:'Focar detectat automat: '+cl.ids.length+' cazuri cu acelasi germen in aceeasi sectie, in interval de '+FOC_WINDOW_DAYS+' zile.'
+  });
+}
+
+// ═══ Editor focar ═══
+var _focDraft=null;
+async function editFocar(id,preset){
+  const isEN=CFG.lang==='en';
+  const all=await ga('outbreaks');
+  let f=id?all.find(function(x){return x.id===id}):null;
+  _focDraft=f?JSON.parse(JSON.stringify(f)):Object.assign({year:A.year,name:'',pathogen:'',mdr:'',sections:[],
+    date_start:new Date().toISOString().slice(0,10),date_stop:'',status:'suspiciune',case_ids:[],description:'',actions:[],conclusions:''},preset||{});
+  if(!Array.isArray(_focDraft.sections))_focDraft.sections=[];
+  if(!Array.isArray(_focDraft.case_ids))_focDraft.case_ids=[];
+  if(!Array.isArray(_focDraft.actions))_focDraft.actions=[];
+
+  const iaamAll=(await ga('iaam')).filter(function(r){return r.year===A.year});
+  window._focIaamCache=iaamAll;
+
+  openM(id?'Editare focar':'Focar nou',
+    '<div class="fg"><label>Denumire focar *</label><input id="f-foc-name" value="'+esc(_focDraft.name)+'" placeholder="ex: Clostridioides difficile — Chirurgie Generala"></div>'+
+    '<div class="fr3"><div class="fg"><label>Germen / agent</label><input id="f-foc-path" value="'+esc(_focDraft.pathogen)+'" placeholder="ex: Klebsiella pneumoniae"></div>'+
+    '<div class="fg"><label>Profil rezistenta</label><select id="f-foc-mdr"><option value="">—</option>'+
+      MDR_OPTS.filter(function(m){return m!=='Nu'}).map(function(m){return '<option value="'+m+'"'+(_focDraft.mdr===m?' selected':'')+'>'+m+'</option>'}).join('')+'</select></div>'+
+    '<div class="fg"><label>Status</label><select id="f-foc-status">'+
+      FOC_STATUS.map(function(s){return '<option value="'+s.v+'"'+(_focDraft.status===s.v?' selected':'')+'>'+s.n+'</option>'}).join('')+'</select></div></div>'+
+    '<div class="fr"><div class="fg"><label>Data debut focar</label><input type="date" id="f-foc-start" value="'+(_focDraft.date_start||'')+'"></div>'+
+    '<div class="fg"><label>Data inchidere</label><input type="date" id="f-foc-stop" value="'+(_focDraft.date_stop||'')+'">'+
+      '<small style="color:var(--txtL);font-size:10px;display:block;margin-top:2px">Lasa gol daca focarul e in desfasurare</small></div></div>'+
+    '<div class="fg"><label>Sectii implicate</label><div id="f-foc-secs" style="display:flex;flex-wrap:wrap;gap:8px;max-height:120px;overflow-y:auto;border:1px solid var(--brd);border-radius:6px;padding:8px">'+
+      (CFG.sections||[]).map(function(s){return '<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;white-space:nowrap"><input type="checkbox" value="'+s.id+'"'+(_focDraft.sections.indexOf(s.id)>=0?' checked':'')+' onchange="_focToggleSec(\''+s.id+'\',this.checked)"> '+esc(_secDisplayName?_secDisplayName(s):s.name)+'</label>'}).join('')+
+    '</div></div>'+
+    '<div class="fg"><label>Cazuri IAAM legate <span style="font-size:11px;color:var(--txtL)">('+_focDraft.case_ids.length+' selectate)</span></label>'+
+      '<div id="f-foc-cases" style="max-height:160px;overflow-y:auto;border:1px solid var(--brd);border-radius:6px;padding:8px">'+_focCaseChecks(iaamAll)+'</div></div>'+
+    '<div class="fg"><label>Descriere / context</label><textarea id="f-foc-desc" rows="2">'+esc(_focDraft.description)+'</textarea></div>'+
+    '<div class="fg"><label>Plan de masuri</label><div id="f-foc-acts">'+_focActRows()+'</div>'+
+      '<button class="btn bo bsm" onclick="focAddAction()" style="margin-top:6px">+ Adauga masura</button></div>'+
+    '<div class="fg"><label>Concluzii</label><textarea id="f-foc-concl" rows="2">'+esc(_focDraft.conclusions)+'</textarea></div>',
+    '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveFocar('+(id||'null')+')">Salveaza</button>');
+  setTimeout(function(){addDatePreview('f-foc-start');addDatePreview('f-foc-stop');attachDirtyTracking()},50);
+}
+function _focCaseChecks(iaamAll){
+  if(!iaamAll.length)return '<div style="font-size:11px;color:var(--txtL)">Niciun caz IAAM in '+A.year+'.</div>';
+  return iaamAll.slice().sort(function(a,b){return (focCaseDate(b)||'').localeCompare(focCaseDate(a)||'')}).map(function(c){
+    const g=focCaseGerms(c).join(', ');
+    return '<label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;padding:2px 0">'+
+      '<input type="checkbox" value="'+c.id+'"'+(_focDraft.case_ids.indexOf(c.id)>=0?' checked':'')+' onchange="_focToggleCase('+c.id+',this.checked)"> '+
+      '<span>'+esc(c.patient||('P-'+c.id))+(c.fo_number?' (FO '+esc(c.fo_number)+')':'')+' · '+esc(rSec(c.section))+' · '+(focCaseDate(c)?fmtDate(focCaseDate(c)):'—')+(g?' · '+esc(g):'')+'</span></label>';
+  }).join('');
+}
+function _focToggleSec(id,on){
+  if(on){if(_focDraft.sections.indexOf(id)<0)_focDraft.sections.push(id)}
+  else _focDraft.sections=_focDraft.sections.filter(function(x){return x!==id});
+  markFormDirty();
+}
+function _focToggleCase(id,on){
+  if(on){if(_focDraft.case_ids.indexOf(id)<0)_focDraft.case_ids.push(id)}
+  else _focDraft.case_ids=_focDraft.case_ids.filter(function(x){return x!==id});
+  markFormDirty();
+}
+function _focActRows(){
+  if(!_focDraft.actions.length)return '<div style="color:var(--txtL);font-size:11px">Nicio masura adaugata.</div>';
+  return _focDraft.actions.map(function(a,i){
+    return '<div class="foc-act-row">'+
+      '<input class="fa-act" value="'+esc(a.action||'')+'" placeholder="Masura de control" oninput="_focDraft.actions['+i+'].action=this.value">'+
+      '<input class="fa-resp" value="'+esc(a.responsible||'')+'" placeholder="Responsabil" oninput="_focDraft.actions['+i+'].responsible=this.value">'+
+      '<input type="date" class="fa-dl" value="'+(a.deadline||'')+'" title="Termen" oninput="_focDraft.actions['+i+'].deadline=this.value">'+
+      '<button class="contact-del" onclick="focRemoveAction('+i+')">&times;</button></div>';
+  }).join('');
+}
+function focAddAction(){
+  _focDraft.actions.push({action:'',responsible:'',deadline:'',status:'neinceput'});markFormDirty();
+  const el=document.getElementById('f-foc-acts');if(el)el.innerHTML=_focActRows();
+}
+function focRemoveAction(i){
+  _focDraft.actions.splice(i,1);markFormDirty();
+  const el=document.getElementById('f-foc-acts');if(el)el.innerHTML=_focActRows();
+}
+async function saveFocar(id){
+  const v=function(s){const e=document.getElementById(s);return e?e.value:''};
+  const rec=Object.assign({},_focDraft,{
+    year:A.year,
+    name:v('f-foc-name').trim(),pathogen:v('f-foc-path').trim(),mdr:v('f-foc-mdr'),
+    status:v('f-foc-status'),date_start:v('f-foc-start'),date_stop:v('f-foc-stop'),
+    description:v('f-foc-desc').trim(),conclusions:v('f-foc-concl').trim()
+  });
+  if(!rec.name){alert('Completeaza denumirea focarului.');return}
+  if(rec.date_start&&rec.date_stop&&rec.date_start>rec.date_stop){alert('Data de debut este dupa data de inchidere.');return}
+  rec.actions=(rec.actions||[]).filter(function(a){return a&&((a.action||'').trim()||(a.responsible||'').trim()||a.deadline)});
+  if(id)rec.id=id;
+  await pt('outbreaks',rec);
+  logActivity((id?'Editat':'Adaugat')+' focar — '+rec.name);
+  closeM();render();
+}
+
+// ═══ Raport Word focar ═══
+async function genFocarWord(id){
+  const f=(await ga('outbreaks')).find(function(x){return x.id===id});if(!f){alert('Focar negasit.');return}
+  const iaamAll=await ga('iaam');
+  const cs=(f.case_ids||[]).map(function(cid){return iaamAll.find(function(r){return r.id===cid})}).filter(Boolean);
+  cs.sort(function(a,b){return (focCaseDate(a)||'').localeCompare(focCaseDate(b)||'')});
+  const W1=[3600,5426];
+  const kv=function(k,val){return wTblRow([{text:k,bold:true},{text:(val===0?'0':(val||'—'))}],W1)};
+  const T1=function(rows){return new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W1,rows:rows})};
+  const dsh=function(x){const s=(x==null?'':String(x)).trim();return s||'—'};
+  const st=focStatus(f.status);
+  const ch=[];
+  ch.push(wP([wTR(CFG.cpiaam_name,{bold:true,size:22,color:WC.navy})],{align:AlignmentType.CENTER}),wSp(40));
+  ch.push(wP([wTR('RAPORT DE FOCAR',{bold:true,size:28,color:WC.navy})],{align:AlignmentType.CENTER}));
+  ch.push(wP([wTR(dsh(f.name),{bold:true,size:22,color:WC.navy})],{align:AlignmentType.CENTER}),wSp(60));
+  ch.push(T1([
+    kv('Germen / agent',dsh(f.pathogen)),kv('Profil rezistenta',dsh(f.mdr)),
+    kv('Sectii implicate',(f.sections||[]).map(function(s){return rSec(s)}).join(', ')||'—'),
+    kv('Data debut',f.date_start?fmtDate(f.date_start):'—'),
+    kv('Data inchidere',f.date_stop?fmtDate(f.date_stop):'Focar in desfasurare'),
+    kv('Durata',(f.date_start&&f.date_stop)?(calcDays(f.date_start,f.date_stop)+' zile'):'—'),
+    kv('Status',st.n),kv('Numar cazuri',cs.length)
+  ]),wSp(80));
+  ch.push(wH1('I. CONTEXT SI DESCRIERE'),wSp(40),wP(dsh(f.description),{size:20}),wSp(80));
+  ch.push(wH1('II. CAZURI INCLUSE'),wSp(40));
+  if(!cs.length){ch.push(wP('Niciun caz atribuit.',{size:20}))}
+  else{
+    const WC3=[1500,1100,2000,1300,2126,1000];
+    ch.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WC3,rows:[
+      wTblHead(['Pacient','Nr. FO','Sectia','Data','Germen','MDR'],WC3),
+      ...cs.map(function(c,i){return wTblRow([dsh(c.patient||('P-'+c.id)),dsh(c.fo_number),dsh(rSec(c.section)),
+        focCaseDate(c)?fmtDate(focCaseDate(c)):'—',dsh(focCaseGerms(c).join(', ')),
+        (c.germeni||[]).some(function(g){return g.mdr&&g.mdr!=='Nu'})?'DA':'NU'],WC3,i%2===1)})]}));
+  }
+  ch.push(wSp(80));
+  // curba epidemica ca tabel (text) — Word nu primeste HTML
+  ch.push(wH1('III. DISTRIBUTIA TEMPORALA A CAZURILOR'),wSp(40));
+  (function(){
+    const byDate={};cs.forEach(function(c){const d=focCaseDate(c);if(d)byDate[d]=(byDate[d]||0)+1});
+    const keys=Object.keys(byDate).sort();
+    if(!keys.length){ch.push(wP('—',{size:20}));return}
+    const WD=[4513,4513];
+    ch.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WD,rows:[
+      wTblHead(['Data','Cazuri noi'],WD),
+      ...keys.map(function(k,i){return wTblRow([fmtDate(k),String(byDate[k])],WD,i%2===1)})]}));
+  })();
+  ch.push(wSp(80));
+  ch.push(wH1('IV. PLAN DE MASURI'),wSp(40));
+  (function(){
+    const acts=(f.actions||[]);
+    if(!acts.length){ch.push(wP('—',{size:20}));return}
+    const WA=[3900,1900,1300,1926];
+    const lbl={neinceput:'Neinceput',in_lucru:'In lucru',finalizat:'Finalizat'};
+    ch.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WA,rows:[
+      wTblHead(['Masura','Responsabil','Termen','Status'],WA),
+      ...acts.map(function(a,i){const late=a.status!=='finalizat'&&a.deadline&&new Date(a.deadline+'T00:00:00')<new Date();
+        return wTblRow([dsh(a.action),dsh(a.responsible),a.deadline?fmtDate(a.deadline):'—',lbl[a.status||'neinceput']],WA,i%2===1,late)})]}));
+  })();
+  ch.push(wSp(80));
+  ch.push(wH1('V. CONCLUZII SI RECOMANDARI'),wSp(40),wP(dsh(f.conclusions),{size:20}),wSp(80));
+  ch.push(...wSigBlock());
+  await saveDocx(makeDoc(ch,'Raport Focar','Raport_Focar'),'Raport_Focar_'+(f.name||'focar').replace(/[^a-zA-Z0-9]/g,'_').slice(0,40)+'_'+A.year+'.docx');
+  logActivity('Generat raport focar — '+f.name);
+}
 
 </script>
 <script>
@@ -9571,13 +10032,23 @@ function genGhidBiocideOpenWizard(){
     '<h4 style="font-size:13px;color:var(--navy);margin:14px 0 6px">Header personalizat</h4>'+
     '<div class="fr"><div class="fg"><label>Nume unitate</label><input id="ghid-hosp" value="'+esc(hospitalName)+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div>'+
     '<div class="fg"><label>Coordonator CPIAAM</label><input id="ghid-head" value="'+esc(cpiaamHead)+'" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px"></div></div>'+
+    // v13.52 - instructiuni proprii, salvate in CFG ca sa nu fie rescrise la fiecare generare
+    '<h4 style="font-size:13px;color:var(--navy);margin:14px 0 6px">Instructiuni proprii <span style="font-size:10px;font-weight:400;color:var(--txtL)">(se salveaza si reapar la urmatoarea generare)</span></h4>'+
+    '<div class="fg"><label style="font-size:11px">Instructiuni interne / observatii locale</label>'+
+      '<textarea id="ghid-notes" rows="4" placeholder="ex: Dilutiile se prepara zilnic, la inceputul turei de dimineata. Recipientele se eticheteaza cu data si ora preparării si numele persoanei responsabile." style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-family:var(--f);font-size:11px">'+esc((CFG&&CFG.biocide_guide_notes)||'')+'</textarea></div>'+
+    '<div class="fg"><label style="font-size:11px">Proceduri operationale de referinta (una pe linie)</label>'+
+      '<textarea id="ghid-po" rows="3" placeholder="ex:&#10;PO-CPIAAM-04 — Curatenie si dezinfectie&#10;PO-CPIAAM-12 — Gestionarea biocidelor" style="width:100%;padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-family:var(--f);font-size:11px">'+esc((CFG&&CFG.biocide_guide_po)||'')+'</textarea></div>'+
   '</div>';
   openM('Genereaza Ghid Utilizare Biocide',h,
-    '<button class="btn bp" onclick="genGhidBiocideRun()">Genereaza HTML</button>'+
+    '<button class="btn bp" onclick="genGhidBiocideRun(\'view\')" title="Deschide in fereastra noua (printabil / salvabil ca PDF)">&#128196; Vezi / Print</button>'+
+    '<button class="btn bp" onclick="genGhidBiocideRun(\'word\')" title="Descarca fisier Word editabil">&#128221; Word</button>'+
+    '<button class="btn bo" onclick="genGhidBiocideRun(\'html\')" title="Descarca fisierul HTML">&#11015; HTML</button>'+
     '<button class="btn bo" onclick="closeM()">Anuleaza</button>');
 }
-// Citeste optiunile din wizard si genereaza HTML-ul
-function genGhidBiocideRun(){
+// Citeste optiunile din wizard si genereaza in formatul cerut.
+// v13.52 - mode: 'view' (fereastra noua, printabil), 'html' (descarca fisier), 'word' (docx editabil)
+async function genGhidBiocideRun(mode){
+  mode=mode||'view';
   var sel={};
   document.querySelectorAll('[data-ghid-tpl]').forEach(function(cb){
     if(cb.checked)sel[cb.getAttribute('data-ghid-tpl')]=true;
@@ -9592,15 +10063,155 @@ function genGhidBiocideRun(){
     incPrecautii:ck('ghid-opt-precautii'),
     incRef:ck('ghid-opt-referinte'),
     hospital:v('ghid-hosp')||'Spital',
-    head:v('ghid-head')||''
+    head:v('ghid-head')||'',
+    notes:v('ghid-notes'),
+    po:v('ghid-po')
   };
+  // v13.52 - persist instructiunile proprii, ca sa nu fie retastate la fiecare generare
+  if(typeof CFG==='object'){
+    var changed=(CFG.biocide_guide_notes||'')!==opts.notes||(CFG.biocide_guide_po||'')!==opts.po;
+    CFG.biocide_guide_notes=opts.notes;CFG.biocide_guide_po=opts.po;
+    if(changed&&typeof saveCfg==='function')await saveCfg();
+  }
   closeM();
+  var nCat=Object.keys(sel).length;
+  if(mode==='word'){
+    await genGhidBiocideWord(opts);
+    if(typeof logActivity==='function')logActivity('Generat Ghid Biocide Word ('+nCat+' categorii)');
+    return;
+  }
   var html=genGhidBiocideHTML(opts);
+  if(mode==='html'){
+    var fname='Ghid_Biocide_'+String(opts.hospital).replace(/[^a-zA-Z0-9]/g,'_').slice(0,40)+'.html';
+    try{
+      saveAs(new Blob([html],{type:'text/html;charset=utf-8'}),fname);
+      if(typeof showToast==='function')showToast('Ghid HTML descarcat — se poate edita in Word sau orice editor');
+    }catch(e){alert('Nu s-a putut descarca fisierul: '+e.message);return}
+    if(typeof logActivity==='function')logActivity('Descarcat Ghid Biocide HTML ('+nCat+' categorii)');
+    return;
+  }
   var w=window.open('','_blank');
   if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.');return}
   w.document.write(html);w.document.close();
-  if(typeof showToast==='function')showToast('Ghid generat cu '+Object.keys(sel).length+' categorii');
-  if(typeof logActivity==='function')logActivity('Generat Ghid Utilizare Biocide ('+Object.keys(sel).length+' categorii)');
+  if(typeof showToast==='function')showToast('Ghid generat cu '+nCat+' categorii');
+  if(typeof logActivity==='function')logActivity('Generat Ghid Utilizare Biocide ('+nCat+' categorii)');
+}
+
+// ═══ v13.52 — Export Word (docx nativ, editabil) ═══
+// Construit din aceleasi date ca HTML-ul (catalog + BIO_USAGE_TEMPLATES), nu prin conversie HTML.
+async function genGhidBiocideWord(opts){
+  // Nota: biocide_ghid.js se incarca INAINTE de rapoarte.js, dar apelul are loc dupa load,
+  // deci helperii docx sunt initializati. Verific prin declaratii de functie (hoisted, typeof sigur)
+  // si NU prin `const Table` — un const in TDZ ar arunca ReferenceError la typeof.
+  if(typeof saveDocx!=='function'||typeof makeDoc!=='function'||typeof wTblHead!=='function'){
+    alert('Generatorul Word nu este disponibil. Reincarca pagina si incearca din nou.');return;
+  }
+  var groups=_genGhidGroupProducts();
+  var levelLabel=function(id){var l=(BIO_USAGE_LEVELS||[]).find(function(x){return x.id===id});return l?l.label:id};
+  var useLabel=function(id){var u=(BIO_USE_TYPES||[]).find(function(x){return x.id===id});return u?u.label:id};
+  var warnLabels=function(arr){return (arr||[]).map(function(w){var b=(BIO_WARNINGS||[]).find(function(x){return x.id===w});return b?b.short:w}).join(' / ')};
+  var dsh=function(x){var s=(x==null?'':String(x)).trim();return s||'—'};
+  var ch=[];
+
+  ch.push(wP([wTR(opts.hospital+' — C.P.I.A.A.M.',{bold:true,size:22,color:WC.navy})],{align:AlignmentType.CENTER}),wSp(40));
+  ch.push(wP([wTR('GHID DE UTILIZARE A PRODUSELOR BIOCIDE',{bold:true,size:28,color:WC.navy})],{align:AlignmentType.CENTER}));
+  ch.push(wP([wTR('Uz intern — personal sanitar',{size:18,color:WC.gray,italic:true})],{align:AlignmentType.CENTER}),wSp(60));
+  var W1=[3600,5426];
+  ch.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W1,rows:[
+    wTblRow([{text:'Unitate',bold:true},{text:dsh(opts.hospital)}],W1),
+    wTblRow([{text:'Coordonator CPIAAM',bold:true},{text:dsh(opts.head)}],W1),
+    wTblRow([{text:'Data generarii',bold:true},{text:fmtDateNow()}],W1)
+  ]}),wSp(80));
+
+  // ── Instructiuni proprii (daca au fost completate) ──
+  if(opts.notes){
+    ch.push(wH1('INSTRUCTIUNI INTERNE'),wSp(40));
+    String(opts.notes).split(/\n+/).forEach(function(l){if(l.trim())ch.push(wP(l.trim(),{size:20,before:40}))});
+    ch.push(wSp(80));
+  }
+  if(opts.po){
+    ch.push(wH1('PROCEDURI OPERATIONALE DE REFERINTA'),wSp(40));
+    String(opts.po).split(/\n+/).forEach(function(l){if(l.trim())ch.push(wBul(l.trim(),{size:20}))});
+    ch.push(wSp(80));
+  }
+
+  // ── Tabel produse + profile ──
+  ch.push(wH1('PRODUSE BIOCIDE — PROTOCOL DE UTILIZARE'),wSp(40));
+  var WT=[1700,1250,1150,1150,900,1200,1676];
+  var rows=[wTblHead(['Produs','Utilizare','Nivel','Concentratie','Timp','Tehnica','Protocol / atentionari'],WT)];
+  var selectedKeys=Object.keys(BIO_USAGE_TEMPLATES).filter(function(k){return opts.selected[k]});
+  var alt=0;
+  selectedKeys.forEach(function(k){
+    var g=groups[k];var tplLabel=g.tpl.label||k;
+    // rand-titlu de categorie
+    rows.push(new TableRow({children:[new TableCell({borders:BRDS,columnSpan:7,
+      shading:{type:ShadingType.CLEAR,fill:'EEF2FF'},margins:MARG,
+      children:[wP([wTR(tplLabel,{bold:true,size:18,color:WC.navy})])]})]}));
+    if(g.products.length===0){
+      (g.tpl.usage_profiles||[]).forEach(function(pr){
+        rows.push(wTblRow([{text:'(categorie generica)',italic:true},dsh(useLabel(pr.use)),dsh(levelLabel(pr.level)),
+          dsh(pr.concentration),dsh(pr.contact_time),dsh(pr.technique),dsh(pr.protocol)],WT,(alt++)%2===1));
+      });
+      if(!(g.tpl.usage_profiles||[]).length)rows.push(wTblRow([{text:'Niciun produs in catalog',italic:true},'—','—','—','—','—','—'],WT,(alt++)%2===1));
+    }else{
+      g.products.forEach(function(p){
+        var profs=p.usage_profiles||[];
+        var pName=(p.name||'')+(p.product_type?' ('+p.product_type+')':'');
+        if(!profs.length){
+          rows.push(wTblRow([pName,{text:'Niciun profil de utilizare definit',italic:true},'—','—','—','—','—'],WT,(alt++)%2===1));
+        }else{
+          profs.forEach(function(pr,pi){
+            rows.push(wTblRow([pi===0?pName:'',dsh(useLabel(pr.use)),dsh(levelLabel(pr.level)),
+              dsh(pr.concentration)+(pr.dose?' / '+pr.dose:''),dsh(pr.contact_time),dsh(pr.technique),
+              dsh(pr.protocol)+((p.warnings&&p.warnings.length)?'  !'+warnLabels(p.warnings):'')],WT,(alt++)%2===1,
+              !!(p.warnings&&p.warnings.length)));
+          });
+        }
+      });
+    }
+  });
+  ch.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WT,rows:rows}),wSp(80));
+
+  // ── Sectiuni fixe optionale ──
+  if(opts.incLegend){
+    ch.push(wH1('LEGENDA NIVELURI DE DEZINFECTIE'),wSp(40));
+    var WL=[2600,6426];
+    ch.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WL,rows:[
+      wTblHead(['Nivel','Descriere'],WL),
+      ...(BIO_USAGE_LEVELS||[]).map(function(l,i){return wTblRow([dsh(l.label),dsh(l.desc||l.description||l.label)],WL,i%2===1)})
+    ]}),wSp(80));
+  }
+  if(opts.incPrecautii){
+    ch.push(wH1('PRECAUTII GENERALE OBLIGATORII'),wSp(40));
+    [
+      'Nu se amesteca niciodata produse biocide diferite (risc de reactii chimice periculoase).',
+      'Se respecta strict concentratia si timpul de contact indicat de producator — sub-dozarea nu dezinfecteaza, supra-dozarea deterioreaza suprafetele si creste riscul toxic.',
+      'Curatarea precede intotdeauna dezinfectia: materia organica inactiveaza majoritatea dezinfectantilor.',
+      'Dilutiile se prepara la momentul utilizarii, in recipiente curate si etichetate (produs, concentratie, data si ora preparării).',
+      'Se utilizeaza echipamentul individual de protectie indicat in fisa cu date de securitate (manusi, ochelari, masca, halat).',
+      'Se asigura ventilatia incaperii la utilizarea produselor volatile (aldehide, acid peracetic, clor).',
+      'Produsele se pastreaza in ambalajul original, inchis, ferite de lumina si surse de caldura, la temperatura indicata.',
+      'Nu se depaseste data de expirare, nici perioada de valabilitate dupa deschidere sau dupa diluare.'
+    ].forEach(function(t){ch.push(wBul(t,{size:20}))});
+    ch.push(wSp(80));
+  }
+  if(opts.incRef){
+    ch.push(wH1('REFERINTE LEGALE'),wSp(40));
+    ch.push(wP([wTR('Reglementare nationala:',{bold:true,size:20})]));
+    ['Ord. MS 1761/2021 — Norme tehnice privind dezinfectia, sterilizarea si gestionarea deseurilor medicale',
+     'Ord. MS 1226/2012 — Norme tehnice privind gestionarea deseurilor medicale',
+     'HG 856/2002 — Lista deseurilor (codificare 18 01 xx)',
+     'Ord. MS 1101/2016 — Norme de supraveghere, prevenire si control IAAM'].forEach(function(t){ch.push(wBul(t,{size:20}))});
+    ch.push(wSp(40),wP([wTR('Reglementare europeana:',{bold:true,size:20})]));
+    ['Reg. EU 528/2012 (BPR) — Punerea pe piata si utilizarea produselor biocide (TP1–TP22)',
+     'EN 14885 — Dezinfectanti chimici: aplicare',
+     'EN 12791 — Dezinfectie chirurgicala a mainilor',
+     'EN 1500 — Dezinfectie igienica a mainilor prin frecare'].forEach(function(t){ch.push(wBul(t,{size:20}))});
+    ch.push(wSp(80));
+  }
+  ch.push(...wSigBlock());
+  await saveDocx(makeDoc(ch,'Ghid Utilizare Biocide','Ghid_Biocide'),
+    'Ghid_Biocide_'+String(opts.hospital).replace(/[^a-zA-Z0-9]/g,'_').slice(0,40)+'.docx');
 }
 // Helper escape HTML pentru output
 function _ghidEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -9734,6 +10345,18 @@ function genGhidBiocideHTML(opts){
 
   // Sectiuni fixe
   var fixedPages=[];
+  // v13.52 - instructiunile proprii ale unitatii, pe pagina proprie, INAINTE de sectiunile standard
+  if(opts.notes||opts.po){
+    var np='<div class="page">'+hdrHtml('Instructiuni interne')+
+      (opts.notes?'<div class="section-title">INSTRUCTIUNI INTERNE</div>'+
+        '<div style="border:0.5px solid #D0D5E0;border-top:none;padding:12px;font-size:9.5pt;line-height:1.7;white-space:pre-line">'+_ghidEsc(opts.notes)+'</div>':'')+
+      (opts.po?'<div class="section-title"'+(opts.notes?' style="margin-top:14px"':'')+'>PROCEDURI OPERATIONALE DE REFERINTA</div>'+
+        '<div style="border:0.5px solid #D0D5E0;border-top:none;padding:12px;font-size:9.5pt;line-height:1.8">'+
+        '<ul style="padding-left:20px;margin:0">'+String(opts.po).split(/\n+/).filter(function(l){return l.trim()}).map(function(l){return '<li>'+_ghidEsc(l.trim())+'</li>'}).join('')+'</ul>'+
+        '</div>':'')+
+      footerHtml()+'</div>';
+    fixedPages.push(np);
+  }
   if(opts.incLegend||opts.incRisk){
     var p='<div class="page">'+hdrHtml('Cadru general - niveluri dezinfectie + scor de risc')+
       (opts.incLegend?
@@ -12601,6 +13224,16 @@ async function rTerm(el){
     return true;
   }
 
+  // v13.51 - auto-reparare inregistrari clasificate greşit inainte de fix: o raportare
+  // 'singulara'/'perioada' salvata ca template nu apărea in KPI-uri, nu genera notificari
+  // si stătea inutil in secţiunea Repetitive. Nu poate avea instante (nu se genereaza pentru
+  // aceste frecvente), deci reclasificarea e sigura. Scrie in DB doar daca exista ce reparat.
+  const misclassified=allData.filter(d=>d._isTemplate&&(d.frequency==='singulara'||d.frequency==='perioada'));
+  if(misclassified.length>0){
+    for(const d of misclassified){d._isTemplate=false;await pt('deadlines',d)}
+    if(typeof showToast==='function')showToast(misclassified.length+' raportare/raportari unice mutate la „Raportari Singulare" si incluse in termene');
+  }
+
   // Split: templates (parents), instances (children with _parentName), standalone (no parent)
   const templates=allData.filter(d=>d._isTemplate);
   const instancesByParent={};
@@ -12764,7 +13397,9 @@ async function rTerm(el){
       standaloneFiltered.forEach(d=>{
         const isOverdue=d.status!=='finalizat'&&d.status!=='trimis'&&d.due_date&&new Date(d.due_date)<new Date();
         h+='<tr id="dl-row-'+d.id+'"'+(isOverdue?' style="background:#fef2f2"':'')+'><td><strong>'+esc(d.name)+'</strong></td><td>'+esc(d.recipient||'—')+'</td>'+
-          '<td style="font-size:11px">'+fmtDate(d.due_date)+'</td>'+
+          // v13.51 - arata FEREASTRA cand exista data de inceput (raportare care trebuie facuta intr-un interval)
+          '<td style="font-size:11px">'+(d.start_date?fmtDate(d.start_date)+' — '+fmtDate(d.due_date):fmtDate(d.due_date))+
+            (d.start_date&&d.status!=='finalizat'&&d.status!=='trimis'&&new Date(d.start_date+'T00:00:00')>new Date()?'<div style="font-size:9px;color:var(--txtL)">se deschide '+fmtDate(d.start_date)+'</div>':'')+'</td>'+
           '<td><select onchange="updateDeadlineStatus('+d.id+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px">'+
             '<option value="neinceput"'+(d.status==='neinceput'?' selected':'')+'>'+(isEN?'Not started':'Neinceput')+'</option>'+
             '<option value="in_lucru"'+(d.status==='in_lucru'?' selected':'')+'>'+(isEN?'In progress':'In lucru')+'</option>'+
@@ -12922,7 +13557,13 @@ async function saveDeadline(id){
     rec.day_of_month=+(v('f-dom'))||15;
   }
   if(id)rec.id=id;
-  rec._isTemplate=true; // Mark as template (not a generated instance)
+  // v13.51 FIX - inainte ORICE raportare salvata primea _isTemplate=true, inclusiv cele
+  // 'singulara' / 'perioada'. Consecinte: ajungeau in secţiunea "Raportari Repetitive" cu 0/0
+  // instante, NU apareau in "Raportari Singulare", si — cel mai grav — erau excluse din
+  // KPI-urile "Urmatoarele 30 zile" / "Depasite" si din notificarile din clopotel
+  // (toate filtreaza pe !_isTemplate). Deci o raportare unica devenea invizibila pentru alertare.
+  // Template = doar frecventele care genereaza efectiv instante.
+  rec._isTemplate=!!(rec.frequency&&rec.frequency!=='singulara'&&rec.frequency!=='perioada');
   await pt('deadlines',rec);
   // Auto-generate instances for recurring deadlines
   if(rec.frequency&&rec.frequency!=='singulara'&&rec.frequency!=='perioada'){
@@ -20025,6 +20666,9 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.52',date:'2026-07-28',summary:'Ghid Biocide — 3 formate: „Vezi / Print" (ca înainte), „Word" (.docx editabil) și „HTML" (descărcare fișier). Plus: poți adăuga instrucțiuni interne proprii și lista procedurilor operaționale de referință, care apar ca secțiuni în ghid. Se salvează în configurare, nu trebuie rescrise.'},
+  {version:'13.51',date:'2026-07-28',summary:'FIX IMPORTANT: o raportare „Singulara” sau „Perioada definita” era salvată ca repetitivă — apărea în „Raportări Repetitive” cu 0/0 instanțe, lipsea din „Raportări Singulare” și NU era numărată la „Următoarele 30 zile” / „Depășite”, nici nu genera notificare. Se repară automat. Plus: raportările singulare cu dată de început afișează acum toată fereastra (ex. 28.07 — 09.08).'},
+  {version:'13.50',date:'2026-07-28',summary:'MODUL NOU „Focare”: registru cu germen, secții, perioadă, status, cazuri IAAM legate, curbă epidemică și plan de măsuri cu responsabil/termen. Detectare automată a cazurilor cu același germen în aceeași secție la sub 30 zile, cu buton „Declară focar”. Raport Word de focar. Fix: alerta de cluster din Cronologie grupa doar pe germen (fals-pozitive între secții). Fix: pe graficul Dashboard limitele de control se suprapuneau cu media când variația e zero.'},
   {version:'13.49',date:'2026-07-28',summary:'Raport Ancheta Epidemiologică rescris complet — 12 capitole fără lacune (III Etiologie, XI Evoluție, XII Concluzii lipseau). FIX CRITIC: bifele de la Măsuri de control (izolare, EPP, curățenie terminală, precauții, biocide, reinstruire) nu apăreau NICIODATĂ în raport. Adăugate: data începerii anchetei, simptomatologia, buletinele de negativare, antibioterapia cu date/cale/zile, detaliile factorilor de risc, procedurile cu dată, contacții cu date de contact.'},
   {version:'13.48',date:'2026-07-28',summary:'IAAM pas 5: fiecare factor de risc bifat primește rând de detalii — data început/sfârșit, zile calculate automat și câmp liber (moleculă/doză/cale, sit cateter, tip intervenție). Factor nou „Internare anterioară” auto-bifat din pasul 2. IAAM pas 10: „Clasificare finală” devine listă cu colonizare / infecție / INFIRMAT; textul vechi trece în „Observații clasificare”, nu se pierde.'},
   {version:'13.47',date:'2026-07-27',summary:'IAAM pas 3: câmpuri noi „Data debut simptomatologie” și „Descriere simptomatologie”. IAAM pas 8: intervalul de contact se introduce cu calendar (de la / până la) în loc de text liber — pas necesar pentru corelarea epidemiologică între cazuri. Textele vechi rămân vizibile, nu se pierde nimic.'},

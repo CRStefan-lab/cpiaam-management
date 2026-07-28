@@ -1,10 +1,9 @@
 {
-  "version": "13.49",
+  "version": "13.52",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Raport Ancheta Epidemiologică rescris complet: 12 capitole fără lacune. Capitolele III (Etiologie), XI (Evoluție și clasificare) și XII (Concluzii și recomandări) lipseau — acum există.",
-    "FIX CRITIC cap. VIII Măsuri de control: bifele de izolare, EPP, curățenie terminală, precauții, biocide și reinstruire nu apăreau NICIODATĂ în raport. Acum apar toate.",
-    "Adăugat: data începerii anchetei, numărul anchetei pe rând separat de titlu, simptomatologia, buletinele de negativare, antibioterapia cu date/cale/nr. zile, detaliile factorilor de risc, procedurile cu data intervenției, contacții cu date de contact.",
-    "Câmpurile necompletate afișează „—” în loc să lase spații goale sau „Nu” (afirmație falsă)."
+    "Ghid Biocide — 3 formate la alegere: „Vezi / Print” (ca înainte), „Word” (fișier .docx editabil) și „HTML” (descărcare fișier, se poate deschide și edita în Word).",
+    "Instrucțiuni proprii: poți adăuga instrucțiuni interne și lista procedurilor operaționale de referință. Apar ca secțiuni proprii în ghid, atât în HTML cât și în Word.",
+    "Instrucțiunile se salvează în configurare — nu trebuie rescrise la fiecare generare."
   ]
 }

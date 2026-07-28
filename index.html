@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.52</title>
+<title>CPIAAM Management v13.55</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1126,7 +1126,9 @@ body{display:block!important;background:#fff!important}
 
 // v13.50 - VER 8→9: store nou 'outbreaks' (modul focare). Upgrade-ul doar CREEAZA store-ul lipsa,
 // nu atinge datele existente (onupgradeneeded itereaza ST si sare peste cele care exista deja).
-const DB='CPIAAM4',VER=9,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum','objectives','lab_isolates','hospital_activity','outbreaks'];
+// v13.55 - VER 9→10: store nou 'atb_approvals' (evidenta avizarilor pentru antibioticele cu regim
+// restrictionat). Sync-ul si backup-ul itereaza ST, deci nu e nevoie de cod suplimentar acolo.
+const DB='CPIAAM4',VER=10,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum','objectives','lab_isolates','hospital_activity','outbreaks','atb_approvals'];
 function odb(){return new Promise((ok,no)=>{const r=indexedDB.open(DB,VER);r.onupgradeneeded=e=>{const d=e.target.result;ST.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id',autoIncrement:true})})};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function ga(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result.filter(function(x){return!x._deleted}));r.onerror=()=>no(r.error)})}
 async function gaAll(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
@@ -2282,7 +2284,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.52';
+const APP_VERSION='13.55';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -2299,6 +2301,14 @@ const _DEFAULT_ATP_SURFACES=[
   {id:'atp_013',name:'Vesela',threshold:60},{id:'atp_014',name:'Suprafete contact direct alimente',threshold:60},
   {id:'atp_015',name:'Suprafete contact indirect alimente',threshold:120},{id:'atp_016',name:'Tegumente',threshold:300},
   {id:'atp_017',name:'Alta suprafata',threshold:150}
+];
+// v13.53 - dispozitive pentru care se colecteaza ZILE-DISPOZITIV ca total lunar per spital/sectie.
+// Numitorul cerut de noul OMS pentru ratele la 1000 zile-dispozitiv. Se introduc agregat (ca om-zilele),
+// NU se urmareste niciun pacient — aplicatia ramane asistent CPIAAM, vezi "Scop si limite" din CLAUDE.md.
+const _DEFAULT_DEVICE_DAYS=[
+  {id:'dd_urinar',name:'Sonda urinara',short:'ITU'},
+  {id:'dd_ventil',name:'Ventilatie mecanica',short:'PAV'},
+  {id:'dd_cvc',name:'Cateter venos central (CVC)',short:'BSI'}
 ];
 const _DEFAULT_UV_SURFACES=[
   {id:'uv_001',name:'Pat salon'},{id:'uv_002',name:'Noptiera'},{id:'uv_003',name:'Podea'},
@@ -2381,8 +2391,24 @@ var CFG={
   audit_prof_categories:['Medic','Asistent medical','Infirmiera','Brancardier','Altul'],
   atp_surface_types:_DEFAULT_ATP_SURFACES.map(s=>({...s})),
   uv_surface_types:_DEFAULT_UV_SURFACES.map(s=>({...s})),
-  custom_antibiotics:[]
+  custom_antibiotics:[],
+  device_day_types:_DEFAULT_DEVICE_DAYS.map(s=>({...s})),
+  // v13.55 - antibiotice cu regim restrictionat (necesita avizare). Gol implicit: lista de
+  // antibiotice avizabile e o DECIZIE A SPITALULUI, nu o presupunem noi. Butonul din Configurare
+  // incarca sugestia WHO Reserve daca userul o vrea.
+  atb_restricted:[]
 };
+
+// v13.55 - sugestie de lista cu avizare: grupa Reserve (WHO AWaRe) + carbapenemele Watch.
+// NU se aplica automat — se incarca doar la cererea explicita a userului din Configurare.
+const _ATB_RESTRICTED_SUGGESTED=[
+  {atc:'J01DH51',name:'Imipenem/cilastatin'},{atc:'J01DH02',name:'Meropenem'},
+  {atc:'J01DH03',name:'Ertapenem'},{atc:'J01XB01',name:'Colistin'},
+  {atc:'J01XX08',name:'Linezolid'},{atc:'J01AA12',name:'Tigeciclina'},
+  {atc:'J01XX09',name:'Daptomicina'},{atc:'J01DI04',name:'Ceftarolina'},
+  {atc:'J01XA01',name:'Vancomicina IV'},{atc:'J01XA02',name:'Teicoplanina'},
+  {atc:'J01DD52',name:'Ceftazidim/avibactam'},{atc:'J01DI54',name:'Ceftolozan/tazobactam'}
+];
 
 // Section templates for wizard
 
@@ -2417,6 +2443,10 @@ async function loadCfg(){
   }
   // v13.45 - custom_antibiotics pentru utilizatori existenti (config salvat nu are cheia)
   if(!Array.isArray(CFG.custom_antibiotics))CFG.custom_antibiotics=[];
+  // v13.55 - antibiotice cu avizare (utilizatori existenti)
+  if(!Array.isArray(CFG.atb_restricted))CFG.atb_restricted=[];
+  // v13.53 - dispozitive pentru zile-dispozitiv (utilizatori existenti)
+  if(!Array.isArray(CFG.device_day_types)||!CFG.device_day_types.length)CFG.device_day_types=_DEFAULT_DEVICE_DAYS.map(function(s){return {...s}});
   // v13.43 - migrare origini IAAM la lista ECDC-aliniata (relabel + adauga LTCF, ordine logica).
   // Origini nu sunt user-editabile (fara UI), deci inlocuim complet pentru a forta ordinea corecta.
   // Datele vechi pastreaza cheia (ex 'nespecificat' → eticheta noua "Origine necunoscuta"); cheile inca rezolva in Word.
@@ -2446,6 +2476,10 @@ async function loadCfg(){
       {id:genId('ipc'),name_ro:'Antibiotic Stewardship',name_en:'Antibiotic Stewardship',color:'#1B5E20',source_module:'atb_consum',audit_type:null,standard:true,active:true},
       {id:genId('ipc'),name_ro:'Educatie si formare',name_en:'Education & training',color:'#FF6F00',source_module:'trainings',audit_type:null,standard:true,active:true},
       {id:genId('ipc'),name_ro:'Audit si conformitate',name_en:'Audit & compliance',color:'#0D9488',source_module:'audit',audit_type:'agregat',standard:true,active:true},
+      // v13.55 - doua grile noi pentru antibiotice. NU refolosesc categoria "Antibiotic Stewardship"
+      // (source_module:'atb_consum'): schimbarea sursei ar rescrie auto-calculul obiectivelor existente.
+      {id:genId('ipc'),name_ro:'Audit program stewardship ATB',name_en:'ATB stewardship program audit',color:'#166534',source_module:'audit',audit_type:'stewardship',standard:true,active:true},
+      {id:genId('ipc'),name_ro:'Audit clinic FO — antibiotice',name_en:'Clinical chart audit — antibiotics',color:'#15803D',source_module:'audit',audit_type:'atb_fo',standard:true,active:true},
       {id:genId('ipc'),name_ro:'Focare epidemice',name_en:'Outbreak management',color:'#D32F2F',source_module:null,audit_type:null,standard:true,active:true}
     ];
   }
@@ -2533,6 +2567,15 @@ async function loadCfg(){
   // Add Focare epidemice category if missing (needed for Obiective SMART template)
   if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(c=>(c.name_ro||'').indexOf('Focare')>=0)){
     CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Focare epidemice',name_en:'Outbreaks',color:'#D32F2F',source_module:'iaam',audit_type:null,standard:true,active:true});
+    _comorbAdded=true;
+  }
+  // v13.55: cele doua grile noi pentru antibiotice (utilizatori existenti)
+  if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(function(c){return c.audit_type==='stewardship'})){
+    CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Audit program stewardship ATB',name_en:'ATB stewardship program audit',color:'#166534',source_module:'audit',audit_type:'stewardship',standard:true,active:true});
+    _comorbAdded=true;
+  }
+  if(CFG.ipc_categories&&CFG.ipc_categories.length&&!CFG.ipc_categories.find(function(c){return c.audit_type==='atb_fo'})){
+    CFG.ipc_categories.push({id:genId('ipc'),name_ro:'Audit clinic FO — antibiotice',name_en:'Clinical chart audit — antibiotics',color:'#15803D',source_module:'audit',audit_type:'atb_fo',standard:true,active:true});
     _comorbAdded=true;
   }
   // v12.62: Add Governance IPC category (WHO Core Components 1+2+6)
@@ -4812,8 +4855,14 @@ function renderIaamSection(step){
   case 0: // Patient data
     h='<div id="f-iaam-match-banner"></div>'+
       '<div class="fr"><div class="fg"><label>'+T('iaam_contact_initials')+' pacient</label><input id="f-pinit" value="'+esc(d.patient_initials||d.patient||'')+'" placeholder="ex: C.R." maxlength="10" oninput="checkIaamMatch('+(_iaamEditId||'null')+')"></div>'+
-      '<div class="fg"><label>Data nasterii</label><input type="date" id="f-dob" value="'+(d.date_of_birth||'')+'" onchange="document.getElementById(\'f-age\').value=calcAge(this.value);checkIaamMatch('+(_iaamEditId||'null')+')"></div></div>'+
-      '<div class="fr4"><div class="fg"><label>Varsta</label><input type="number" id="f-age" value="'+(d.age||'')+'" min="0" max="120"></div>'+
+      '<div class="fg"><label>Data nasterii</label><input type="date" id="f-dob" value="'+(d.date_of_birth||'')+'" onchange="_iaamSyncAge(this.value);checkIaamMatch('+(_iaamEditId||'null')+')"></div></div>'+
+      // v13.54 - Figura 2 cere varsta in LUNI pentru sugarii sub 1 an. Campul de luni apare doar cand e cazul.
+      '<div class="fr4"><div class="fg"><label>Varsta</label><div style="display:flex;gap:5px;align-items:center">'+
+        '<input type="number" id="f-age" value="'+(d.age||d.age===0?d.age:'')+'" min="0" max="120" style="flex:1" oninput="_iaamToggleMonths()">'+
+        '<span style="font-size:11px;color:var(--txtL)">ani</span></div>'+
+        '<div id="f-age-mo-wrap" style="display:'+(_iaamNeedsMonths(d)?'flex':'none')+';gap:5px;align-items:center;margin-top:4px">'+
+        '<input type="number" id="f-age-mo" value="'+(d.age_months||d.age_months===0?d.age_months:'')+'" min="0" max="11" style="flex:1" placeholder="0-11">'+
+        '<span style="font-size:11px;color:var(--txtL)">luni</span></div></div>'+
       '<div class="fg"><label>Sex</label><select id="f-sex" onchange="checkIaamMatch('+(_iaamEditId||'null')+')"><option value="">—</option><option value="M" '+(d.sex==='M'?'selected':'')+'>M</option><option value="F" '+(d.sex==='F'?'selected':'')+'>F</option></select></div>'+
       '<div class="fg"><label>'+T('iaam_mediu')+'</label><select id="f-mediu"><option value="Urban" '+(d.mediu==='Urban'||!d.mediu?'selected':'')+'>'+T('iaam_urban')+'</option><option value="Rural" '+(d.mediu==='Rural'?'selected':'')+'>'+T('iaam_rural')+'</option></select></div>'+
       '<div class="fg"><label>Luna raportarii</label><select id="f-mo">'+moOpts(d.month)+'</select></div></div>'+
@@ -4951,7 +5000,17 @@ function renderIaamSection(step){
           '<div class="fg"><label>Observatii clasificare</label><textarea id="f-class-note" rows="2" placeholder="Motivarea clasificarii (mai ales pentru cazurile infirmate)">'+esc(note)+'</textarea>'+
           (!isEnum&&note?'<small style="display:block;margin-top:4px;color:var(--amber);font-size:11px">Text preluat automat din vechiul camp „Clasificare finala" — verifica si alege valoarea corecta din lista de sus.</small>':'')+'</div>';
       })()+
-      '<div class="fg"><label>Concluzii si recomandari</label><textarea id="f-concl" rows="3">'+esc(d.conclusions||'')+'</textarea></div>';
+      '<div class="fg"><label>Concluzii si recomandari</label><textarea id="f-concl" rows="3">'+esc(d.conclusions||'')+'</textarea></div>'+
+      // v13.54 - Figura 2 din noul OMS cere validarea fisei de catre seful SPIAAM/CPIAAM (nume + data).
+      // Fisa e completata de medicul curant; validarea e un act distinct, de aceea sta separat vizual.
+      '<div class="fg" style="margin-top:14px;padding:12px;background:var(--bg);border:1px solid var(--brd);border-radius:8px">'+
+        '<label style="font-weight:700">Validare CPIAAM</label>'+
+        '<div style="font-size:11px;color:var(--txtL);margin:4px 0 8px">Fisa de caz se completeaza de medicul curant si se <strong>valideaza de seful SPIAAM/CPIAAM</strong>. Apare pe fisa generata in Word.</div>'+
+        '<div class="fr"><div class="fg"><label>Validat de</label><select id="f-valid-by"><option value="">— nevalidat —</option>'+
+          (CFG.personnel||[]).map(function(p){return '<option value="'+esc(p.name)+'"'+(d.validated_by===p.name?' selected':'')+'>'+esc(p.name)+(p.title?' ('+esc(p.title)+')':'')+'</option>'}).join('')+
+        '</select></div>'+
+        '<div class="fg"><label>Data validarii</label><input type="date" id="f-valid-date" value="'+(d.validated_date||'')+'"></div></div>'+
+      '</div>';
     break;
   }
   if(content)content.innerHTML=h;
@@ -4988,7 +5047,11 @@ function collectIaamSection(step){
   case 0:
     if(!_el('f-pinit'))break;// step not visible, skip
     d.patient_initials=v('f-pinit').trim();d.patient=d.patient_initials;
-    d.date_of_birth=v('f-dob');d.age=+v('f-age')||null;d.sex=v('f-sex');
+    // v13.54 - age poate fi legitim 0 (sugar), deci NU folosesc ||null care l-ar sterge
+    d.date_of_birth=v('f-dob');
+    d.age=(v('f-age')===''?null:+v('f-age'));
+    d.age_months=(_el('f-age-mo')&&v('f-age-mo')!==''&&String(d.age)==='0')?+v('f-age-mo'):null;
+    d.sex=v('f-sex');
     d.mediu=v('f-mediu')||'Urban';
     d.month=+v('f-mo');
     d.domiciliu=v('f-dom').trim();
@@ -5061,6 +5124,9 @@ function collectIaamSection(step){
     // v13.48 - classification e acum enum (colonizare|infectie|infirmat); textul liber trece in classification_note
     d.origin=v('f-orig');d.classification=v('f-class');d.conclusions=v('f-concl').trim();
     d.classification_note=(_el('f-class-note')?v('f-class-note').trim():(d.classification_note||''));
+    // v13.54 - validarea fisei de seful SPIAAM/CPIAAM
+    d.validated_by=(_el('f-valid-by')?v('f-valid-by'):(d.validated_by||''));
+    d.validated_date=(_el('f-valid-date')?v('f-valid-date'):(d.validated_date||''));
     break;
   }
 }
@@ -5340,6 +5406,42 @@ function _rerenderDevices(){
 }
 
 // ═══ Structured contacts section ═══
+// ═══ v13.54 — varsta in luni pentru sugari (cerinta Figura 2 din noul OMS) ═══
+function _iaamNeedsMonths(d){
+  if(!d)return false;
+  if(d.age_months||d.age_months===0)return true;
+  return (d.age===0||d.age==='0');
+}
+function _iaamToggleMonths(){
+  var a=document.getElementById('f-age'),w=document.getElementById('f-age-mo-wrap');
+  if(!a||!w)return;
+  w.style.display=(a.value==='0')?'flex':'none';
+  if(a.value!=='0'){var mo=document.getElementById('f-age-mo');if(mo)mo.value=''}
+}
+// Din data nasterii calculez si anii, si lunile cand pacientul are sub 1 an
+// NU folosesc calcAge() aici: acela intoarce string-ul "4 luni" sub 1 an, iar un
+// <input type="number"> refuza valoarea si ramane gol. Calculez direct anii si lunile.
+function _iaamSyncAge(dob){
+  var a=document.getElementById('f-age');if(!a)return;
+  var mo=document.getElementById('f-age-mo');
+  if(!dob){a.value='';if(mo)mo.value='';_iaamToggleMonths();return}
+  var b=new Date(dob+'T00:00:00'),n=new Date();
+  if(isNaN(b.getTime())){_iaamToggleMonths();return}
+  var m=(n.getFullYear()-b.getFullYear())*12+(n.getMonth()-b.getMonth());
+  if(n.getDate()<b.getDate())m--;
+  if(m<0){a.value='';if(mo)mo.value='';_iaamToggleMonths();return}
+  a.value=Math.floor(m/12);
+  if(mo)mo.value=(m<12)?m:'';
+  _iaamToggleMonths();
+}
+// Eticheta de varsta pentru rapoarte si registru: "8 luni" sub 1 an, altfel "68 ani"
+function ageLabel(r){
+  if(!r)return '—';
+  if((r.age===0||r.age==='0')&&(r.age_months||r.age_months===0))return r.age_months+' luni';
+  if(r.age||r.age===0)return r.age+' ani';
+  return '—';
+}
+
 // v13.47 - intervalul de contact devine 2 date calendaristice (date_start/date_stop).
 // `interval` (text) ramane populat automat din date pentru compatibilitate cu rapoartele existente
 // si pastreaza textul vechi introdus manual in versiunile anterioare.
@@ -6190,6 +6292,10 @@ const FOC_STATUS=[
 function focStatus(v){return FOC_STATUS.find(function(s){return s.v===v})||FOC_STATUS[0]}
 // Fereastra temporala (zile) in care 2 cazuri cu acelasi germen se considera legate epidemiologic
 const FOC_WINDOW_DAYS=30;
+// v13.54 - noul OMS cere cumul de MINIM 3 cazuri cu aceeasi etiologie pentru semnalare.
+// Configurabil: daca textul final schimba pragul, se modifica aici, nu prin cod nou.
+// FUNCTIE, nu const: un const s-ar evalua la incarcarea scriptului, cand CFG inca nu e citit din DB.
+function focMinCazuri(){var v=(typeof CFG!=='undefined')?parseInt(CFG.foc_min_cazuri,10):NaN;return (v>=2&&v<=10)?v:3}
 
 var _focFilters={status:'',q:''};
 var _focOpen={};
@@ -6217,16 +6323,16 @@ function focDetectClusters(cases,declaredIds){
   });
   var out=[];
   Object.keys(groups).forEach(function(k){
-    var arr=groups[k];if(arr.length<2)return;
+    var arr=groups[k];if(arr.length<focMinCazuri())return;
     arr.sort(function(a,b){return a.t-b.t});
     // lanturi de cazuri consecutive aflate la <= FOC_WINDOW_DAYS unul de altul
     var chain=[arr[0]];
     for(var i=1;i<arr.length;i++){
       var gap=(arr[i].t-chain[chain.length-1].t)/86400000;
       if(gap<=FOC_WINDOW_DAYS){chain.push(arr[i])}
-      else{if(chain.length>=2)out.push(_focMkCluster(k,chain));chain=[arr[i]]}
+      else{if(chain.length>=focMinCazuri())out.push(_focMkCluster(k,chain));chain=[arr[i]]}
     }
-    if(chain.length>=2)out.push(_focMkCluster(k,chain));
+    if(chain.length>=focMinCazuri())out.push(_focMkCluster(k,chain));
   });
   return out.sort(function(a,b){return b.ids.length-a.ids.length});
 }
@@ -6276,7 +6382,7 @@ async function rFocare(el){
   if(clusters.length>0){
     h+='<div class="pn" style="border-color:var(--amber);margin-bottom:14px"><div class="ph" style="background:rgba(245,158,11,.12)"><h3 style="color:var(--amber)">&#9888;&#65039; '+
       (isEN?'Possible undeclared outbreaks':'Posibile focare nedeclarate')+' ('+clusters.length+')</h3></div><div class="pb">'+
-      '<div class="ib inf" style="margin-bottom:10px">Cazuri cu <strong>acelasi germen, in aceeasi sectie</strong>, aparute la mai putin de '+FOC_WINDOW_DAYS+' zile unul de altul. Verifica si declara focarul daca se confirma legatura epidemiologica.</div>';
+      '<div class="ib inf" style="margin-bottom:10px">Cumul de <strong>minim '+focMinCazuri()+' cazuri cu acelasi germen, in aceeasi sectie</strong>, aparute la mai putin de '+FOC_WINDOW_DAYS+' zile unul de altul. Verifica si declara focarul daca se confirma legatura epidemiologica.</div>';
     clusters.forEach(function(cl,i){
       h+='<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 10px;border:1px solid var(--brd);border-radius:6px;margin-bottom:6px">'+
         '<div style="flex:1;min-width:220px"><strong>'+esc(cl.pathogen)+'</strong>'+(cl.mdr?' <span class="bdg bdg-r" style="font-size:9px">'+esc(cl.mdr)+'</span>':'')+
@@ -7765,7 +7871,9 @@ async function saveUv(id){
 // ═════════════════════════════════════════════════════════════
 
 // ═══ HELPER FUNCTIONS (global, used by rapoarte, deseuri, dashboard) ═══
-function _emptyHAMonths(){return Array.from({length:12},function(){return {omzile:null,externati:null,paturi_medii:null,sections:[]}})}
+// v13.53 - `internati` (numitor pentru rata de atac/100 internati) si `device_days` (numitor pentru
+// ratele la 1000 zile-dispozitiv) sunt totaluri LUNARE, introduse ca om-zilele. Nu se urmareste niciun pacient.
+function _emptyHAMonths(){return Array.from({length:12},function(){return {omzile:null,externati:null,internati:null,paturi_medii:null,device_days:{},sections:[]}})}
 
 async function getHospitalActivity(year){
   var data=await ga('hospital_activity');
@@ -7797,6 +7905,118 @@ async function getExternatiForPeriod(year,monthStart,monthEnd){
     if(mo&&mo.externati)total+=+mo.externati;
   }
   return total;
+}
+
+// v13.53 - numitori noi ceruti de OMS: pacienti internati si zile-dispozitiv.
+async function getInternatiForPeriod(year,monthStart,monthEnd){
+  var ha=await getHospitalActivity(year);
+  var total=0;
+  for(var m=monthStart;m<=monthEnd;m++){
+    var mo=ha.months[m-1];
+    if(mo&&mo.internati)total+=+mo.internati;
+  }
+  return total;
+}
+// devId lipsa → suma pe TOATE dispozitivele configurate
+async function getDeviceDaysForPeriod(year,monthStart,monthEnd,devId){
+  var ha=await getHospitalActivity(year);
+  var total=0;
+  for(var m=monthStart;m<=monthEnd;m++){
+    var mo=ha.months[m-1];if(!mo||!mo.device_days)continue;
+    if(devId){if(mo.device_days[devId])total+=+mo.device_days[devId]}
+    else Object.keys(mo.device_days).forEach(function(k){if(mo.device_days[k])total+=+mo.device_days[k]});
+  }
+  return total;
+}
+// Rata la 1000 zile-dispozitiv. Returneaza null cand numitorul lipseste (nu 0 — ar minti).
+function rate1000(numarator,zileDispozitiv){
+  if(!zileDispozitiv||zileDispozitiv<=0)return null;
+  return Math.round((numarator/zileDispozitiv)*1000*100)/100;
+}
+// Incidenta la 100 externati (numitorul cerut explicit de noul OMS)
+function ratePer100(numarator,numitor){
+  if(!numitor||numitor<=0)return null;
+  return Math.round((numarator/numitor)*100*100)/100;
+}
+
+// ═══ v13.53 — Setul de indicatori cerut de noul OMS ═══
+// Toate ratele returneaza null cand numitorul lipseste — NU 0, care ar fi o afirmatie falsa.
+// Data de referinta a cazului pentru incadrarea pe luna: confirmarea, altfel debutul, altfel luna raportarii.
+function _indCaseMonth(r){
+  var d=r.date_confirmed||r.date_symptom_onset||r.date_admission||'';
+  if(d&&d.length>=7){var m=parseInt(d.substring(5,7),10);if(m>=1&&m<=12)return m}
+  return r.month||null;
+}
+async function computeOMSIndicators(year,iaCases){
+  var ia=(iaCases||[]).filter(function(r){return r.year===year});
+  // cazurile infirmate NU intra in indicatorii de incidenta
+  var conf=ia.filter(function(r){return r.classification!=='infirmat'});
+  var devTypes=CFG.device_day_types||[];
+  var out={year:year,total:conf.length,anual:{},trimestre:[],sectii:[],dispozitive:[],mrsa:{}};
+
+  // ── ANUAL ──
+  var extAn=await getExternatiForPeriod(year,1,12);
+  var intAn=await getInternatiForPeriod(year,1,12);
+  var omzAn=await getOmZileForPeriod(year,1,12);
+  out.anual={
+    cazuri:conf.length,
+    externati:extAn,internati:intAn,omzile:omzAn,
+    incidenta100Externati:ratePer100(conf.length,extAn),
+    rata1000ZilePacient:rate1000(conf.length,omzAn)
+  };
+  // rata de atac MRSA / 100 internati
+  var mrsaCases=conf.filter(function(r){
+    return (r.germeni||[]).some(function(g){return g.mdr==='MRSA'})||String(r.mdr)==='MRSA';
+  });
+  out.mrsa={cazuri:mrsaCases.length,internati:intAn,rataAtac100Internati:ratePer100(mrsaCases.length,intAn)};
+
+  // ── TRIMESTRIAL (cerut explicit: lunar, trimestrial, anual) ──
+  for(var q=1;q<=4;q++){
+    var m1=(q-1)*3+1,m2=q*3;
+    var cq=conf.filter(function(r){var m=_indCaseMonth(r);return m&&m>=m1&&m<=m2});
+    var extQ=await getExternatiForPeriod(year,m1,m2);
+    var omzQ=await getOmZileForPeriod(year,m1,m2);
+    out.trimestre.push({q:q,cazuri:cq.length,externati:extQ,
+      incidenta100Externati:ratePer100(cq.length,extQ),
+      rata1000ZilePacient:rate1000(cq.length,omzQ)});
+  }
+
+  // ── PER SECTIE (numitorii per sectie exista in ha.months[].sections) ──
+  var ha=await getHospitalActivity(year);
+  var bySec={};
+  conf.forEach(function(r){var s=r.section_attribution||r.section;if(!s)return;bySec[s]=(bySec[s]||0)+1});
+  (CFG.sections||[]).forEach(function(s){
+    var extS=0,omzS=0;
+    (ha.months||[]).forEach(function(mo){
+      var sd=(mo&&mo.sections||[]).find(function(x){return x.section_id===s.id});
+      if(sd){if(sd.externati)extS+=+sd.externati;if(sd.omzile)omzS+=+sd.omzile}
+    });
+    var c=bySec[s.id]||0;
+    if(c===0&&extS===0&&omzS===0)return; // sectii fara nimic — nu le listez
+    out.sectii.push({id:s.id,nume:rSec(s.id),cazuri:c,externati:extS,omzile:omzS,
+      incidenta100Externati:ratePer100(c,extS),rata1000ZilePacient:rate1000(c,omzS)});
+  });
+  out.sectii.sort(function(a,b){return b.cazuri-a.cazuri});
+
+  // ── RATE ASOCIATE DISPOZITIVULUI (1000 zile-dispozitiv) ──
+  // Numaratorul: cazurile care au dispozitivul respectiv bifat la factori de risc SAU la dispozitive invazive.
+  for(var di=0;di<devTypes.length;di++){
+    var dev=devTypes[di];
+    var zile=await getDeviceDaysForPeriod(year,1,12,dev.id);
+    var needle=String(dev.name||'').toLowerCase().split('(')[0].trim();
+    var nCaz=conf.filter(function(r){
+      var pool=[].concat(r.invasive_devices||[],r.risk_factors||[]).map(function(x){return String(x||'').toLowerCase()});
+      return pool.some(function(x){return needle&&x.indexOf(needle)>=0});
+    }).length;
+    out.dispozitive.push({id:dev.id,nume:dev.name,zileDispozitiv:zile,cazuri:nCaz,
+      rata1000ZileDispozitiv:rate1000(nCaz,zile)});
+  }
+  return out;
+}
+// Formatare pentru afisare: null → "—" (numitor lipsa), altfel numarul cu virgula zecimala
+function indFmt(v,suffix){
+  if(v===null||v===undefined)return '—';
+  return String(v).replace('.',',')+(suffix||'');
 }
 
 // ═══ MIGRATION FROM DESEURI ═══
@@ -7837,6 +8057,7 @@ async function _migrateDeseuriToHA(){
 
 // ═══ RENDER PAGE ═══
 var _haSecOpen=false;
+var _haDevOpen=false; // v13.53 - sectiunea zile-dispozitiv
 var _haAmbSecOpen=false;
 async function rStatistici(el){
   var isEN=CFG.lang==='en';
@@ -7877,12 +8098,14 @@ async function rStatistici(el){
   // ── SECTION A: Date Totale Spital ──
   h+='<div class="pn"><div class="ph"><h3>'+(isEN?'Hospital Total Data':'Date Totale Spital')+'</h3></div><div class="pb">';
   h+='<div style="overflow-x:auto"><table class="dt" style="font-size:12px"><thead><tr>';
-  h+='<th>Luna</th><th>Om-zile spitalizare</th><th>Pacienti externati</th><th>Paturi medii</th>';
+  // v13.53 - coloana "Pacienti internati" (numitor pentru rata de atac/100 internati)
+  h+='<th>Luna</th><th>Om-zile spitalizare</th><th>Pacienti internati</th><th>Pacienti externati</th><th>Paturi medii</th>';
   h+='</tr></thead><tbody>';
   for(var m=0;m<12;m++){
     var mo=ha.months[m]||{};
     h+='<tr><td style="font-weight:600;white-space:nowrap">'+MO[m]+'</td>';
     h+='<td><input type="number" class="ha-inp" data-m="'+m+'" data-f="omzile" value="'+(mo.omzile||'')+'" min="0" style="width:100px"></td>';
+    h+='<td><input type="number" class="ha-inp" data-m="'+m+'" data-f="internati" value="'+(mo.internati||'')+'" min="0" style="width:100px"></td>';
     h+='<td><input type="number" class="ha-inp" data-m="'+m+'" data-f="externati" value="'+(mo.externati||'')+'" min="0" style="width:100px"></td>';
     h+='<td><input type="number" class="ha-inp" data-m="'+m+'" data-f="paturi_medii" value="'+(mo.paturi_medii||'')+'" min="0" step="0.1" style="width:100px"></td>';
     h+='</tr>';
@@ -7892,6 +8115,82 @@ async function rStatistici(el){
   h+='<button class="btn bp" onclick="saveHA()">Salveaza</button>';
   h+='<button class="btn bd bsm" onclick="if(confirm(\'Stergi datele statistice pentru '+year+'?\')){clearHA()}">Sterge tot anul</button>';
   h+='</div></div></div>';
+
+  // ── v13.53 — ZILE-DISPOZITIV (sectiune proprie, colapsabila, ca sa nu incarce tabelul principal) ──
+  var devTypes=CFG.device_day_types||[];
+  if(devTypes.length>0){
+    h+='<div class="pn" style="margin-top:14px"><div class="ph" onclick="_haDevOpen=!_haDevOpen;render()" style="cursor:pointer"><h3>';
+    h+='<span class="ac-arrow'+(_haDevOpen?' open':'')+'">&#9654;</span> '+(isEN?'Device-days':'Zile-dispozitiv')+' <span style="font-size:11px;color:var(--txtL);font-weight:400">(numitor pentru ratele la 1000 zile-dispozitiv)</span>';
+    h+='</h3></div>';
+    if(_haDevOpen){
+      h+='<div class="pb">';
+      h+='<div class="ib inf" style="margin-bottom:10px;font-size:11px">Totalul lunar al zilelor de prezenta a dispozitivului, insumat pe toti pacientii expusi. Se cere de la sectii ca si om-zilele — <strong>nu se urmareste niciun pacient in aplicatie</strong>. Dispozitivele se configureaza din Configurare &rarr; Introducere date.</div>';
+      h+='<div style="overflow-x:auto"><table class="dt" style="font-size:12px"><thead><tr><th>Luna</th>';
+      devTypes.forEach(function(d){h+='<th style="white-space:nowrap">'+esc(d.name)+'</th>'});
+      h+='</tr></thead><tbody>';
+      for(var dm=0;dm<12;dm++){
+        var dmo=ha.months[dm]||{};var dd=dmo.device_days||{};
+        h+='<tr><td style="font-weight:600;white-space:nowrap">'+MO[dm]+'</td>';
+        devTypes.forEach(function(d){
+          h+='<td><input type="number" class="ha-dev" data-m="'+dm+'" data-dev="'+esc(d.id)+'" value="'+(dd[d.id]||'')+'" min="0" style="width:100px"></td>';
+        });
+        h+='</tr>';
+      }
+      // rand de totaluri anuale
+      h+='<tr style="background:var(--bg);font-weight:700"><td>TOTAL an</td>';
+      devTypes.forEach(function(d){
+        var t=0;for(var q=0;q<12;q++){var mm=ha.months[q]||{};if(mm.device_days&&mm.device_days[d.id])t+=+mm.device_days[d.id]}
+        h+='<td>'+(t||'—')+'</td>';
+      });
+      h+='</tr>';
+      h+='</tbody></table></div>';
+      h+='<div style="margin-top:10px"><button class="btn bp" onclick="saveHA()">Salveaza</button></div>';
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+
+  // ── v13.53 — INDICATORI (setul cerut de noul OMS) ──
+  var iaAll=(await ga('iaam')).filter(function(r){return r.year===year});
+  var ind=await computeOMSIndicators(year,iaAll);
+  h+='<div class="pn" style="margin-top:14px"><div class="ph"><h3>'+(isEN?'Indicators':'Indicatori')+
+    ' <span style="font-size:11px;color:var(--txtL);font-weight:400">(incidenta pe externati, rate la 1000 zile-dispozitiv)</span></h3>'+
+    '<button class="btn bo bsm" onclick="exportIndicatoriSite()" title="Export pentru publicare pe site-ul unitatii">&#128196; Export pentru site</button></div><div class="pb">';
+  h+='<div class="kg" style="margin-bottom:12px">'+
+    '<div class="kc tl"><div class="kl">CAZURI IAAM '+year+'</div><div class="kv">'+ind.total+'</div><div class="ks">confirmate (fara infirmate)</div></div>'+
+    '<div class="kc bl"><div class="kl">INCIDENTA / 100 EXTERNATI</div><div class="kv">'+indFmt(ind.anual.incidenta100Externati)+'</div><div class="ks">'+(ind.anual.externati?ind.anual.externati+' externati':'lipseste numitorul')+'</div></div>'+
+    '<div class="kc am"><div class="kl">RATA / 1000 ZILE-PACIENT</div><div class="kv">'+indFmt(ind.anual.rata1000ZilePacient)+'</div><div class="ks">'+(ind.anual.omzile?ind.anual.omzile+' om-zile':'lipseste numitorul')+'</div></div>'+
+    '<div class="kc '+(ind.mrsa.cazuri>0?'rd':'gn')+'"><div class="kl">RATA ATAC MRSA / 100 INTERNATI</div><div class="kv">'+indFmt(ind.mrsa.rataAtac100Internati)+'</div><div class="ks">'+ind.mrsa.cazuri+' cazuri MRSA</div></div>'+
+  '</div>';
+  // trimestrial
+  h+='<div style="overflow-x:auto"><table class="dt" style="font-size:12px"><thead><tr><th>Perioada</th><th>Cazuri</th><th>Externati</th><th>Incidenta/100 externati</th><th>Rata/1000 zile-pacient</th></tr></thead><tbody>';
+  ind.trimestre.forEach(function(t){
+    h+='<tr><td style="font-weight:600">T'+t.q+'</td><td>'+t.cazuri+'</td><td>'+(t.externati||'—')+'</td><td>'+indFmt(t.incidenta100Externati)+'</td><td>'+indFmt(t.rata1000ZilePacient)+'</td></tr>';
+  });
+  h+='<tr style="background:var(--bg);font-weight:700"><td>ANUAL</td><td>'+ind.anual.cazuri+'</td><td>'+(ind.anual.externati||'—')+'</td><td>'+indFmt(ind.anual.incidenta100Externati)+'</td><td>'+indFmt(ind.anual.rata1000ZilePacient)+'</td></tr>';
+  h+='</tbody></table></div>';
+  // rate asociate dispozitivului
+  if(ind.dispozitive.length){
+    h+='<div style="margin-top:14px"><strong style="font-size:12px">Rate asociate dispozitivului</strong>';
+    h+='<div style="overflow-x:auto;margin-top:6px"><table class="dt" style="font-size:12px"><thead><tr><th>Dispozitiv</th><th>Cazuri</th><th>Zile-dispozitiv</th><th>Rata / 1000 zile-dispozitiv</th></tr></thead><tbody>';
+    ind.dispozitive.forEach(function(d){
+      h+='<tr><td>'+esc(d.nume)+'</td><td>'+d.cazuri+'</td><td>'+(d.zileDispozitiv||'—')+'</td><td'+(d.rata1000ZileDispozitiv===null?' style="color:var(--txtL)"':'')+'>'+indFmt(d.rata1000ZileDispozitiv)+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+    if(ind.dispozitive.every(function(d){return !d.zileDispozitiv}))
+      h+='<div style="font-size:11px;color:var(--amber);margin-top:6px">Completeaza zilele-dispozitiv in sectiunea de mai sus pentru a calcula aceste rate.</div>';
+    h+='</div>';
+  }
+  // per sectie
+  if(ind.sectii.length){
+    h+='<div style="margin-top:14px"><strong style="font-size:12px">Per sectie</strong>';
+    h+='<div style="overflow-x:auto;margin-top:6px"><table class="dt" style="font-size:11px"><thead><tr><th>Sectia</th><th>Cazuri</th><th>Externati</th><th>Incidenta/100 ext.</th><th>Rata/1000 zile-pac.</th></tr></thead><tbody>';
+    ind.sectii.forEach(function(s){
+      h+='<tr><td>'+esc(s.nume)+'</td><td>'+s.cazuri+'</td><td>'+(s.externati||'—')+'</td><td>'+indFmt(s.incidenta100Externati)+'</td><td>'+indFmt(s.rata1000ZilePacient)+'</td></tr>';
+    });
+    h+='</tbody></table></div></div>';
+  }
+  h+='</div></div>';
 
   // ── SECTION B: Date per Sectie (colapsabil) — doar sectii si compartimente ──
   var allSecs=CFG.sections||[];
@@ -7979,9 +8278,20 @@ async function saveHA(){
   // Collect total inputs
   document.querySelectorAll('.ha-inp').forEach(function(inp){
     var m=+inp.dataset.m;var f=inp.dataset.f;
-    if(!ha.months[m])ha.months[m]={omzile:null,externati:null,paturi_medii:null,sections:[]};
+    if(!ha.months[m])ha.months[m]={omzile:null,externati:null,internati:null,paturi_medii:null,device_days:{},sections:[]};
     ha.months[m][f]=inp.value?+inp.value:null;
   });
+  // v13.53 - zile-dispozitiv (sectiunea e colapsabila: daca e inchisa, inputurile nu exista in DOM
+  // si valorile salvate NU trebuie sterse — de aceea scriu doar cand gasesc inputuri)
+  var devInputs=document.querySelectorAll('.ha-dev');
+  if(devInputs.length){
+    for(var dz=0;dz<12;dz++){if(!ha.months[dz])ha.months[dz]={omzile:null,externati:null,internati:null,paturi_medii:null,device_days:{},sections:[]};ha.months[dz].device_days={}}
+    devInputs.forEach(function(inp){
+      var m=+inp.dataset.m;var dev=inp.dataset.dev;
+      if(!ha.months[m].device_days)ha.months[m].device_days={};
+      if(inp.value)ha.months[m].device_days[dev]=+inp.value;
+    });
+  }
   // Collect per-section inputs
   document.querySelectorAll('.ha-sec-inp').forEach(function(inp){
     var m=+inp.dataset.m;var sid=inp.dataset.sid;var f=inp.dataset.f;
@@ -8001,6 +8311,74 @@ async function clearHA(){
   var rec=data.find(function(r){return r.year===year});
   if(rec)await dl('hospital_activity',rec.id);
   showToast(CFG.lang==='en'?'Deleted!':'Sters!');render();
+}
+
+// ═══ v13.53 — Export pentru publicare pe site-ul unitatii ═══
+// Noul OMS cere publicarea indicatorilor de incidenta si a consumului de antibiotice clasificat
+// AWaRe pe site-ul unitatii. Genereaza o pagina HTML curata, fara date individuale de pacient.
+async function exportIndicatoriSite(){
+  var year=A.year;
+  var iaAll=(await ga('iaam')).filter(function(r){return r.year===year});
+  var ind=await computeOMSIndicators(year,iaAll);
+  // consum antibiotice pe clase AWaRe
+  var aw={A:0,W:0,R:0,X:0},totDDD=0;
+  try{
+    var cons=(await ga('atb_consum')).filter(function(r){return r.year===year});
+    cons.forEach(function(r){
+      var ddd=(typeof atbDDD==='function'&&r.atc)?atbDDD(r.atc):0;
+      var q=parseFloat(r.quantity_g||0)||0;
+      var d=ddd>0?q/ddd:0;totDDD+=d;
+      var cls=(typeof _atbFlat==='function'&&r.atc&&_atbFlat()[r.atc])?_atbFlat()[r.atc].aw:'X';
+      aw[cls]=(aw[cls]||0)+d;
+    });
+  }catch(e){}
+  var pAw=function(k){return totDDD>0?(Math.round(aw[k]/totDDD*1000)/10).toFixed(1).replace('.',',')+' %':'—'};
+  var esc2=function(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')};
+  var row=function(a,b){return '<tr><td>'+a+'</td><td class="v">'+b+'</td></tr>'};
+
+  var html='<!DOCTYPE html><html lang="ro"><head><meta charset="UTF-8">'+
+  '<title>Indicatori IAAM '+year+' — '+esc2(CFG.hospital_name)+'</title><style>'+
+  'body{font-family:Segoe UI,Arial,sans-serif;max-width:900px;margin:24px auto;padding:0 18px;color:#1E293B;line-height:1.6}'+
+  'h1{font-size:22px;color:#115E59;margin-bottom:4px}h2{font-size:16px;color:#115E59;margin-top:26px;border-bottom:2px solid #0EA5E9;padding-bottom:4px}'+
+  '.sub{color:#64748B;font-size:13px;margin-bottom:18px}'+
+  'table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}'+
+  'th,td{border:1px solid #CBD5E1;padding:7px 10px;text-align:left}th{background:#115E59;color:#fff;font-weight:600}'+
+  'td.v{text-align:right;font-weight:600;width:180px}tr:nth-child(even) td{background:#F8FAFC}'+
+  '.note{font-size:12px;color:#64748B;margin-top:8px;font-style:italic}'+
+  'footer{margin-top:30px;padding-top:12px;border-top:1px solid #CBD5E1;font-size:12px;color:#64748B}'+
+  '@media print{body{margin:0}}</style></head><body>'+
+  '<h1>Indicatori privind infecțiile asociate asistenței medicale</h1>'+
+  '<div class="sub">'+esc2(CFG.hospital_name)+' &middot; anul '+year+' &middot; publicat la '+fmtDateNow()+'</div>'+
+  '<h2>Incidența IAAM</h2><table>'+
+  row('Cazuri IAAM confirmate',ind.total)+
+  row('Pacienți externați',ind.anual.externati||'—')+
+  row('Incidența la 100 pacienți externați',indFmt(ind.anual.incidenta100Externati))+
+  row('Rata la 1000 zile-pacient',indFmt(ind.anual.rata1000ZilePacient))+
+  row('Rata de atac MRSA la 100 pacienți internați',indFmt(ind.mrsa.rataAtac100Internati))+
+  '</table>'+
+  '<h2>Evoluție trimestrială</h2><table><tr><th>Trimestru</th><th>Cazuri</th><th>Incidența / 100 externați</th></tr>'+
+  ind.trimestre.map(function(t){return '<tr><td>T'+t.q+'</td><td class="v">'+t.cazuri+'</td><td class="v">'+indFmt(t.incidenta100Externati)+'</td></tr>'}).join('')+
+  '</table>';
+  if(ind.dispozitive.some(function(d){return d.rata1000ZileDispozitiv!==null})){
+    html+='<h2>Infecții asociate dispozitivelor medicale</h2><table><tr><th>Dispozitiv</th><th>Cazuri</th><th>Rata / 1000 zile-dispozitiv</th></tr>'+
+    ind.dispozitive.map(function(d){return '<tr><td>'+esc2(d.nume)+'</td><td class="v">'+d.cazuri+'</td><td class="v">'+indFmt(d.rata1000ZileDispozitiv)+'</td></tr>'}).join('')+'</table>';
+  }
+  html+='<h2>Consumul de antibiotice — clasificare AWaRe (OMS)</h2><table>'+
+  row('Consum total',totDDD>0?(Math.round(totDDD*10)/10).toFixed(1).replace('.',',')+' DDD':'—')+
+  row('Access (A) — antibiotice de primă intenție',pAw('A'))+
+  row('Watch (W) — utilizare monitorizată',pAw('W'))+
+  row('Reserve (R) — ultimă linie',pAw('R'))+
+  '</table>'+
+  '<div class="note">Clasificarea AWaRe este stabilită de Organizația Mondială a Sănătății. O pondere mare a grupei Access reflectă o utilizare judicioasă a antibioticelor.</div>'+
+  '<footer>Date agregate, fără informații care să permită identificarea pacienților. '+
+  'Compartimentul de Prevenire a Infecțiilor Asociate Asistenței Medicale &middot; '+esc2(CFG.hospital_name)+'</footer>'+
+  '</body></html>';
+
+  var w=window.open('','_blank');
+  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.');return}
+  w.document.write(html);w.document.close();
+  if(typeof showToast==='function')showToast('Pagina de indicatori generata — se poate salva ca PDF sau publica pe site');
+  if(typeof logActivity==='function')logActivity('Export indicatori pentru site — '+year);
 }
 
 </script>
@@ -12536,8 +12914,26 @@ async function rConsumATB(el){
   h+=_dddBuildTable(data,mx);
   h+='</div>';
 
+  // v13.55 - trei panouri colapsabile cerute de noul OMS. Inchise implicit: pagina arata
+  // la fel ca inainte pentru cine nu le foloseste.
+  const isEN=CFG.lang==='en';
+  const therapy=await _dddTherapyStats(y);
+  const approvals=(await ga('atb_approvals')).filter(r=>r.year===y);
+  h+='<div class="pn" id="ddd-p-doc" style="margin-top:16px"><div class="ph"><h3>'+
+    (isEN?'Consumption by attending physician':'Consum pe medic curant')+'</h3></div>'+
+    '<div class="pb">'+_dddDoctorHTML(data)+'</div></div>';
+  h+='<div class="pn" id="ddd-p-dur" style="margin-top:12px"><div class="ph"><h3>'+
+    (isEN?'Mean duration of antibiotic therapy':'Durata medie a terapiei antibiotice')+
+    (therapy.n?' <span style="font-weight:400;color:var(--txtL);font-size:12px">('+therapy.mean.toFixed(1)+' '+(isEN?'days':'zile')+')</span>':'')+
+    '</h3></div><div class="pb">'+_dddTherapyHTML(therapy)+'</div></div>';
+  h+='<div class="pn" id="ddd-p-avz" style="margin-top:12px"><div class="ph"><h3>'+
+    (isEN?'Restricted antibiotics — approval register':'Antibiotice cu avizare — registrul avizarilor')+
+    ' <span style="font-weight:400;color:var(--txtL);font-size:12px">('+approvals.length+')</span>'+
+    '</h3></div><div class="pb">'+_dddApprovalsHTML(approvals,data)+'</div></div>';
+
   el.innerHTML=h;
   _dddRenderCharts(t);
+  _dddSetupCollapse();
 }
 
 function _dddBuildTable(data,mx){
@@ -12651,6 +13047,10 @@ async function editConsumATB(id){
   });
 
   const routeH=ATB_ROUTES.map(rt=>'<option value="'+rt.v+'" '+(rt.v===r.route?'selected':'')+'>'+rt.n+'</option>').join('');
+  // v13.55 - medicul curant e text liber (ca in IAAM), cu sugestii din ce s-a introdus deja.
+  // Nu vine din CFG.personnel: acolo e echipa CPIAAM, nu medicii prescriptori din sectii.
+  const docsSeen=Array.from(new Set(allData.map(x=>(x.doctor||'').trim()).filter(Boolean))).sort();
+  const docList='<datalist id="ddd-doc-list">'+docsSeen.map(d=>'<option value="'+esc(d)+'"></option>').join('')+'</datalist>';
 
   openM(id?'Editare Consum':'Adauga Consum Antibiotic',
     '<div class="fr"><div class="fg"><label>'+T('ddd_section')+'</label><select id="f-sec"><option value="">—</option>'+secOptsGrouped(r.section)+'</select></div>'+
@@ -12658,6 +13058,8 @@ async function editConsumATB(id){
     '<div class="fg"><label>'+T('ddd_substance')+'</label><select id="f-atc" onchange="dddUpdatePreview()">'+atbH+'</select></div>'+
     '<div class="fr"><div class="fg"><label>'+T('ddd_quantity')+' (grame)</label><input type="number" id="f-qty" value="'+(r.quantity_g||'')+'" min="0" step="0.1" oninput="dddUpdatePreview()"></div>'+
     '<div class="fg"><label>'+T('ddd_route')+'</label><select id="f-route">'+routeH+'</select></div></div>'+
+    '<div class="fg"><label>Medic curant <span style="font-weight:400;color:var(--txtL);font-size:11px">(optional)</span></label>'+
+      '<input id="f-doc" list="ddd-doc-list" value="'+esc(r.doctor||'')+'" placeholder="ex: Dr. Popescu Ion" autocomplete="off">'+docList+'</div>'+
     '<div id="ddd-preview" style="padding:8px 12px;background:var(--bg);border-radius:6px;font-size:12px;margin-top:6px"></div>'+
     '<div class="fg" style="margin-top:8px"><label>Observatii</label><textarea id="f-n" rows="2">'+(r.notes||'')+'</textarea></div>',
   '<button class="btn bo" onclick="safeCloseM()">'+T('btn_cancel')+'</button><button class="btn bp" onclick="saveConsumATB('+(id||'null')+')">'+T('btn_save')+'</button>');
@@ -12682,7 +13084,7 @@ async function saveConsumATB(id){
   if(!sec){alert('Selecteaza sectia.');return}
   if(!atc){alert('Selecteaza antibioticul.');return}
   if(qty<=0){alert('Introdu cantitatea in grame.');return}
-  const rec={year:A.year,month:mo,section:sec,atc:atc,atb_name:atbName(atc),quantity_g:qty,route:route,notes:notes};
+  const rec={year:A.year,month:mo,section:sec,atc:atc,atb_name:atbName(atc),quantity_g:qty,route:route,doctor:v('f-doc').trim(),notes:notes};
   if(id)rec.id=id;
   await pt('atb_consum',rec);
   logActivity((id?'Editat':'Adaugat')+' consum ATB — '+atbName(atc)+' '+qty+'g '+rSec(sec));
@@ -12749,7 +13151,7 @@ function _dddMatchATC(val){
 }
 
 function _dddDetectColumns(headers){
-  var map={section:-1,month:-1,atc:-1,quantity:-1,route:-1};
+  var map={section:-1,month:-1,atc:-1,quantity:-1,route:-1,doctor:-1};
   headers.forEach(function(h,i){
     var hl=h.toLowerCase().trim();
     if(map.section<0&&(/sect|departm|ward|clinica|compartiment/.test(hl)))map.section=i;
@@ -12757,6 +13159,8 @@ function _dddDetectColumns(headers){
     if(map.atc<0&&(/atc|cod.*atc|antibiotic|substant|medicam/.test(hl)))map.atc=i;
     if(map.quantity<0&&(/cantit|quantit|grame|gram|qty|consum|amount/.test(hl)))map.quantity=i;
     if(map.route<0&&(/cale|route|admin/.test(hl)))map.route=i;
+    // v13.55 - medicul curant, cerut de noul OMS pentru defalcarea consumului
+    if(map.doctor<0&&(/medic|doctor|prescri|curant/.test(hl)))map.doctor=i;
   });
   return map;
 }
@@ -12816,6 +13220,7 @@ function _dddBuildMapping(rows){
     '<div class="fg" style="flex:1;min-width:140px"><label style="font-size:11px">Antibiotic / ATC</label><select id="ddd-map-atc" onchange="_dddRefreshPreview()" style="font-size:12px;padding:4px">'+colOpts.replace('value="'+auto.atc+'"','value="'+auto.atc+'" selected')+'</select></div>'+
     '<div class="fg" style="flex:1;min-width:140px"><label style="font-size:11px">Cantitate (g)</label><select id="ddd-map-qty" onchange="_dddRefreshPreview()" style="font-size:12px;padding:4px">'+colOpts.replace('value="'+auto.quantity+'"','value="'+auto.quantity+'" selected')+'</select></div>'+
     '<div class="fg" style="flex:1;min-width:140px"><label style="font-size:11px">Cale administrare</label><select id="ddd-map-route" onchange="_dddRefreshPreview()" style="font-size:12px;padding:4px">'+colOpts.replace('value="'+auto.route+'"','value="'+auto.route+'" selected')+'</select></div>'+
+    '<div class="fg" style="flex:1;min-width:140px"><label style="font-size:11px">Medic curant (optional)</label><select id="ddd-map-doc" onchange="_dddRefreshPreview()" style="font-size:12px;padding:4px">'+colOpts.replace('value="'+auto.doctor+'"','value="'+auto.doctor+'" selected')+'</select></div>'+
     '</div>';
   // Store raw rows for preview
   window._dddRawRows=rows;
@@ -12829,6 +13234,7 @@ function _dddRefreshPreview(){
   var iAtc=+document.getElementById('ddd-map-atc').value;
   var iQty=+document.getElementById('ddd-map-qty').value;
   var iRoute=+document.getElementById('ddd-map-route').value;
+  var iDoc=(document.getElementById('ddd-map-doc')?+document.getElementById('ddd-map-doc').value:-1);
 
   if(iAtc<0||iQty<0){
     document.getElementById('ddd-imp-preview').innerHTML='<div class="ib wrn">Selecteaza cel putin coloanele Antibiotic/ATC si Cantitate.</div>';
@@ -12844,6 +13250,7 @@ function _dddRefreshPreview(){
     var rawAtc=iAtc>=0?r[iAtc]||'':'';
     var rawQty=iQty>=0?r[iQty]||'':'';
     var rawRoute=iRoute>=0?r[iRoute]||'':'';
+    var rawDoc=iDoc>=0?String(r[iDoc]||'').trim():'';
     var qty=parseFloat(String(rawQty).replace(/[^\d.,\-]/g,'').replace(',','.'));
     if(isNaN(qty)||qty<=0){errors++;continue}
     var matchedSec=_dddMatchSection(rawSec);
@@ -12854,7 +13261,7 @@ function _dddRefreshPreview(){
     _dddImportRows.push({
       rawSec:rawSec,section:matchedSec||'',month:month||new Date().getMonth()+1,
       atc:matchedAtc,atb_name:atbName(matchedAtc),qty:qty,
-      route:rawRoute||'IV',secWarn:!matchedSec&&!!rawSec,moWarn:!month
+      route:rawRoute||'IV',doctor:rawDoc,secWarn:!matchedSec&&!!rawSec,moWarn:!month
     });
   }
 
@@ -12864,16 +13271,17 @@ function _dddRefreshPreview(){
   if(_dddImportRows.length===0){
     h+='<div class="ib wrn">Nu s-au gasit randuri valide. Verifica mapping-ul coloanelor.</div>';
   }else{
-    h+='<div style="max-height:300px;overflow-y:auto"><table class="dt" style="font-size:12px"><thead><tr><th>Sectie</th><th>Luna</th><th>Antibiotic</th><th>ATC</th><th>Cantitate (g)</th><th>AWaRe</th></tr></thead><tbody>';
+    h+='<div style="max-height:300px;overflow-y:auto"><table class="dt" style="font-size:12px"><thead><tr><th>Sectie</th><th>Luna</th><th>Antibiotic</th><th>ATC</th><th>Cantitate (g)</th><th>AWaRe</th><th>Medic</th></tr></thead><tbody>';
     _dddImportRows.slice(0,50).forEach(function(row){
       var secDisplay=row.section?rSec(row.section):(row.rawSec?'<span style="color:var(--red)" title="Sectia nu a fost gasita">&#9888; '+esc(row.rawSec)+'</span>':'<em style="color:var(--txtL)">—</em>');
       var aw=atbAWaRe(row.atc);var awCls='ddd-aw-'+(aw||'x').toLowerCase();
       h+='<tr><td>'+secDisplay+'</td><td>'+mo[(row.month||1)-1]+(row.moWarn?' &#9888;':'')+'</td>';
       h+='<td>'+esc(row.atb_name)+'</td><td style="font-size:10px;color:var(--txtL)">'+row.atc+'</td>';
       h+='<td style="text-align:right">'+row.qty.toFixed(1)+'</td>';
-      h+='<td><span class="'+awCls+'">'+aw+'</span></td></tr>';
+      h+='<td><span class="'+awCls+'">'+aw+'</span></td>';
+      h+='<td style="font-size:11px">'+(row.doctor?esc(row.doctor):'<em style="color:var(--txtL)">—</em>')+'</td></tr>';
     });
-    if(_dddImportRows.length>50)h+='<tr><td colspan="6" style="text-align:center;color:var(--txtL)">... si inca '+(_dddImportRows.length-50)+' randuri</td></tr>';
+    if(_dddImportRows.length>50)h+='<tr><td colspan="7" style="text-align:center;color:var(--txtL)">... si inca '+(_dddImportRows.length-50)+' randuri</td></tr>';
     h+='</tbody></table></div>';
   }
   document.getElementById('ddd-imp-preview').innerHTML=h;
@@ -12923,7 +13331,7 @@ async function dddDoImport(){
   var ok=0;
   for(var i=0;i<_dddImportRows.length;i++){
     var r=_dddImportRows[i];
-    await pt('atb_consum',{year:A.year,month:r.month,section:r.section,atc:r.atc,atb_name:r.atb_name,quantity_g:r.qty,route:r.route,notes:'Import fisier'});
+    await pt('atb_consum',{year:A.year,month:r.month,section:r.section,atc:r.atc,atb_name:r.atb_name,quantity_g:r.qty,route:r.route,doctor:r.doctor||'',notes:'Import fisier'});
     ok++;
   }
   logActivity('Import consum ATB: '+ok+' inregistrari din fisier');
@@ -13071,6 +13479,297 @@ async function genConsumATBWord(aiText){
   if(aiText)logActivity('Generat Raport Consum ATB AI '+y);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// v13.55 — DEFALCARE PE MEDIC CURANT / DURATA TERAPIEI / ANTIBIOTICE CU AVIZARE
+// Cerinte ale noului OMS. Toate trei sunt panouri colapsabile sub tabelul principal —
+// pagina isi pastreaza aspectul, iar cine nu foloseste campurile nu vede nimic in plus.
+// ═══════════════════════════════════════════════════════════════
+
+// Colapsare pe pattern-ul deja folosit in Configurare (.pn-collapsed + .pn-chev),
+// ca sa nu introduc CSS nou. Starea traieste in sesiune, ca in config_page.js.
+var _dddPanelOpen={};
+function _dddSetupCollapse(){
+  ['ddd-p-doc','ddd-p-dur','ddd-p-avz'].forEach(function(id){
+    var pn=document.getElementById(id);if(!pn)return;
+    if(!_dddPanelOpen[id])pn.classList.add('pn-collapsed');
+    var h3=pn.querySelector('.ph h3');if(!h3)return;
+    if(!h3.querySelector('.pn-chev')){
+      var chev=document.createElement('span');
+      chev.className='pn-chev';
+      chev.style.cssText='display:inline-block;transition:transform .2s;margin-right:6px;font-size:10px;color:var(--txtL)';
+      chev.innerHTML='&#9654;';
+      h3.insertBefore(chev,h3.firstChild);
+    }
+    h3.style.cursor='pointer';
+    h3.onclick=function(){_dddTogglePanel(id)};
+  });
+}
+function _dddTogglePanel(id){
+  var pn=document.getElementById(id);if(!pn)return;
+  var open=pn.classList.contains('pn-collapsed');
+  pn.classList.toggle('pn-collapsed',!open);
+  _dddPanelOpen[id]=open;
+}
+
+// ── 1. Consum defalcat pe medic curant ─────────────────────────
+function _dddDoctorHTML(data){
+  var isEN=CFG.lang==='en';
+  var by={};
+  data.forEach(function(r){
+    var d=(r.doctor||'').trim();
+    var k=d||'__none__';
+    if(!by[k])by[k]={name:d,n:0,g:0,ddd:0,a:0,w:0,rz:0};
+    by[k].n++;by[k].g+=(r.quantity_g||0);
+    var dd=calcDDD(r.atc,r.quantity_g||0);
+    by[k].ddd+=dd;
+    if((r.atc||'').indexOf('J01')===0){
+      var aw=atbAWaRe(r.atc);
+      if(aw==='A')by[k].a+=dd;else if(aw==='W')by[k].w+=dd;else if(aw==='R')by[k].rz+=dd;
+    }
+  });
+  var rows=Object.keys(by).map(function(k){return by[k]}).sort(function(a,b){return b.ddd-a.ddd});
+  var named=rows.filter(function(r){return r.name});
+  if(!named.length){
+    return '<div class="ib inf">'+(isEN
+      ?'No prescriber recorded yet. Fill in "Attending physician" when adding consumption, or map that column on file import.'
+      :'Nu exista inca niciun medic curant inregistrat. Completeaza campul „Medic curant" cand adaugi consum, sau potriveste coloana respectiva la importul din fisier.')+'</div>';
+  }
+  var totalDDD=rows.reduce(function(s,r){return s+r.ddd},0);
+  var h='<div style="overflow-x:auto"><table class="dt"><thead><tr>'+
+    '<th>'+(isEN?'Attending physician':'Medic curant')+'</th>'+
+    '<th style="width:80px">'+(isEN?'Records':'Inregistrari')+'</th>'+
+    '<th style="width:100px">'+(isEN?'Quantity (g)':'Cantitate (g)')+'</th>'+
+    '<th style="width:90px">DDD</th><th style="width:90px">% '+(isEN?'of total':'din total')+'</th>'+
+    '<th style="width:150px">AWaRe (A / W / R)</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    var j01=r.a+r.w+r.rz;
+    var pa=j01>0?Math.round(r.a/j01*100):null;
+    var pw=j01>0?Math.round(r.w/j01*100):null;
+    var pr=j01>0?Math.round(r.rz/j01*100):null;
+    var share=totalDDD>0?(r.ddd/totalDDD*100).toFixed(1):'—';
+    var nm=r.name?esc(r.name):'<em style="color:var(--txtL)">'+(isEN?'Not specified':'Nespecificat')+'</em>';
+    h+='<tr><td>'+nm+'</td><td style="text-align:right">'+r.n+'</td>'+
+      '<td style="text-align:right">'+r.g.toFixed(1)+'</td>'+
+      '<td style="text-align:right;font-weight:600">'+r.ddd.toFixed(1)+'</td>'+
+      '<td style="text-align:right">'+share+'%</td>'+
+      '<td style="font-size:11px">'+(j01>0
+        ?('<span class="ddd-aw-a">'+pa+'%</span> / <span class="ddd-aw-w">'+pw+'%</span> / <span class="ddd-aw-r">'+pr+'%</span>')
+        :'<span style="color:var(--txtL)">—</span>')+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div style="font-size:11px;color:var(--txtL);margin-top:8px">'+(isEN
+    ?'AWaRe percentages are computed on J01 antibacterials only, as in the main table.'
+    :'Procentele AWaRe sunt calculate doar pe antibacterienele J01, la fel ca in tabelul principal.')+'</div>';
+  return h;
+}
+
+// ── 2. Durata medie a terapiei ─────────────────────────────────
+// Sursa: antibioticele din fisele IAAM (au date de start/stop). Sunt singurele prescrieri
+// cu durata pe care CPIAAM le detine — datele din farmacie sunt cantitati lunare agregate,
+// din ele NU se poate deduce durata. Etichetat explicit ca atare, ca sa nu fie citit ca
+// durata medie pe tot spitalul.
+async function _dddTherapyStats(year){
+  var cases=(await ga('iaam')).filter(function(r){return r.year===year});
+  var durations=[],bySub={},nCases=0;
+  cases.forEach(function(c){
+    var list=Array.isArray(c.antibiotics)?c.antibiotics:[];
+    var used=false;
+    list.forEach(function(a){
+      var d=calcDays(a.date_start,a.date_stop);
+      if(d===''||d===null||isNaN(+d))return;
+      var days=+d;
+      if(days<=0)return;
+      used=true;
+      durations.push(days);
+      var k=a.atc||a.name||'?';
+      if(!bySub[k])bySub[k]={name:a.name||atbName(a.atc||''),atc:a.atc||'',n:0,sum:0};
+      bySub[k].n++;bySub[k].sum+=days;
+    });
+    if(used)nCases++;
+  });
+  durations.sort(function(a,b){return a-b});
+  var mean=durations.length?durations.reduce(function(s,x){return s+x},0)/durations.length:null;
+  var median=null;
+  if(durations.length){
+    var m=Math.floor(durations.length/2);
+    median=(durations.length%2)?durations[m]:(durations[m-1]+durations[m])/2;
+  }
+  return {n:durations.length,nCases:nCases,mean:mean,median:median,
+    min:durations.length?durations[0]:null,max:durations.length?durations[durations.length-1]:null,
+    bySub:Object.keys(bySub).map(function(k){var s=bySub[k];s.avg=s.sum/s.n;return s}).sort(function(a,b){return b.n-a.n})};
+}
+
+function _dddTherapyHTML(st){
+  var isEN=CFG.lang==='en';
+  if(!st.n){
+    return '<div class="ib inf">'+(isEN
+      ?'No antibiotic with both start and stop dates found in this year’s IAAM case files.'
+      :'Nicio prescriere cu data de start SI de stop in fisele IAAM din anul curent. Durata se calculeaza din pasul 5 „Tratament ATB" al fisei de caz.')+'</div>';
+  }
+  var h='<div class="kg" style="margin-bottom:12px">'+
+    '<div class="kc bl"><div class="kl">'+(isEN?'Mean duration':'Durata medie')+'</div><div class="kv">'+st.mean.toFixed(1)+'</div><div class="ks">'+(isEN?'days':'zile')+'</div></div>'+
+    '<div class="kc tl"><div class="kl">'+(isEN?'Median':'Mediana')+'</div><div class="kv">'+st.median.toFixed(1)+'</div><div class="ks">'+(isEN?'days':'zile')+'</div></div>'+
+    '<div class="kc gn"><div class="kl">'+(isEN?'Prescriptions':'Prescrieri')+'</div><div class="kv">'+st.n+'</div><div class="ks">'+st.nCases+' '+(isEN?'cases':'cazuri')+'</div></div>'+
+    '<div class="kc am"><div class="kl">'+(isEN?'Range':'Interval')+'</div><div class="kv" style="font-size:20px">'+st.min+'–'+st.max+'</div><div class="ks">'+(isEN?'days':'zile')+'</div></div>'+
+    '</div>';
+  h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th>'+(isEN?'Substance':'Substanta')+'</th><th style="width:80px">ATC</th>'+
+    '<th style="width:100px">'+(isEN?'Prescriptions':'Prescrieri')+'</th><th style="width:120px">'+(isEN?'Mean days':'Durata medie (zile)')+'</th></tr></thead><tbody>';
+  st.bySub.forEach(function(s){
+    h+='<tr><td>'+esc(s.name)+'</td><td style="font-size:11px;color:var(--txtL)">'+esc(s.atc)+'</td>'+
+      '<td style="text-align:right">'+s.n+'</td><td style="text-align:right;font-weight:600">'+s.avg.toFixed(1)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div style="font-size:11px;color:var(--txtL);margin-top:8px">'+(isEN
+    ?'Source: antibiotics recorded in IAAM case files (step 5), which are the only prescriptions with start/stop dates available to the IPC team. Not a hospital-wide average.'
+    :'Sursa: antibioticele din fisele IAAM (pasul 5) — singurele prescrieri cu date de start/stop pe care le detine CPIAAM. NU este media pe tot spitalul; consumul din farmacie e cantitate lunara agregata, din care durata nu se poate deduce.')+'</div>';
+  return h;
+}
+
+// ── 3. Antibiotice cu regim restrictionat + evidenta avizarilor ─
+function _atbIsRestricted(atc){
+  if(!atc||!Array.isArray(CFG.atb_restricted))return false;
+  return CFG.atb_restricted.some(function(x){return (x.atc||'')===atc});
+}
+function _atbRestrictedName(atc){
+  var x=(CFG.atb_restricted||[]).find(function(y){return (y.atc||'')===atc});
+  return x?(x.name||atbName(atc)):atbName(atc);
+}
+
+function _dddApprovalsHTML(approvals,data){
+  var isEN=CFG.lang==='en';
+  var list=CFG.atb_restricted||[];
+  var h='';
+  if(!list.length){
+    h+='<div class="ib wrn">'+(isEN
+      ?'No restricted antibiotic list defined yet. Set it in Settings → Data entry → Restricted antibiotics.'
+      :'Lista antibioticelor cu regim restrictionat nu e definita inca. Se configureaza in Configurare → Introducere date → Antibiotice cu avizare.')+
+      ' <button class="btn bo bsm" onclick="nav(\'config\');setTimeout(function(){location.hash=\'#cfg-atb-restricted\'},300)">'+(isEN?'Go to Settings':'Mergi la Configurare')+'</button></div>';
+  }else{
+    // Consum din anul curent pe antibioticele restrictionate — cu cate avizari exista
+    var byAtc={};
+    data.forEach(function(r){
+      if(!_atbIsRestricted(r.atc))return;
+      if(!byAtc[r.atc])byAtc[r.atc]={atc:r.atc,g:0,ddd:0};
+      byAtc[r.atc].g+=(r.quantity_g||0);
+      byAtc[r.atc].ddd+=calcDDD(r.atc,r.quantity_g||0);
+    });
+    var nApr={};
+    approvals.forEach(function(a){nApr[a.atc]=(nApr[a.atc]||0)+1});
+    h+='<div style="overflow-x:auto"><table class="dt" style="margin-bottom:14px"><thead><tr>'+
+      '<th>'+(isEN?'Restricted antibiotic':'Antibiotic cu avizare')+'</th><th style="width:80px">ATC</th>'+
+      '<th style="width:110px">'+(isEN?'Approver':'Avizeaza')+'</th>'+
+      '<th style="width:100px">'+(isEN?'Consumption (DDD)':'Consum (DDD)')+'</th>'+
+      '<th style="width:100px">'+(isEN?'Approvals':'Avizari')+'</th></tr></thead><tbody>';
+    list.forEach(function(x){
+      var c=byAtc[x.atc];
+      var na=nApr[x.atc]||0;
+      var warn=(c&&c.ddd>0&&na===0);
+      h+='<tr><td>'+esc(x.name||atbName(x.atc))+'</td><td style="font-size:11px;color:var(--txtL)">'+esc(x.atc||'')+'</td>'+
+        '<td style="font-size:11px">'+(x.approver?esc(x.approver):'<span style="color:var(--txtL)">—</span>')+'</td>'+
+        '<td style="text-align:right">'+(c?c.ddd.toFixed(1):'<span style="color:var(--txtL)">—</span>')+'</td>'+
+        '<td style="text-align:right'+(warn?';color:var(--red);font-weight:700':'')+'">'+na+(warn?' &#9888;':'')+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+    // Semnal invers: se consuma antibiotice WHO Reserve care NU sunt in lista cu avizare.
+    // Inseamna ca lista din Configurare a ramas in urma fata de practica reala.
+    var resNoAviz={};
+    data.forEach(function(r){
+      if(_atbIsRestricted(r.atc))return;
+      if(atbAWaRe(r.atc)!=='R')return;
+      resNoAviz[r.atc]=true;
+    });
+    var names=Object.keys(resNoAviz).map(function(a){return atbName(a)});
+    if(names.length){
+      h+='<div class="ib wrn" style="margin-bottom:12px">'+(isEN
+        ?'Reserve-group antibiotics consumed without being on the restricted list: '
+        :'Se consuma antibiotice din grupa Reserve care nu sunt in lista cu avizare: ')+
+        esc(names.join(', '))+'.</div>';
+    }
+  }
+  // Registrul avizarilor
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin:6px 0 8px">'+
+    '<div style="font-weight:600;font-size:13px">'+(isEN?'Approval register':'Registrul avizarilor')+' ('+approvals.length+')</div>'+
+    '<button class="btn bp bsm" onclick="editAtbApproval()">+ '+(isEN?'Add approval':'Adauga avizare')+'</button></div>';
+  if(!approvals.length){
+    h+='<div class="es"><p>'+(isEN?'No approvals recorded for this year.':'Nicio avizare inregistrata in anul curent.')+'</p></div>';
+  }else{
+    h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th style="width:95px">'+(isEN?'Date':'Data')+'</th>'+
+      '<th style="width:80px">Nr. FO</th><th>'+(isEN?'Antibiotic':'Antibiotic')+'</th><th>'+(isEN?'Section':'Sectia')+'</th>'+
+      '<th>'+(isEN?'Requested by':'Solicitat de')+'</th><th>'+(isEN?'Approved by':'Avizat de')+'</th>'+
+      '<th style="width:80px">'+(isEN?'Decision':'Decizie')+'</th><th style="width:60px"></th></tr></thead><tbody>';
+    approvals.slice().sort(function(a,b){return (b.date||'').localeCompare(a.date||'')}).forEach(function(a){
+      var dec=a.decision==='respins'
+        ?'<span class="bdg bdg-r">'+(isEN?'Rejected':'Respins')+'</span>'
+        :'<span class="bdg bdg-g">'+(isEN?'Approved':'Avizat')+'</span>';
+      h+='<tr><td>'+fmtDate(a.date)+'</td><td>'+esc(a.fo||'')+'</td>'+
+        '<td>'+esc(a.atb_name||atbName(a.atc||''))+'</td><td>'+(a.section?esc(rSec(a.section)):'—')+'</td>'+
+        '<td>'+esc(a.requested_by||'')+'</td><td>'+esc(a.approved_by||'')+'</td><td>'+dec+'</td>'+
+        '<td class="act"><button onclick="editAtbApproval('+JSON.stringify(a.id)+')" title="Editeaza">&#9998;</button>'+
+        '<button onclick="delAtbApproval('+JSON.stringify(a.id)+')" title="Sterge">&#128465;</button></td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  return h;
+}
+
+async function editAtbApproval(id){
+  var isEN=CFG.lang==='en';
+  var all=await ga('atb_approvals');
+  var r=id?all.find(function(x){return x.id===id}):null;
+  if(!r)r={date:new Date().toISOString().slice(0,10),fo:'',atc:'',section:'',requested_by:'',approved_by:'',decision:'avizat',indication:'',duration_days:'',notes:''};
+  // In lista intra antibioticele marcate cu avizare; daca lista e goala, oferim toate.
+  var restricted=CFG.atb_restricted||[];
+  var opts='<option value="">—</option>';
+  if(restricted.length){
+    restricted.forEach(function(x){opts+='<option value="'+esc(x.atc||'')+'"'+((x.atc||'')===r.atc?' selected':'')+'>'+esc(x.name||atbName(x.atc||''))+'</option>'});
+  }else{
+    (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(function(g){
+      opts+='<optgroup label="'+esc(g.g)+'">';
+      g.items.forEach(function(it){opts+='<option value="'+it.a+'"'+(it.a===r.atc?' selected':'')+'>'+esc(it.n)+'</option>'});
+      opts+='</optgroup>';
+    });
+  }
+  openM(id?(isEN?'Edit approval':'Editare avizare'):(isEN?'New approval':'Avizare antibiotic'),
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Date':'Data')+'</label><input type="date" id="f-av-date" value="'+(r.date||'')+'"></div>'+
+    '<div class="fg"><label>Nr. FO</label><input id="f-av-fo" value="'+esc(r.fo||'')+'" placeholder="ex: 12345"></div>'+
+    '<div class="fg"><label>'+(isEN?'Section':'Sectia')+'</label><select id="f-av-sec"><option value="">—</option>'+secOptsGrouped(r.section)+'</select></div></div>'+
+    '<div class="fg"><label>'+(isEN?'Antibiotic':'Antibiotic')+'</label><select id="f-av-atc">'+opts+'</select></div>'+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Requested by':'Solicitat de (medic curant)')+'</label><input id="f-av-req" value="'+esc(r.requested_by||'')+'"></div>'+
+    '<div class="fg"><label>'+(isEN?'Approved by':'Avizat de')+'</label><input id="f-av-apr" value="'+esc(r.approved_by||'')+'"></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Decision':'Decizie')+'</label><select id="f-av-dec">'+
+      '<option value="avizat"'+(r.decision!=='respins'?' selected':'')+'>'+(isEN?'Approved':'Avizat')+'</option>'+
+      '<option value="respins"'+(r.decision==='respins'?' selected':'')+'>'+(isEN?'Rejected':'Respins')+'</option></select></div>'+
+    '<div class="fg"><label>'+(isEN?'Approved duration (days)':'Durata avizata (zile)')+'</label><input type="number" id="f-av-dur" min="0" value="'+(r.duration_days||'')+'"></div></div>'+
+    '<div class="fg"><label>'+(isEN?'Indication':'Indicatia')+'</label><input id="f-av-ind" value="'+esc(r.indication||'')+'" placeholder="'+(isEN?'e.g. sepsis with MDR Klebsiella':'ex: sepsis cu Klebsiella MDR')+'"></div>'+
+    '<div class="fg"><label>'+(isEN?'Notes':'Observatii')+'</label><textarea id="f-av-n" rows="2">'+esc(r.notes||'')+'</textarea></div>',
+    '<button class="btn bo" onclick="safeCloseM()">'+T('btn_cancel')+'</button>'+
+    '<button class="btn bp" onclick="saveAtbApproval('+(id?JSON.stringify(id):'null')+')">'+T('btn_save')+'</button>');
+  setTimeout(function(){if(typeof attachDirtyTracking==='function')attachDirtyTracking()},50);
+}
+
+async function saveAtbApproval(id){
+  var mc=document.getElementById('mdc');
+  var v=function(s){var el=(mc?mc.querySelector('#'+s):null)||document.getElementById(s);return el?el.value:''};
+  var date=v('f-av-date');if(!date){alert('Selectati data.');return}
+  var atc=v('f-av-atc');if(!atc){alert('Selectati antibioticul.');return}
+  var rec={year:A.year,date:date,fo:v('f-av-fo').trim(),atc:atc,atb_name:atbName(atc),
+    section:v('f-av-sec'),requested_by:v('f-av-req').trim(),approved_by:v('f-av-apr').trim(),
+    decision:v('f-av-dec')||'avizat',duration_days:(v('f-av-dur')===''?null:+v('f-av-dur')),
+    indication:v('f-av-ind').trim(),notes:v('f-av-n').trim()};
+  if(id)rec.id=id;
+  await pt('atb_approvals',rec);
+  _dddPanelOpen['ddd-p-avz']=true;
+  logActivity((id?'Editata':'Adaugata')+' avizare antibiotic — '+atbName(atc));
+  closeM();render();
+}
+
+async function delAtbApproval(id){
+  if(!confirm(CFG.lang==='en'?'Delete this approval?':'Stergi aceasta avizare?'))return;
+  await dl('atb_approvals',id);
+  _dddPanelOpen['ddd-p-avz']=true;
+  logActivity('Stearsa avizare antibiotic');
+  render();
+}
 
 </script>
 <script>
@@ -13272,7 +13971,9 @@ async function rTerm(el){
     '<button class="btn bo bsm" onclick="_termExpandAll(false)">'+(isEN?'Collapse all':'Restrange tot')+'</button>'+
   '</div>';
 
-  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px;gap:8px"><button class="btn bp" onclick="editDeadline()">+ '+(isEN?'Add Report':'Adauga Raportare')+'</button></div>';
+  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:14px;gap:8px">'+
+    '<button class="btn bo" onclick="creeazaRaportariOMS()" title="Creeaza raportarile cu termenele din noul ordin (Anexa 2): registru sectii luni, registru DSP marti, fise pana in 5, registru manager primele 10 zile">&#128203; '+(isEN?'Add OMS deadlines':'Termene conform OMS')+'</button>'+
+    '<button class="btn bp" onclick="editDeadline()">+ '+(isEN?'Add Report':'Adauga Raportare')+'</button></div>';
 
   // ── Section: Recurring reports (grouped by template) ──
   if(templates.length>0){
@@ -13971,6 +14672,41 @@ async function renderDashCalendar(){
 }
 
 
+// ═══ v13.54 — Termenele de raportare cerute de noul OMS (Anexa 2) ═══
+// Creeaza template-urile de raportare cu frecventele si zilele impuse. Idempotent: nu duplica
+// ce exista deja (match pe denumire). Textul ordinului fiind draft, denumirile si termenele stau
+// intr-o singura lista — daca se schimba, se modifica aici.
+const OMS_RAPORTARI=[
+  {name:'Registru IAAM sectii → CPIAAM',recipient:'Sectii',frequency:'saptamanal',day_of_week:0,
+   obs:'Fiecare sectie transmite registrul electronic pentru saptamana precedenta. Termen: in fiecare zi de luni.'},
+  {name:'Registru IAAM unitate → DSP',recipient:'DSP',frequency:'saptamanal',day_of_week:1,
+   obs:'Transmitere electronica a registrului unitatii pentru saptamana anterioara. Termen: in fiecare zi de marti.'},
+  {name:'Registru IAAM → manager si Comitetul de prevenire',recipient:'Manager / Comitet',frequency:'lunar',day_of_month:10,
+   obs:'Registrul unitatii pentru luna anterioara. Termen: primele 10 zile ale lunii.'},
+  {name:'Fise de caz IAAM → DSP',recipient:'DSP',frequency:'lunar',day_of_month:5,
+   obs:'Fisele cazurilor confirmate pentru luna precedenta. Termen: pana in data de 5.'},
+  {name:'Verificare sectii — cazuri nediagnosticate/neinregistrate',recipient:'Intern CPIAAM',frequency:'saptamanal',day_of_week:2,
+   obs:'Supraveghere activa prin analiza foilor de observatie. Ritm cerut: minim la 2 zile, maxim la 7 zile.'}
+];
+async function creeazaRaportariOMS(){
+  if(!confirm('Se creeaza '+OMS_RAPORTARI.length+' raportari repetitive cu termenele din noul ordin (Anexa 2).\n\nCele care exista deja NU se dubleaza. Continui?'))return;
+  var existing=await ga('deadlines');
+  var created=0,skipped=0;
+  for(const t of OMS_RAPORTARI){
+    if(existing.some(function(d){return d._isTemplate&&(d.name||'').trim().toLowerCase()===t.name.toLowerCase()})){skipped++;continue}
+    var rec={name:t.name,recipient:t.recipient,frequency:t.frequency,status:'neinceput',
+      observations:t.obs,_isTemplate:true,url:'',due_date:''};
+    if(t.frequency==='saptamanal'){rec.day_of_week=t.day_of_week;rec.active_months=[]}
+    if(t.frequency==='lunar')rec.day_of_month=t.day_of_month;
+    await pt('deadlines',rec);
+    await _genInstancesForTemplate(rec);
+    created++;
+  }
+  if(typeof logActivity==='function')logActivity('Create raportari conform noului OMS: '+created);
+  showToast(created+' raportari create'+(skipped?', '+skipped+' existau deja':'')+'. Completeaza data de inceput/termen limita unde e cazul.');
+  render();
+}
+
 </script>
 <script>
 // ═════════════════════════════════════════════════════════════
@@ -14210,6 +14946,39 @@ const AUDIT_ITEMS={
     {text_ro:'Echipament de protectie (manusi groase, sort) disponibil pentru personalul de curatenie',text_en:'Protective equipment (thick gloves, apron) available for cleaning staff',ref:COUNTRY.regulations.wasteOrder},
     {text_ro:'Nu se recicleaza sau refolosesc obiecte din deseuri periculoase',text_en:'Hazardous waste items are not recycled or reused',ref:COUNTRY.regulations.wasteOrder},
     {text_ro:'Deseuri lichide (chimice, farmaceutice) — colectare si eliminare conform',text_en:'Liquid waste (chemical, pharmaceutical) — compliant collection and disposal',ref:COUNTRY.regulations.wasteOrder}
+  ],
+  // v13.55 — Auditul programului de Antibiotic Stewardship, structurat pe cele 7 elemente
+  // de baza CDC (Core Elements of Hospital Antibiotic Stewardship Programs).
+  // Grila evalueaza PROGRAMUL (o data pe an), nu prescriptiile — pentru prescriptii vezi grila
+  // separata "Audit clinic FO — antibiotice" (indicatorii ECDC/Global-PPS).
+  stewardship:[
+    // 1. Leadership commitment
+    {text_ro:'Conducerea spitalului a aprobat formal programul de utilizare judicioasa a antibioticelor (decizie/dispozitie scrisa)',text_en:'Hospital leadership has formally approved the antibiotic stewardship program (written decision)',ref:'CDC Core Elements — Leadership',section:'1. Angajamentul conducerii'},
+    {text_ro:'Programul are resurse alocate (timp de lucru dedicat, buget, suport IT)',text_en:'The program has allocated resources (dedicated work time, budget, IT support)',ref:'CDC Core Elements — Leadership',section:'1. Angajamentul conducerii'},
+    {text_ro:'Rezultatele programului sunt prezentate periodic conducerii si Comitetului de prevenire',text_en:'Program results are periodically presented to leadership and the prevention committee',ref:'CDC Core Elements — Leadership',section:'1. Angajamentul conducerii'},
+    // 2. Accountability
+    {text_ro:'Este desemnat prin decizie un responsabil (lider) al programului de stewardship',text_en:'A program leader is formally designated by written decision',ref:'CDC Core Elements — Accountability',section:'2. Responsabilitate'},
+    {text_ro:'Responsabilitatile liderului sunt descrise in fisa postului sau in decizie',text_en:'Leader responsibilities are described in the job description or decision',ref:'CDC Core Elements — Accountability',section:'2. Responsabilitate'},
+    // 3. Pharmacy expertise
+    {text_ro:'Un farmacist este desemnat co-responsabil pentru imbunatatirea prescrierii antibioticelor',text_en:'A pharmacist is designated as co-lead for improving antibiotic prescribing',ref:'CDC Core Elements — Pharmacy expertise',section:'3. Expertiza farmaceutica'},
+    {text_ro:'Farmacia furnizeaza periodic datele de consum (cantitati/DDD) catre program',text_en:'Pharmacy regularly provides consumption data (quantities/DDD) to the program',ref:'CDC Core Elements — Pharmacy expertise',section:'3. Expertiza farmaceutica'},
+    // 4. Action
+    {text_ro:'Exista ghid local de antibioterapie empirica, bazat pe antibiograma locala, actualizat in ultimele 24 de luni',text_en:'A local empiric antibiotic guideline based on the local antibiogram exists, updated in the last 24 months',ref:'CDC Core Elements — Action',section:'4. Actiuni'},
+    {text_ro:'Exista lista antibioticelor cu regim restrictionat si procedura de avizare',text_en:'A restricted antibiotic list and approval procedure exist',ref:'CDC Core Elements — Action',section:'4. Actiuni'},
+    {text_ro:'Se practica reevaluarea la 48-72h („antibiotic time-out") documentata in foaia de observatie',text_en:'A documented 48-72h review ("antibiotic time-out") is practiced in the patient chart',ref:'CDC Core Elements — Action',section:'4. Actiuni'},
+    {text_ro:'Exista protocol de trecere IV → oral pentru antibioticele cu biodisponibilitate buna',text_en:'An IV to oral switch protocol exists for antibiotics with good bioavailability',ref:'CDC Core Elements — Action',section:'4. Actiuni'},
+    {text_ro:'Profilaxia antibiotica perioperatorie este protocolizata si limitata la maximum 24h',text_en:'Perioperative antibiotic prophylaxis is protocolized and limited to max 24h',ref:'CDC Core Elements — Action',section:'4. Actiuni'},
+    // 5. Tracking
+    {text_ro:'Se monitorizeaza consumul de antibiotice in DDD/100 zile-pat, pe sectii',text_en:'Antibiotic consumption is monitored as DDD/100 bed-days, per ward',ref:'CDC Core Elements — Tracking',section:'5. Monitorizare'},
+    {text_ro:'Se monitorizeaza distributia AWaRe (Access / Watch / Reserve)',text_en:'AWaRe distribution (Access / Watch / Reserve) is monitored',ref:'CDC Core Elements — Tracking',section:'5. Monitorizare'},
+    {text_ro:'Se monitorizeaza rezistenta la antibiotice prin antibiograma locala',text_en:'Antimicrobial resistance is monitored through the local antibiogram',ref:'CDC Core Elements — Tracking',section:'5. Monitorizare'},
+    {text_ro:'Se auditeaza periodic calitatea prescrierii pe foile de observatie',text_en:'Prescribing quality is periodically audited on patient charts',ref:'CDC Core Elements — Tracking',section:'5. Monitorizare'},
+    // 6. Reporting
+    {text_ro:'Datele de consum si rezistenta sunt raportate periodic medicilor prescriptori si sefilor de sectie',text_en:'Consumption and resistance data are periodically reported to prescribers and ward heads',ref:'CDC Core Elements — Reporting',section:'6. Raportare'},
+    {text_ro:'Consumul clasificat AWaRe este publicat conform cerintelor legale',text_en:'AWaRe-classified consumption is published per legal requirements',ref:'CDC Core Elements — Reporting',section:'6. Raportare'},
+    // 7. Education
+    {text_ro:'Personalul medical este instruit anual privind utilizarea judicioasa a antibioticelor',text_en:'Medical staff receive annual training on judicious antibiotic use',ref:'CDC Core Elements — Education',section:'7. Educatie'},
+    {text_ro:'Exista materiale informative privind rezistenta la antibiotice pentru pacienti/apartinatori',text_en:'Informational materials on antibiotic resistance exist for patients/families',ref:'CDC Core Elements — Education',section:'7. Educatie'}
   ]
 };
 
@@ -14341,6 +15110,7 @@ async function rAudit(el){
   if(_auditView==='dotare')return _renderDotareAudit(el,_dotareEditId);
   if(_auditView==='agregat')return _renderAgregatAudit(el,_agregatEditId);
   if(_auditView==='custom')return _renderCustomAudit(el,_customEditId);
+  if(_auditView==='atb_fo')return _renderFoAudit(el,_foEditId);
 
   // ── LIST VIEW ──
   var allData=(await ga('audits')).filter(r=>r.year===A.year);
@@ -14438,7 +15208,8 @@ function _startNewAudit(ipcCatId){
   if(at==='igm'){_igmEditId=null;_igmSecs=[];_auditView='igm';render();return}
   if(at==='dotare_igiena'){_dotareEditId=null;_dotareData={catId:ipcCatId,sections:{}};_auditView='dotare';render();return}
   if(at==='agregat'){_agregatEditId=null;_agregatData={catId:ipcCatId};_auditView='agregat';render();return}
-  if(at==='curatenie'||at==='rotatie_biocide'||at==='sterilizare'||at==='preoperator'||at==='deseuri'){
+  if(at==='atb_fo'){_foEditId=null;_foRows=[_foMkRow()];_foMeta={};_auditView='atb_fo';_foCatId=ipcCatId;render();return}
+  if(at==='curatenie'||at==='rotatie_biocide'||at==='sterilizare'||at==='preoperator'||at==='deseuri'||at==='stewardship'){
     _genEditId=null;
     _genItems=(AUDIT_ITEMS[at]||[]).map((it,i)=>({id:genId('gi'),text_ro:it.text_ro,text_en:it.text_en,ref:it.ref||'',section:it.section||'',result:'',note:''}));
     _auditView='generic';_genEditCatId=ipcCatId;render();return;
@@ -14459,7 +15230,8 @@ async function _editExistingAudit(id){
   if(at==='igm'){_igmEditId=id;_igmSecs=JSON.parse(JSON.stringify(r.sections||[]));_auditView='igm';render();return}
   if(at==='dotare_igiena'){_dotareEditId=id;_dotareData=JSON.parse(JSON.stringify(r));_auditView='dotare';render();return}
   if(at==='agregat'){_agregatEditId=id;_agregatData=JSON.parse(JSON.stringify(r));_auditView='agregat';render();return}
-  if(at==='curatenie'||at==='rotatie_biocide'||at==='sterilizare'||at==='preoperator'||at==='deseuri'){
+  if(at==='atb_fo'){_foEditId=id;_foRows=JSON.parse(JSON.stringify(r.rows||[]));_foMeta={};_foCatId=r.audit_type;_auditView='atb_fo';render();return}
+  if(at==='curatenie'||at==='rotatie_biocide'||at==='sterilizare'||at==='preoperator'||at==='deseuri'||at==='stewardship'){
     _genEditId=id;_genItems=JSON.parse(JSON.stringify(r.items||[]));_genEditCatId=r.audit_type;_auditView='generic';render();return;
   }
   if(at&&at.startsWith('hii_')&&HII_ITEMS[at]){
@@ -14469,7 +15241,7 @@ async function _editExistingAudit(id){
   _customEditId=id;_customItems=JSON.parse(JSON.stringify(r.items||[]));_customCatId=r.audit_type;_auditView='custom';render();
 }
 
-function _backToList(){_auditView='list';_igmEditId=null;_genEditId=null;_dotareEditId=null;_agregatEditId=null;_customEditId=null;render()}
+function _backToList(){_auditView='list';_igmEditId=null;_genEditId=null;_dotareEditId=null;_agregatEditId=null;_customEditId=null;_foEditId=null;render()}
 
 // ═══════════════════════════════════════════════════════════════
 // TIP A: HAND HYGIENE AUDIT (WHO 5 Moments with calups)
@@ -14751,6 +15523,15 @@ async function _renderGenericAudit(el,id){
     var secB=_genItems.filter(it=>it.section==='B');
     h+=_genSectionHTML(T('aud_sect_a')+': Procesul de sterilizare',secA,'A');
     h+=_genSectionHTML(T('aud_sect_b')+': Reprocesare instrumente',secB,'B');
+  } else if(at==='stewardship'){
+    // v13.55 - cele 7 elemente CDC sunt grupuri cu titlu propriu; eticheta e chiar it.section.
+    // Gruparea e limitata la stewardship intentionat: grilele HII au si ele it.section, dar
+    // se afiseaza plat de la introducerea lor si nu le schimb aspectul fara ca userul sa ceara.
+    var groups=[];
+    _genItems.forEach(function(it){var s=it.section||'Altele';if(groups.indexOf(s)<0)groups.push(s)});
+    groups.forEach(function(g){
+      h+=_genSectionHTML(esc(g),_genItems.filter(function(it){return (it.section||'Altele')===g}),g);
+    });
   } else {
     h+=_genSectionHTML(esc(catName),_genItems,'');
   }
@@ -14791,7 +15572,7 @@ function _genSectionHTML(title,items,sectionId){
       '<div style="width:24px"><button onclick="_genRemoveItem('+globalIdx+')" title="Sterge intrebare" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px;padding:2px">&#128465;</button></div>'+
     '</div>';
   });
-  h+='<div style="margin-top:8px"><button class="btn bo bsm" onclick="_genAddItem('+(sectionId?"\'"+sectionId+"\'":"''")+')">+ Adauga intrebare</button></div>';
+  h+='<div style="margin-top:8px"><button class="btn bo bsm" onclick="_genAddItem('+(sectionId?"\'"+String(sectionId).replace(/'/g,"\\'")+"\'":"''")+')">+ Adauga intrebare</button></div>';
   h+='</div></div>';
   return h;
 }
@@ -15656,6 +16437,205 @@ async function genIgmBlankForm(){
     await saveDocx(doc,'Fisa_Audit_Igiena_Mainilor.docx');
   }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
   finally{hideGen()}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// v13.55 — AUDIT CLINIC AL FOILOR DE OBSERVATIE (prescrieri de antibiotice)
+// Indicatorii de calitate ECDC PPS / Global-PPS. Spre deosebire de grilele generice
+// (o intrebare = un raspuns), aici UNITATEA AUDITATA E PRESCRIPTIA: fiecare rand din
+// tabel e o prescriptie din foaia de observatie, evaluata pe cei 7 indicatori.
+// De aceea are view propriu si nu se poate turna in AUDIT_ITEMS.
+// ═══════════════════════════════════════════════════════════════
+var _foRows=[],_foEditId=null,_foCatId='',_foMeta={};
+
+const FO_IND=[
+  {id:'doc',    ro:'Indicatia documentata in FO', en:'Indication documented',    tip:'Motivul prescrierii este scris in foaia de observatie'},
+  {id:'stop',   ro:'Data stop / reevaluare',      en:'Stop / review date',       tip:'Exista data de oprire sau de reevaluare consemnata'},
+  {id:'ghid',   ro:'Conform ghidului local',      en:'Guideline compliant',      tip:'Alegerea, doza si durata respecta ghidul local de antibioterapie'},
+  {id:'cultura',ro:'Proba microbiologica inainte',en:'Sample before start',      tip:'S-a recoltat proba microbiologica inainte de prima doza'},
+  {id:'reeval', ro:'Reevaluare la 48-72h',        en:'48-72h review',            tip:'Reevaluarea terapiei la 48-72h e consemnata in FO'},
+  {id:'ivpo',   ro:'Trecere IV la oral evaluata', en:'IV to oral assessed',      tip:'S-a evaluat trecerea la forma orala cand pacientul o permitea'},
+  {id:'profil', ro:'Profilaxie chirurgicala sub 24h',en:'Surgical prophylaxis <=24h',tip:'Profilaxia perioperatorie nu depaseste 24 de ore (N/A daca nu e profilaxie)'}
+];
+const FO_TIP_PRESC=[
+  {v:'empiric',ro:'Empiric',en:'Empiric'},
+  {v:'tintit',ro:'Tintit (dupa antibiograma)',en:'Targeted'},
+  {v:'profilaxie_chir',ro:'Profilaxie chirurgicala',en:'Surgical prophylaxis'},
+  {v:'profilaxie_med',ro:'Profilaxie medicala',en:'Medical prophylaxis'}
+];
+
+function _foMkRow(){var r={id:genId('fo'),fo:'',atc:'',atb:'',tip:'empiric',note:''};FO_IND.forEach(function(i){r[i.id]=''});return r}
+function _foIndLabel(i){return (CFG.lang==='en')?i.en:i.ro}
+
+// Scor: NA nu intra in numitor (indicatorul nu era aplicabil prescriptiei).
+function _foScore(rows){
+  var per={},totC=0,totEval=0;
+  FO_IND.forEach(function(i){per[i.id]={c:0,eval:0}});
+  (rows||[]).forEach(function(r){
+    FO_IND.forEach(function(i){
+      var v=r[i.id];
+      if(v==='C'||v==='NC'){per[i.id].eval++;totEval++;if(v==='C'){per[i.id].c++;totC++}}
+    });
+  });
+  return {per:per,conform:totC,evaluate:totEval,pct:totEval>0?Math.round(totC/totEval*1000)/10:null};
+}
+
+async function _renderFoAudit(el,id){
+  var isEN=CFG.lang==='en';
+  var r=null;
+  if(id){r=(await ga('audits')).find(function(x){return x.id===id});if(r&&!_foRows.length)_foRows=JSON.parse(JSON.stringify(r.rows||[]))}
+  if(!r)r={date:new Date().toISOString().slice(0,10),auditor:'',section:'',observations:'',recommendations:'',measures:'',measure_deadline:'',measure_responsible:''};
+  if(!_foRows.length)_foRows=[_foMkRow()];
+
+  var catName=_audCatName(_foCatId);
+  var sc=_foScore(_foRows);
+
+  var h='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'+
+    '<button class="btn bo bsm" onclick="_backToList()">&#8592; '+T('aud_inapoi')+'</button>'+
+    '<h3 style="margin:0;color:'+_audCatColor(_foCatId)+'">'+esc(catName)+'</h3></div>';
+
+  h+='<div class="ib inf">'+(isEN
+    ?'Each row is one antibiotic prescription reviewed in a patient chart. Quality indicators: ECDC PPS / Global-PPS. N/A answers are excluded from the denominator.'
+    :'Fiecare rand este o prescriptie de antibiotic verificata intr-o foaie de observatie. Indicatori de calitate: ECDC PPS / Global-PPS. Raspunsurile N/A nu intra in numitor.')+'</div>';
+
+  h+='<div class="pn"><div class="ph"><h3>'+(isEN?'Identification':'Date identificare')+'</h3></div><div class="pb">'+
+    '<div class="fr">'+
+      '<div class="fg"><label>'+T('aud_data')+'</label><input type="date" id="f-fo-date" value="'+(r.date||'')+'"></div>'+
+      '<div class="fg"><label>'+T('aud_sectie')+'</label><select id="f-fo-sec"><option value="">-</option>'+secOptsGrouped(r.section)+'</select></div>'+
+      '<div class="fg"><label>'+T('aud_auditor')+'</label><select id="f-fo-auditor"><option value="">-</option>'+_persOpts(r.auditor)+'</select></div>'+
+    '</div></div></div>';
+
+  h+='<div class="kg" style="margin:12px 0"><div class="kc '+(sc.pct===null?'tl':(sc.pct>=80?'gn':(sc.pct>=60?'am':'rd')))+'">'+
+    '<div class="kl">'+(isEN?'Overall compliance':'Conformitate globala')+'</div>'+
+    '<div class="kv" id="fo-pct">'+(sc.pct===null?'—':sc.pct+'%')+'</div>'+
+    '<div class="ks" id="fo-sub">'+sc.conform+'/'+sc.evaluate+' '+(isEN?'answers':'raspunsuri')+'</div></div>'+
+    '<div class="kc bl"><div class="kl">'+(isEN?'Prescriptions reviewed':'Prescriptii verificate')+'</div><div class="kv" id="fo-n">'+_foRows.length+'</div></div></div>';
+
+  h+='<div class="pn"><div class="ph"><h3>'+(isEN?'Reviewed prescriptions':'Prescriptii auditate')+'</h3></div><div class="pb">';
+  h+='<div style="overflow-x:auto"><table class="dt" style="font-size:11px;min-width:900px"><thead><tr>'+
+    '<th style="width:80px">Nr. FO</th><th style="width:150px">Antibiotic</th>'+
+    '<th style="width:110px">'+(isEN?'Type':'Tip')+'</th>'+
+    FO_IND.map(function(i){return '<th style="min-width:78px" title="'+esc(i.tip)+'">'+esc(_foIndLabel(i))+'</th>'}).join('')+
+    '<th style="width:110px">'+T('aud_nota')+'</th><th style="width:26px"></th></tr></thead><tbody id="fo-tb">';
+  h+=_foRowsHTML();
+  h+='</tbody></table></div>';
+  h+='<div style="margin-top:10px"><button class="btn bo bsm" onclick="_foAddRow()">+ '+(isEN?'Add prescription':'Adauga prescriptie')+'</button></div>';
+  h+='</div></div>';
+
+  h+='<div class="pn" style="margin-top:12px"><div class="ph"><h3>'+(isEN?'Result per indicator':'Rezultat pe indicator')+'</h3></div>'+
+    '<div class="pb"><div id="fo-ind-tbl">'+_foIndTableHTML(sc)+'</div></div></div>';
+
+  h+='<div class="pn" style="margin-top:12px"><div class="ph"><h3>'+T('aud_observatii')+' / '+T('aud_recomandari')+'</h3></div><div class="pb">'+
+    '<div class="fr"><div class="fg"><label>'+T('aud_observatii')+'</label><textarea id="f-fo-obs" rows="2">'+esc(r.observations||'')+'</textarea></div>'+
+    '<div class="fg"><label>'+T('aud_recomandari')+'</label><textarea id="f-fo-rec" rows="2">'+esc(r.recommendations||'')+'</textarea></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+T('aud_masuri_corective')+'</label><textarea id="f-fo-measures" rows="2">'+esc(r.measures||'')+'</textarea></div>'+
+    '<div class="fg"><label>'+T('aud_termen')+'</label><input type="date" id="f-fo-deadline" value="'+(r.measure_deadline||'')+'"></div>'+
+    '<div class="fg"><label>'+T('aud_responsabil')+'</label><input id="f-fo-resp" value="'+esc(r.measure_responsible||'')+'"></div></div></div></div>';
+
+  h+='<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
+    '<button class="btn bp" onclick="_saveFoAudit()" style="background:#16A34A;border-color:#16A34A">'+(isEN?'Save audit':'Salveaza audit')+'</button>'+
+    '<button class="btn bo" onclick="_backToList()">'+T('btn_cancel')+'</button></div>';
+
+  el.innerHTML=h;
+}
+
+function _foRowsHTML(){
+  return _foRows.map(function(row,idx){
+    var opts='<option value="">-</option>';
+    (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(function(g){
+      opts+='<optgroup label="'+esc(g.g)+'">';
+      g.items.forEach(function(it){opts+='<option value="'+it.a+'"'+(it.a===row.atc?' selected':'')+'>'+esc(it.n)+'</option>'});
+      opts+='</optgroup>';
+    });
+    var tipH=FO_TIP_PRESC.map(function(t){return '<option value="'+t.v+'"'+(t.v===row.tip?' selected':'')+'>'+esc(CFG.lang==='en'?t.en:t.ro)+'</option>'}).join('');
+    var cells=FO_IND.map(function(i){
+      var v=row[i.id]||'';
+      // &quot; in atributul onclick: browserul il decodeaza in " inainte de a parsa JS-ul,
+      // deci scap de scaparea de apostrofuri in sir imbricat in sir.
+      var btn=function(val,cls,lbl,ttl){
+        return '<span class="aud-gen-btn'+(v===val?' '+cls:'')+'" style="width:24px;height:22px;line-height:22px"'+
+          ' onclick="_foSet('+idx+',&quot;'+i.id+'&quot;,&quot;'+val+'&quot;)" title="'+ttl+'">'+lbl+'</span>';
+      };
+      return '<td style="text-align:center;padding:3px"><div class="aud-gen-btns" style="justify-content:center">'+
+        btn('C','c-on','D','Da / conform')+btn('NC','nc-on','N','Nu / neconform')+btn('NA','na-on','-','Nu se aplica')+
+      '</div></td>';
+    }).join('');
+    return '<tr>'+
+      '<td><input value="'+esc(row.fo||'')+'" oninput="_foRows['+idx+'].fo=this.value" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
+      '<td><select onchange="_foSetAtb('+idx+',this.value)" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'+opts+'</select></td>'+
+      '<td><select onchange="_foRows['+idx+'].tip=this.value" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px">'+tipH+'</select></td>'+
+      cells+
+      '<td><input value="'+esc(row.note||'')+'" oninput="_foRows['+idx+'].note=this.value" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
+      '<td><button class="btn-x" onclick="_foRemRow('+idx+')" title="Sterge prescriptia">&times;</button></td></tr>';
+  }).join('');
+}
+
+function _foIndTableHTML(sc){
+  var isEN=CFG.lang==='en';
+  var h='<table class="dt" style="font-size:12px"><thead><tr><th>Indicator</th>'+
+    '<th style="width:90px">'+(isEN?'Compliant':'Conforme')+'</th><th style="width:90px">'+(isEN?'Evaluated':'Evaluate')+'</th>'+
+    '<th style="width:90px">%</th></tr></thead><tbody>';
+  FO_IND.forEach(function(i){
+    var p=sc.per[i.id];
+    var pct=p.eval>0?Math.round(p.c/p.eval*1000)/10:null;
+    var col=pct===null?'var(--txtL)':(pct>=80?'var(--green)':(pct>=60?'#BA7517':'var(--red)'));
+    h+='<tr><td>'+esc(_foIndLabel(i))+'<div style="font-size:10px;color:var(--txtL)">'+esc(i.tip)+'</div></td>'+
+      '<td>'+p.c+'</td><td>'+p.eval+'</td>'+
+      '<td style="font-weight:700;color:'+col+'">'+(pct===null?'—':pct+'%')+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  return h;
+}
+
+// Redesenez doar ce se schimba (tbody + scoruri), nu toata pagina prin render(): altfel
+// s-ar pierde focusul din inputurile de Nr. FO / nota in timp ce userul scrie in ele.
+function _foRefreshScore(){
+  var sc=_foScore(_foRows);
+  var p=document.getElementById('fo-pct'),s=document.getElementById('fo-sub'),n=document.getElementById('fo-n'),t=document.getElementById('fo-ind-tbl');
+  if(p)p.textContent=(sc.pct===null?'—':sc.pct+'%');
+  if(s)s.textContent=sc.conform+'/'+sc.evaluate+' '+(CFG.lang==='en'?'answers':'raspunsuri');
+  if(n)n.textContent=_foRows.length;
+  if(t)t.innerHTML=_foIndTableHTML(sc);
+}
+function _foRedrawRows(){var tb=document.getElementById('fo-tb');if(tb)tb.innerHTML=_foRowsHTML();_foRefreshScore()}
+function _foSet(idx,ind,val){
+  if(!_foRows[idx])return;
+  _foRows[idx][ind]=(_foRows[idx][ind]===val)?'':val;
+  _foRedrawRows();
+}
+function _foSetAtb(idx,atc){
+  if(!_foRows[idx])return;
+  _foRows[idx].atc=atc;
+  _foRows[idx].atb=atc?((typeof atbName==='function')?atbName(atc):atc):'';
+}
+function _foAddRow(){_foRows.push(_foMkRow());_foRedrawRows()}
+function _foRemRow(idx){
+  if(_foRows.length<=1){_foRows=[_foMkRow()];_foRedrawRows();return}
+  _foRows.splice(idx,1);_foRedrawRows();
+}
+
+async function _saveFoAudit(){
+  var v=function(s){var el=document.getElementById(s);return el?el.value:''};
+  var date=v('f-fo-date');if(!date){alert('Selectati data.');return}
+  var sec=v('f-fo-sec');if(!sec){alert('Selectati sectia.');return}
+  var rows=_foRows.filter(function(r){
+    return (r.fo||'').trim()||r.atc||FO_IND.some(function(i){return r[i.id]});
+  });
+  if(!rows.length){alert(CFG.lang==='en'?'Add at least one prescription.':'Adaugati cel putin o prescriptie.');return}
+  var sc=_foScore(rows);
+  var rec={year:A.year,audit_type:_foCatId,section:sec,date:date,auditor:v('f-fo-auditor'),
+    rows:JSON.parse(JSON.stringify(rows)),
+    // compliance_pct / total_items / conform_items pastreaza numele folosite de lista de audituri,
+    // de KPI-uri si de auto-calculul obiectivelor - grila noua se integreaza fara cod suplimentar.
+    compliance_pct:(sc.pct===null?0:sc.pct),total_items:sc.evaluate,conform_items:sc.conform,
+    n_prescriptions:rows.length,
+    observations:v('f-fo-obs').trim(),recommendations:v('f-fo-rec').trim(),
+    measures:v('f-fo-measures').trim(),measure_deadline:v('f-fo-deadline'),measure_responsible:v('f-fo-resp').trim(),
+    created_at:new Date().toISOString()};
+  if(_foEditId)rec.id=_foEditId;
+  await pt('audits',rec);
+  logActivity((_foEditId?'Editat':'Adaugat')+' audit clinic FO antibiotice - '+rows.length+' prescriptii, '+(sc.pct===null?'-':sc.pct+'%'));
+  _backToList();
 }
 
 </script>
@@ -16678,7 +17658,7 @@ async function genAnchetaWord(id){
   ch.push(wH1('I. DATE PACIENT'),wSp(40));
   ch.push(T1([
     kvRow('Pacient (initiale)',dsh(r.patient)),kvRow('Data nasterii',r.date_of_birth?fmtDate(r.date_of_birth):'—'),
-    kvRow('Varsta',r.age?r.age+' ani':'—'),kvRow('Sex',dsh(r.sex)),
+    kvRow('Varsta',(typeof ageLabel==='function'?ageLabel(r):(r.age?r.age+' ani':'—'))),kvRow('Sex',dsh(r.sex)),
     kvRow('Mediu',dsh(r.mediu)),
     kvRow('Nr. inregistrare (registru)',dsh(r.reg_number)),kvRow('Nr. foaie observatie (FO)',dsh(r.fo_number)),
     kvRow('Medic curant',dsh(r.doctor)),kvRow('Domiciliu',dsh(r.domiciliu)),
@@ -17592,7 +18572,7 @@ async function genRegistruIAAMExcel(){
     const mdrTypes=hasGerm?r.germeni.filter(g=>g.mdr&&g.mdr!=='Nu').map(g=>g.mdr).join(', '):'';
     const probeTypes=(r.germeni||[]).map(g=>g.probe_type||'').filter(Boolean).join(', ');
     rows.push([
-      i+1,rSec(r.section),r.fo_number||'',r.age||'',r.sex||'',
+      i+1,rSec(r.section),r.fo_number||'',(typeof ageLabel==='function'?ageLabel(r):(r.age||'')),r.sex||'',
       r.date_admission?fmtDate(r.date_admission):'',r.date_confirmed?fmtDate(r.date_confirmed):'',
       detLabel(r.detection),hasGerm?'Da':'Nu',germNames,
       r.mdr?'Da':'Nu',mdrTypes,probeTypes,
@@ -18610,11 +19590,13 @@ async function rCfg(el){
       ['cfg-risk',isEN?'IAAM Risk Factors':'Factori de Risc IAAM'],
       ['cfg-comorb',isEN?'IAAM Comorbidities':'Comorbidități IAAM'],
       ['cfg-disp',isEN?'IAAM Invasive Devices':'Dispozitive Invazive IAAM'],
+      ['cfg-devdays',isEN?'Device-days (denominators)':'Zile-dispozitiv (numitori)'],
       ['cfg-probe',isEN?'Autocontrol Sample Types':'Tipuri Probe Autocontrol'],
       ['cfg-probe-map',isEN?'Applicable Samples per Section':'Probe Aplicabile per Secție'],
       ['cfg-atp',isEN?'ATP/UV Surfaces':'Suprafețe ATP/UV'],
       ['cfg-lab',isEN?'Lab Samples (Antibiogram)':'Tipuri Probe Laborator (Antibiograma)'],
       ['cfg-atb-custom',isEN?'Custom Antibiotics':'Antibiotice Personalizate'],
+      ['cfg-atb-restricted',isEN?'Restricted Antibiotics':'Antibiotice cu Avizare'],
       ['cfg-ipc',isEN?'IPC Categories (Audits + SMART)':'Categorii IPC (Audituri + Obiective SMART)'],
       ['cfg-prof',isEN?'Professional Categories (Hand Hygiene)':'Categorii Profesionale (Audit Igienă Mâini)'],
       ['cfg-bio',isEN?'Biocide Products':'Produse Biocide'],
@@ -18764,6 +19746,20 @@ async function rCfg(el){
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-dev" placeholder="Dispozitiv invaziv nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-dev\').value.trim();if(v){if(!CFG.devices_config)CFG.devices_config=[];CFG.devices_config.push({name:v,pinned:false});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
+  // v13.53 - dispozitive pentru care se colecteaza zile-dispozitiv (numitorul ratelor la 1000 zile-dispozitiv)
+  '<div class="pn" id="cfg-devdays"><div class="ph"><h3>'+(isEN?'Device-days (denominators)':'Zile-dispozitiv (numitori)')+'</h3></div><div class="pb">'+
+    '<div class="ib inf" style="margin-bottom:10px">'+(isEN
+      ?'Devices for which monthly device-days are collected in Hospital Statistics. These are the denominators for device-associated infection rates per 1000 device-days. Aggregate monthly totals only — no patient-level tracking.'
+      :'Dispozitivele pentru care se introduc zile-dispozitiv lunar in Statistici Spital. Sunt numitorii pentru ratele de infectie asociata dispozitivului la 1000 zile-dispozitiv. Se introduc doar totaluri lunare agregate — nu se urmareste niciun pacient.')+'</div>'+
+    '<div class="tag-list">'+(CFG.device_day_types||[]).map(function(d,i){
+      return '<span class="tag">'+esc(d.name||d.id)+(d.short?' <span style="font-size:9px;opacity:.7">('+esc(d.short)+')</span>':'')+
+      '<span class="tag-x" onclick="renameCfgItem(\'device_day_types\','+i+',\'dispozitivul\')" title="Redenumeste" style="color:#2563B0;margin-right:4px">&#9998;</span>'+
+      '<span class="tag-x" onclick="CFG.device_day_types.splice('+i+',1);saveCfg();render()" title="Sterge">&#215;</span></span>';
+    }).join('')+'</div>'+
+    '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-devday" placeholder="ex: Cateter venos periferic (CVP)"></div>'+
+    '<div><button class="btn bp" onclick="addDeviceDayType()" style="margin-top:22px">+ Adauga</button></div></div>'+
+  '</div></div>'+
+
     // ═══ GRUPUL 2: AUTOCONTROL ═══
   '<div class="pn" id="cfg-probe"><div class="ph"><h3>'+(isEN?'Autocontrol Sample Types':'Tipuri Probe Autocontrol')+'</h3></div><div class="pb">'+
     // v13.29 - editare in-place a numelui tipului de proba (click pe pencil ✎)
@@ -18832,6 +19828,29 @@ async function rCfg(el){
       '<div class="fg" style="max-width:110px"><label>DDD (g, optional)</label><input type="number" id="new-atb-ddd" step="0.01" min="0" placeholder="ex: 2"></div></div>'+
       '<button class="btn bp" style="margin-top:10px" onclick="addCustomAtb()">+ Adauga antibiotic</button>'+
     '</div>'+
+  '</div></div>'+
+
+  // v13.55 - antibiotice cu regim restrictionat (necesita avizare). Lista e o decizie a
+  // spitalului, de aceea e goala implicit; butonul incarca sugestia WHO Reserve la cerere.
+  '<div class="pn" id="cfg-atb-restricted"><div class="ph"><h3>'+(isEN?'Restricted Antibiotics':'Antibiotice cu Avizare')+'</h3></div><div class="pb">'+
+    '<div class="ib inf" style="margin-bottom:10px">'+(isEN?'Antibiotics that require prior approval before prescribing. They appear in Antibiotic Consumption with an approval register, and in the stewardship audit grid.':'Antibiotice care necesita avizare inainte de prescriere. Apar in modulul Consum Antibiotice cu registrul avizarilor si in grila de audit stewardship. Lista e o decizie a spitalului — o poti porni de la sugestia WHO Reserve si o ajustezi.')+'</div>'+
+    ((CFG.atb_restricted||[]).length?('<table class="dt" style="font-size:12px"><thead><tr><th>'+(isEN?'Antibiotic':'Antibiotic')+'</th><th style="width:110px">Cod ATC</th><th style="width:80px">AWaRe</th><th>'+(isEN?'Approved by':'Avizeaza')+'</th><th style="width:40px">&#215;</th></tr></thead><tbody>'+
+      (CFG.atb_restricted||[]).map(function(x,i){
+        var aw=(typeof atbAWaRe==='function'&&x.atc)?atbAWaRe(x.atc):'X';
+        return '<tr><td>'+esc(x.name||'')+'</td><td style="font-family:monospace;font-size:11px">'+esc(x.atc||'—')+'</td>'+
+          '<td style="text-align:center"><span class="bdg '+(aw==='A'?'bdg-g':aw==='W'?'bdg-b':aw==='R'?'bdg-r':'')+'" style="font-size:10px">'+esc(aw)+'</span></td>'+
+          '<td><input value="'+esc(x.approver||'')+'" placeholder="'+(isEN?'e.g. Infectious diseases specialist':'ex: Medic infectionist')+'" onchange="CFG.atb_restricted['+i+'].approver=this.value.trim();saveCfg()" style="width:100%;padding:3px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
+          '<td class="act"><button onclick="CFG.atb_restricted.splice('+i+',1);saveCfg();render()">&#128465;</button></td></tr>';
+      }).join('')+'</tbody></table>')
+      :'<div class="es"><p>'+(isEN?'No restricted antibiotics defined.':'Niciun antibiotic cu avizare definit.')+'</p></div>')+
+    '<div style="margin-top:12px;padding:12px;background:var(--bg);border:1px solid var(--brd);border-radius:8px">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px">&#10133; '+(isEN?'Add antibiotic':'Adauga antibiotic')+'</div>'+
+      '<div class="fr"><div class="fg"><label>'+(isEN?'Antibiotic':'Antibiotic')+'</label><select id="new-restr-atc">'+atbOptsFlat('')+'</select></div>'+
+      '<div class="fg"><label>'+(isEN?'Approved by':'Avizeaza')+'</label><input id="new-restr-apr" placeholder="'+(isEN?'e.g. Infectious diseases specialist':'ex: Medic infectionist')+'"></div></div>'+
+      '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+
+        '<button class="btn bp" onclick="addRestrictedAtb()">+ '+(isEN?'Add':'Adauga')+'</button>'+
+        '<button class="btn bo" onclick="loadSuggestedRestrictedAtb()" title="'+(isEN?'Load the WHO Reserve group + carbapenems as a starting point':'Incarca grupa WHO Reserve + carbapenemele ca punct de plecare')+'">'+(isEN?'Load WHO Reserve suggestion':'Incarca sugestia WHO Reserve')+'</button>'+
+      '</div></div>'+
   '</div></div>'+
 
     // ═══ GRUPUL 4: AUDITURI & CALITATE ═══
@@ -19116,6 +20135,18 @@ async function fullReset(){
   location.reload();
 }
 
+// v13.53 - adauga un dispozitiv pentru care se colecteaza zile-dispozitiv
+function addDeviceDayType(){
+  var inp=document.getElementById('new-devday');if(!inp||!inp.value.trim())return;
+  var v=inp.value.trim();
+  if(!Array.isArray(CFG.device_day_types))CFG.device_day_types=[];
+  if(CFG.device_day_types.some(function(d){return (d.name||'').toLowerCase()===v.toLowerCase()})){alert('Exista deja acest dispozitiv.');return}
+  CFG.device_day_types.push({id:genId('dd'),name:v,short:''});
+  saveCfg();
+  if(typeof logActivity==='function')logActivity('Adaugat dispozitiv pentru zile-dispozitiv — '+v);
+  render();
+}
+
 // v13.45 - adauga antibiotic personalizat in CFG.custom_antibiotics. Apare in toate modulele ATB.
 function addCustomAtb(){
   var isEN=CFG.lang==='en';
@@ -19322,6 +20353,43 @@ async function renameCfgItem(arrName,idx,labelFriendly){
   if(typeof showToast==='function')showToast('Redenumit "'+oldName+'" -> "'+newName+'"');
   if(typeof logActivity==='function')logActivity('Redenumit '+arrName+': '+oldName+' -> '+newName);
   render();
+}
+
+// v13.55 - lista plata de antibiotice pentru select-uri simple (fara optgroup-uri)
+function atbOptsFlat(sel){
+  var h='<option value="">— selecteaza —</option>';
+  (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(function(g){
+    h+='<optgroup label="'+esc(g.g)+'">';
+    g.items.forEach(function(it){h+='<option value="'+it.a+'"'+(it.a===sel?' selected':'')+'>'+esc(it.n)+'</option>'});
+    h+='</optgroup>';
+  });
+  return h;
+}
+function addRestrictedAtb(){
+  var sel=document.getElementById('new-restr-atc');
+  var apr=document.getElementById('new-restr-apr');
+  var atc=sel?sel.value:'';
+  if(!atc){alert(CFG.lang==='en'?'Select an antibiotic.':'Selecteaza antibioticul.');return}
+  if(!Array.isArray(CFG.atb_restricted))CFG.atb_restricted=[];
+  if(CFG.atb_restricted.some(function(x){return x.atc===atc})){
+    alert(CFG.lang==='en'?'Already in the list.':'Antibioticul este deja in lista.');return;
+  }
+  CFG.atb_restricted.push({atc:atc,name:atbName(atc),approver:apr?apr.value.trim():''});
+  saveCfg();render();
+}
+function loadSuggestedRestrictedAtb(){
+  var isEN=CFG.lang==='en';
+  if(!confirm(isEN
+    ?'Load the suggested list (WHO Reserve + carbapenems)? Existing entries are kept.'
+    :'Incarci lista sugerata (grupa WHO Reserve + carbapeneme)? Ce ai deja in lista se pastreaza.'))return;
+  if(!Array.isArray(CFG.atb_restricted))CFG.atb_restricted=[];
+  var added=0;
+  _ATB_RESTRICTED_SUGGESTED.forEach(function(s){
+    if(CFG.atb_restricted.some(function(x){return x.atc===s.atc}))return;
+    CFG.atb_restricted.push({atc:s.atc,name:s.name,approver:''});added++;
+  });
+  saveCfg();render();
+  if(typeof showToast==='function')showToast(added+(isEN?' antibiotics added. Set the approver for each.':' antibiotice adaugate. Completeaza cine avizeaza pentru fiecare.'));
 }
 
 </script>
@@ -20666,6 +21734,9 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.55',date:'2026-07-28',summary:"Antibiotice — cerintele noului ordin. Consum Antibiotice: defalcare pe MEDIC CURANT (camp nou + coloana la import), panou „Durata medie a terapiei\" calculat din fisele IAAM, si registrul avizarilor pentru antibioticele cu regim restrictionat (lista configurabila, cu sugestie WHO Reserve). Audituri IPC: doua grile noi — „Audit program stewardship ATB\" (cele 7 elemente CDC Core Elements) si „Audit clinic FO — antibiotice\" (cei 7 indicatori de calitate ECDC/Global-PPS, evaluati prescriere cu prescriere)."},
+  {version:'13.54',date:'2026-07-28',summary:"Fisa de caz IAAM aliniata la noul ordin: varsta in LUNI pentru sugarii sub 1 an (camp care apare doar cand varsta e 0, calculat automat din data nasterii) si bloc de VALIDARE CPIAAM la pasul 10 (validat de + data validarii). Detectarea focarelor: pragul trece de la 2 la minim 3 cazuri cu aceeasi etiologie, configurabil din Setari. Calendar: buton „Termene conform OMS\" care creeaza automat cele 5 raportari cu termenele impuse."},
+  {version:'13.53',date:'2026-07-28',summary:'Statistici Spital: coloană „Pacienți internați" și secțiune „Zile-dispozitiv" (dispozitive configurabile) — numitorii ceruți de noul ordin MS. Secțiune nouă de Indicatori: incidența la 100 externați anual/trimestrial/per secție, rata de atac MRSA la 100 internați, rate la 1000 zile-dispozitiv. Buton „Export pentru site" cu indicatori + AWaRe, obligatoriu conform ordinului.'},
   {version:'13.52',date:'2026-07-28',summary:'Ghid Biocide — 3 formate: „Vezi / Print" (ca înainte), „Word" (.docx editabil) și „HTML" (descărcare fișier). Plus: poți adăuga instrucțiuni interne proprii și lista procedurilor operaționale de referință, care apar ca secțiuni în ghid. Se salvează în configurare, nu trebuie rescrise.'},
   {version:'13.51',date:'2026-07-28',summary:'FIX IMPORTANT: o raportare „Singulara” sau „Perioada definita” era salvată ca repetitivă — apărea în „Raportări Repetitive” cu 0/0 instanțe, lipsea din „Raportări Singulare” și NU era numărată la „Următoarele 30 zile” / „Depășite”, nici nu genera notificare. Se repară automat. Plus: raportările singulare cu dată de început afișează acum toată fereastra (ex. 28.07 — 09.08).'},
   {version:'13.50',date:'2026-07-28',summary:'MODUL NOU „Focare”: registru cu germen, secții, perioadă, status, cazuri IAAM legate, curbă epidemică și plan de măsuri cu responsabil/termen. Detectare automată a cazurilor cu același germen în aceeași secție la sub 30 zile, cu buton „Declară focar”. Raport Word de focar. Fix: alerta de cluster din Cronologie grupa doar pe germen (fals-pozitive între secții). Fix: pe graficul Dashboard limitele de control se suprapuneau cu media când variația e zero.'},

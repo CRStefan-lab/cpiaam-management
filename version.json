@@ -1,9 +1,11 @@
 {
-  "version": "13.52",
+  "version": "13.55",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Ghid Biocide — 3 formate la alegere: „Vezi / Print” (ca înainte), „Word” (fișier .docx editabil) și „HTML” (descărcare fișier, se poate deschide și edita în Word).",
-    "Instrucțiuni proprii: poți adăuga instrucțiuni interne și lista procedurilor operaționale de referință. Apar ca secțiuni proprii în ghid, atât în HTML cât și în Word.",
-    "Instrucțiunile se salvează în configurare — nu trebuie rescrise la fiecare generare."
+    "Consum Antibiotice: consumul se poate defalca pe MEDIC CURANT — câmp nou la adăugare (cu sugestii din ce ai introdus deja) și coloană detectată automat la importul din fișier. Panou nou cu DDD și AWaRe per medic.",
+    "Consum Antibiotice: panou nou „Durata medie a terapiei antibiotice\" — medie, mediană, interval și durată pe substanță, calculate din antibioticele cu date de start/stop din fișele IAAM.",
+    "Consum Antibiotice: registrul avizărilor pentru antibioticele cu regim restricționat (cine a cerut, cine a avizat, indicația, durata avizată). Lista antibioticelor cu avizare se configurează în Configurare → Antibiotice cu Avizare, cu buton pentru încărcarea sugestiei WHO Reserve. Semnal roșu când un antibiotic cu avizare are consum, dar zero avizări.",
+    "Audituri IPC — grilă nouă „Audit program stewardship ATB\": 20 de întrebări structurate pe cele 7 elemente de bază CDC (angajamentul conducerii, responsabilitate, expertiză farmaceutică, acțiuni, monitorizare, raportare, educație).",
+    "Audituri IPC — grilă nouă „Audit clinic FO — antibiotice\": auditezi prescriere cu prescriere (nr. FO, antibiotic, tip) pe cei 7 indicatori de calitate ECDC/Global-PPS, cu procent de conformitate pe fiecare indicator. Răspunsurile N/A nu intră în calcul."
   ]
 }

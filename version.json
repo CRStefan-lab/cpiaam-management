@@ -1,11 +1,11 @@
 {
-  "version": "13.55",
+  "version": "13.61",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Consum Antibiotice: consumul se poate defalca pe MEDIC CURANT — câmp nou la adăugare (cu sugestii din ce ai introdus deja) și coloană detectată automat la importul din fișier. Panou nou cu DDD și AWaRe per medic.",
-    "Consum Antibiotice: panou nou „Durata medie a terapiei antibiotice\" — medie, mediană, interval și durată pe substanță, calculate din antibioticele cu date de start/stop din fișele IAAM.",
-    "Consum Antibiotice: registrul avizărilor pentru antibioticele cu regim restricționat (cine a cerut, cine a avizat, indicația, durata avizată). Lista antibioticelor cu avizare se configurează în Configurare → Antibiotice cu Avizare, cu buton pentru încărcarea sugestiei WHO Reserve. Semnal roșu când un antibiotic cu avizare are consum, dar zero avizări.",
-    "Audituri IPC — grilă nouă „Audit program stewardship ATB\": 20 de întrebări structurate pe cele 7 elemente de bază CDC (angajamentul conducerii, responsabilitate, expertiză farmaceutică, acțiuni, monitorizare, raportare, educație).",
-    "Audituri IPC — grilă nouă „Audit clinic FO — antibiotice\": auditezi prescriere cu prescriere (nr. FO, antibiotic, tip) pe cei 7 indicatori de calitate ECDC/Global-PPS, cu procent de conformitate pe fiecare indicator. Răspunsurile N/A nu intră în calcul."
+    "REPARAT — Raportul Anual raporta cifre false. Rata de incidență IAAM lipsea complet, consumul de antibiotice apărea „0,0 DDD\" și conformitatea auditurilor „0,0 %\" — chiar și pentru un spital cu date complete. Plus o alertă roșie falsă „conformitate sub 80%\". Cauza: analizele citeau câmpuri care nu mai există în date. Verificat pe date reale: acum rata iese 0,50‰, consumul 400 DDD și conformitatea 86%.",
+    "REPARAT — dashboard: cardurile „IAAM/1000 zile spitalizare\" și „kg deșeuri/1000 zile\" nu se afișau niciodată. Foloseau un câmp golit de mutarea om-zilelor în Statistici Spital.",
+    "REPARAT — auditurile apăreau în rapoarte cu un cod intern (ex. „ipc_d908acacf8274ef1\") în loc de denumire.",
+    "REPARAT — dacă închideai cu × avertismentul „Cazuri incomplete\", generarea raportului rămânea blocată la nesfârșit, fără niciun mesaj. Acum se anulează curat.",
+    "Ecranul „Se generează...\" nu mai poate rămâne blocat: se închide cu Escape, cu click pe fundal, iar dacă o generare eșuează se deblochează singur cu un mesaj explicit."
   ]
 }

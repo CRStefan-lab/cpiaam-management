@@ -1,9 +1,11 @@
 {
-  "version": "13.66",
-  "version_note": "Ecranul alb de la pornire",
+  "version": "13.67",
+  "version_note": "PPS: corectiile manuale nu mai dubleaza sectiile la reimport",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "La deschidere nu mai apare fereastra alba. Mesajul „Se incarca\" ramane pe ecran pana cand aplicatia e chiar gata de folosit, in loc sa dispara mai devreme si sa lase cateva secunde de ecran gol. Durata pornirii nu s-a schimbat inca — s-a eliminat doar intervalul in care parea blocata.",
-    "Daca prima randare esueaza din orice motiv, ecranul de incarcare dispare oricum si aplicatia nu mai ramane blocata pe el."
+    "REPARAT — PPS: daca deschideai o sectie venita din importul HelicsWin si corectai o cifra, la urmatorul import al aceluiasi studiu sectia aparea de doua ori, iar prevalenta PPS iesea umflata. Corectia manuala isi pastreaza acum legatura cu importul.",
+    "REPARAT — PPS: o inregistrare adaugata manual primea anul din bara de sus, nu anul datei studiului. Cu bara comutata pe alt an, inregistrarea disparea din lista desi era in baza.",
+    "Bara de sus nu mai iese din ecran pe monitoare mai inguste sau pe tableta — se aseaza pe doua randuri in loc sa impinga pagina. Pe ecran larg arata exact ca inainte.",
+    "Eticheta campului „Sectie\" era scrisa diferit in modulul Instruire fata de restul aplicatiei."
   ]
 }

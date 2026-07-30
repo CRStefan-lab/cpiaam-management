@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.66</title>
+<title>CPIAAM Management v13.67</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -460,7 +460,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dark select option{background:#0F172A;color:#E2E8F0}
 
 /* ── Toolbar extras ── */
-.tb-actions{display:flex;align-items:center;gap:10px}
+.tb-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .tb-icon{background:none;border:1px solid transparent;cursor:pointer;font-size:16px;width:34px;height:34px;border-radius:8px;color:var(--txtL);position:relative;transition:all .15s ease;display:inline-flex;align-items:center;justify-content:center;font-family:var(--f)}
 .tb-icon:hover{background:var(--bg);color:var(--txt);border-color:var(--brd)}
 .tb-icon .notif-badge{position:absolute;top:-4px;right:-4px;background:#EF4444;color:#fff;font-size:9px;font-weight:700;min-width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1;border:2px solid var(--card)}
@@ -2363,7 +2363,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.66';
+const APP_VERSION='13.67';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -12849,22 +12849,37 @@ async function editPPS(id){
   if(!r)r={year:A.year};
   openM(id?'Editare PPS':'Sectie PPS Noua',
     '<div class="fr"><div class="fg"><label>Sectie</label><select id="f-sec"><option value="">—</option>'+secOptsGrouped(r.section)+'</select></div>'+
-    '<div class="fg"><label>Data PPS</label><input type="date" id="f-dt" value="'+(r.date_pps||'')+'"></div></div>'+
+    '<div class="fg"><label>Data PPS</label><input type="date" id="f-dt" value="'+esc(r.date_pps||'')+'"></div></div>'+
     '<div class="fr3"><div class="fg"><label>Nr. pacienti evaluati</label><input type="number" id="f-pat" value="'+(r.patients||'')+'" min="0"></div>'+
     '<div class="fg"><label>Pacienti cu antibiotice</label><input type="number" id="f-au" value="'+(r.patients_au||'')+'" min="0"></div>'+
     '<div class="fg"><label>IAAM identificate</label><input type="number" id="f-iaam" value="'+(r.iaam_found||'')+'" min="0"></div></div>'+
     '<div class="fr"><div class="fg"><label>Nr. total prescriptii AB</label><input type="number" id="f-rx" value="'+(r.prescriptions||'')+'" min="0"></div>'+
     '<div class="fg"><label>Indicatie documentata (nr.)</label><input type="number" id="f-ddoc" value="'+(r.documented||'')+'" min="0"></div></div>'+
-    '<div class="fg"><label>Observatii / antibiotice frecvente</label><textarea id="f-n" rows="3">'+(r.notes||'')+'</textarea></div>',
+    '<div class="fg"><label>Observatii / antibiotice frecvente</label><textarea id="f-n" rows="3">'+esc(r.notes||'')+'</textarea></div>',
   '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="savePPS('+JSON.stringify(id||null)+')">Salveaza</button>');
   setTimeout(()=>{addDatePreview('f-dt');attachDirtyTracking()},50);
 }
 async function savePPS(id){
   const v=s=>document.getElementById(s).value;
-  const rec={year:A.year,section:v('f-sec'),date_pps:v('f-dt'),patients:+v('f-pat')||0,patients_au:+v('f-au')||0,
+  // A1-32 - anul urmeaza DATA studiului, nu anul din bara de sus. Altfel, cu toolbar-ul comutat
+  // pe alt an, inregistrarea de azi primea anul acela si disparea din lista (care filtreaza
+  // pe A.year), desi era in baza cu data corecta. Acelasi tipar reparat la registre in v13.63.
+  const rec={year:yearOfDate(v('f-dt')),section:v('f-sec'),date_pps:v('f-dt'),patients:+v('f-pat')||0,patients_au:+v('f-au')||0,
     iaam_found:+v('f-iaam')||0,prescriptions:+v('f-rx')||0,documented:+v('f-ddoc')||0,notes:v('f-n').trim()};
   if(needSection(rec.section))return;
-  if(id)rec.id=id;await pt('pps',rec);toastSaved();closeM();render();
+  if(id){
+    rec.id=id;
+    // A1-33 - pastram campurile interne ale inregistrarii existente, in primul rand `_fromIR`.
+    // Tabelul listeaza SI agregatele generate din importul .mdb, fiecare cu buton de editare.
+    // savePPS reconstruia inregistrarea de la zero, deci o corectie manuala pe un rand importat
+    // ii stergea marcajul. La urmatorul import, bucla de curatenie (care sterge doar `_fromIR`)
+    // nu o mai gasea → sectia aparea de DOUA ori, iar rPPS insumeaza randurile, deci prevalenta
+    // PPS iesea umflata. In plus, raportul Word numara ca „manuale" doar inregistrarile fara
+    // `_fromIR`, deci randul editat era numarat si acolo, si in IR.
+    const _ex=(await gaAll('pps')).find(x=>x.id===id);
+    if(_ex)Object.keys(_ex).forEach(function(k){if(k.charAt(0)==='_'&&!(k in rec))rec[k]=_ex[k]});
+  }
+  await pt('pps',rec);toastSaved();closeM();render();
 }
 
 // ── IR details modal + delete (S4) ──
@@ -18888,7 +18903,7 @@ async function editTraining(id){
     '<div class="fr"><div class="fg"><label>Data</label><input type="date" id="f-tdate" value="'+(r.date||'')+'"></div>'+
     '<div class="fg"><label>Durata (ore)</label><input type="number" id="f-tdur" value="'+(r.duration_hours||1)+'" min="0.5" step="0.5"></div></div>'+
     '<div class="fg"><label>Tema / Subiect</label><input id="f-ttopic" value="'+esc(r.topic||'')+'"></div>'+
-    '<div class="fr"><div class="fg"><label>Sectia</label><select id="f-tsec"><option value="">— Toate / General —</option>'+secOptsGrouped(r.section)+'</select></div>'+
+    '<div class="fr"><div class="fg"><label>Sectie</label><select id="f-tsec"><option value="">— Toate / General —</option>'+secOptsGrouped(r.section)+'</select></div>'+
     '<div class="fg"><label>Formator(i)</label>'+
     '<select id="f-trainers" multiple size="3" style="min-height:60px;width:100%;padding:4px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+trainerOpts+'</select>'+
     '<span style="font-size:10px;color:var(--txtL)">Ctrl+click pentru selectie multipla</span>'+fallbackNote+
@@ -23550,6 +23565,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.67',date:'2026-07-30',summary:'Incheierea modulelor neparcurse din auditul functional (PPS si antibiograma) plus ultimele puncte din auditul UX. Cea mai importanta reparatie: o corectie manuala pe o sectie importata din HelicsWin isi pierdea legatura cu importul, deci la reimport sectia se dubla si prevalenta PPS iesea umflata.'},
   {version:'13.66',date:'2026-07-30',summary:'Reparat ecranul alb de la pornire, semnalat de user pe PWA-ul instalat pe desktop. Mesajul de incarcare ramane acum pana cand aplicatia e efectiv randata. Investigatia a masurat si de unde vine restul intarzierii: 1,65 MB de biblioteci externe incarcate inainte de aplicatie, din care niciuna nu e necesara la pornire.'},
   {version:'13.65',date:'2026-07-30',summary:'A doua transa din auditul UX. Cifrele mari din cardurile de indicatori erau prea palide pe alb ca sa fie lizibile — nuantele au fost inchise strict cat era nevoie, calculat, nu la ochi. Pe telefon paginile cu tabele late intindeau toata interfata la trei ori latimea ecranului; acum tabelul deruleaza in panoul lui. Aceeasi reparatie a eliminat scroll-ul orizontal si pe monitoare inguste.'},
   {version:'13.64',date:'2026-07-30',summary:"Prima transa din auditul UX. Modul intunecat era parțial ilizibil — text alb pe fundal deschis in randurile TOTAL, in antetul calendarului, in matricea antibiogramei si in mesajele de confirmare. Salvarea confirma acum ce a facut, cursorul se aseaza singur in primul camp, iar mesajele de eroare nu mai arata textul tehnic al exceptiei. Aplicatia vorbeste englezeste si cand apare o problema. Un spital nou vede de unde sa inceapa, in loc de un tablou de indicatori pe zero."},

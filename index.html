@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.63</title>
+<title>CPIAAM Management v13.64</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -24,7 +24,7 @@
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
-:root{--navy:#115E59;--teal:#0EA5E9;--amber:#F59E0B;--red:#EF4444;--blue:#0D9488;--green:#10B981;
+:root{--navy:#115E59;--onAccent:#fff;--teal:#0EA5E9;--amber:#F59E0B;--red:#EF4444;--blue:#0D9488;--green:#10B981;
 --bg:#F8FAFC;--card:#ffffff;--sb:#1E293B;--txt:#0F172A;--txtL:#64748B;--brd:#E2E8F0;
 --sh:0 1px 3px rgba(0,0,0,.08);--shL:0 4px 6px rgba(0,0,0,.07);--r:8px;--rL:12px;--f:'Segoe UI',system-ui,sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -46,7 +46,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .ni.a{background:linear-gradient(90deg,rgba(20,184,166,.25),rgba(20,184,166,.05));border-left:3px solid #2DD4BF;color:#fff;font-weight:600}
 .ni svg{width:18px;height:18px;flex-shrink:0}
 .sb-bk{padding:8px 16px}
-.sb-bk button{width:100%;padding:8px;border:none;border-radius:6px;background:var(--amber);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--f);transition:.15s}
+.sb-bk button{width:100%;padding:8px;border:none;border-radius:6px;background:var(--amber);color:var(--onAccent);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--f);transition:.15s}
 .sb-bk button:hover{background:#B8890F}
 /* v13.59 - grupuri colapsabile in sidebar
    v13.62 - afordanta vizibila. Mecanismul exista de la v13.59, dar nu se vedea: chevronul era
@@ -166,7 +166,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dt th{background:#1E293B;color:#fff;padding:9px 10px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
 .dt td{padding:8px 10px;border-bottom:1px solid var(--brd)}
 .dt tr:nth-child(even){background:#F8FAFC}.dt tbody tr:hover{background:#EEF2FF}.dt thead th:hover{background:#15202F}.dt th.sorted{background:#0F766E;color:#fff}
-.dt .act{white-space:nowrap}.dt .act button{background:none;border:none;cursor:pointer;width:28px;height:28px;border-radius:6px;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s ease}.dt .act button:hover{background:var(--bg)}
+.dt .act{white-space:nowrap}.dt .act button{background:none;border:none;color:inherit;cursor:pointer;width:28px;height:28px;border-radius:6px;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s ease}.dt .act button:hover{background:var(--bg)}
 
 /* ── Badges ── */
 .bdg{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10.5px;font-weight:600}
@@ -177,11 +177,11 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .ac-period-tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
 .ac-ptab{padding:6px 16px;border:1px solid var(--brd);border-radius:20px;background:var(--card);cursor:pointer;font-size:12px;font-weight:600;color:var(--txt);transition:.15s}
 .ac-ptab:hover{border-color:var(--teal)}
-.ac-ptab.act{background:var(--teal);color:#fff;border-color:var(--teal)}
+.ac-ptab.act{background:var(--teal);color:var(--onAccent);border-color:var(--teal)}
 .ac-type-tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--bg);padding:4px;border-radius:10px}
 .ac-ttab{padding:10px 20px;cursor:pointer;font-size:13px;font-weight:600;color:var(--txtL);border-radius:8px;transition:.15s;flex:1;text-align:center}
 .ac-ttab:hover{color:var(--navy);background:rgba(255,255,255,.6)}
-.ac-ttab.act{color:#fff;background:var(--navy);box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.ac-ttab.act{color:var(--onAccent);background:var(--navy);box-shadow:0 2px 6px rgba(0,0,0,.15)}
 .ac-main-tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--brd)}
 .ac-mtab{padding:10px 22px;cursor:pointer;font-size:13px;font-weight:600;color:var(--txtL);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s}
 .ac-mtab:hover{color:var(--navy)}
@@ -407,7 +407,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 
 /* ── Dark Mode ── */
 .dark{--bg:#0F172A;--card:#1E293B;--txt:#E2E8F0;--txtL:#94A3B8;--brd:#334155;--sb:#020617;
---navy:#93C5FD;--teal:#5EEAD4;--amber:#FCD34D;--red:#FCA5A5;--blue:#93C5FD;--green:#6EE7B7;
+--navy:#93C5FD;--onAccent:#0F172A;--teal:#5EEAD4;--amber:#FCD34D;--red:#FCA5A5;--blue:#93C5FD;--green:#6EE7B7;
 --sh:0 1px 3px rgba(0,0,0,.3);--shL:0 4px 6px rgba(0,0,0,.25)}
 .dark .dt th{background:#1E3A5F;color:#E2E8F0}.dark .dt tr:nth-child(even){background:#172032}.dark .dt tbody tr:hover{background:#1E3050}.dark .dt tbody tr:hover td{color:#E2E8F0}.dark .dt thead th:hover{background:#162D4A}
 .dark .ib.inf{background:#1E3050;border-color:#2563B0;color:#93C5FD}
@@ -513,7 +513,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .cal-nav button:hover{background:var(--bg);border-color:#0D9488}
 .cal-nav .cal-title{font-size:18px;font-weight:700;color:var(--navy);min-width:180px;text-align:center}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--brd);border:1px solid var(--brd);border-radius:var(--r);overflow:hidden}
-.cal-hdr{background:var(--navy);color:#fff;padding:8px 4px;text-align:center;font-size:12px;font-weight:700}
+.cal-hdr{background:var(--navy);color:var(--onAccent);padding:8px 4px;text-align:center;font-size:12px;font-weight:700}
 .cal-day{background:var(--card);min-height:80px;padding:4px 6px;cursor:pointer;transition:.1s;position:relative}
 .cal-day:hover{background:var(--bg)}
 .cal-day.other{opacity:.4}
@@ -561,7 +561,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .cal-nav input[type=number]{border:1px solid var(--brd);border-radius:var(--r);padding:5px 8px;font-size:13px;color:var(--txt);background:var(--card);font-family:var(--f);width:70px;text-align:center}
 .cal-view-btns{display:flex;gap:0;border:1px solid var(--brd);border-radius:var(--r);overflow:hidden;margin-left:8px}
 .cal-view-btns button{background:var(--card);border:none;padding:5px 12px;font-size:12px;cursor:pointer;color:var(--txt);font-family:var(--f)}
-.cal-view-btns button.active{background:var(--navy);color:#fff}
+.cal-view-btns button.active{background:var(--navy);color:var(--onAccent)}
 /* Year view */
 .cal-year-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 @media(max-width:800px){.cal-year-grid{grid-template-columns:repeat(2,1fr)}}
@@ -800,10 +800,10 @@ body{display:block!important;background:#fff!important}
 .man-toc li{padding:6px 0;border-bottom:1px dashed var(--brd)}
 .man-toc a{color:var(--navy);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px}
 .man-toc a:hover{color:var(--blue);text-decoration:underline}
-.man-toc .toc-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:10px;font-weight:700;flex-shrink:0}
+.man-toc .toc-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--navy);color:var(--onAccent);font-size:10px;font-weight:700;flex-shrink:0}
 .man-sec{scroll-margin-top:70px}
 .man-sec h3{font-size:16px;font-weight:700;color:var(--navy);margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid var(--navy);display:flex;align-items:center;gap:8px}
-.man-sec h3 .sec-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+.man-sec h3 .sec-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--navy);color:var(--onAccent);font-size:12px;font-weight:700;flex-shrink:0}
 .man-sec h4{font-size:13.5px;font-weight:700;color:var(--txt);margin:16px 0 8px}
 .man-sec p,.man-sec li{font-size:13px;line-height:1.7;color:var(--txt)}
 .man-sec ul,.man-sec ol{padding-left:20px;margin:8px 0}
@@ -813,7 +813,7 @@ body{display:block!important;background:#fff!important}
 .man-tip{background:#EEF2FF;border-left:4px solid var(--blue);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:12.5px;line-height:1.6}
 .man-warn{background:#FEF3C7;border-left:4px solid var(--amber);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:12.5px;line-height:1.6}
 .man-step{display:flex;gap:12px;align-items:flex-start;margin:10px 0}
-.man-step .step-n{display:flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:700;flex-shrink:0;margin-top:2px}
+.man-step .step-n{display:flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:50%;background:var(--blue);color:var(--onAccent);font-size:12px;font-weight:700;flex-shrink:0;margin-top:2px}
 .man-step .step-t{font-size:13px;line-height:1.6}
 .man-img{max-width:100%;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.12);margin:12px 0;border:1px solid var(--brd)}
 .man-cap{font-size:11px;color:var(--txtL);text-align:center;margin:-6px 0 14px;font-style:italic}
@@ -826,7 +826,7 @@ body{display:block!important;background:#fff!important}
 .dark .man-warn{background:#1E293B;border-color:#F59E0B}
 .dark .man-step .step-n{background:#2DD4BF}
 .dark .man-top{border-color:#475569;color:#94A3B8}.dark .man-top:hover{color:#2DD4BF;border-color:#2DD4BF;background:#1E293B}
-.man-go{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;font-family:var(--f);margin:10px 0}
+.man-go{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--navy);color:var(--onAccent);border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;font-family:var(--f);margin:10px 0}
 .man-go:hover{background:var(--blue);transform:translateY(-1px)}
 .dark .man-go{background:#2DD4BF}.dark .man-go:hover{background:#0D9488}
 .man-vis{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
@@ -838,7 +838,7 @@ body{display:block!important;background:#fff!important}
 .abg-wrap{overflow-x:auto;margin:16px 0;border:1px solid var(--brd);border-radius:var(--rL)}
 .abg-matrix{border-collapse:collapse;font-size:11px;min-width:100%}
 .abg-matrix th,.abg-matrix td{padding:4px 6px;text-align:center;white-space:nowrap;border:1px solid var(--brd)}
-.abg-matrix thead th{background:var(--navy);color:#fff;font-size:10px;font-weight:600;position:sticky;top:0;z-index:2}
+.abg-matrix thead th{background:var(--navy);color:var(--onAccent);font-size:10px;font-weight:600;position:sticky;top:0;z-index:2}
 .abg-matrix thead th.abg-grp{background:#334155;font-size:9px;text-transform:uppercase;letter-spacing:.5px}
 .abg-matrix tbody th{text-align:left;font-weight:600;background:var(--bg);position:sticky;left:0;z-index:1;font-size:11px}
 .abg-matrix tbody th .abg-n{display:block;font-size:10px;color:var(--txtL);font-weight:400}
@@ -1263,12 +1263,12 @@ function showAttReconnectBanner(){
   document.body.prepend(banner);
 }
 async function pickAttDir(){
-  if(!window.showDirectoryPicker){alert('Browserul nu suporta File System Access API. Foloseste Chrome/Edge.');return}
+  if(!window.showDirectoryPicker){alert(_M('Browserul nu suporta File System Access API. Foloseste Chrome/Edge.'));return}
   try{_attDirHandle=await window.showDirectoryPicker({mode:'readwrite'});
     CFG.att_dir_name=_attDirHandle.name;await saveCfg();
     await saveAttDirHandle(_attDirHandle);
     alert('Folder atasamente selectat: '+_attDirHandle.name);render();
-  }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}
+  }catch(e){if(e.name!=='AbortError')errAlert(e,'Nu am putut deschide fisierul de sincronizare.','Could not open the sync file.')}
 }
 // ── File I/O helpers for attachments on disk ──
 async function attWriteFile(subdir,filename,blob){
@@ -1290,7 +1290,7 @@ async function attDeleteFile(subdir,filename){
     await dir.removeEntry(filename)}catch(e){console.warn('attDeleteFile:',e)}
 }
 async function migrateAttachmentsToDisk(){
-  if(!_attDirHandle){alert('Selecteaza mai intai folderul de atasamente din Configurare.');return}
+  if(!_attDirHandle){alert(_M('Selecteaza mai intai folderul de atasamente din Configurare.'));return}
   if(!confirm(CFG.lang==='en'?'Migration will move attachments from database to disk. Continue?':'Migrarea va muta atasamentele din baza de date pe disc. Continua?'))return;
   let count=0,errors=0;
   const bios=await ga('biocide');
@@ -1404,7 +1404,7 @@ document.addEventListener('click',async function(){
 },{once:false});
 function disconnectSync(){stopSyncPoll();_fileHandle=null;CFG.sync_file_name='';saveCfg();updateSyncIndicator();render()}
 async function syncReconnect(){
-  if(!window.showOpenFilePicker){alert('Browserul nu suporta File System Access API.');return}
+  if(!window.showOpenFilePicker){alert(_M('Browserul nu suporta File System Access API.'));return}
   // First try restoring the stored handle
   const stored=await loadFileHandle();
   if(stored){
@@ -1420,7 +1420,7 @@ async function syncReconnect(){
     _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();
     await saveFileHandle(fh);
     await _syncAfterReconnect();
-  }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}
+  }catch(e){if(e.name!=='AbortError')errAlert(e,'Nu am putut deschide fisierul de sincronizare.','Could not open the sync file.')}
 }
 async function _syncAfterReconnect(){
   var localData=await ga('iaam');var localAuto=await ga('autocontrol');
@@ -1453,7 +1453,7 @@ async function _syncAfterReconnect(){
   render();
 }
 async function syncPickFile(){
-  if(!window.showSaveFilePicker){alert('Browserul tau nu suporta File System Access API. Foloseste Chrome sau Edge.');return}
+  if(!window.showSaveFilePicker){alert(_M('Browserul tau nu suporta File System Access API. Foloseste Chrome sau Edge.'));return}
   try{var _sfName='CPIAAM_'+(CFG.hospital_name||CFG.hospital_short||'data').replace(/[^a-zA-Z0-9\u00C0-\u024F]/g,'_').replace(/_+/g,'_').substring(0,40)+'.json';
   const _spOpts={suggestedName:_sfName,types:[{description:'JSON',accept:{'application/json':['.json']}}]};
     const _spSh=await loadFileHandle().catch(()=>null);if(_spSh)_spOpts.startIn=_spSh;
@@ -1477,7 +1477,7 @@ async function syncPickFile(){
     }catch(e){/* file empty or not JSON — proceed with write */}
     await syncWrite();updateSyncIndicator();startSyncPoll();render();
     setTimeout(()=>showFileLocationModal(),300);
-  }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}}
+  }catch(e){if(e.name!=='AbortError')errAlert(e,'Nu am putut deschide fisierul de sincronizare.','Could not open the sync file.')}}
 function showFileLocationModal(){
   const isEN=CFG.lang==='en';
   const cur=CFG.file_location||'';
@@ -1559,7 +1559,7 @@ window.addEventListener('beforeunload',function(e){
   }
 });
 async function syncReadFile(){
-  if(!window.showOpenFilePicker){alert('Browserul tau nu suporta File System Access API. Foloseste Chrome/Edge.');return}
+  if(!window.showOpenFilePicker){alert(_M('Browserul tau nu suporta File System Access API. Foloseste Chrome/Edge.'));return}
   try{const _rfOpts={types:[{description:'JSON',accept:{'application/json':['.json']}}]};
     const _rfSh=await loadFileHandle().catch(()=>null);if(_rfSh)_rfOpts.startIn=_rfSh;
     const[fh]=await window.showOpenFilePicker(_rfOpts);
@@ -1585,7 +1585,7 @@ async function syncReadFile(){
     // No local data, not connected — direct import
     _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();await saveFileHandle(fh);
     await _importFromHandle(fh,true,'replace');updateSyncIndicator();startSyncPoll();render();
-  }catch(e){if(e.name!=='AbortError')alert('Eroare import: '+e.message)}}
+  }catch(e){if(e.name!=='AbortError')errAlert(e,'Importul nu a reusit. Datele existente nu au fost modificate.','The import failed. Existing data was left unchanged.')}}
 var _pendingFileHandle=null;
 function _showFileActionDialog(newName,currentName){
   var isEN=CFG.lang==='en';
@@ -1637,14 +1637,14 @@ async function _fileActionPreview(){
       var arr=d[s];var cnt=Array.isArray(arr)?arr.length:0;
       if(cnt>0){totalRecs+=cnt;h+='<tr><td>'+(storeNames[s]||s)+'</td><td style="text-align:right"><strong>'+cnt+'</strong></td></tr>'}
     });
-    h+='<tr style="background:var(--navy);color:#fff;font-weight:700"><td>'+(isEN?'Total':'Total')+'</td><td style="text-align:right">'+totalRecs+'</td></tr>';
+    h+='<tr style="background:var(--navy);color:var(--onAccent);font-weight:700"><td>'+(isEN?'Total':'Total')+'</td><td style="text-align:right">'+totalRecs+'</td></tr>';
     h+='</tbody></table>';
     if(d.config&&d.config.hospital_name){h+='<div style="margin-top:10px;font-size:11px;color:var(--txtL)">'+(isEN?'Hospital: ':'Spital: ')+esc(d.config.hospital_name)+'</div>'}
     h+='</div>';
     closeM();
     openM(isEN?'File Preview (read-only)':'Previzualizare fisier (doar citire)',h,
       '<button class="btn bo" onclick="_pendingFileHandle=null;closeM()">'+(isEN?'Close':'Inchide')+'</button>');
-  }catch(e){alert('Eroare citire: '+e.message);_pendingFileHandle=null;closeM()}
+  }catch(e){errAlert(e,'Nu am putut citi fisierul de sincronizare.','Could not read the sync file.');_pendingFileHandle=null;closeM()}
 }
 // ── Option 2: Merge (import without changing connection) ──
 // v12.51: reuse _importFromHandle instead of duplicating (incomplete) merge logic.
@@ -1674,7 +1674,7 @@ async function _fileActionMerge(){
     }
     if(wasDisconnected&&_fileHandle){await syncWrite();startSyncPoll()}
     updateSyncIndicator();render();
-  }catch(e){alert('Eroare merge: '+e.message)}
+  }catch(e){errAlert(e,'Sincronizarea nu a reusit. Datele locale au ramas neschimbate.','Sync failed. Local data was left unchanged.')}
 }
 // ── Option 3: Switch file (backup + clean + import) ──
 async function _fileActionSwitch(){
@@ -2363,7 +2363,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.63';
+const APP_VERSION='13.64';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -3505,6 +3505,93 @@ en:{
 }
 };
 
+// A2-04 - mesajele de validare si eroare erau hardcodate in romana (200 din 214 de apeluri
+// alert/confirm), deci in modul EN toata aplicatia vorbea englezeste pana cand aparea o
+// problema — si atunci raspundea in romana. Dictionarul e cheiat pe textul ROMANESC, nu pe un
+// cod: asa call site-ul ramane lizibil (`alert(_M('Completeaza denumirea.'))`) si nu trebuie
+// inventate 79 de nume de chei. Necunoscutele cad pe textul romanesc, deci nimic nu dispare.
+const MSG_EN={
+  'Adapter HelicsWin neîncărcat. Rebuild dist/index.html.':'HelicsWin adapter not loaded. Rebuild dist/index.html.',
+  'Adauga cel putin o persoana.':'Add at least one person.',
+  'Adauga cel putin o sectie.':'Add at least one ward.',
+  'Adaugati cel putin o sectie.':'Add at least one ward.',
+  'Antetul fisierului nu este recunoscut.\n\nColoane obligatorii: Tip Proba, Sectie, Rezultat.\n\nCel mai simplu: exporta intai din aplicatie (Export CSV) si foloseste acel fisier ca model.':'The file header was not recognised.\n\nRequired columns: Sample Type, Ward, Result.\n\nEasiest way: export from the application first (Export CSV) and use that file as a template.',
+  'Biblioteca XLSX nu este disponibila (offline?).':'The XLSX library is not available (offline?).',
+  'Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie si reincearca.':'The browser blocked the new window. Allow pop-ups for this application and try again.',
+  'Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.':'The browser blocked the new window. Allow pop-ups for this application.',
+  'Browserul nu suporta Directory Picker. Foloseste Chrome/Edge.':'This browser does not support the Directory Picker. Use Chrome or Edge.',
+  'Browserul nu suporta File System Access API.':'This browser does not support the File System Access API.',
+  'Browserul nu suporta File System Access API. Foloseste Chrome/Edge.':'This browser does not support the File System Access API. Use Chrome or Edge.',
+  'Browserul tau nu suporta File System Access API. Foloseste Chrome sau Edge.':'Your browser does not support the File System Access API. Use Chrome or Edge.',
+  'Browserul tau nu suporta File System Access API. Foloseste Chrome/Edge.':'Your browser does not support the File System Access API. Use Chrome or Edge.',
+  'Capacitatea (kg) este obligatorie si trebuie sa fie pozitiva.':'Capacity (kg) is required and must be positive.',
+  'Caz negasit.':'Case not found.',
+  'Completeaza denumirea focarului.':'Enter the outbreak name.',
+  'Completeaza denumirea spitalului.':'Enter the hospital name.',
+  'Completeaza denumirea.':'Enter the name.',
+  'Completeaza numele tau.':'Enter your name.',
+  'Completeaza produsul.':'Enter the product.',
+  'Completeaza sectia (sectiunea 2 — Spitalizare).':'Enter the ward (step 2 — Admission).',
+  'Completeaza tema instruirii.':'Enter the training topic.',
+  'Completeaza tipul si sectia.':'Enter the type and the ward.',
+  'Configurare AI salvata!':'AI settings saved.',
+  'Configureaza mai intai folderul de atasamente: Configurare → Date & Backup → Stocare Atasamente':'Configure the attachments folder first: Settings → Data & Backup → Attachment storage',
+  'Data de debut este dupa data de inchidere.':'The start date is after the closing date.',
+  'Data de inceput este dupa termenul limita. Corecteaza intervalul.':'The start date is after the deadline. Correct the interval.',
+  'Date importate cu succes!':'Data imported successfully.',
+  'Denumirea RO este obligatorie.':'The Romanian name is required.',
+  'Erori la incarcarea seed-ului default.':'Errors while loading the default seed data.',
+  'Exista deja acest dispozitiv.':'This device already exists.',
+  'Fisierul e gol.':'The file is empty.',
+  'Fisierul este gol sau contine doar antetul \u2014 nu am ce importa.':'The file is empty or contains only the header \u2014 there is nothing to import.',
+  'Fisierul nu mai este disponibil.':'The file is no longer available.',
+  'Fisierul trebuie sa aiba cel putin un header + un rand de date.':'The file must have at least a header and one data row.',
+  'Focar negasit.':'Outbreak not found.',
+  'Format nerecunoscut. Fisierul trebuie sa fie o balanta de stocuri cu coloane:\n - Id, Cod, Nume produs\n - Grupuri Initial / Intrari / Iesiri / Final\n - Sub-headers Cantitate + Valoare':'Unrecognised format. The file must be a stock balance with columns:\n - Id, Code, Product name\n - Groups Opening / In / Out / Closing\n - Sub-headers Quantity + Value',
+  'Generatorul Word nu este disponibil. Reincarca pagina si incearca din nou.':'The Word generator is not available. Reload the page and try again.',
+  'Inregistrarea nu mai exista.':'The record no longer exists.',
+  'Introdu cantitatea in grame.':'Enter the quantity in grams.',
+  'Introdu valoarea RLU.':'Enter the RLU value.',
+  'Max 10MB.':'Max 10 MB.',
+  'Maxim 3 germeni.':'Maximum 3 organisms.',
+  'Migrezi documentele de pe miscari la nivel de produs?\n\nAceasta operatiune:\n• Copie fisierele unice pe produs\n• Elimina atasamentele de pe fiecare miscare\n• Deduplica fisierele cu nume identic\n• Recomandare: fa un backup JSON inainte (Configurare → Backup)':'Move documents from individual movements up to product level?\n\nThis operation:\n• Copies unique files to the product\n• Removes attachments from each movement\n• De-duplicates files with identical names\n• Recommended: export a JSON backup first (Settings → Backup)',
+  'Niciun fisier incarcat.':'No file loaded.',
+  'Nimic de exportat.':'Nothing to export.',
+  'Nu exista date de antibiograma.':'There is no antibiogram data.',
+  'Nu exista date de consum antibiotice.':'There is no antibiotic consumption data.',
+  'Nu exista documente pentru acest produs.':'There are no documents for this product.',
+  'Nu exista randuri de importat.':'There are no rows to import.',
+  'Nu exista raportari repetitive.':'There are no recurring reports.',
+  'Nu pot citi fisierul de pe disc.':'Cannot read the file from disk.',
+  'Nu pot citi fisierul de pe disc. Reconecteaza folderul de atasamente din Configurare.':'Cannot read the file from disk. Reconnect the attachments folder from Settings.',
+  'Nu poti fuziona un produs cu el insusi.':'A product cannot be merged with itself.',
+  'Nu s-au gasit izolate pozitive.':'No positive isolates were found.',
+  'Nu s-au gasit tabele in fisier.':'No tables were found in the file.',
+  'Nu s-au putut grupa izolate din CSV.':'Could not group any isolates from the CSV.',
+  'Numele produsului este obligatoriu.':'The product name is required.',
+  'Numele recipientului este obligatoriu.':'The container name is required.',
+  'Produs nedetectat':'Product not detected',
+  'Produs negasit.':'Product not found.',
+  'Produs(e) negasit(e).':'Product(s) not found.',
+  'Sectia este deja adaugata.':'The ward has already been added.',
+  'Selectati antibioticul.':'Select the antibiotic.',
+  'Selectati data.':'Select the date.',
+  'Selecteaza antibioticul.':'Select the antibiotic.',
+  'Selecteaza cel putin o categorie.':'Select at least one category.',
+  'Selecteaza cel putin un cod deseu.':'Select at least one waste code.',
+  'Selecteaza mai intai folderul de atasamente din Configurare.':'Select the attachments folder from Settings first.',
+  'Selecteaza tipul de suprafata — el stabileste pragul RLU.':'Select the surface type — it sets the RLU threshold.',
+  'Selecteaza un produs destinatie din dropdown.':'Select a target product from the dropdown.',
+  'Selecteaza un provider AI mai intai.':'Select an AI provider first.',
+  'Selecteaza un template din dropdown.':'Select a template from the dropdown.',
+  'Setari salvate!':'Settings saved.',
+  'Stergi acest focar? Cazurile IAAM legate NU se sterg.':'Delete this outbreak? The linked HAI cases will NOT be deleted.',
+  'Stergi acest profil de utilizare?':'Delete this usage profile?',
+  'Stergi documentul?':'Delete the document?',
+  'Titlul RO este obligatoriu.':'The Romanian title is required.',
+  'Valoarea RLU trebuie sa fie un numar pozitiv.':'The RLU value must be a positive number.'
+};
+
 </script>
 <script>
 // ═════════════════════════════════════════════════════════════
@@ -3916,8 +4003,54 @@ function parseDateISO(s){var dt=parseDate(s);if(!dt)return null;return dt.getFul
 // Toast notification
 function showToast(msg){
   const t=document.createElement('div');
-  t.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:500;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
+  t.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--navy);color:var(--onAccent);padding:10px 18px;border-radius:8px;font-size:13px;z-index:500;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
   t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
+}
+
+// A2-02 - confirmare vizibila dupa o salvare reusita. 27 de cai de salvare se terminau cu
+// `closeM();render()` si atat: dialogul disparea si userul nu avea niciun semn ca inregistrarea
+// chiar a intrat. Se vedea doar daca randul aparea in tabelul de dedesubt — dar nu apare cand
+// inregistrarea cade sub un filtru activ, intr-o sectiune pliata sau in alt an.
+// `saveHA` din Statistici facea deja asta corect; acum e la fel peste tot.
+function toastSaved(){showToast(CFG.lang==='en'?'Saved':'Salvat')}
+
+// A2-05 - mesaj de eroare lizibil, in locul textului brut al exceptiei.
+// 45 de locuri afisau `alert('Eroare: '+e.message)`, adica lucruri de tipul
+// „Failed to execute 'getFileHandle' on 'FileSystemDirectoryHandle'" unei asistente de spital:
+// niciun indiciu despre ce s-a intamplat si ce are de facut. Acum: ce a esuat, ce se poate face,
+// iar detaliul tehnic ramane in consola, pentru diagnostic.
+function errAlert(e,roMsg,enMsg){
+  console.error(roMsg||'Eroare:',e);
+  var en=CFG.lang==='en';
+  var det=(e&&e.message)?String(e.message):String(e||'');
+  var hint='';
+  if(/NotAllowedError|SecurityError|permission/i.test(det))
+    hint=en?'The browser blocked access to the file. Reconnect the file or folder from Settings.'
+           :'Browserul a blocat accesul la fisier. Reconecteaza fisierul sau folderul din Configurare.';
+  else if(/NotFoundError|no such file|could not be found/i.test(det))
+    hint=en?'The file or folder no longer exists at that location.'
+           :'Fisierul sau folderul nu mai exista la locatia respectiva.';
+  else if(/QuotaExceeded|storage/i.test(det))
+    hint=en?'The browser has run out of storage space. Export a backup and remove old attachments.'
+           :'Nu mai este spatiu de stocare in browser. Exporta un backup si elimina atasamente vechi.';
+  else if(/JSON|Unexpected token|Unexpected end/i.test(det))
+    hint=en?'The file is not a valid CPIAAM backup — it may be damaged or the wrong file.'
+           :'Fisierul nu este un backup CPIAAM valid — poate fi deteriorat sau alt fisier.';
+  else if(/NetworkError|Failed to fetch|ERR_/i.test(det))
+    hint=en?'No connection could be made. Check the internet connection.'
+           :'Nu s-a putut face conexiunea. Verifica legatura la internet.';
+  else
+    hint=en?'If it keeps happening, take a screenshot and report it.'
+           :'Daca se repeta, fa o captura de ecran si semnaleaza problema.';
+  alert((en?(enMsg||'The operation failed.'):(roMsg||'Operatiunea nu a reusit.'))+'\n\n'+hint);
+}
+
+// A2-04 - traducerea mesajelor de validare si eroare. Dictionarul MSG_EN (data_lang.js) e cheiat
+// pe textul ROMANESC, deci call site-ul ramane lizibil si nu e nevoie de 79 de nume de chei noi.
+// Orice text fara traducere cade pe romana — nimic nu dispare si nimic nu afiseaza o cheie bruta.
+function _M(ro){
+  if(!CFG||CFG.lang!=='en')return ro;
+  return (typeof MSG_EN!=='undefined'&&MSG_EN[ro])?MSG_EN[ro]:ro;
 }
 
 // Activity log (localStorage, max 20 entries)
@@ -3943,6 +4076,22 @@ function rDocCat(id){if(!id)return '—';const a=CFG.doc_categories||[];const c=
 
 // Safe name accessor — never returns undefined
 function sn(obj){if(!obj)return '—';if(typeof obj==='string')return obj;return obj.name||obj.label||obj.code||obj.id||'?'}
+
+// A2-01 - mesaj pentru campul obligatoriu „Sectia". Cand spitalul nu are inca nicio sectie
+// configurata, dropdown-ul contine doar „—", deci „Selecteaza sectia." cerea ceva imposibil
+// de facut din acel ecran, fara nicio indicatie unde se rezolva. Acum mesajul numeste locul.
+// Intoarce true daca validarea a esuat, ca sa se poata scrie: if(needSection(sec))return;
+function needSection(val){
+  if(val)return false;
+  var en=CFG.lang==='en';
+  if(!(CFG.sections||[]).length){
+    alert(en?'No ward or structure is configured yet.\n\nGo to Settings → Wards / Structures and add at least one, then come back.'
+            :'Nu ai inca nicio sectie sau structura configurata.\n\nMergi la Configurare → Sectii / Structuri, adauga cel putin una, apoi revino aici.');
+  }else{
+    alert(en?'Select the ward.':'Selecteaza sectia.');
+  }
+  return true;
+}
 
 // Check if a probe type applies to a section (for autocontrol filtering)
 function isProbeApplicable(secId,ptId){
@@ -4151,7 +4300,18 @@ var _formDirty=false;
 function openM(t,body,foot){const m=document.getElementById('mdc');
   _formDirty=false;m.classList.remove('iw-modal');
   m.innerHTML='<div class="mh"><h3>'+t+'</h3><button class="cx" onclick="safeCloseM()">&times;</button></div><div class="mb">'+body+'</div>'+(foot?'<div class="mf">'+foot+'</div>':'');
-  document.getElementById('mov').classList.add('sh')}
+  document.getElementById('mov').classList.add('sh');
+  // A2-03 - focusul se aseaza singur in primul camp editabil. Inainte ramanea pe BODY, deci
+  // intr-un formular cu 14 campuri userul trebuia sa ia mouse-ul ca sa inceapa sa scrie.
+  // Sarim peste input[type=file] (deschide un dialog de sistem la Enter) si peste campurile
+  // ascunse sau dezactivate. setTimeout, ca sa apuce randarea sa se aseze.
+  setTimeout(function(){
+    try{
+      var f=m.querySelector('.mb input:not([type=file]):not([type=hidden]):not([disabled]):not([readonly]),.mb select:not([disabled]),.mb textarea:not([disabled]):not([readonly])');
+      if(f&&f.offsetParent!==null)f.focus({preventScroll:true});
+    }catch(e){}
+  },60);
+}
 function closeM(){_formDirty=false;document.getElementById('mov').classList.remove('sh')}
 function markFormDirty(){_formDirty=true}
 function attachDirtyTracking(){
@@ -4611,6 +4771,29 @@ async function rDash(el){
   });
 
   let h='<div class="print-header"></div>';
+  // A2-07 - primul contact. Un spital care tocmai a instalat aplicatia vedea doar un schelet de
+  // KPI-uri pe zero, fara sa afle de unde se incepe. Panoul apare NUMAI cand nu exista nicio
+  // inregistrare in modulele principale si nicio sectie configurata, deci dispare de la prima
+  // secţie adaugata si nu mai incarca ecranul nimanui.
+  if(!(CFG.sections||[]).length&&!ia.length&&!au.length&&!de.length&&!bi.length){
+    h+='<div class="pn" style="margin-bottom:14px;border-color:var(--teal)"><div class="ph"><h3>'+
+      (isEN?'Getting started':'Cum incepi')+'</h3></div><div class="pb">'+
+      '<div class="ib inf" style="margin-bottom:10px">'+
+      (isEN?'The application is empty. Two steps are enough to make every module usable:'
+           :'Aplicatia e goala. Doi pasi sunt de ajuns ca toate modulele sa devina utilizabile:')+
+      '</div>'+
+      '<ol style="margin:0 0 10px 18px;font-size:13px;line-height:1.9">'+
+      '<li>'+(isEN?'Add the hospital wards and structures — every record is attached to one.'
+                  :'Adauga sectiile si structurile spitalului — fiecare inregistrare se leaga de una.')+'</li>'+
+      '<li>'+(isEN?'Enter patient-days and discharges in Hospital Statistics — they are the denominator for every rate.'
+                  :'Introdu om-zilele si externatii in Statistici Spital — sunt numitorul tuturor ratelor.')+'</li>'+
+      '</ol>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button class="btn bp bsm" onclick="nav(\'config\')">'+(isEN?'Settings → Wards':'Configurare → Sectii')+'</button>'+
+      '<button class="btn bo bsm" onclick="nav(\'statistici\')">'+(isEN?'Hospital Statistics':'Statistici Spital')+'</button>'+
+      '<button class="btn bo bsm" onclick="nav(\'manual\')">'+(isEN?'User manual':'Manual de utilizare')+'</button>'+
+      '</div></div></div>';
+  }
   // v13.14 - CONFIG BAR redesign: buton cu icon gear + badge count + panou cu toggle switches grupate pe categorii cu mini-icon
   const _dw=CFG.dash_widgets||{};
   const _dwGroups=[
@@ -4834,9 +5017,9 @@ function renderGermeniCards(){if(_iaamGermeni.length===0)return '<div style="col
     h+='<div class="abg-hint">Antibiograma nu a fost completata — click pentru a introduce sensibilitatile</div>';
   }
   h+='</div>';return h}).join('')}
-function addIaamGermen(){const sel=document.getElementById('f-germ-sel');if(!sel||!sel.value)return;if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}if(_iaamGermeni.find(g=>g.code===sel.value))return;const name=germenName(sel.value);_iaamGermeni.push({code:sel.value,name,mdr:'Nu'});sel.value='';document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
-function selectGermenFromDD(code){if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}if(_iaamGermeni.find(g=>g.code===code))return;const name=germenName(code);_iaamGermeni.push({code,name,mdr:needsMDRo(code)?'Nu':''});markFormDirty();const si=document.getElementById('f-germ-search');if(si)si.value='';hideGermeniDD();document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
-function addGermenManual(){if(_iaamGermeni.length>=3){alert('Maxim 3 germeni.');return}const name=prompt('Numele germenului:');if(!name||!name.trim())return;_iaamGermeni.push({code:'MANUAL',name:name.trim(),mdr:'Nu'});markFormDirty();document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
+function addIaamGermen(){const sel=document.getElementById('f-germ-sel');if(!sel||!sel.value)return;if(_iaamGermeni.length>=3){alert(_M('Maxim 3 germeni.'));return}if(_iaamGermeni.find(g=>g.code===sel.value))return;const name=germenName(sel.value);_iaamGermeni.push({code:sel.value,name,mdr:'Nu'});sel.value='';document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
+function selectGermenFromDD(code){if(_iaamGermeni.length>=3){alert(_M('Maxim 3 germeni.'));return}if(_iaamGermeni.find(g=>g.code===code))return;const name=germenName(code);_iaamGermeni.push({code,name,mdr:needsMDRo(code)?'Nu':''});markFormDirty();const si=document.getElementById('f-germ-search');if(si)si.value='';hideGermeniDD();document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
+function addGermenManual(){if(_iaamGermeni.length>=3){alert(_M('Maxim 3 germeni.'));return}const name=prompt('Numele germenului:');if(!name||!name.trim())return;_iaamGermeni.push({code:'MANUAL',name:name.trim(),mdr:'Nu'});markFormDirty();document.getElementById('f-germeni-cards').innerHTML=renderGermeniCards()}
 function showGermeniDD(){filterGermeniDropdown(document.getElementById('f-germ-search')?.value||'')}
 function hideGermeniDD(){setTimeout(()=>{const dd=document.getElementById('f-germ-dd');if(dd)dd.style.display='none'},200)}
 function filterGermeniDropdown(q){const dd=document.getElementById('f-germ-dd');if(!dd)return;
@@ -6070,7 +6253,7 @@ async function saveIAAM(){
   _iaamDraft.antibiotics=JSON.parse(JSON.stringify(_iaamAtb));
   _iaamDraft.prev_antibiotics=_iaamAtb.map(a=>a.name).join(', ');
   // Validate minimum
-  if(!_iaamDraft.section){alert('Completeaza sectia (sectiunea 2 — Spitalizare).');return}
+  if(!_iaamDraft.section){alert(_M('Completeaza sectia (sectiunea 2 — Spitalizare).'));return}
   // Calc completion
   const comp=calcIaamCompletion(_iaamDraft);
   const rec=Object.assign({},_iaamDraft,{year:A.year,completion:comp.total});
@@ -6078,9 +6261,9 @@ async function saveIAAM(){
   // Save last section for smart defaults
   if(rec.section)localStorage.setItem('iaam_last_section',rec.section);
   await pt('iaam',rec);
-  logActivity((_iaamEditId?'Editat':'Adaugat')+' caz IAAM — '+rSec(rec.section)+' ('+comp.total+'%)');
+  logActivity((_iaamEditId?'Editat':'Adaugat')+' caz IAAM — '+rSec(rec.section)+' ('+comp.total+'%)');toastSaved();
   closeM();render();
-  }catch(e){console.error('saveIAAM error:',e);alert('Eroare la salvare: '+e.message)}
+  }catch(e){console.error('saveIAAM error:',e);errAlert(e,'Nu am putut salva inregistrarea.','Could not save the record.')}
 }
 function exportIAAM(){ga('iaam').then(d=>{const blob=new Blob([JSON.stringify(d.filter(r=>r.year===A.year),null,2)],{type:'application/json'});saveAs(blob,'IAAM_'+A.year+'.json')})}
 
@@ -6278,13 +6461,13 @@ function _renderTimeline(allData,isEN){
     h+='<button class="tl-nav-btn" onclick="A.year++;_tlViewStart=1;render()" title="An urmator">&#9654;&#9654;</button>';
     h+='<div style="display:flex;gap:4px;margin-left:8px">';
     h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px" onclick="_tlMode=\'month\';_tlViewStart=1;render()">'+T('tl_luna_btn')+'</button>';
-    h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px;background:var(--blue);color:#fff;border-color:var(--blue)" onclick="_tlMode=\'year\';render()">'+T('tl_an_btn')+'</button>';
+    h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px;background:var(--blue);color:var(--onAccent);border-color:var(--blue)" onclick="_tlMode=\'year\';render()">'+T('tl_an_btn')+'</button>';
     h+='</div>';
     // Toggle: Reporting section vs Attribution section
     h+='<div style="display:flex;gap:4px;margin-left:auto;align-items:center;font-size:11px">';
     h+='<span style="color:var(--txtL)">'+(isEN?'Group by:':'Grupeaza dupa:')+'</span>';
-    h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:10px'+(_tlSecField==='section'?';background:var(--teal);color:#fff;border-color:var(--teal)':'')+'" onclick="window._tlSecField=\'section\';render()">'+(isEN?'Reporting':'Raportoare')+'</button>';
-    h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:10px'+(_tlSecField!=='section'?';background:var(--teal);color:#fff;border-color:var(--teal)':'')+'" onclick="window._tlSecField=\'attribution\';render()">'+(isEN?'Attribution':'Dobandire')+'</button>';
+    h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:10px'+(_tlSecField==='section'?';background:var(--teal);color:var(--onAccent);border-color:var(--teal)':'')+'" onclick="window._tlSecField=\'section\';render()">'+(isEN?'Reporting':'Raportoare')+'</button>';
+    h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:10px'+(_tlSecField!=='section'?';background:var(--teal);color:var(--onAccent);border-color:var(--teal)':'')+'" onclick="window._tlSecField=\'attribution\';render()">'+(isEN?'Attribution':'Dobandire')+'</button>';
     h+='</div>';
     h+='</div>';
     h+=_tlBuildLegend(DK);
@@ -6452,14 +6635,14 @@ function _renderTimeline(allData,isEN){
     '<button class="tl-nav-btn" onclick="_tlNextM()">&#9654;&#9654;</button>';
   // Mode toggle
   h+='<div style="display:flex;gap:4px;margin-left:8px">';
-  h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px;background:var(--blue);color:#fff;border-color:var(--blue)" onclick="_tlMode=\'month\';render()">'+T('tl_luna_btn')+'</button>';
+  h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px;background:var(--blue);color:var(--onAccent);border-color:var(--blue)" onclick="_tlMode=\'month\';render()">'+T('tl_luna_btn')+'</button>';
   h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:11px" onclick="_tlMode=\'year\';_tlViewStart=1;render()">'+T('tl_an_btn')+'</button>';
   h+='</div>';
   // Toggle: Reporting section vs Attribution section
   h+='<div style="display:flex;gap:4px;margin-left:auto;align-items:center;font-size:11px">';
   h+='<span style="color:var(--txtL)">'+(isEN?'Group by:':'Grupeaza dupa:')+'</span>';
-  h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:10px'+(_tlSecField==='section'?';background:var(--teal);color:#fff;border-color:var(--teal)':'')+'" onclick="window._tlSecField=\'section\';render()">'+(isEN?'Reporting':'Raportoare')+'</button>';
-  h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:10px'+(_tlSecField!=='section'?';background:var(--teal);color:#fff;border-color:var(--teal)':'')+'" onclick="window._tlSecField=\'attribution\';render()">'+(isEN?'Attribution':'Dobandire')+'</button>';
+  h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:10px'+(_tlSecField==='section'?';background:var(--teal);color:var(--onAccent);border-color:var(--teal)':'')+'" onclick="window._tlSecField=\'section\';render()">'+(isEN?'Reporting':'Raportoare')+'</button>';
+  h+='<button class="tl-nav-btn" style="width:auto;padding:0 8px;font-size:10px'+(_tlSecField!=='section'?';background:var(--teal);color:var(--onAccent);border-color:var(--teal)':'')+'" onclick="window._tlSecField=\'attribution\';render()">'+(isEN?'Attribution':'Dobandire')+'</button>';
   h+='</div>';
   h+='</div>';
 
@@ -6846,7 +7029,7 @@ async function focSetActionStatus(fid,idx,st){
 }
 
 async function delFocar(id){
-  if(!confirm('Stergi acest focar? Cazurile IAAM legate NU se sterg.'))return;
+  if(!confirm(_M('Stergi acest focar? Cazurile IAAM legate NU se sterg.')))return;
   await dl('outbreaks',id);logActivity('Sters focar');render();
 }
 
@@ -6947,18 +7130,18 @@ async function saveFocar(id){
     status:v('f-foc-status'),date_start:v('f-foc-start'),date_stop:v('f-foc-stop'),
     description:v('f-foc-desc').trim(),conclusions:v('f-foc-concl').trim()
   });
-  if(!rec.name){alert('Completeaza denumirea focarului.');return}
-  if(rec.date_start&&rec.date_stop&&rec.date_start>rec.date_stop){alert('Data de debut este dupa data de inchidere.');return}
+  if(!rec.name){alert(_M('Completeaza denumirea focarului.'));return}
+  if(rec.date_start&&rec.date_stop&&rec.date_start>rec.date_stop){alert(_M('Data de debut este dupa data de inchidere.'));return}
   rec.actions=(rec.actions||[]).filter(function(a){return a&&((a.action||'').trim()||(a.responsible||'').trim()||a.deadline)});
   if(id)rec.id=id;
   await pt('outbreaks',rec);
-  logActivity((id?'Editat':'Adaugat')+' focar — '+rec.name);
+  logActivity((id?'Editat':'Adaugat')+' focar — '+rec.name);toastSaved();
   closeM();render();
 }
 
 // ═══ Raport Word focar ═══
 async function genFocarWord(id){
-  const f=(await ga('outbreaks')).find(function(x){return x.id===id});if(!f){alert('Focar negasit.');return}
+  const f=(await ga('outbreaks')).find(function(x){return x.id===id});if(!f){alert(_M('Focar negasit.'));return}
   const iaamAll=await ga('iaam');
   const cs=(f.case_ids||[]).map(function(cid){return iaamAll.find(function(r){return r.id===cid})}).filter(Boolean);
   cs.sort(function(a,b){return (focCaseDate(a)||'').localeCompare(focCaseDate(b)||'')});
@@ -7106,6 +7289,26 @@ async function rAuto(el){
   // v13.57 - pe tabul „Harta de risc" KPI-urile de probe si tab-urile de trimestru nu au ce
   // filtra: harta nu depinde de perioada. Conditia atinge DOAR tabul nou; celelalte trei raman
   // exact cum erau.
+  // A2-07 - stare goala pentru primul contact. Modulul afisa „Total Probe 0 · Conformitate 0% ·
+  // Acoperire Sectii 0/0" fara niciun indemn, iar cu 0 sectii configurate matricea de acoperire
+  // nu are nici linii, nici coloane. Apare numai cand nu exista nicio proba in anul curent.
+  if(_autoTab!=='risc'&&allData.length===0){
+    var _fara=[];
+    if(!sections.length)_fara.push(isEN?'wards / structures':'sectii / structuri');
+    if(!probeTypes.length)_fara.push(isEN?'sample types':'tipuri de proba');
+    h+='<div class="pn" style="margin-bottom:14px;border-color:var(--teal)"><div class="pb">'+
+      '<div class="ib inf" style="margin-bottom:'+(_fara.length?'10px':'0')+'">'+
+      (isEN?'No microbiological sample recorded for '+A.year+' yet.'
+           :'Nicio proba microbiologica inregistrata pentru '+A.year+'.')+' '+
+      (isEN?'Use <strong>Quarterly planning</strong> to lay out the year, then record results as the lab bulletins arrive.'
+           :'Foloseste <strong>Planificarea trimestriala</strong> ca sa asezi anul, apoi inregistreaza rezultatele pe masura ce sosesc buletinele.')+
+      '</div>'+
+      (_fara.length?'<div class="ib wrn">'+
+        (isEN?'First configure: ':'Configureaza mai intai: ')+esc(_fara.join(', '))+
+        ' — <a href="#" onclick="event.preventDefault();nav(\'config\')" style="font-weight:600">'+
+        (isEN?'Settings':'Configurare')+'</a></div>':'')+
+      '</div></div>';
+  }
   if(_autoTab!=='risc'){
   h+='<div class="kg">'+
     '<div class="kc tl"><div class="kl">'+(isEN?'Total Samples':'Total Probe')+' ('+qLabel+')</div><div class="kv">'+totalProbe+'</div></div>'+
@@ -7807,12 +8010,12 @@ async function _collectAutoRec(id){
   const organism=orgSel==='__custom'?orgCustom:(orgSel||'');
   const rec={year:A.year,quarter:+v('f-auto-q'),month:+v('f-auto-mo'),date:v('f-auto-dt'),probe_type:v('f-auto-tp'),section:v('f-auto-sec'),result:v('f-auto-res'),organism:organism,dsp_parallel:v('f-auto-dsp')==='true',notes:v('f-auto-n').trim(),details:v('f-auto-det').trim(),reg_number:v('f-auto-reg').trim()};
   if(rec.result==='neconform'){rec.nc_details=(mc.querySelector('#f-auto-nc')?.value||'').trim();rec.ufc_count=+v('f-auto-ufc')||null}
-  if(!rec.probe_type||!rec.section){alert('Completeaza tipul si sectia.');return null}
+  if(!rec.probe_type||!rec.section){alert(_M('Completeaza tipul si sectia.'));return null}
   if(id)rec.id=id;return rec;
 }
 async function saveAuto(id){
   const rec=await _collectAutoRec(id);if(!rec)return;
-  await pt('autocontrol',rec);logActivity((id?'Editat':'Adaugat')+' proba autocontrol — '+rSec(rec.section));closeM();render();
+  await pt('autocontrol',rec);logActivity((id?'Editat':'Adaugat')+' proba autocontrol — '+rSec(rec.section));toastSaved();closeM();render();
 }
 async function saveAutoAndNew(){
   const rec=await _collectAutoRec(null);if(!rec)return;
@@ -7828,7 +8031,7 @@ async function saveAutoAndNew(){
 // CONFIGURARE, nu cel afisat: rSec trece prin _secDisplayName, care prefixeaza \u201ECab." / \u201ESpZi",
 // iar importul nu mai recunostea numele si scria textul afisat in campul `section` \u2014 proba
 // disparea din matricea de acoperire si din filtre, desi in tabel arata la fel.
-function expAutoCSV(){ga('autocontrol').then(d=>{const rows=d.filter(r=>r.year===A.year);if(!rows.length){alert('Nimic de exportat.');return}
+function expAutoCSV(){ga('autocontrol').then(d=>{const rows=d.filter(r=>r.year===A.year);if(!rows.length){alert(_M('Nimic de exportat.'));return}
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
   const secName=id=>{const s=(CFG.sections||[]).find(x=>x.id===id);return s?sn(s):(id||'')};
   const ptName=id=>{const p=(CFG.probe_types||[]).find(x=>x.id===id);return p?sn(p):(id||'')};
@@ -7845,7 +8048,7 @@ function impAutoCSV(){const inp=document.createElement('input');inp.type='file';
   const f=e.target.files[0];if(!f)return;
   let t;try{t=await f.text()}catch(err){alert('Nu pot citi fisierul: '+(err&&err.message?err.message:err));return}
   const lines=t.split(/\r?\n/).filter(l=>l.trim());
-  if(lines.length<2){alert('Fisierul este gol sau contine doar antetul \u2014 nu am ce importa.');return}
+  if(lines.length<2){alert(_M('Fisierul este gol sau contine doar antetul \u2014 nu am ce importa.'));return}
   const first=lines[0].replace(/^\uFEFF/,'');
   const sep=(first.split(';').length>first.split(',').length)?';':',';
   const hdr=_csvSplit(first,sep).map(h=>h.toLowerCase());
@@ -7855,7 +8058,7 @@ function impAutoCSV(){const inp=document.createElement('input');inp.type='file';
     sec:has('sectie','sec\u0163ie','sec\u021Bie'),res:has('rezultat'),org:has('germen'),ufc:has('ufc'),
     det:has('detalii'),dsp:has('dsp'),reg:has('inregistrare','nr. inreg'),nc:has('neconformit'),notes:has('obs')};
   if(ci.pt<0||ci.sec<0||ci.res<0){
-    alert('Antetul fisierului nu este recunoscut.\n\nColoane obligatorii: Tip Proba, Sectie, Rezultat.\n\nCel mai simplu: exporta intai din aplicatie (Export CSV) si foloseste acel fisier ca model.');
+    alert(_M('Antetul fisierului nu este recunoscut.\n\nColoane obligatorii: Tip Proba, Sectie, Rezultat.\n\nCel mai simplu: exporta intai din aplicatie (Export CSV) si foloseste acel fisier ca model.'));
     return;
   }
   const existing=(await ga('autocontrol')).filter(r=>r.year===A.year).length;
@@ -8017,14 +8220,14 @@ async function editRiskPoint(id){
 async function saveRiskPoint(id){
   var mc=document.getElementById('mdc');
   var v=function(s){var el=(mc?mc.querySelector('#'+s):null)||document.getElementById(s);return el?el.value:''};
-  var sec=v('f-rk-sec'); if(!sec){alert(CFG.lang==='en'?'Select the ward.':'Selecteaza sectia.');return}
+  var sec=v('f-rk-sec'); if(needSection(sec))return;
   var zone=v('f-rk-zone').trim(); if(!zone){alert(CFG.lang==='en'?'Fill in the zone.':'Completeaza zona.');return}
   var rec={kind:'risc',year:A.year,section:sec,zone:zone,points:v('f-rk-points').trim(),
     level:v('f-rk-lv')||'mediu',frequency:v('f-rk-freq').trim(),measures:v('f-rk-meas').trim(),
     reviewed_date:v('f-rk-rev'),notes:v('f-rk-n').trim()};
   if(id)rec.id=id;
   await pt('ipc_registry',rec);
-  logActivity((id?'Editat':'Adaugat')+' punct de risc — '+rSec(sec)+' / '+zone);
+  logActivity((id?'Editat':'Adaugat')+' punct de risc — '+rSec(sec)+' / '+zone);toastSaved();
   closeM();render();
 }
 
@@ -8071,7 +8274,7 @@ async function genRiskMapWord(){
     );
     var doc=makeDoc(children,'Harta punctelor si zonelor de risc','HartaRisc',{landscape:true});
     await saveDocx(doc,'Harta_Risc_'+A.year+'.docx');
-  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  }catch(e){console.error(e);errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.')}
   finally{hideGen()}
 }
 
@@ -8252,15 +8455,15 @@ async function saveAtp(id){
   // sub orice prag → aparea CONFORMA in tabel, in KPI si in raportul Word. O proba la care
   // userul a uitat sa treaca citirea nu se distingea de una curata.
   const rluRaw=v('f-atp-rlu').trim();
-  if(rluRaw===''){alert('Introdu valoarea RLU.');return}
+  if(rluRaw===''){alert(_M('Introdu valoarea RLU.'));return}
   const rlu=+rluRaw;
-  if(!isFinite(rlu)||rlu<0){alert('Valoarea RLU trebuie sa fie un numar pozitiv.');return}
-  const sec=v('f-atp-sec');if(!sec){alert('Selecteaza sectia.');return}
-  const surf=v('f-atp-surf');if(!surf){alert('Selecteaza tipul de suprafata — el stabileste pragul RLU.');return}
+  if(!isFinite(rlu)||rlu<0){alert(_M('Valoarea RLU trebuie sa fie un numar pozitiv.'));return}
+  const sec=v('f-atp-sec');if(needSection(sec))return;
+  const surf=v('f-atp-surf');if(!surf){alert(_M('Selecteaza tipul de suprafata — el stabileste pragul RLU.'));return}
   const rlu2=v('f-atp-rlu2');
   const rec={year:A.year,date:v('f-atp-date'),section:sec,surface_type:v('f-atp-surf'),location:v('f-atp-loc').trim(),
     rlu_value:rlu,rlu_repeat:rlu2!==''?+rlu2:null,notes:v('f-atp-notes').trim()};
-  if(id)rec.id=id;await pt('atp',rec);logActivity((id?'Editat':'Adaugat')+' proba ATP — '+rSec(rec.section));closeM();render();
+  if(id)rec.id=id;await pt('atp',rec);logActivity((id?'Editat':'Adaugat')+' proba ATP — '+rSec(rec.section));toastSaved();closeM();render();
 }
 
 function editAtpSurfaces(){
@@ -8428,9 +8631,9 @@ async function editUv(id){
 }
 async function saveUv(id){
   const v=s=>document.getElementById(s)?document.getElementById(s).value:'';
-  const sec=v('f-uv-sec');if(!sec){alert('Selecteaza sectia.');return}
+  const sec=v('f-uv-sec');if(needSection(sec))return;
   const rec={year:A.year,date:v('f-uv-date'),section:sec,surface:v('f-uv-surf').trim(),result:v('f-uv-res'),notes:v('f-uv-notes').trim()};
-  if(id)rec.id=id;await pt('uvcheck',rec);logActivity((id?'Editat':'Adaugat')+' verificare UV — '+rSec(rec.section));closeM();render();
+  if(id)rec.id=id;await pt('uvcheck',rec);logActivity((id?'Editat':'Adaugat')+' verificare UV — '+rSec(rec.section));toastSaved();closeM();render();
 }
 
 
@@ -8982,7 +9185,7 @@ async function exportIndicatoriSite(){
   '</body></html>';
 
   var w=window.open('','_blank');
-  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.');return}
+  if(!w){alert(_M('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.'));return}
   w.document.write(html);w.document.close();
   if(typeof showToast==='function')showToast('Pagina de indicatori generata — se poate salva ca PDF sau publica pe site');
   if(typeof logActivity==='function')logActivity('Export indicatori pentru site — '+year);
@@ -9022,7 +9225,7 @@ async function rDes(el){
     activeWC.map(w=>{var noteHtml=w.note_populatie?'<br><span style="font-size:9px;color:var(--amber);font-style:italic">&#9888; '+w.note_populatie+'</span>':'';return '<tr><td><strong>'+w.code+'</strong><br><span style="font-size:10px;color:var(--txtL)">'+(w.name||w.code)+'</span>'+noteHtml+'</td>'+
       MO.map((_,mi)=>{const v=byM[mi+1]?byM[mi+1][w.id]||'':'';return'<td style="padding:3px"><input type="number" step="0.01" min="0" value="'+v+'" style="width:100%;padding:4px 3px;border:1px solid var(--brd);border-radius:4px;font-size:11px;text-align:right;font-family:var(--f)" onchange="sDes('+(mi+1)+',\''+w.id+'\',this.value)"></td>'}).join('')+
       '<td style="text-align:right" id="des-rt-'+w.id+'"><strong>'+fn(Math.round(ct[w.id]*100)/100)+'</strong> <span style="font-size:10px;opacity:.7">kg</span></td></tr>'}).join('')+
-    '<tr style="background:var(--navy);color:#fff;font-weight:700"><td>TOTAL (kg)</td>'+
+    '<tr style="background:var(--navy);color:var(--onAccent);font-weight:700"><td>TOTAL (kg)</td>'+
       MO.map((_,mi)=>{let mt=0;activeWC.forEach(w=>{mt+=+(byM[mi+1]?.[w.id])||0});return'<td style="text-align:right" id="des-mt-'+(mi+1)+'">'+(mt>0?fn(Math.round(mt*100)/100)+' kg':'')+'</td>'}).join('')+
       '<td style="text-align:right" id="des-gt">'+fn(Math.round(gt*100)/100)+' kg</td></tr>'+
   '</tbody></table></div></div>'+
@@ -9104,7 +9307,7 @@ function _wRecipForecastHtml(byM,activeWC){
     '<div style="overflow-x:auto"><table class="dt" style="font-size:12px">'+
     '<thead><tr><th>Cod deseu</th><th style="text-align:right">Consum YTD</th><th style="text-align:right">Forecast luni ramase</th><th>Recipient</th><th style="text-align:right">Buc necesare</th><th style="text-align:right">Cost (optional)</th></tr></thead>'+
     '<tbody>'+rows+'</tbody>'+
-    (hasCost?'<tfoot><tr style="background:var(--navy);color:#fff;font-weight:700"><td colspan="5" style="text-align:right">TOTAL BUGET ESTIMAT (luni ramase, doar recipiente cu cost)</td><td style="text-align:right">'+fn(Math.round(totalCost))+' lei</td></tr></tfoot>':'')+
+    (hasCost?'<tfoot><tr style="background:var(--navy);color:var(--onAccent);font-weight:700"><td colspan="5" style="text-align:right">TOTAL BUGET ESTIMAT (luni ramase, doar recipiente cu cost)</td><td style="text-align:right">'+fn(Math.round(totalCost))+' lei</td></tr></tfoot>':'')+
     '</table></div>'+
     (anyHasMapping?'':'<div class="ib wrn" style="margin-top:8px;font-size:11px">Niciun recipient mapat la codurile tale active. Adauga recipiente in catalogul de mai jos cu coduri deseu corecte.</div>')+
     '</div></div>';
@@ -9147,7 +9350,7 @@ function _wRecipCatalogHtml(){
 }
 // CRUD recipiente
 async function wRecipPrePopulate(){
-  if(typeof DEFAULT_WASTE_RECIPIENTS==='undefined'){alert('Erori la incarcarea seed-ului default.');return}
+  if(typeof DEFAULT_WASTE_RECIPIENTS==='undefined'){alert(_M('Erori la incarcarea seed-ului default.'));return}
   if(!CFG.waste_recipients)CFG.waste_recipients=[];
   // v12.99 - duplicate detection dupa nume (in caz ca user apasa de 2 ori sau sync aduce date)
   var existingNames={};(CFG.waste_recipients||[]).forEach(function(r){existingNames[(r.name||'').toLowerCase()]=true});
@@ -9194,10 +9397,10 @@ function wRecipEdit(idx){
 }
 async function wRecipSave(idx){
   var v=function(id){var el=document.getElementById(id);return el?el.value.trim():''};
-  var n=v('wr-name');if(!n){alert('Numele recipientului este obligatoriu.');return}
-  var capKg=parseFloat(v('wr-capkg'));if(!capKg||capKg<=0){alert('Capacitatea (kg) este obligatorie si trebuie sa fie pozitiva.');return}
+  var n=v('wr-name');if(!n){alert(_M('Numele recipientului este obligatoriu.'));return}
+  var capKg=parseFloat(v('wr-capkg'));if(!capKg||capKg<=0){alert(_M('Capacitatea (kg) este obligatorie si trebuie sa fie pozitiva.'));return}
   var codes=[];document.querySelectorAll('[data-wcode]:checked').forEach(function(c){codes.push(c.getAttribute('data-wcode'))});
-  if(codes.length===0){alert('Selecteaza cel putin un cod deseu.');return}
+  if(codes.length===0){alert(_M('Selecteaza cel putin un cod deseu.'));return}
   var costEl=document.getElementById('wr-cost');var costVal=costEl?parseFloat(costEl.value):0;
   var rec={
     id:idx>=0?(CFG.waste_recipients[idx].id||_wasteRecipId()):_wasteRecipId(),
@@ -9297,7 +9500,7 @@ function bioCollapseAll(){_bioExpanded={};render()}
 function bioAddAviz(pid){
   if(!pid)return;
   var prod=(CFG.biocide_products||[]).find(function(p){return p.id===pid});
-  if(!prod){alert('Produs nedetectat');return}
+  if(!prod){alert(_M('Produs nedetectat'));return}
   if(!prod.avize)prod.avize=[];
   prod.avize.push({nr:'',date_issued:'',date_expiry:''});
   saveCfg();render();
@@ -9782,7 +9985,7 @@ function bioQuickAddProduct(){
 var _bioRecSnapshot=null;
 async function bioQuickAddProductSave(){
   var v=function(id){var el=document.getElementById(id);return el?el.value.trim():''};
-  var name=v('bqap-name');if(!name){alert('Numele produsului este obligatoriu.');return}
+  var name=v('bqap-name');if(!name){alert(_M('Numele produsului este obligatoriu.'));return}
   if((CFG.biocide_products||[]).some(function(p){return(p.name||'').toLowerCase()===name.toLowerCase()})){
     alert('Produsul „'+name+'" exista deja in catalog.');return;
   }
@@ -9885,7 +10088,7 @@ function uploadBioAttModal(key){
         const fname='bio_'+_editBioRec.id+'_'+key+'_'+idx+'_'+Date.now()+'.'+ext;
         await attWriteFile('biocide',fname,f);
         _editBioRec.attachments[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});
-      }catch(err){alert('Eroare la salvarea fisierului: '+err.message);return}
+      }catch(err){errAlert(err,'Nu am putut salva fisierul atasat.','Could not save the attached file.');return}
     }
     await pt('biocide',_editBioRec);editBio(_editBioRec.id)};inp.click();
 }
@@ -9903,7 +10106,7 @@ function downloadBioAttModal(key,idx){
   const files=_getBioAttFiles(_editBioRec,key);
   const att=files[idx];if(!att)return;
   if(att.on_disk&&att.filename){
-    attReadFile('biocide',att.filename).then(file=>saveAs(file,att.name)).catch(()=>alert('Nu pot citi fisierul de pe disc.'));return;
+    attReadFile('biocide',att.filename).then(file=>saveAs(file,att.name)).catch(()=>alert(_M('Nu pot citi fisierul de pe disc.')));return;
   }
   if(att.data){const a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
 }
@@ -9912,7 +10115,7 @@ function downloadBioAttModal(key,idx){
 function _bioOpenInNewTab(promiseOrUrl){
   // Deschidem fereastra IMEDIAT (sync, user gesture - browser-ul nu blocheaza)
   var w=window.open('about:blank','_blank');
-  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie si reincearca.');return}
+  if(!w){alert(_M('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie si reincearca.'));return}
   if(typeof promiseOrUrl==='string'){w.location=promiseOrUrl;return}
   // Promise care returneaza URL string sau blob
   promiseOrUrl.then(function(res){
@@ -9935,31 +10138,31 @@ function viewBioAttModal(key,idx){
 function bioViewAttByRec(recId,key,idx){
   // v13.19 - sync user gesture: deschide fereastra imediat, populeaza async dupa
   var w=window.open('about:blank','_blank');
-  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.');return}
+  if(!w){alert(_M('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.'));return}
   (async()=>{
     try{
       var rec=(await ga('biocide')).find(function(r){return r.id===recId});
-      if(!rec){w.close();return alert('Inregistrarea nu mai exista.')}
+      if(!rec){w.close();return alert(_M('Inregistrarea nu mai exista.'))}
       var att=(_getBioAttFiles(rec,key)||[])[idx];
-      if(!att){w.close();return alert('Fisierul nu mai este disponibil.')}
+      if(!att){w.close();return alert(_M('Fisierul nu mai este disponibil.'))}
       if(att.on_disk&&att.filename){var f=await attReadFile('biocide',att.filename);w.location=URL.createObjectURL(f);return}
       if(att.data){w.location=att.data;return}
       w.close();
-    }catch(e){try{w.close()}catch(_){}alert('Eroare vizualizare: '+e.message)}
+    }catch(e){try{w.close()}catch(_){}errAlert(e,'Nu am putut deschide fisierul.','Could not open the file.')}
   })();
 }
 async function bioDownloadAttByRec(recId,key,idx){
-  try{var rec=(await ga('biocide')).find(function(r){return r.id===recId});if(!rec)return alert('Inregistrarea nu mai exista.');
-    var att=(_getBioAttFiles(rec,key)||[])[idx];if(!att)return alert('Fisierul nu mai este disponibil.');
+  try{var rec=(await ga('biocide')).find(function(r){return r.id===recId});if(!rec)return alert(_M('Inregistrarea nu mai exista.'));
+    var att=(_getBioAttFiles(rec,key)||[])[idx];if(!att)return alert(_M('Fisierul nu mai este disponibil.'));
     if(att.on_disk&&att.filename){var f=await attReadFile('biocide',att.filename);saveAs(f,att.name);return}
     if(att.data){var a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
-  }catch(e){alert('Eroare download: '+e.message)}
+  }catch(e){errAlert(e,'Nu am putut descarca fisierul.','Could not download the file.')}
 }
 // v12.82 — Editor produs COMPLET (identificare, clasificare, parteneri, avize, documente produs).
 // Documentele la nivel de PRODUS inlocuiesc atasamentele duplicate pe fiecare miscare.
 function bioEditProduct(pid){
   var idx=(CFG.biocide_products||[]).findIndex(function(p){return p.id===pid});
-  if(idx<0)return alert('Produs negasit.');
+  if(idx<0)return alert(_M('Produs negasit.'));
   var p=CFG.biocide_products[idx];
   if(!p.documents)p.documents={aviz:[],fisa_tehnica:[],sds:[],alte_doc:[]};
   if(!p.avize)p.avize=[];
@@ -10256,7 +10459,7 @@ function bioAddUsageProfile(pid){
   _bioReRenderEditor(pid,{scrollToLastProfile:true}); // v13.1 scroll la noul profil
 }
 function bioDeleteUsageProfile(pid,idx){
-  if(!confirm('Stergi acest profil de utilizare?'))return;
+  if(!confirm(_M('Stergi acest profil de utilizare?')))return;
   bioSaveProduct(pid,true);
   var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p||!p.usage_profiles)return;
   p.usage_profiles.splice(idx,1);
@@ -10277,7 +10480,7 @@ async function bioApplyTemplateToProduct(pid){
 async function bioApplyTemplateByKey(pid){
   var sel=document.getElementById('bep-tpl-choose');
   var key=sel?sel.value:'';
-  if(!key){alert('Selecteaza un template din dropdown.');return}
+  if(!key){alert(_M('Selecteaza un template din dropdown.'));return}
   var tpl=_getBioTemplateByKey(key);
   if(!tpl){alert('Template invalid: '+key);return}
   var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p)return;
@@ -10291,12 +10494,12 @@ async function bioApplyTemplateByKey(pid){
 async function bioMergeProduct(sourcePid){
   var sel=document.getElementById('bep-merge-target');
   var targetPid=sel?sel.value:'';
-  if(!targetPid){alert('Selecteaza un produs destinatie din dropdown.');return}
-  if(targetPid===sourcePid){alert('Nu poti fuziona un produs cu el insusi.');return}
+  if(!targetPid){alert(_M('Selecteaza un produs destinatie din dropdown.'));return}
+  if(targetPid===sourcePid){alert(_M('Nu poti fuziona un produs cu el insusi.'));return}
   // v12.88 — snapshot + try-catch: daca o parte esueaza (pt record / saveCfg), raportam clar
   var sIdx=CFG.biocide_products.findIndex(function(p){return p.id===sourcePid});
   var tIdx=CFG.biocide_products.findIndex(function(p){return p.id===targetPid});
-  if(sIdx<0||tIdx<0){alert('Produs(e) negasit(e).');return}
+  if(sIdx<0||tIdx<0){alert(_M('Produs(e) negasit(e).'));return}
   var source=CFG.biocide_products[sIdx];
   var target=CFG.biocide_products[tIdx];
   var allRecs=await ga('biocide');
@@ -10398,7 +10601,7 @@ function bioAddProductDoc(pid,key){
   var inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.doc,.docx,.jpg,.png,.jpeg';inp.multiple=true;
   inp.onchange=async function(e){
     var files=Array.from(e.target.files);if(!files.length)return;
-    if(!_attDirHandle){alert('Configureaza mai intai folderul de atasamente: Configurare → Date & Backup → Stocare Atasamente');return}
+    if(!_attDirHandle){alert(_M('Configureaza mai intai folderul de atasamente: Configurare → Date & Backup → Stocare Atasamente'));return}
     for(var i=0;i<files.length;i++){var f=files[i];
       if(f.size>10*1024*1024){alert('Fisierul '+f.name+' depaseste 10MB.');continue}
       try{
@@ -10406,7 +10609,7 @@ function bioAddProductDoc(pid,key){
         var fname='bp_'+p.id+'_'+key+'_'+Date.now()+'_'+i+'.'+ext;
         await attWriteFile('biocide',fname,f);
         p.documents[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});
-      }catch(err){alert('Eroare salvare: '+err.message);return}
+      }catch(err){errAlert(err,'Nu am putut salva fisierul atasat.','Could not save the attached file.');return}
     }
     await saveCfg();bioEditProduct(pid);render();
   };inp.click();
@@ -10416,13 +10619,13 @@ function bioViewProductDoc(pid,key,fi){
   var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p||!p.documents||!p.documents[key])return;
   var att=p.documents[key][fi];if(!att)return;
   var w=window.open('about:blank','_blank');
-  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.');return}
+  if(!w){alert(_M('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.'));return}
   (async()=>{
     try{
       if(att.on_disk&&att.filename){var f=await attReadFile('biocide',att.filename);w.location=URL.createObjectURL(f);return}
       if(att.data){w.location=att.data;return}
       w.close();
-    }catch(e){try{w.close()}catch(_){}alert('Eroare vizualizare: '+e.message)}
+    }catch(e){try{w.close()}catch(_){}errAlert(e,'Nu am putut deschide fisierul.','Could not open the file.')}
   })();
 }
 async function bioDownloadProductDoc(pid,key,fi){
@@ -10431,13 +10634,13 @@ async function bioDownloadProductDoc(pid,key,fi){
   try{
     if(att.on_disk&&att.filename){var f=await attReadFile('biocide',att.filename);saveAs(f,att.name);return}
     if(att.data){var a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
-  }catch(e){alert('Eroare download: '+e.message)}
+  }catch(e){errAlert(e,'Nu am putut descarca fisierul.','Could not download the file.')}
 }
 // v12.83 — Download bulk: toate documentele produs (Aviz+Fisa+SDS+Alte) secvential
 async function bioDownloadAllProductDocs(pid){
   var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p||!p.documents)return;
   var all=[];BIO_ATT_TYPES.forEach(function(t){(p.documents[t.key]||[]).forEach(function(f){all.push({file:f,label:t.label})})});
-  if(all.length===0){alert('Nu exista documente pentru acest produs.');return}
+  if(all.length===0){alert(_M('Nu exista documente pentru acest produs.'));return}
   if(!confirm('Descarci '+all.length+' fisiere pentru „'+(p.name||'produs')+'"? Browserul va cere permisiune pentru descarcari multiple.'))return;
   for(var i=0;i<all.length;i++){
     var it=all[i];
@@ -10452,7 +10655,7 @@ async function bioDownloadAllProductDocs(pid){
   if(typeof showToast==='function')showToast(all.length+' fisiere descarcate pentru '+(p.name||'produs'));
 }
 async function bioDeleteProductDoc(pid,key,fi){
-  if(!confirm('Stergi documentul?'))return;
+  if(!confirm(_M('Stergi documentul?')))return;
   var idx=(CFG.biocide_products||[]).findIndex(function(p){return p.id===pid});if(idx<0)return;
   var p=CFG.biocide_products[idx];if(!p.documents||!p.documents[key])return;
   var att=p.documents[key][fi];
@@ -10463,7 +10666,7 @@ async function bioDeleteProductDoc(pid,key,fi){
 // v12.82 — Migratie atasamente de pe records la nivel de produs
 // Deduplicare: fisiere cu acelasi `name` din miscari diferite ale aceluiasi produs → pastram primul
 async function bioMigrateDocsToProduct(pid){
-  if(!confirm('Migrezi documentele de pe miscari la nivel de produs?\n\nAceasta operatiune:\n• Copie fisierele unice pe produs\n• Elimina atasamentele de pe fiecare miscare\n• Deduplica fisierele cu nume identic\n• Recomandare: fa un backup JSON inainte (Configurare → Backup)'))return;
+  if(!confirm(_M('Migrezi documentele de pe miscari la nivel de produs?\n\nAceasta operatiune:\n• Copie fisierele unice pe produs\n• Elimina atasamentele de pe fiecare miscare\n• Deduplica fisierele cu nume identic\n• Recomandare: fa un backup JSON inainte (Configurare → Backup)')))return;
   var records=await ga('biocide');
   var targets=pid?records.filter(function(r){return r.product_id===pid}):records;
   var moved=0,deduped=0;
@@ -10492,7 +10695,7 @@ async function saveBio(id){
   const selVal=v('f-prod').trim();
   const customVal=(document.getElementById('f-prod-custom')?.value||'').trim();
   const prodVal=selVal||customVal;
-  if(!prodVal){alert('Completeaza produsul.');return}
+  if(!prodVal){alert(_M('Completeaza produsul.'));return}
   const prodObj=CFG.biocide_products.find(p=>p.id===prodVal)||CFG.biocide_products.find(p=>p.name===prodVal);
   const rec={year:A.year,product_id:prodObj?prodObj.id:prodVal,product_name:prodObj?prodObj.name:(customVal||prodVal),unit:v('f-um').trim(),type:v('f-tp'),month:+v('f-mo')||null,lot:v('f-lot').trim(),quantity:+v('f-qty')||0,value_lei:+v('f-val')||0,manufacturer:(document.getElementById('f-bio-mfr')?.value||'').trim(),distributor:(document.getElementById('f-bio-dist')?.value||'').trim(),product_type:(document.getElementById('f-bio-ptype')?.value||'')};
   if(id){
@@ -10504,7 +10707,7 @@ async function saveBio(id){
     if(old&&old.notes!==undefined&&old.notes!=='')rec.notes=old.notes;
     rec.id=id;
   }
-  await pt('biocide',rec);logActivity((id?'Editat':'Adaugat')+' biocid — '+rec.product_name);closeM();render();
+  await pt('biocide',rec);logActivity((id?'Editat':'Adaugat')+' biocid — '+rec.product_name);toastSaved();closeM();render();
 }
 
 // ── Biocide Attachments (cerinta 7) ──
@@ -10556,7 +10759,7 @@ function showBioAttPopup(evt,id,key){
 function viewBioAttIdx(id,key,idx){
   // v13.19 - sync user gesture
   var w=window.open('about:blank','_blank');
-  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.');return}
+  if(!w){alert(_M('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.'));return}
   (async()=>{
     try{
       var data=await ga('biocide');var rec=data.find(function(x){return String(x.id)===String(id)});if(!rec){w.close();return}
@@ -10564,13 +10767,13 @@ function viewBioAttIdx(id,key,idx){
       if(att.on_disk&&att.filename){var file=await attReadFile('biocide',att.filename);w.location=URL.createObjectURL(file);return}
       if(att.data){w.location=att.data;return}
       w.close();
-    }catch(e){try{w.close()}catch(_){}alert('Nu pot citi fisierul: '+e.message)}
+    }catch(e){try{w.close()}catch(_){}errAlert(e,'Nu am putut citi fisierul.','Could not read the file.')}
   })();
 }
 async function downloadBioAttIdx(id,key,idx){
   var data=await ga('biocide');var rec=data.find(function(x){return String(x.id)===String(id)});if(!rec)return;
   var files=_getBioAttFiles(rec,key);var att=files[idx];if(!att)return;
-  if(att.on_disk&&att.filename){try{var file=await attReadFile('biocide',att.filename);saveAs(file,att.name);return}catch(e){alert('Nu pot citi fisierul de pe disc.')};return}
+  if(att.on_disk&&att.filename){try{var file=await attReadFile('biocide',att.filename);saveAs(file,att.name);return}catch(e){alert(_M('Nu pot citi fisierul de pe disc.'))};return}
   if(att.data){var a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
 }
 async function downloadBioAttAll(id,key){
@@ -10598,7 +10801,7 @@ function uploadBioAtt(id,key){
         const fname='bio_'+id+'_'+key+'_'+idx+'_'+Date.now()+'.'+ext;
         await attWriteFile('biocide',fname,f);
         rec.attachments[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});
-      }catch(err){alert('Eroare la salvarea fisierului: '+err.message);return}
+      }catch(err){errAlert(err,'Nu am putut salva fisierul atasat.','Could not save the attached file.');return}
     }
     await pt('biocide',rec);render()};inp.click();
 }
@@ -10608,7 +10811,7 @@ async function downloadBioAtt(id,key){
   const att=files[0];
   if(att.on_disk&&att.filename){
     try{const file=await attReadFile('biocide',att.filename);
-      saveAs(file,att.name);return}catch(e){alert('Nu pot citi fisierul de pe disc. Reconecteaza folderul de atasamente din Configurare.')}
+      saveAs(file,att.name);return}catch(e){alert(_M('Nu pot citi fisierul de pe disc. Reconecteaza folderul de atasamente din Configurare.'))}
     return;
   }
   if(att.data){const a=document.createElement('a');a.href=att.data;a.download=att.name;a.click()}
@@ -10616,7 +10819,7 @@ async function downloadBioAtt(id,key){
 function viewBioAtt(id,key){
   // v13.19 - sync user gesture
   var w=window.open('about:blank','_blank');
-  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.');return}
+  if(!w){alert(_M('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.'));return}
   (async()=>{
     try{
       const data=await ga('biocide');const rec=data.find(x=>String(x.id)===String(id));
@@ -10625,7 +10828,7 @@ function viewBioAtt(id,key){
       if(att.on_disk&&att.filename){const file=await attReadFile('biocide',att.filename);w.location=URL.createObjectURL(file);return}
       if(att.data){w.location=att.data;return}
       w.close();
-    }catch(e){try{w.close()}catch(_){}alert('Nu pot citi fisierul de pe disc. Reconecteaza folderul de atasamente din Configurare.')}
+    }catch(e){try{w.close()}catch(_){}alert(_M('Nu pot citi fisierul de pe disc. Reconecteaza folderul de atasamente din Configurare.'))}
   })();
 }
 
@@ -10681,7 +10884,7 @@ function getBioExpiredAvize(){
 // Agregheaza rowurile cu acelasi nume (multi-lot devine o singura inregistrare per tip).
 var _bioImportData=null;
 async function importBiocideBalanceExcel(){
-  if(typeof XLSX==='undefined'){alert('Biblioteca XLSX nu este disponibila (offline?).');return}
+  if(typeof XLSX==='undefined'){alert(_M('Biblioteca XLSX nu este disponibila (offline?).'));return}
   var inp=document.createElement('input');
   inp.type='file';inp.accept='.xlsx,.xls,.xlsm';
   inp.onchange=async function(){
@@ -10695,12 +10898,12 @@ async function importBiocideBalanceExcel(){
       var parsed=_parseBioBalanceXlsx(rows);
       hideGen&&hideGen();
       if(!parsed||!parsed.products.length){
-        alert('Format nerecunoscut. Fisierul trebuie sa fie o balanta de stocuri cu coloane:\n - Id, Cod, Nume produs\n - Grupuri Initial / Intrari / Iesiri / Final\n - Sub-headers Cantitate + Valoare');
+        alert(_M('Format nerecunoscut. Fisierul trebuie sa fie o balanta de stocuri cu coloane:\n - Id, Cod, Nume produs\n - Grupuri Initial / Intrari / Iesiri / Final\n - Sub-headers Cantitate + Valoare'));
         return;
       }
       _bioImportData=parsed;
       _showBioImportPreview();
-    }catch(e){hideGen&&hideGen();alert('Eroare citire Excel: '+e.message);console.error(e)}
+    }catch(e){hideGen&&hideGen();errAlert(e,'Nu am putut citi fisierul Excel.','Could not read the Excel file.');console.error(e)}
   };
   inp.click();
 }
@@ -10888,7 +11091,7 @@ function _showBioImportPreview(){
   h+='<div class="ib wrn" style="margin:10px 0;font-size:12px"><strong>&#9888; Atentie:</strong> inregistrarile existente pentru aceeasi perioada nu sunt inlocuite — se adauga in plus. Daca ai introdus deja manual date pentru aceasta perioada, sterge-le intai sau anuleaza acest import.</div>';
   // Preview produse
   h+='<div style="overflow-x:auto;max-height:50vh;overflow-y:auto;border:1px solid var(--brd);border-radius:6px">';
-  h+='<table class="dt" style="margin:0;font-size:11px"><thead style="position:sticky;top:0;background:var(--navy);color:#fff"><tr><th>Import</th><th>Nume din fisier</th><th style="min-width:220px">Produs catalog</th><th>TP</th><th>UM</th><th style="text-align:right">Initial Q</th><th style="text-align:right">Initial V</th><th style="text-align:right">Intrari Q</th><th style="text-align:right">Intrari V</th><th style="text-align:right">Iesiri Q</th><th style="text-align:right">Iesiri V</th></tr></thead><tbody>';
+  h+='<table class="dt" style="margin:0;font-size:11px"><thead style="position:sticky;top:0;background:var(--navy);color:var(--onAccent)"><tr><th>Import</th><th>Nume din fisier</th><th style="min-width:220px">Produs catalog</th><th>TP</th><th>UM</th><th style="text-align:right">Initial Q</th><th style="text-align:right">Initial V</th><th style="text-align:right">Intrari Q</th><th style="text-align:right">Intrari V</th><th style="text-align:right">Iesiri Q</th><th style="text-align:right">Iesiri V</th></tr></thead><tbody>';
   // v12.85 — suggestions cu fuzzy match; user alege din dropdown daca e +nou sau se potriveste cu produs existent
   d.products.forEach(function(prd,i){
     var match=_matchBioProduct(prd.nume);
@@ -11082,7 +11285,7 @@ async function genGhidBiocideRun(mode){
   document.querySelectorAll('[data-ghid-tpl]').forEach(function(cb){
     if(cb.checked)sel[cb.getAttribute('data-ghid-tpl')]=true;
   });
-  if(Object.keys(sel).length===0){alert('Selecteaza cel putin o categorie.');return}
+  if(Object.keys(sel).length===0){alert(_M('Selecteaza cel putin o categorie.'));return}
   var v=function(id){var el=document.getElementById(id);return el?el.value.trim():''};
   var ck=function(id){var el=document.getElementById(id);return el?el.checked:false};
   var opts={
@@ -11115,12 +11318,12 @@ async function genGhidBiocideRun(mode){
     try{
       saveAs(new Blob([html],{type:'text/html;charset=utf-8'}),fname);
       if(typeof showToast==='function')showToast('Ghid HTML descarcat — se poate edita in Word sau orice editor');
-    }catch(e){alert('Nu s-a putut descarca fisierul: '+e.message);return}
+    }catch(e){errAlert(e,'Nu am putut descarca fisierul.','Could not download the file.');return}
     if(typeof logActivity==='function')logActivity('Descarcat Ghid Biocide HTML ('+nCat+' categorii)');
     return;
   }
   var w=window.open('','_blank');
-  if(!w){alert('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.');return}
+  if(!w){alert(_M('Browser-ul a blocat fereastra noua. Permite pop-up-uri pentru aceasta aplicatie.'));return}
   w.document.write(html);w.document.close();
   if(typeof showToast==='function')showToast('Ghid generat cu '+nCat+' categorii');
   if(typeof logActivity==='function')logActivity('Generat Ghid Utilizare Biocide ('+nCat+' categorii)');
@@ -11133,7 +11336,7 @@ async function genGhidBiocideWord(opts){
   // deci helperii docx sunt initializati. Verific prin declaratii de functie (hoisted, typeof sigur)
   // si NU prin `const Table` — un const in TDZ ar arunca ReferenceError la typeof.
   if(typeof saveDocx!=='function'||typeof makeDoc!=='function'||typeof wTblHead!=='function'){
-    alert('Generatorul Word nu este disponibil. Reincarca pagina si incearca din nou.');return;
+    alert(_M('Generatorul Word nu este disponibil. Reincarca pagina si incearca din nou.'));return;
   }
   var groups=_genGhidGroupProducts();
   var levelLabel=function(id){var l=(BIO_USAGE_LEVELS||[]).find(function(x){return x.id===id});return l?l.label:id};
@@ -11963,7 +12166,7 @@ if (typeof window !== 'undefined') {
 
 function importHelicsWinMDB(){
   if(typeof window.parseHelicWinMDB !== 'function'){
-    alert('Adapter HelicsWin neîncărcat. Rebuild dist/index.html.');
+    alert(_M('Adapter HelicsWin neîncărcat. Rebuild dist/index.html.'));
     return;
   }
   openM('Import HelicsWin.Net (.mdb) — ECDC PPS',
@@ -12155,7 +12358,7 @@ async function previewHelicsWin(){
   }catch(err){console.error(err);fail('Nu pot citi fisierul: '+(err&&err.message?err.message:err)+'<br>Exporta din HelicsWin in format CSV sau Excel.')}
 }
 async function processHelicsWin(){
-  const rows=window._hwRows;if(!rows||rows.length<2){alert('Niciun fisier incarcat.');return}
+  const rows=window._hwRows;if(!rows||rows.length<2){alert(_M('Niciun fisier incarcat.'));return}
   const ci={sec:+(document.getElementById('hw-sec')?.value||0),pat:+(document.getElementById('hw-pat')?.value||1),
     au:+(document.getElementById('hw-au')?.value||2),ia:+(document.getElementById('hw-ia')?.value||3),rx:+(document.getElementById('hw-rx')?.value||4)};
   // v13.62 - fara id, `pt` creeaza mereu inregistrari noi, iar rPPS le insumeaza pe sectie:
@@ -12249,7 +12452,7 @@ async function rPPS(el){
         '<td>'+(r.prescriptions||0)+'</td><td>'+rDoc+'</td>'+
         '<td class="act"><button onclick="editPPS('+r.id+')">&#9998;</button><button onclick="delRec(\'pps\','+r.id+')">&#128465;</button></td></tr>';
     });
-    h+='<tr style="background:var(--navy);color:#fff;font-weight:700"><td>TOTAL</td><td></td><td>'+totPat+'</td><td>'+totAU+'</td><td>'+auPct+'%</td>'+
+    h+='<tr style="background:var(--navy);color:var(--onAccent);font-weight:700"><td>TOTAL</td><td></td><td>'+totPat+'</td><td>'+totAU+'</td><td>'+auPct+'%</td>'+
       '<td>'+totIAAM+'</td><td>'+totRx+'</td><td>'+docPct+'%</td><td></td></tr>';
     h+='</tbody></table>';
   }
@@ -12657,8 +12860,8 @@ async function savePPS(id){
   const v=s=>document.getElementById(s).value;
   const rec={year:A.year,section:v('f-sec'),date_pps:v('f-dt'),patients:+v('f-pat')||0,patients_au:+v('f-au')||0,
     iaam_found:+v('f-iaam')||0,prescriptions:+v('f-rx')||0,documented:+v('f-ddoc')||0,notes:v('f-n').trim()};
-  if(!rec.section){alert('Selecteaza sectia.');return}
-  if(id)rec.id=id;await pt('pps',rec);closeM();render();
+  if(needSection(rec.section))return;
+  if(id)rec.id=id;await pt('pps',rec);toastSaved();closeM();render();
 }
 
 // ── IR details modal + delete (S4) ──
@@ -12986,7 +13189,7 @@ async function genAntibiogramaWord(){
     germeni=r2.germeni;atbCols=r2.atbCols;
     sourceLabel='Date din cazuri IAAM';
   }
-  if(germeni.length===0){alert('Nu exista date de antibiograma.');return}
+  if(germeni.length===0){alert(_M('Nu exista date de antibiograma.'));return}
   const E=CFG.lang==='en';
   const title=E?'LOCAL ANTIBIOGRAM':'ANTIBIOGRAMA LOCALA';
   const subtitle=CFG.hospital_name+' — '+A.year;
@@ -13322,7 +13525,7 @@ async function processLabImport(){
 }
 
 async function processLabCSV(){
-  const rows=window._labRows;if(!rows||rows.length===0){alert('Niciun fisier incarcat.');return}
+  const rows=window._labRows;if(!rows||rows.length===0){alert(_M('Niciun fisier incarcat.'));return}
   const ci={buletin:+document.getElementById('lab-col-buletin').value,
     date:+document.getElementById('lab-col-date').value,
     section:+document.getElementById('lab-col-section').value,
@@ -13386,7 +13589,7 @@ async function processLabCSV(){
   });
 
   const isolates=Object.values(isoMap);
-  if(isolates.length===0){alert('Nu s-au putut grupa izolate din CSV.');return}
+  if(isolates.length===0){alert(_M('Nu s-au putut grupa izolate din CSV.'));return}
 
   // Deduplication: check existing lab_isolates
   const existing=await ga('lab_isolates');
@@ -13424,7 +13627,7 @@ async function processLabCSV(){
 
 // ── Process registru lab format → lab_isolates ──
 async function processLabRegistru(){
-  const parsed=window._labParsed;if(!parsed||parsed.length===0){alert('Niciun fisier incarcat.');return}
+  const parsed=window._labParsed;if(!parsed||parsed.length===0){alert(_M('Niciun fisier incarcat.'));return}
   const batch=document.getElementById('f-lab-batch')?.value||A.year;
   const sampleType=(document.getElementById('lab-sample-type')?.value||'necunoscut').trim().toLowerCase();
   const year=window._labYear||A.year;
@@ -13448,7 +13651,7 @@ async function processLabRegistru(){
       });
     });
   });
-  if(isolates.length===0){alert('Nu s-au gasit izolate pozitive.');return}
+  if(isolates.length===0){alert(_M('Nu s-au gasit izolate pozitive.'));return}
 
   // Deduplication
   const existing=await ga('lab_isolates');
@@ -13518,7 +13721,7 @@ async function genAntibiogramaWHONET(){
 
   const atbCodes=[];
   (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(grp=>{grp.items.forEach(atb=>{if(atbSet.has(atb.a))atbCodes.push(atb.a)})});
-  if(atbCodes.length===0){alert('Nu exista date de antibiograma.');return}
+  if(atbCodes.length===0){alert(_M('Nu exista date de antibiograma.'));return}
 
   const header=['PATIENT_ID','SPEC_DATE','ORGANISM','SPEC_TYPE','WARD',...atbCodes];
   const rows=[header.join(',')];
@@ -13705,7 +13908,7 @@ function _dddBuildTable(data,mx){
     h+='<td style="text-align:right">'+r.dddPer100.toFixed(2)+'</td></tr>';
   });
   // Totals row
-  h+='<tr style="background:var(--navy);color:#fff;font-weight:700"><td>TOTAL</td><td></td><td></td>';
+  h+='<tr style="background:var(--navy);color:var(--onAccent);font-weight:700"><td>TOTAL</td><td></td><td></td>';
   h+='<td style="text-align:right">'+mx.rows.reduce((s,r)=>s+r.totalG,0).toFixed(1)+'g</td>';
   h+='<td style="text-align:right">'+mx.totals.totalDDD.toFixed(1)+'</td>';
   h+='<td style="text-align:right">'+mx.totals.dddPer100.toFixed(2)+'</td></tr>';
@@ -13837,13 +14040,13 @@ async function saveConsumATB(id){
   const mc=document.getElementById('mdc');
   const v=s=>{const el=mc.querySelector('#'+s)||document.getElementById(s);return el?el.value:''};
   const sec=v('f-sec'),mo=+v('f-mo'),atc=v('f-atc'),qty=parseFloat(v('f-qty'))||0,route=v('f-route'),notes=v('f-n').trim();
-  if(!sec){alert('Selecteaza sectia.');return}
-  if(!atc){alert('Selecteaza antibioticul.');return}
-  if(qty<=0){alert('Introdu cantitatea in grame.');return}
+  if(needSection(sec))return;
+  if(!atc){alert(_M('Selecteaza antibioticul.'));return}
+  if(qty<=0){alert(_M('Introdu cantitatea in grame.'));return}
   const rec={year:A.year,month:mo,section:sec,atc:atc,atb_name:atbName(atc),quantity_g:qty,route:route,doctor:v('f-doc').trim(),notes:notes};
   if(id)rec.id=id;
   await pt('atb_consum',rec);
-  logActivity((id?'Editat':'Adaugat')+' consum ATB — '+atbName(atc)+' '+qty+'g '+rSec(sec));
+  logActivity((id?'Editat':'Adaugat')+' consum ATB — '+atbName(atc)+' '+qty+'g '+rSec(sec));toastSaved();
   closeM();render();
 }
 
@@ -13943,7 +14146,7 @@ async function dddParseFile(file){
     var parser=new DOMParser();
     var doc=parser.parseFromString(txt,'text/html');
     var tables=doc.querySelectorAll('table');
-    if(tables.length===0){alert('Nu s-au gasit tabele in fisier.');return}
+    if(tables.length===0){alert(_M('Nu s-au gasit tabele in fisier.'));return}
     var table=tables[0];
     table.querySelectorAll('tr').forEach(function(tr){
       var cells=[];tr.querySelectorAll('td,th').forEach(function(td){cells.push(td.textContent.trim())});
@@ -13952,11 +14155,11 @@ async function dddParseFile(file){
   }else{
     // CSV/TSV
     var lines=txt.split(/\r?\n/).filter(function(l){return l.trim()});
-    if(lines.length===0){alert('Fisierul e gol.');return}
+    if(lines.length===0){alert(_M('Fisierul e gol.'));return}
     var sep=_dddDetectSep(lines[0]);
     rows=lines.map(function(l){return l.split(sep).map(function(c){return c.trim().replace(/^"|"$/g,'')})});
   }
-  if(rows.length<2){alert('Fisierul trebuie sa aiba cel putin un header + un rand de date.');return}
+  if(rows.length<2){alert(_M('Fisierul trebuie sa aiba cel putin un header + un rand de date.'));return}
   _dddBuildMapping(rows);
 }
 
@@ -14083,7 +14286,7 @@ function _dddApplyFallbackSec(){
 }
 
 async function dddDoImport(){
-  if(_dddImportRows.length===0){alert('Nu exista randuri de importat.');return}
+  if(_dddImportRows.length===0){alert(_M('Nu exista randuri de importat.'));return}
   var noSec=_dddImportRows.filter(function(r){return!r.section});
   if(noSec.length>0&&!confirm(noSec.length+' randuri nu au sectie atribuita. Continui importul?'))return;
   // v13.62 - avertisment la suprapunere. `pt` fara id creeaza mereu o inregistrare noua
@@ -14113,7 +14316,7 @@ async function genConsumATBWord(aiText){
   const data=await ga('atb_consum');
   const y=A.year;
   const mx=buildConsumMatrix(data,y,null,null);
-  if(mx.rows.length===0){alert('Nu exista date de consum antibiotice.');return}
+  if(mx.rows.length===0){alert(_M('Nu exista date de consum antibiotice.'));return}
   const t=mx.totals;
   const E=CFG.lang==='en';
   const title=E?'ANTIBIOTIC CONSUMPTION REPORT':'RAPORT CONSUM ANTIBIOTICE';
@@ -14520,8 +14723,8 @@ async function editAtbApproval(id){
 async function saveAtbApproval(id){
   var mc=document.getElementById('mdc');
   var v=function(s){var el=(mc?mc.querySelector('#'+s):null)||document.getElementById(s);return el?el.value:''};
-  var date=v('f-av-date');if(!date){alert('Selectati data.');return}
-  var atc=v('f-av-atc');if(!atc){alert('Selectati antibioticul.');return}
+  var date=v('f-av-date');if(!date){alert(_M('Selectati data.'));return}
+  var atc=v('f-av-atc');if(!atc){alert(_M('Selectati antibioticul.'));return}
   var rec={year:yearOfDate(date),date:date,fo:v('f-av-fo').trim(),atc:atc,atb_name:atbName(atc),
     section:v('f-av-sec'),requested_by:v('f-av-req').trim(),approved_by:v('f-av-apr').trim(),
     decision:v('f-av-dec')||'avizat',duration_days:(v('f-av-dur')===''?null:+v('f-av-dur')),
@@ -14529,7 +14732,7 @@ async function saveAtbApproval(id){
   if(id)rec.id=id;
   await pt('atb_approvals',rec);
   _dddPanelOpen['ddd-p-avz']=true;
-  logActivity((id?'Editata':'Adaugata')+' avizare antibiotic — '+atbName(atc));
+  logActivity((id?'Editata':'Adaugata')+' avizare antibiotic — '+atbName(atc));toastSaved();
   closeM();render();
 }
 
@@ -14660,7 +14863,7 @@ async function saveDoc(id){
     rec.id=id}
   const fileInput=document.getElementById('f-file');
   if(fileInput.files.length>0){
-    const f=fileInput.files[0];if(f.size>10*1024*1024){alert('Max 10MB.');return}
+    const f=fileInput.files[0];if(f.size>10*1024*1024){alert(_M('Max 10MB.'));return}
     if(!_attDirHandle){
       alert(CFG.lang==='en'?'Please configure the attachments folder first.\nGo to: Configure > Data & Backup > Storage Attachments > Choose folder':'Configureaza mai intai folderul de atasamente.\nMergi la: Configurare > Date & Backup > Stocare Atasamente > Alege folder atasamente');
       return;
@@ -14671,15 +14874,15 @@ async function saveDoc(id){
       await attWriteFile('documents',fname,f);
       rec.file_meta={filename:fname,size:f.size,type:f.type,on_disk:true};
       delete rec.file_data;
-    }catch(err){alert('Eroare la salvarea fisierului: '+err.message);return}
+    }catch(err){errAlert(err,'Nu am putut salva fisierul atasat.','Could not save the attached file.');return}
   }
-  await pt('documents',rec);logActivity((id?'Editat':'Adaugat')+' document — '+rec.name);closeM();render();
+  await pt('documents',rec);logActivity((id?'Editat':'Adaugat')+' document — '+rec.name);toastSaved();closeM();render();
 }
 async function downloadDocFile(id){
   const data=await ga('documents');const d=data.find(x=>x.id===id);if(!d)return;
   if(d.file_meta&&d.file_meta.on_disk&&d.file_meta.filename){
     try{const file=await attReadFile('documents',d.file_meta.filename);
-      saveAs(file,d.file_name||d.file_meta.filename);return}catch(e){console.warn('Disk read failed:',e);alert('Nu pot citi fisierul de pe disc. Reconecteaza folderul de atasamente din Configurare.')}
+      saveAs(file,d.file_name||d.file_meta.filename);return}catch(e){console.warn('Disk read failed:',e);alert(_M('Nu pot citi fisierul de pe disc. Reconecteaza folderul de atasamente din Configurare.'))}
     return;
   }
   if(!d.file_data)return;
@@ -14801,15 +15004,15 @@ async function saveIpcReport(id){
   var mc=document.getElementById('mdc');
   var v=function(s){var el=(mc?mc.querySelector('#'+s):null)||document.getElementById(s);return el?el.value:''};
   var ck=function(s){var el=(mc?mc.querySelector('#'+s):null)||document.getElementById(s);return el?el.checked:false};
-  var date=v('f-rp-date'); if(!date){alert('Selectati data.');return}
-  var sec=v('f-rp-sec'); if(!sec){alert(CFG.lang==='en'?'Select the ward.':'Selectati sectia.');return}
+  var date=v('f-rp-date'); if(!date){alert(_M('Selectati data.'));return}
+  var sec=v('f-rp-sec'); if(needSection(sec))return;
   var rec={kind:'raport_sectie',year:yearOfDate(date),date:date,period:v('f-rp-period').trim(),section:sec,
     reported_by:v('f-rp-by').trim(),subject:v('f-rp-subj').trim(),findings:v('f-rp-find').trim(),
     followup:v('f-rp-fu').trim(),followup_done:ck('f-rp-fud'),notes:''};
   if(id)rec.id=id;
   await pt('ipc_registry',rec);
   _regPanelOpen['doc-p-resp']=true;
-  logActivity((id?'Editat':'Inregistrat')+' raport responsabil sectie — '+rSec(sec));
+  logActivity((id?'Editat':'Inregistrat')+' raport responsabil sectie — '+rSec(sec));toastSaved();
   closeM();render();
 }
 
@@ -14884,7 +15087,7 @@ async function editSanct(id){
 async function saveSanct(id){
   var mc=document.getElementById('mdc');
   var v=function(s){var el=(mc?mc.querySelector('#'+s):null)||document.getElementById(s);return el?el.value:''};
-  var date=v('f-sn-date'); if(!date){alert('Selectati data.');return}
+  var date=v('f-sn-date'); if(!date){alert(_M('Selectati data.'));return}
   var fin=v('f-sn-find').trim(); if(!fin){alert(CFG.lang==='en'?'Describe the non-compliance.':'Descrieti abaterea constatata.');return}
   var rec={kind:'sanctiune',year:yearOfDate(date),date:date,section:v('f-sn-sec'),role:v('f-sn-role').trim(),
     finding:fin,proposal:v('f-sn-prop').trim(),submitted_to:v('f-sn-to').trim(),
@@ -14892,7 +15095,7 @@ async function saveSanct(id){
   if(id)rec.id=id;
   await pt('ipc_registry',rec);
   _regPanelOpen['doc-p-sanct']=true;
-  logActivity((id?'Editata':'Adaugata')+' propunere de sanctiune');
+  logActivity((id?'Editata':'Adaugata')+' propunere de sanctiune');toastSaved();
   closeM();render();
 }
 
@@ -15263,9 +15466,9 @@ function _dlFreqChange(){
 async function saveDeadline(id){
   const v=s=>{var e=document.getElementById(s);return e?e.value:''};
   const rec={name:v('f-name').trim(),recipient:v('f-dest').trim(),frequency:v('f-freq'),start_date:v('f-start'),due_date:v('f-due'),status:v('f-st'),url:v('f-url').trim(),observations:v('f-obs').trim()};
-  if(!rec.name){alert('Completeaza denumirea.');return}
+  if(!rec.name){alert(_M('Completeaza denumirea.'));return}
   // v13.46 - validare interval: data de inceput nu poate fi dupa termenul limita
-  if(rec.start_date&&rec.due_date&&rec.start_date>rec.due_date){alert('Data de inceput este dupa termenul limita. Corecteaza intervalul.');return}
+  if(rec.start_date&&rec.due_date&&rec.start_date>rec.due_date){alert(_M('Data de inceput este dupa termenul limita. Corecteaza intervalul.'));return}
   // Save frequency-specific fields
   if(rec.frequency==='saptamanal'){
     rec.day_of_week=+(v('f-dow'))||0;
@@ -15299,7 +15502,7 @@ async function saveDeadline(id){
     var genCnt=await _genInstancesForTemplate(rec);
     logActivity((id?'Editat':'Adaugat')+' termen — '+rec.name+(genCnt?' (+'+genCnt+' instante)':''));
   } else {
-    logActivity((id?'Editat':'Adaugat')+' termen — '+rec.name);
+    logActivity((id?'Editat':'Adaugat')+' termen — '+rec.name);toastSaved();
   }
   closeM();render();
 }
@@ -15399,7 +15602,7 @@ async function _genInstancesForTemplate(t){
 async function genRecurringDeadlines(){
   var y=A.year;var existing=await ga('deadlines');
   var templates=existing.filter(d=>d._isTemplate&&d.frequency&&d.frequency!=='singulara'&&d.frequency!=='perioada');
-  if(templates.length===0){alert('Nu exista raportari repetitive.');return}
+  if(templates.length===0){alert(_M('Nu exista raportari repetitive.'));return}
   var cnt=0;
   for(var i=0;i<templates.length;i++){cnt+=await _genInstancesForTemplate(templates[i])}
   alert(cnt+' instante generate pentru '+y+'.');render();
@@ -15605,7 +15808,7 @@ async function saveCalEvent(id){
   const rec={title:title,date:date,date_end:dateEnd,category:cat,description:desc,notes:notes};
   if(id)rec.id=id;
   await pt('events',rec);
-  logActivity((id?'Editat':'Adaugat')+' eveniment — '+title);closeM();render();
+  logActivity((id?'Editat':'Adaugat')+' eveniment — '+title);toastSaved();closeM();render();
 }
 async function deleteCalEvent(id){if(!confirm(CFG.lang==='en'?'Delete this event?':'Stergi acest eveniment?'))return;await dl('events',id);render()}
 // Mini-calendar + upcoming 7 days for dashboard
@@ -16560,7 +16763,7 @@ async function _renderIgmAudit(el,id){
       IGM_KNOWLEDGE.forEach(function(k){
         if(k.partLabel!==lastPart){
           lastPart=k.partLabel;
-          h+='<div style="margin-top:8px;padding:4px 8px;background:var(--navy);color:#fff;font-size:11px;font-weight:600;border-radius:4px">'+esc(k.partLabel)+'</div>';
+          h+='<div style="margin-top:8px;padding:4px 8px;background:var(--navy);color:var(--onAccent);font-size:11px;font-weight:600;border-radius:4px">'+esc(k.partLabel)+'</div>';
         }
         var val=sec.knowledge[k.id]||'';
         h+='<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--brd)">'+
@@ -16625,7 +16828,7 @@ function _igmRowHTML(sec,c){
 function _igmAddSec(){
   var sel=document.getElementById('igm-sec-sel');if(!sel||!sel.value)return;
   var secId=sel.value;var secName=rSec(secId);
-  if(_igmSecs.find(s=>s.id===secId)){alert('Sectia este deja adaugata.');return}
+  if(_igmSecs.find(s=>s.id===secId)){alert(_M('Sectia este deja adaugata.'));return}
   var calups=[];for(var i=0;i<10;i++)calups.push(_mkCalup());
   _igmSecs.push({id:secId,name:secName,calups:calups,knowledge:{}});
   render();
@@ -16714,8 +16917,8 @@ function _igmRenderTbody(sid){
 
 async function _saveIgmAudit(){
   var v=s=>{var el=document.getElementById(s);return el?el.value:''};
-  var date=v('f-igm-date');if(!date){alert('Selectati data.');return}
-  if(!_igmSecs.length){alert('Adaugati cel putin o sectie.');return}
+  var date=v('f-igm-date');if(!date){alert(_M('Selectati data.'));return}
+  if(!_igmSecs.length){alert(_M('Adaugati cel putin o sectie.'));return}
   var igmCat=(CFG.ipc_categories||[]).find(c=>c.audit_type==='igm');
   var catId=igmCat?igmCat.id:'';
   // Global score
@@ -16850,8 +17053,8 @@ function _genAddItem(sectionId){
 
 async function _saveGenericAudit(){
   var v=s=>{var el=document.getElementById(s);return el?el.value:''};
-  var date=v('f-gen-date');if(!date){alert('Selectati data.');return}
-  var sec=v('f-gen-sec');if(!sec){alert('Selectati sectia.');return}
+  var date=v('f-gen-date');if(!date){alert(_M('Selectati data.'));return}
+  var sec=v('f-gen-sec');if(needSection(sec))return;
   var items=_genItems;
   var totalEval=0,conform=0;
   items.forEach(it=>{if(it.result==='C'||it.result==='NC'){totalEval++;if(it.result==='C')conform++}});
@@ -16936,7 +17139,7 @@ async function _renderDotareAudit(el,id){
 
 async function _saveDotareAudit(){
   var v=s=>{var el=document.getElementById(s);return el?el.value:''};
-  var date=v('f-dot-date');if(!date){alert('Selectati data.');return}
+  var date=v('f-dot-date');if(!date){alert(_M('Selectati data.'));return}
   var dotareCat=(CFG.ipc_categories||[]).find(c=>c.audit_type==='dotare_igiena');
   var catId=dotareCat?dotareCat.id:'';
   var dotItems=AUDIT_ITEMS.dotare_igiena||[];
@@ -17016,7 +17219,7 @@ async function _renderAgregatAudit(el,id){
   } else {
     var displayCats=relevantCats.length>0?relevantCats:auditCats;
     h+='<div style="overflow-x:auto"><table class="dt" style="font-size:11px;min-width:'+(300+displayCats.length*110)+'px">'+
-      '<thead><tr><th style="text-align:left;min-width:200px;position:sticky;left:0;background:var(--navy);color:#fff;z-index:2">'+T('aud_sectie')+'</th>';
+      '<thead><tr><th style="text-align:left;min-width:200px;position:sticky;left:0;background:var(--navy);color:var(--onAccent);z-index:2">'+T('aud_sectie')+'</th>';
     displayCats.forEach(function(c){
       h+='<th style="background:'+c.color+';color:#fff;font-size:10px;min-width:100px;max-width:130px;white-space:normal;word-wrap:break-word;padding:6px 8px;line-height:1.2;vertical-align:middle">'+esc(_audCatName(c.id))+'</th>';
     });
@@ -17096,7 +17299,7 @@ function _agregatOverride(secId,catId,val){
 
 async function _saveAgregatAudit(){
   var v=s=>{var el=document.getElementById(s);return el?el.value:''};
-  var date=v('f-agr-date');if(!date){alert('Selectati data.');return}
+  var date=v('f-agr-date');if(!date){alert(_M('Selectati data.'));return}
   var agregCat=(CFG.ipc_categories||[]).find(c=>c.audit_type==='agregat');
   var catId=agregCat?agregCat.id:'';
   // Calc overall compliance from matrix
@@ -17184,7 +17387,7 @@ function _customSetResult(i,val){if(_customItems[i].result===val)_customItems[i]
 
 async function _saveCustomAudit(){
   var v=s=>{var el=document.getElementById(s);return el?el.value:''};
-  var date=v('f-cust-date');if(!date){alert('Selectati data.');return}
+  var date=v('f-cust-date');if(!date){alert(_M('Selectati data.'));return}
   var sec=v('f-cust-sec');
   var items=_customItems.filter(it=>it.text_ro);
   var totalEval=0,conform=0;
@@ -17287,7 +17490,7 @@ async function genAuditWordIgm(r){
     ];
     var doc=makeDoc(children,'Audit Igiena Mainilor','AuditIgm_'+r.date);
     await saveDocx(doc,'Audit_Igiena_Mainilor_'+r.date+'.docx');
-  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  }catch(e){console.error(e);errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.')}
   finally{hideGen()}
 }
 
@@ -17424,7 +17627,7 @@ async function genIgmFilteredReport(){
 
     var doc=makeDoc(children,'Raport Complianta Igiena Mainilor','RaportIGM');
     await saveDocx(doc,'Raport_Complianta_IGM_'+A.year+'.docx');
-  }catch(e){console.error(e);alert('Eroare: '+e.message)}
+  }catch(e){errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.')}
   finally{hideGen()}
 }
 
@@ -17463,7 +17666,7 @@ async function genAuditWordGeneric(r){
     ];
     var doc=makeDoc(children,'Audit — '+catName,'Audit_'+r.date);
     await saveDocx(doc,'Audit_'+catName.replace(/[^a-zA-Z0-9]/g,'_')+'_'+r.date+'.docx');
-  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  }catch(e){console.error(e);errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.')}
   finally{hideGen()}
 }
 
@@ -17509,7 +17712,7 @@ async function genAuditWordAgregat(r){
     ];
     var doc=makeDoc(children,'Audit Agregat IPC T'+(r.quarter||'?'),'AuditAgregat_T'+(r.quarter||0)+'_'+r.date);
     await saveDocx(doc,'Audit_Agregat_IPC_T'+(r.quarter||0)+'_'+r.date+'.docx');
-  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  }catch(e){console.error(e);errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.')}
   finally{hideGen()}
 }
 
@@ -17557,7 +17760,7 @@ async function genAuditBlankForm(ipcCatId){
     ];
     var doc=makeDoc(children,'Fisa Audit — '+catName,'FisaAudit');
     await saveDocx(doc,'Fisa_Audit_'+catName.replace(/[^a-zA-Z0-9]/g,'_')+'.docx');
-  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  }catch(e){console.error(e);errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.')}
   finally{hideGen()}
 }
 
@@ -17592,7 +17795,7 @@ async function genDotareBlankForm(){
     ];
     var doc=makeDoc(children,'Fisa Audit Dotare Puncte Igiena','FisaDotare');
     await saveDocx(doc,'Fisa_Audit_Dotare.docx');
-  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  }catch(e){console.error(e);errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.')}
   finally{hideGen()}
 }
 
@@ -17628,7 +17831,7 @@ async function genCustomBlankForm(){
     ];
     var doc=makeDoc(children,'Fisa Audit Personalizat','FisaCustom');
     await saveDocx(doc,'Fisa_Audit_Personalizat.docx');
-  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  }catch(e){console.error(e);errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.')}
   finally{hideGen()}
 }
 
@@ -17688,7 +17891,7 @@ async function genIgmBlankForm(){
     ];
     var doc=makeDoc(children,'Fisa Audit Igiena Mainilor','FisaIgm',{landscape:true});
     await saveDocx(doc,'Fisa_Audit_Igiena_Mainilor.docx');
-  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  }catch(e){console.error(e);errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.')}
   finally{hideGen()}
 }
 
@@ -17869,8 +18072,8 @@ function _foRemRow(idx){
 
 async function _saveFoAudit(){
   var v=function(s){var el=document.getElementById(s);return el?el.value:''};
-  var date=v('f-fo-date');if(!date){alert('Selectati data.');return}
-  var sec=v('f-fo-sec');if(!sec){alert('Selectati sectia.');return}
+  var date=v('f-fo-date');if(!date){alert(_M('Selectati data.'));return}
+  var sec=v('f-fo-sec');if(needSection(sec))return;
   var rows=_foRows.filter(function(r){
     return (r.fo||'').trim()||r.atc||FO_IND.some(function(i){return r[i.id]});
   });
@@ -18464,7 +18667,7 @@ function _showAddObjModal(year){
 
 async function _saveNewObj(year){
   var tro=document.getElementById('obj-new-tro').value.trim();
-  if(!tro){alert('Titlul RO este obligatoriu.');return}
+  if(!tro){alert(_M('Titlul RO este obligatoriu.'));return}
   var target=+(document.getElementById('obj-new-target').value)||0;
   // Auto-increment code
   var existing=await _loadObjectives(year);
@@ -18484,7 +18687,7 @@ async function _saveNewObj(year){
     recorded_values:[]
   };
   await pt('objectives',obj);
-  closeM();render();
+  toastSaved();closeM();render();
 }
 
 // ═══ WORD EXPORT ═══
@@ -18567,7 +18770,7 @@ async function genObiectiveWord(){
   }catch(e){
     hideGen();
     console.error('Word export error:',e);
-    alert('Eroare la generare: '+e.message);
+    errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.');
   }
 }
 
@@ -18719,7 +18922,7 @@ function removeTrainParticipant(i){_instrParticipants.splice(i,1);document.getEl
 
 async function saveTraining(id){
   const v=s=>document.getElementById(s)?document.getElementById(s).value:'';
-  const topic=v('f-ttopic').trim();if(!topic){alert('Completeaza tema instruirii.');return}
+  const topic=v('f-ttopic').trim();if(!topic){alert(_M('Completeaza tema instruirii.'));return}
   const participants=_instrParticipants.filter(p=>p.name);
   // Collect trainers from multi-select
   var sel=document.getElementById('f-trainers');
@@ -18732,7 +18935,7 @@ async function saveTraining(id){
     participants,duration_hours:parseFloat(v('f-tdur'))||1,observations:v('f-tobs').trim(),
     test_max:(v('f-tmax')===''?null:+v('f-tmax')),test_pass:(v('f-tpass')===''?null:+v('f-tpass'))};
   if(id)rec.id=id;await pt('trainings',rec);
-  logActivity((id?'Editata':'Adaugata')+' instruire — '+topic);
+  logActivity((id?'Editata':'Adaugata')+' instruire — '+topic);toastSaved();
   closeM();render();
 }
 
@@ -18787,7 +18990,7 @@ async function genTrainingWord(id){
     ];
     const doc=makeDoc(children,'PV Instruire — '+rSec(r.section),'Instruire_'+r.date);
     await saveDocx(doc,'PV_Instruire_'+r.date+'_'+(r.topic||'').replace(/[^a-zA-Z0-9]/g,'_').slice(0,30)+'.docx');
-  }catch(e){console.error(e);alert('Eroare generare Word: '+e.message)}
+  }catch(e){console.error(e);errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.')}
   finally{hideGen()}
 }
 
@@ -19026,7 +19229,7 @@ async function saveDocx(doc,filename){showGen('Se genereaza '+filename+'...');
       }
     }
     saveAs(blob,filename);
-  }catch(e){alert('Eroare: '+e.message);console.error(e)}hideGen()}
+  }catch(e){errAlert(e,'Nu am putut salva documentul pe disc.','Could not save the document to disk.')}hideGen()}
 
 function addNarrative(ch,an){an.narrative.forEach(p=>{ch.push(wP(p,{size:20,before:40}))});
   if(an.alerts.length>0){ch.push(wSp(60));an.alerts.forEach(a=>{ch.push(a.level==='red'?wAlertBox(a.text):wInfoBox(a.text));ch.push(wSp(20))})}
@@ -19039,7 +19242,7 @@ function addRecs(ch,an,title){if(an.recommendations.length===0)return;ch.push(wS
 
 // ── Ancheta Epidemiologica (cu data externarii) ──
 async function genAnchetaWord(id){
-  const r=(await ga('iaam')).find(x=>x.id===id);if(!r){alert('Caz negasit.');return}
+  const r=(await ga('iaam')).find(x=>x.id===id);if(!r){alert(_M('Caz negasit.'));return}
   // ═══ v13.49 — rescriere completa: 12 capitole fara lacune (III/XI/XII lipseau), toate
   // datele salvate ajung in raport, fallback '—' peste tot, fara afirmatii false tip 'Nu'. ═══
   const W1=[3600,5426];function kvRow(k,v){return wTblRow([{text:k,bold:true},{text:(v===0?'0':(v||'—'))}],W1)}
@@ -19283,7 +19486,7 @@ async function genAnchetaWord(id){
 
 // ── Fisa IAAM (conform Ordinul 1101/2016 — Fisa de inregistrare a IAAM) ──
 async function genFisaIAAM(id){
-  const r=(await ga('iaam')).find(x=>x.id===id);if(!r){alert('Caz negasit.');return}
+  const r=(await ga('iaam')).find(x=>x.id===id);if(!r){alert(_M('Caz negasit.'));return}
   // ═══ FORMAT OFICIAL — Ordinul MS 1101/2016, Figura 2 ═══
   // Courier New 9pt monospace, chenare ASCII box-drawing
   const CN='Courier New',SZ=18,LH=220;// 9pt = 18 half-pt
@@ -20708,7 +20911,7 @@ async function genPVCPIAAM(){
     children.push(wP([wTR((CFG.hospital_name||'Spital')+' • '+(CFG.cpiaam_name||'CPIAAM')+' • PV Anual '+y+' • Document intern • Arhivare 5 ani',{size:14,color:WC.gray,italic:true})],{align:AlignmentType.CENTER}));
 
     await saveDocx(makeDoc(children,'PV Sedinta CPIAAM '+y,'PV_Sedinta_CPIAAM_'+y),'PV_Sedinta_CPIAAM_'+y+'.docx');
-  }catch(e){console.error(e);alert('Eroare generare PV: '+e.message)}
+  }catch(e){console.error(e);errAlert(e,'Nu am putut genera procesul-verbal.','Could not generate the minutes document.')}
   finally{hideGen()}
 }
 
@@ -20930,9 +21133,9 @@ function _renderProbeApplicabilityUI(){
   var spziSec=(CFG.sections||[]).filter(function(s){return s.type==='spitalizare_zi'}).slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'')});
   var ambulSec=(CFG.sections||[]).filter(function(s){return s.type==='cabinet'}).slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'')});
   var h='<div class="ib inf" style="margin-bottom:10px;font-size:12px">'+(isEN?'Check the sample types that apply to each section. Unchecked types will NOT appear as "untested" in autocontrol analysis. Sections grouped: Hospital / Day Hospital / Outpatient.':'Bifeaza tipurile de probe microbiologice care se aplica fiecarei sectii. Probele nebifate NU vor aparea ca &quot;netestate&quot; in analiza autocontrol. Sectiile sunt grupate: Spital / Spitalizare de Zi / Ambulatoriu.')+'</div>';
-  h+='<div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table class="dt" style="font-size:11px"><thead style="position:sticky;top:0;z-index:3"><tr><th style="position:sticky;left:0;background:var(--navy);color:#fff;z-index:4">'+(isEN?'Section':'Sectie')+'</th>';
-  pts.forEach(function(pt){h+='<th style="writing-mode:vertical-lr;transform:rotate(180deg);white-space:nowrap;padding:4px 2px;font-size:10px;background:var(--navy);color:#fff">'+sn(pt)+'</th>'});
-  h+='<th style="font-size:10px;background:var(--navy);color:#fff">'+(isEN?'All':'Toate')+'</th></tr></thead><tbody>';
+  h+='<div style="overflow-x:auto;max-height:500px;overflow-y:auto"><table class="dt" style="font-size:11px"><thead style="position:sticky;top:0;z-index:3"><tr><th style="position:sticky;left:0;background:var(--navy);color:var(--onAccent);z-index:4">'+(isEN?'Section':'Sectie')+'</th>';
+  pts.forEach(function(pt){h+='<th style="writing-mode:vertical-lr;transform:rotate(180deg);white-space:nowrap;padding:4px 2px;font-size:10px;background:var(--navy);color:var(--onAccent)">'+sn(pt)+'</th>'});
+  h+='<th style="font-size:10px;background:var(--navy);color:var(--onAccent)">'+(isEN?'All':'Toate')+'</th></tr></thead><tbody>';
   // v13.34 - 3 grupuri colapsabile (default deschise) cu state persistent in window._cfgProbeAppOpen
   if(!window._cfgProbeAppOpen)window._cfgProbeAppOpen={spital:true,spzi:true,ambulatoriu:true};
   function renderGroupHeader(label,bg,groupKey,count){
@@ -21139,7 +21342,7 @@ async function rCfg(el){
     // ═══ GRUPUL 1: IAAM ═══
   '<div class="pn" id="cfg-ecdc"><div class="ph"><h3>'+(isEN?'HAI Categories (ECDC Annex 9)':'Categorii IAAM (Anexa 9 ECDC)')+'</h3></div><div class="pb">'+
     '<p style="font-size:12px;color:var(--txtL);margin-bottom:10px">Categoriile ECDC sunt predefinite si nu pot fi sterse. Poti adauga categorii personalizate.</p>'+
-    '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">'+IAAM_CATS.map(g=>g.items.map(it=>'<span class="tag" style="background:#EEF2FF;border:1px solid #C7D2FE;color:var(--navy)">'+it.c+' — '+it.n+' <span style="font-size:9px;background:var(--navy);color:#fff;padding:1px 4px;border-radius:3px;margin-left:3px">ECDC</span></span>').join('')).join('')+'</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">'+IAAM_CATS.map(g=>g.items.map(it=>'<span class="tag" style="background:#EEF2FF;border:1px solid #C7D2FE;color:var(--navy)">'+it.c+' — '+it.n+' <span style="font-size:9px;background:var(--navy);color:var(--onAccent);padding:1px 4px;border-radius:3px;margin-left:3px">ECDC</span></span>').join('')).join('')+'</div>'+
     '<h4 style="font-size:12px;color:var(--navy);margin-bottom:6px">Categorii personalizate</h4>'+
     '<div class="tag-list">'+(CFG.iaam_custom_cats||[]).map((c,i)=>'<span class="tag">'+esc(c.name)+'<span class="tag-x" onclick="renameCfgItem(\'iaam_custom_cats\','+i+',\'categoria IAAM\')" title="Redenumeste" style="color:#2563B0;margin-right:4px">&#9998;</span><span class="tag-x" onclick="cfgDelete(&quot;iaam_custom_cats&quot;,'+i+')" title="Sterge">&#215;</span></span>').join('')+'</div>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-iaam-cat" placeholder="Categorie personalizata noua"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-iaam-cat\').value.trim();if(v){if(!CFG.iaam_custom_cats)CFG.iaam_custom_cats=[];CFG.iaam_custom_cats.push({id:genId(\'icat\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
@@ -21362,7 +21565,7 @@ async function rCfg(el){
       '<td>'+(w.standard?'<strong>'+w.code+'</strong>':'<input value="'+w.code+'" onchange="CFG.waste_codes['+i+'].code=this.value;CFG.waste_codes['+i+'].dangerous=CFG.waste_codes['+i+'].category===\'periculos\'" style="border:1px solid var(--brd);border-radius:4px;padding:4px;width:100%;font-size:12px">')+'</td>'+
       '<td>'+(w.standard?'<span style="font-size:12px">'+w.name+'</span>':'<input value="'+w.name+'" onchange="CFG.waste_codes['+i+'].name=this.value" style="border:1px solid var(--brd);border-radius:4px;padding:4px;width:100%;font-size:12px">')+'</td>'+
       '<td>'+(w.standard?'<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;background:'+catBg+'">'+catLabel+'</span>':'<select onchange="CFG.waste_codes['+i+'].category=this.value;CFG.waste_codes['+i+'].dangerous=this.value===\'periculos\'" style="border:1px solid var(--brd);border-radius:4px;padding:4px;font-size:12px"><option value="periculos"'+(w.category==='periculos'?' selected':'')+'>Periculos</option><option value="nepericulos"'+(w.category==='nepericulos'?' selected':'')+'>Nepericulos</option><option value="reciclabil"'+(w.category==='reciclabil'?' selected':'')+'>Reciclabil</option></select>')+'</td>'+
-      '<td>'+(w.standard?'<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:10px;background:var(--navy);color:#fff">Standard</span>':'<span style="font-size:10px;color:var(--txtL)">Custom</span>')+'</td>'+
+      '<td>'+(w.standard?'<span style="display:inline-block;padding:2px 6px;border-radius:10px;font-size:10px;background:var(--navy);color:var(--onAccent)">Standard</span>':'<span style="font-size:10px;color:var(--txtL)">Custom</span>')+'</td>'+
       '<td class="act">'+(w.standard?'':'<button onclick="cfgDelete(&quot;waste_codes&quot;,'+i+')" title="'+T('btn_delete')+'">&#128465;</button>')+'</td></tr>'}).join('')+'</tbody></table>'+
     '<div class="fr" style="margin-top:10px;gap:6px;flex-wrap:wrap;align-items:flex-end">'+
       '<div class="fg" style="min-width:100px;max-width:120px"><label style="font-size:11px">Cod</label><input id="new-wc-code" placeholder="ex: 18 01 99" style="border:1px solid var(--brd);border-radius:4px;padding:5px;font-size:12px;width:100%"></div>'+
@@ -21588,7 +21791,7 @@ function addDeviceDayType(){
   var inp=document.getElementById('new-devday');if(!inp||!inp.value.trim())return;
   var v=inp.value.trim();
   if(!Array.isArray(CFG.device_day_types))CFG.device_day_types=[];
-  if(CFG.device_day_types.some(function(d){return (d.name||'').toLowerCase()===v.toLowerCase()})){alert('Exista deja acest dispozitiv.');return}
+  if(CFG.device_day_types.some(function(d){return (d.name||'').toLowerCase()===v.toLowerCase()})){alert(_M('Exista deja acest dispozitiv.'));return}
   CFG.device_day_types.push({id:genId('dd'),name:v,short:''});
   saveCfg();
   if(typeof logActivity==='function')logActivity('Adaugat dispozitiv pentru zile-dispozitiv — '+v);
@@ -21644,7 +21847,7 @@ async function saveCfgForm(){
   var cuEl=document.getElementById('c-curuser');if(cuEl)CFG.current_user=cuEl.value;
   if(document.getElementById('c-datefmt'))CFG.dateFormat=v('c-datefmt');
   const bkpEl=document.getElementById('c-bkpint');if(bkpEl)CFG.backup_interval_days=+bkpEl.value||7;
-  await saveCfg();alert('Setari salvate!');render();
+  await saveCfg();alert(_M('Setari salvate!'));render();
 }
 
 // ── Bed Periods Modal (cerinta 6) ──
@@ -21725,17 +21928,17 @@ async function saveAiCfg(){
     CFG.ai_model=document.getElementById('c-aimodel')?.value||info.defaultModel;
     CFG.ai_endpoint=prov==='custom'?(document.getElementById('c-aiendpoint')?.value||''):info.endpoint;
   } else {CFG.ai_api_key='';CFG.ai_model='';CFG.ai_endpoint=''}
-  await saveCfg();alert('Configurare AI salvata!');
+  await saveCfg();alert(_M('Configurare AI salvata!'));
 }
 async function testAiConnection(){
-  const prov=CFG.ai_provider;if(!prov){alert('Selecteaza un provider AI mai intai.');return}
+  const prov=CFG.ai_provider;if(!prov){alert(_M('Selecteaza un provider AI mai intai.'));return}
   const info=AI_PROVIDERS[prov];
   showGen('Se testeaza conexiunea...');
   try{
     const msg='Raspunde cu un singur cuvant: OK';
     const resp=await callAI(msg);
     hideGen();alert('Conexiune reusita! Raspuns: '+(resp||'(gol)').substring(0,100));
-  }catch(e){hideGen();alert('Eroare conexiune: '+e.message)}
+  }catch(e){hideGen();errAlert(e,'Nu am putut contacta serviciul AI.','Could not reach the AI service.')}
 }
 
 // ═══ IPC CATEGORIES HELPERS ═══
@@ -21753,7 +21956,7 @@ function saveNewIpcCat(){
   var color=document.getElementById('ipc-new-color').value;
   var src=document.getElementById('ipc-new-src').value||null;
   var atype=document.getElementById('ipc-new-atype').value.trim()||null;
-  if(!ro){alert('Denumirea RO este obligatorie.');return}
+  if(!ro){alert(_M('Denumirea RO este obligatorie.'));return}
   if(!CFG.ipc_categories)CFG.ipc_categories=[];
   CFG.ipc_categories.push({id:genId('ipc'),name_ro:ro,name_en:en||ro,color:color,source_module:src,audit_type:atype,standard:false,active:true});
   saveCfg();render();
@@ -22043,9 +22246,9 @@ async function wizSkipImport(){
         _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();await saveFileHandle(fh);
         localStorage.setItem('cpiaam_had_data','true');
         localStorage.setItem('cpiaam_setup_complete','true');
-        alert('Date importate cu succes!');location.reload();
-      }catch(e){alert('Eroare la import: '+e.message)}
-    }).catch(e=>{if(e.name!=='AbortError')alert('Eroare: '+e.message)});
+        alert(_M('Date importate cu succes!'));location.reload();
+      }catch(e){errAlert(e,'Importul nu a reusit. Datele existente nu au fost modificate.','The import failed. Existing data was left unchanged.')}
+    }).catch(e=>{if(e.name!=='AbortError')errAlert(e,'Nu am putut citi fisierul.','Could not read the file.')});
   }else{
     // Fallback: file input
     const inp=document.createElement('input');inp.type='file';inp.accept='.json';
@@ -22060,8 +22263,8 @@ async function wizSkipImport(){
         for(const[key,store] of Object.entries(storeMap)){if(d[key]&&Array.isArray(d[key]))for(const r of d[key])await pt(store,r)}
         localStorage.setItem('cpiaam_had_data','true');
         localStorage.setItem('cpiaam_setup_complete','true');
-        alert('Date importate cu succes!');location.reload();
-      }catch(e){alert('Eroare import: '+e.message)}};
+        alert(_M('Date importate cu succes!'));location.reload();
+      }catch(e){errAlert(e,'Importul nu a reusit. Datele existente nu au fost modificate.','The import failed. Existing data was left unchanged.')}};
     inp.click();
   }
 }
@@ -22188,19 +22391,19 @@ function wizNext(step){
   if(step===1){
     WZ.hospital_name=document.getElementById('wz-hosp').value.trim();
     WZ.cpiaam_name=document.getElementById('wz-cpiaam').value.trim()||'C.P.I.A.A.M.';
-    if(!WZ.hospital_name){alert('Completeaza denumirea spitalului.');return}
+    if(!WZ.hospital_name){alert(_M('Completeaza denumirea spitalului.'));return}
     renderWizStep(2);
   } else if(step===2){
     collectWzSec();WZ.sections=WZ.sections.filter(s=>s.name);
-    if(WZ.sections.length===0){alert('Adauga cel putin o sectie.');return}
+    if(WZ.sections.length===0){alert(_M('Adauga cel putin o sectie.'));return}
     renderWizStep(3);
   } else if(step===3){
     collectWzPers();WZ.personnel=WZ.personnel.filter(p=>p.name);
-    if(WZ.personnel.length===0){alert('Adauga cel putin o persoana.');return}
+    if(WZ.personnel.length===0){alert(_M('Adauga cel putin o persoana.'));return}
     renderWizStep(4);
   } else if(step===4){
     WZ.author_name=document.getElementById('wz-author').value.trim();
-    if(!WZ.author_name){alert('Completeaza numele tau.');return}
+    if(!WZ.author_name){alert(_M('Completeaza numele tau.'));return}
     renderWizStep(5);
   } else if(step===5){
     // File location step — create file if needed
@@ -22215,22 +22418,22 @@ function wizNext(step){
   }
 }
 async function wizPickDataFile(){
-  if(!window.showSaveFilePicker){alert('Browserul nu suporta File System Access API. Foloseste Chrome/Edge.');return false}
+  if(!window.showSaveFilePicker){alert(_M('Browserul nu suporta File System Access API. Foloseste Chrome/Edge.'));return false}
   try{
     const _wpOpts={suggestedName:'CPIAAM_data.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]};
     const _wpSh=await loadFileHandle().catch(()=>null);if(_wpSh)_wpOpts.startIn=_wpSh;
     _fileHandle=await window.showSaveFilePicker(_wpOpts);
     WZ._filePicked=true;WZ._filePickedName=_fileHandle.name;
     return true;
-  }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message);return false}
+  }catch(e){if(e.name!=='AbortError')errAlert(e,'Nu am putut citi fisierul.','Could not read the file.');return false}
 }
 async function wizPickAttDir(){
-  if(!window.showDirectoryPicker){alert('Browserul nu suporta Directory Picker. Foloseste Chrome/Edge.');return}
+  if(!window.showDirectoryPicker){alert(_M('Browserul nu suporta Directory Picker. Foloseste Chrome/Edge.'));return}
   try{
     const dh=await window.showDirectoryPicker({mode:'readwrite'});
     _attDirHandle=dh;WZ._attDirPicked=true;WZ._attDirName=dh.name;
     renderWizStep(6);
-  }catch(e){if(e.name!=='AbortError')alert('Eroare: '+e.message)}
+  }catch(e){if(e.name!=='AbortError')errAlert(e,'Nu am putut citi fisierul.','Could not read the file.')}
 }
 
 async function finishWizard(){
@@ -23344,6 +23547,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.64',date:'2026-07-30',summary:"Prima transa din auditul UX. Modul intunecat era parțial ilizibil — text alb pe fundal deschis in randurile TOTAL, in antetul calendarului, in matricea antibiogramei si in mesajele de confirmare. Salvarea confirma acum ce a facut, cursorul se aseaza singur in primul camp, iar mesajele de eroare nu mai arata textul tehnic al exceptiei. Aplicatia vorbeste englezeste si cand apare o problema. Un spital nou vede de unde sa inceapa, in loc de un tablou de indicatori pe zero."},
   {version:'13.63',date:'2026-07-30',summary:"Reparat motivul pentru care sagetile de pliere din meniul lateral nu se vedeau deloc: orice salvare de configurare — inclusiv fiecare sincronizare — le stergea din pagina. Restul transei repara importurile: valorile cu separator de mii intrau de o mie de ori mai mici, o coloana nerecunoscuta la importul din laborator cadea tacit pe prima coloana din fisier, iar re-importul aceluiasi fisier dubla datele fara niciun avertisment. Plus: sincronizarea nu potrivea niciodata sectiile cu acelasi nume dar id-uri diferite."},
   {version:'13.62',date:'2026-07-30',summary:"Meniul lateral arata in sfarsit ca grupurile se pot plia — sageata e vizibila, randul se aprinde la trecerea mouse-ului, iar grupul pliat isi arata numarul de module ascunse. Restul transei repara cifre false ajunse in documente oficiale: obiectivele CAUTI/CLABSI/VAP erau verzi „conform\" intr-un spital cu infectii reale, inelul AWaRe din Raportul Anual iesea integral gri, iar Raportul Trimestrial aduna instruirile din toti anii. Plus: documentele cu atasament afisau „—\" in coloana Fisier, butonul Salveaza de la biocide era mort pentru mişcarile importate din Excel, iar o proba ATP fara citirea RLU se salva ca CONFORMA."},
   {version:'13.61',date:'2026-07-29',summary:"Auditul functional continua si scoate cea mai grava problema de pana acum: motorul de analiza citea campuri disparute din model, asa ca Raportul Anual afisa rata IAAM lipsa, „0,0 DDD\" consum de antibiotice si „0,0 %\" conformitate audit pe date complete, plus o alerta rosie falsa. Auditurile apareau cu cod intern in loc de denumire. Dashboard-ul nu afisa niciodata cardurile de rate. Generarea raportului ramanea blocata daca inchideai avertismentul cu X. Ecranul „Se genereaza\" nu se mai poate bloca definitiv."},
@@ -23815,7 +24019,7 @@ async function genRaportAnualWordAI(){
     if(aiText)children.push(...wAISection(aiText));
     children.push(...wSigBlock());
     await saveDocx(makeDoc(children,'Raport Anual + AI '+y,'Raport_CPIAAM_AI_'+y),'Raport_Anual_CPIAAM_AI_'+y+'.docx');logActivity('Generat Raport Anual AI '+y);
-  }catch(e){console.error(e);alert('Eroare: '+e.message)}finally{hideGen()}
+  }catch(e){errAlert(e,'Analiza AI nu a reusit.','The AI analysis failed.')}finally{hideGen()}
 }
 async function genAnalizaIAAMWordAI(){
   if(!await checkIncompleteIaam())return;
@@ -23837,7 +24041,7 @@ async function genAnalizaIAAMWordAI(){
     children.push(wSp(100));children.push(wH1('Concluzii si Recomandari',WC.blue));children.push(wSp(40));addRecs(children,AN.iaam);
     if(aiText)children.push(...wAISection(aiText));
     children.push(...wSigBlock());await saveDocx(makeDoc(children,'Analiza IAAM AI '+y,'Analiza_IAAM_AI_'+y),'Analiza_IAAM_AI_'+y+'.docx');logActivity('Generat Analiza IAAM AI '+y);
-  }catch(e){console.error(e);alert('Eroare: '+e.message)}finally{hideGen()}
+  }catch(e){errAlert(e,'Analiza AI nu a reusit.','The AI analysis failed.')}finally{hideGen()}
 }
 async function genAnalizaAutoWordAI(){
   var _aiEN=CFG.lang==='en';
@@ -23856,7 +24060,7 @@ async function genAnalizaAutoWordAI(){
     addRecs(children,AN.auto,'Recomandari Autocontrol');
     if(aiText)children.push(...wAISection(aiText));
     children.push(...wSigBlock());await saveDocx(makeDoc(children,'Analiza Autocontrol AI '+y,'Analiza_Auto_AI_'+y),'Analiza_Autocontrol_AI_'+y+'.docx');logActivity('Generat Analiza Autocontrol AI '+y);
-  }catch(e){console.error(e);alert('Eroare: '+e.message)}finally{hideGen()}
+  }catch(e){errAlert(e,'Analiza AI nu a reusit.','The AI analysis failed.')}finally{hideGen()}
 }
 async function genAnalizaDesWordAI(){
   var _aiEN=CFG.lang==='en';
@@ -23874,7 +24078,7 @@ async function genAnalizaDesWordAI(){
     addRecs(children,AN.deseuri,'Recomandari Deseuri');
     if(aiText)children.push(...wAISection(aiText));
     children.push(...wSigBlock());await saveDocx(makeDoc(children,'Analiza Deseuri AI '+y,'Analiza_Des_AI_'+y),'Analiza_Deseuri_AI_'+y+'.docx');logActivity('Generat Analiza Deseuri AI '+y);
-  }catch(e){console.error(e);alert('Eroare: '+e.message)}finally{hideGen()}
+  }catch(e){errAlert(e,'Analiza AI nu a reusit.','The AI analysis failed.')}finally{hideGen()}
 }
 async function genConsumATBWordAI(){
   var _aiEN=CFG.lang==='en';
@@ -23888,7 +24092,7 @@ async function genConsumATBWordAI(){
     showGen(_aiEN?'3/3 Generating Word document...':'3/3 Generez documentul Word...');
     hideGen();
     await genConsumATBWord(aiText);
-  }catch(e){console.error(e);alert('Eroare: '+e.message);hideGen()}
+  }catch(e){errAlert(e,'Analiza AI nu a reusit.','The AI analysis failed.');hideGen()}
 }
 
 
@@ -24022,7 +24226,7 @@ async function exportMultiAnWord(){
     children.push(...wSigBlock());
     await saveDocx(makeDoc(children,(isEN?'Multi-Year Analysis':'Analiza Multi-An'),'MultiAn'),'Analiza_MultiAn_'+years.join('-')+'.docx');
     logActivity('Generat Analiza Multi-An');
-  }catch(e){console.error(e);alert('Eroare: '+e.message)}finally{hideGen()}
+  }catch(e){errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.')}finally{hideGen()}
 }
 
 
@@ -24529,7 +24733,7 @@ function impAll(){if(!confirm(CFG.lang==='en'?'Import replaces the data categori
     }
     localStorage.setItem('cpiaam_last_version',APP_VERSION);
     alert('Import finalizat din v'+fromVer+'! ('+ST.filter(s=>d[s]&&d[s].length).length+' module importate)');
-    await loadCfg();render()}catch(e){alert('Eroare import: '+e.message)}};inp.click()}
+    await loadCfg();render()}catch(e){errAlert(e,'Importul nu a reusit. Datele existente nu au fost modificate.','The import failed. Existing data was left unchanged.')}};inp.click()}
 
 
 </script>

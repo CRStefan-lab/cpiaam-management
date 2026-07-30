@@ -1,20 +1,14 @@
 {
-  "version": "13.63",
+  "version": "13.64",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "REPARAT — motivul pentru care săgețile de pliere din meniul lateral nu se vedeau deloc: orice salvare de configurare, inclusiv fiecare sincronizare, le ștergea din pagină și nu mai reveneau până la reîncărcare. Pe un calculator cu sincronizare activă dispăreau în câteva secunde de la pornire. Grupurile chiar se pliau dacă dădeai click pe titlu, dar nimic nu o anunța.",
-    "REPARAT — valorile cu separator de mii se importau de o mie de ori mai mici: o balanță de farmacie cu „12.500,00 lei\" intra ca 12,5 lei, iar „1.250,5 g\" antibiotic ca 1,25 g. Afecta importul de biocide și pe cel de consum antibiotice, deci costul biocidelor și DDD/100 zile-pacient raportat la DSP.",
-    "REPARAT — la importul din laborator, dacă o coloană obligatorie nu era recunoscută automat (ex. „Substanță\" în loc de „Antibiotic\"), se folosea tăcut prima coloană din fișier. Importul raporta „480 izolate importate\" și antibiograma rămânea goală. Acum coloanele nerecunoscute sunt semnalate și importul așteaptă alegerea lor.",
-    "REPARAT — antibiograma din registrul de laborator deducea S/I/R exclusiv din poziția rândului, ignorând eticheta („Rezistent la:\"). O tulpină rezistentă putea fi înregistrată ca integral sensibilă. Acum eticheta are prioritate.",
-    "REPARAT — re-importul aceluiași fișier dubla tăcut datele (consum antibiotice, autocontrol, PPS). Acum aplicația spune ce există deja pe perioada respectivă și cere confirmare.",
-    "REPARAT — importul de autocontrol nu valida nimic: un fișier străin ieșea cu „0 probe importate\", rândurile sărite nu se numărau, iar anul era forțat pe cel din bara de sus. Exportul CSV include acum anul, nr. de înregistrare și neconformitățile, care se pierdeau la un ciclu export→import.",
-    "REPARAT — sincronizarea între două calculatoare nu potrivea niciodată secțiile cu același nume dar id-uri diferite: probele colegei apăreau cu un cod în loc de denumire și dispăreau din matricea de acoperire și din filtre.",
-    "REPARAT — codurile de deșeu periculoase („18 01 03*\") nu se legau niciodată de un recipient: în planificare apărea „niciun recipient mapat\" chiar după pre-popularea catalogului standard.",
-    "REPARAT — în Statistici, indicatorii afișau „0\" când lipseau om-zilele, ceea ce nu se distinge de o performanță reală; acum afișează „—\". Tot acolo, două carduri arătau rate IAAM diferite pentru același an, pentru că unul includea și cazurile infirmate.",
-    "REPARAT — în Deșeuri, completarea unei cantități redesena tot tabelul și se pierdea focusul din câmpul următor. În Statistici, deschiderea unei secțiuni pliate ștergea tot ce era tastat și nesalvat.",
-    "REPARAT — ștergerea unui tip de suprafață UV, a unui produs biocid sau a unui cod de deșeu nu avertiza niciodată câte înregistrări îl folosesc, deși pentru asta fusese scrisă verificarea.",
-    "REPARAT — un document cu ghilimele în denumire se trunchia la redeschidere și se pierdea la salvare; o raportare repetitivă cu „&\" în nume nu se putea deschide deloc.",
-    "REPARAT — importul PPS din Excel eșua complet fără niciun mesaj (previzualizarea rămânea goală), un fișier .mdb gol ștergea studiul existent și afișa „Import OK: 0 pacienți\", iar anularea confirmării de an lăsa dialogul blocat pe „Se parsează\".",
-    "REPARAT — înregistrările din registre, avizări și focare primeau anul din bara de sus, nu din propria dată: o înregistrare făcută azi cu anul comutat pe cel precedent dispărea din liste. Acum anul se deduce din dată."
+    "Modul întunecat era parțial ilizibil. Rândurile TOTAL din Deșeuri, Consum Antibiotice și PPS, antetul calendarului, matricea antibiogramei și — cel mai important — mesajele de confirmare apăreau cu text alb pe fundal deschis. Cauza: toate culorile paletei devin pasteluri deschise pe întuneric, dar textul rămăsese alb. Modul luminos arată exact ca înainte.",
+    "Butoanele de editare și ștergere din tabele erau aproape invizibile pe întuneric (negru pe fundal închis), în toate modulele.",
+    "La salvare apare acum o confirmare. Înainte dialogul se închidea și nu aveai niciun semn că înregistrarea a intrat — se vedea doar dacă rândul apărea în tabel, ceea ce nu se întâmplă când e ascuns de un filtru, într-o secțiune pliată sau în alt an.",
+    "Când deschizi un formular, cursorul e deja în primul câmp. Nu mai trebuie să iei mouse-ul ca să începi să scrii.",
+    "Dacă nu ai încă nicio secție configurată, mesajul „Selectează secția\" spunea ceva imposibil de făcut din acel ecran. Acum îți spune exact unde se configurează.",
+    "Mesajele de eroare nu mai arată textul tehnic al erorii. În loc de „Failed to execute 'getFileHandle'...\" primești ce s-a întâmplat și ce poți face; detaliul tehnic rămâne în consolă, pentru diagnostic. 44 de locuri.",
+    "Aplicația vorbește acum englezește și când apare o problemă: 79 de mesaje de validare și eroare erau hardcodate în română, deci în modul EN toată interfața era engleză până la prima eroare.",
+    "Un spital care tocmai a instalat aplicația vede pe Dashboard cei doi pași cu care începe, în loc de un tablou de indicatori pe zero. Panoul dispare de la prima secție adăugată. La fel în Autocontrol, care spune acum de unde se pornește."
   ]
 }

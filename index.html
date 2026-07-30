@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.67</title>
+<title>CPIAAM Management v13.69</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1178,7 +1178,24 @@ const DB='CPIAAM4',VER=11,ST=['iaam','autocontrol','deseuri','biocide','pps','co
 function odb(){return new Promise((ok,no)=>{const r=indexedDB.open(DB,VER);r.onupgradeneeded=e=>{const d=e.target.result;ST.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id',autoIncrement:true})})};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function ga(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result.filter(function(x){return!x._deleted}));r.onerror=()=>no(r.error)})}
 async function gaAll(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+// A1-34 - id unic la CREARE, generat de aplicatie, nu de baza de date.
+// Store-urile sunt declarate cu autoIncrement, deci o inregistrare fara `id` primea 1, 2, 3…
+// pe FIECARE calculator, independent. Merge-ul din sync se face strict pe `id`: doua colege
+// care adauga fiecare cate o proba intre doua poll-uri primeau amandoua id=1, iar la
+// sincronizare una o suprascria tacit pe cealalta — raportul de merge o contoriza chiar ca
+// „actualizata". genId foloseste crypto.randomUUID, deci coliziunea devine imposibila.
+// Aici, in `pt`, nu la cele 13 locuri de creare: acopera si modulele viitoare, fara sa fie
+// nevoie sa-si aminteasca cineva regula.
+// DE CE NU MIGRAM si inregistrarile existente: fiecare calculator si-ar renumerota local
+// propriile copii, deci aceeasi inregistrare deja sincronizata ar primi id-uri DIFERITE pe
+// cele doua masini si la urmatorul merge ar aparea de doua ori. Am transforma o suprascriere
+// tacuta intr-o duplicare tacuta. Coliziunile deja produse nu se pot repara retroactiv —
+// datele suprascrise nu mai exista. Oprim doar producerea altora noi.
+// Valoarea intoarsa de pt() (cheia generata de baza) nu e folosita nicaieri — verificat.
 async function pt(s,i,preserveMeta){
+  if(i&&i.id===undefined&&s!=='config'){
+    i.id=(typeof genId==='function')?genId(s.slice(0,3)):(s.slice(0,3)+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8));
+  }
   if(!preserveMeta){
     var user=getCurrentUser();
     if(!i._createdBy){i._createdBy=user;i._createdAt=new Date().toISOString()}
@@ -1267,7 +1284,7 @@ async function pickAttDir(){
   try{_attDirHandle=await window.showDirectoryPicker({mode:'readwrite'});
     CFG.att_dir_name=_attDirHandle.name;await saveCfg();
     await saveAttDirHandle(_attDirHandle);
-    alert('Folder atasamente selectat: '+_attDirHandle.name);render();
+    alert(_Mf('Folder atasamente selectat: {n}',{n:_attDirHandle.name}));render();
   }catch(e){if(e.name!=='AbortError')errAlert(e,'Nu am putut deschide fisierul de sincronizare.','Could not open the sync file.')}
 }
 // ── File I/O helpers for attachments on disk ──
@@ -1302,7 +1319,7 @@ async function migrateAttachmentsToDisk(){
       if(att.data&&!att.on_disk){
         try{const resp=await fetch(att.data);const blob=await resp.blob();
           const ext=att.name?.split('.').pop()||'bin';
-          const fname='bio_'+rec.id+'_'+key+'.'+ext;
+          const fname='bio_'+JSON.stringify(rec.id)+'_'+key+'.'+ext;
           await attWriteFile('biocide',fname,blob);
           att.filename=fname;att.on_disk=true;delete att.data;changed=true;count++;
         }catch(e){errors++;console.warn('Migrate bio:',e)}
@@ -1315,14 +1332,14 @@ async function migrateAttachmentsToDisk(){
     if(rec.file_data&&!(rec.file_meta&&rec.file_meta.on_disk)){
       try{const resp=await fetch(rec.file_data);const blob=await resp.blob();
         const ext=rec.file_name?.split('.').pop()||'bin';
-        const fname='doc_'+rec.id+'.'+ext;
+        const fname='doc_'+JSON.stringify(rec.id)+'.'+ext;
         await attWriteFile('documents',fname,blob);
         rec.file_meta={filename:fname,size:blob.size,type:blob.type,on_disk:true};
         delete rec.file_data;await pt('documents',rec);count++;
       }catch(e){errors++;console.warn('Migrate doc:',e)}
     }
   }
-  alert(count+' atasamente migrate pe disc.'+(errors?' '+errors+' erori.':''));render();
+  alert(_Mf('{c} atasamente migrate pe disc.',{c:count})+(errors?' '+_Mf('{e} erori.',{e:errors}):''));render();
 }
 async function countBase64Attachments(){
   let count=0;
@@ -1912,7 +1929,7 @@ async function _importFromHandle(fh,skipReload,mode){
     else{showToast(CFG.lang==='en'?'Sync OK — no changes':'Sincronizare OK — fara modificari')}
     updateSyncIndicator();render();
   } else {
-    alert('Import reusit! +'+report.added+' noi, '+report.updated+' actualizate');
+    alert(_Mf('Import reusit! +{a} noi, {u} actualizate',{a:report.added,u:report.updated}));
     location.reload();
   }
 }
@@ -2363,7 +2380,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.67';
+const APP_VERSION='13.69';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -3511,6 +3528,41 @@ en:{
 // cod: asa call site-ul ramane lizibil (`alert(_M('Completeaza denumirea.'))`) si nu trebuie
 // inventate 79 de nume de chei. Necunoscutele cad pe textul romanesc, deci nimic nu dispare.
 const MSG_EN={
+  'Stergi acest aviz?':'Delete this authorisation?',
+  'Stergi aviz?':'Delete authorisation?',
+  'Fuzionezi „{s}" in „{t}"?':'Merge „{s}" into „{t}"?',
+  'Salvat!':'Saved!',
+  '{c} probe importate.':'{c} samples imported.',
+  '{s} randuri sarite (fara tip de proba si fara sectie).':'{s} rows skipped (no sample type and no ward).',
+  'Vor fi adaugate {n} tipuri standard de recipiente conform Ord. MS 1226/2012':'{n} standard container types will be added, per Order MS 1226/2012',
+  'Import finalizat din v{v}! ({n} module importate)':'Import finished from v{v}. ({n} modules imported)',
+  '{l} „{n}" exista deja.':'{l} „{n}" already exists.',
+  'Exista deja {n} inregistrari PPS pe anul {y}.':'There are already {n} PPS records for {y}.',
+  'Exista deja {n} inregistrari de consum pe {y}, in lunile: {l}.':'There are already {n} consumption records for {y}, in these months: {l}.',
+  'Folder atasamente selectat: {n}':'Attachments folder selected: {n}',
+  '{c} atasamente migrate pe disc.':'{c} attachments moved to disk.',
+  'Import reusit! +{a} noi, {u} actualizate':'Import successful: +{a} new, {u} updated',
+  'Nu pot citi fisierul: {e}':'Cannot read the file: {e}',
+  'Nicio proba autocontrol pentru {y}.':'No self-monitoring samples for {y}.',
+  'Toate cele {n} tipuri standard sunt deja in catalog.':'All {n} standard types are already in the catalogue.',
+  'Stergi recipientul „{n}"?':'Delete the container „{n}"?',
+  'Produsul „{n}" exista deja in catalog.':'The product „{n}" is already in the catalogue.',
+  'Fisierul {n} depaseste 10MB.':'File {n} is larger than 10 MB.',
+  'Nu exista template generic pentru numele „{n}". Foloseste dropdown-ul manual.':'There is no generic template for the name „{n}". Use the manual dropdown.',
+  'Template invalid: {k}':'Invalid template: {k}',
+  'Descarci {c} fisiere pentru „{p}"? Browserul va cere permisiune pentru descarcari multiple.':'Download {c} files for „{p}"? The browser will ask permission for multiple downloads.',
+  'Migratie completa:\n\u2022 {m} documente mutate la produs\n\u2022 {d} duplicate eliminate\n\nFisierele raman pe disc \u2014 au fost doar re-referentiate.':'Migration complete:\n\u2022 {m} documents moved to product level\n\u2022 {d} duplicates removed\n\nThe files stay on disk \u2014 they were only re-referenced.',
+  'Studiul PPS este din anul {y} (anul curent in aplicatie: {a}). Continui importul pentru {y}?':'The PPS study is from {y} (current year in the application: {a}). Continue the import for {y}?',
+  '{c} sectii PPS importate din HelicsWin.':'{c} PPS wards imported from HelicsWin.',
+  'Nu exista date PPS pentru anul {y}. Importa din HelicsWin sau adauga manual.':'There is no PPS data for {y}. Import from HelicsWin or add it manually.',
+  'Nu exista import IR pentru anul {y}':'There is no IR import for {y}',
+  'Alege coloana pentru: {c}.\n\nImportul nu poate continua fara ele.':'Choose the column for: {c}.\n\nThe import cannot continue without them.',
+  'Import finalizat:\n\u2022 {i} izolate importate\n\u2022 {m} legate de cazuri IAAM\n\u2022 {s} duplicate (skip)':'Import finished:\n\u2022 {i} isolates imported\n\u2022 {m} linked to HAI cases\n\u2022 {s} duplicates (skipped)',
+  '{n} randuri nu au sectie atribuita. Continui importul?':'{n} rows have no ward assigned. Continue the import?',
+  '{c} instante generate pentru {y}.':'{c} instances generated for {y}.',
+  'Se creeaza {n} raportari repetitive cu termenele din noul ordin (Anexa 2).\n\nCele care exista deja NU se dubleaza. Continui?':'This creates {n} recurring reports with the deadlines from the new order (Annex 2).\n\nExisting ones are NOT duplicated. Continue?',
+  'Conexiune reusita! Raspuns: {r}':'Connection successful. Response: {r}',
+  'Tipul de proba „{n}" exista deja.':'The sample type „{n}" already exists.',
   'Adapter HelicsWin neîncărcat. Rebuild dist/index.html.':'HelicsWin adapter not loaded. Rebuild dist/index.html.',
   'Adauga cel putin o persoana.':'Add at least one person.',
   'Adauga cel putin o sectie.':'Add at least one ward.',
@@ -4053,6 +4105,16 @@ function _M(ro){
   return (typeof MSG_EN!=='undefined'&&MSG_EN[ro])?MSG_EN[ro]:ro;
 }
 
+// A2-04b - mesaje cu valori interpolate. `_M` merge doar pe text fix, pentru ca dictionarul e
+// cheiat pe sirul complet: `alert('Importate '+n+' probe')` ar cere o cheie diferita pentru
+// fiecare valoare a lui n. Aici cheia e SABLONUL, cu locuri marcate {asa}, iar valorile se
+// substituie dupa traducere — deci un singur rand in dictionar acopera toate valorile.
+function _Mf(ro,params){
+  var s=_M(ro);
+  if(params)Object.keys(params).forEach(function(k){s=s.split('{'+k+'}').join(params[k])});
+  return s;
+}
+
 // Activity log (localStorage, max 20 entries)
 function logActivity(text){
   const log=JSON.parse(localStorage.getItem('cpiaam_activity')||'[]');
@@ -4062,17 +4124,38 @@ function logActivity(text){
 }
 function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activity')||'[]')}
 
-// Resolve ID→name for each config type. Returns name or '(dezactivat)' if not found.
-function rSec(id){if(!id)return '—';const s=CFG.sections.find(x=>x.id===id)||CFG.sections.find(x=>x.name===id);return s?_secDisplayName(s):id}
+// A1-35 - eticheta pentru o referinta care nu mai exista in configurare.
+// Inainte, cei patru helperi de mai jos intorceau ID-UL BRUT cand elementul fusese sters, deci
+// in Ancheta Epidemiologica, in tabelele Raportului Anual si chiar in NUMELE fisierului livrat
+// aparea „s_a3f9c2d1e8b04a7f". Un cod intern nu spune nimic destinatarului unui raport trimis
+// la DSP si nu e cautabil nici macar in aplicatie.
+// CONSECINTA ASUMATA: in `analysis.js` si in tabelele de distributie din `rapoarte.js`
+// rezultatul e folosit drept CHEIE de grupare, deci toti orfanii se aduna acum intr-un SINGUR
+// rand in loc de cate unul per cod. Totalul nu se schimba, iar un rand cu eticheta clara e mai
+// onest decat trei randuri cu coduri opace pe care nimeni nu le poate interpreta.
+// Numele de fisier au helper separat (_orphanFile), pentru ca eticheta cu spatii si paranteze
+// ar deveni „_sters_din_configurare_" dupa curatarea caracterelor.
+function _orphanLabel(){return CFG.lang==='en'?'(deleted from settings)':'(sters din configurare)'}
+function _orphanFile(){return CFG.lang==='en'?'deleted_item':'element_sters'}
+// Numele sectiei, curatat pentru un nume de fisier. O sectie stearsa nu produce
+// "_sters_din_configurare_", ci o eticheta scurta si lizibila.
+function _secFileName(id){
+  var s=(CFG.sections||[]).find(function(x){return x.id===id})||(CFG.sections||[]).find(function(x){return x.name===id});
+  var t=s?_secDisplayName(s):_orphanFile();
+  return String(t).replace(/[^a-zA-Z0-9]/g,'_').replace(/_+/g,'_').replace(/^_+|_+$/g,'');
+}
+
+// Resolve ID→name for each config type. Returns name or the orphan label if not found.
+function rSec(id){if(!id)return '—';const s=CFG.sections.find(x=>x.id===id)||CFG.sections.find(x=>x.name===id);return s?_secDisplayName(s):_orphanLabel()}
 function secLabel(secId){const sec=CFG.sections.find(s=>s.id===secId)||CFG.sections.find(s=>s.name===secId);if(!sec)return 'Sectia —';const t=sec.type||'sectie';const prefixes={sectie:'Sectia',compartiment:'Compartimentul',spitalizare_zi:'Spitalizare de Zi',cpu_upu:'CPU/UPU',bloc_operator:'Bloc Operator',bloc_alimentar:'Bloc Alimentar',spalatorie:'Spalatoria',laborator:'Laboratorul',cabinet:'Cabinetul',explorari:'Explorari Functionale',radiologie:'Radiologie/Imagistica',serviciu:'Serviciul',altul:''};return (prefixes[t]||'Sectia')+' '+(sec.name||sec.id)}
 const ROLE_MAP={coordinator:'Coordonator CPIAAM',medic_bi:'Medic Boli Infectioase',asistent_igiena:'Asistent Igiena',director_medical:'Director medical',manager:'Manager',sef_sectie:'Sef Sectie',asistent_sef:'Asistent Sef',administrator:'Administrator',responsabil_deseuri:'Responsabil deseuri',other:'Altul'};
 const ROLE_HIDDEN_FROM_USER_MENU=['director_medical','manager'];
 function roleOpts(sel){return Object.entries(ROLE_MAP).map(([v,n])=>'<option value="'+v+'"'+(sel===v?' selected':'')+'>'+n+'</option>').join('')}
 function roleName(role){return ROLE_MAP[role]||role||'Altul'}
-function rProbe(id){if(!id)return '—';const a=CFG.probe_types||[];const p=a.find(x=>x.id===id)||a.find(x=>x.name===id);return p?(p.name||p.id):id}
+function rProbe(id){if(!id)return '—';const a=CFG.probe_types||[];const p=a.find(x=>x.id===id)||a.find(x=>x.name===id);return p?(p.name||p.id):_orphanLabel()}
 function rInf(id){if(!id)return '—';return iaamCatLabel(id)}
-function rBioProd(id){if(!id)return '—';const a=CFG.biocide_products||[];const p=a.find(x=>x.id===id)||a.find(x=>x.name===id);return p?(p.name||p.id):id}
-function rDocCat(id){if(!id)return '—';const a=CFG.doc_categories||[];const c=a.find(x=>x.id===id)||a.find(x=>x.name===id);return c?(c.name||c.id):id}
+function rBioProd(id){if(!id)return '—';const a=CFG.biocide_products||[];const p=a.find(x=>x.id===id)||a.find(x=>x.name===id);return p?(p.name||p.id):_orphanLabel()}
+function rDocCat(id){if(!id)return '—';const a=CFG.doc_categories||[];const c=a.find(x=>x.id===id)||a.find(x=>x.name===id);return c?(c.name||c.id):_orphanLabel()}
 
 // Safe name accessor — never returns undefined
 function sn(obj){if(!obj)return '—';if(typeof obj==='string')return obj;return obj.name||obj.label||obj.code||obj.id||'?'}
@@ -5293,11 +5376,11 @@ async function rIAAM(el){
         '<td><strong>'+esc(germs)+'</strong>'+(r.mdr?' <span class="bdg bdg-r" style="font-size:9px">MDR</span>':'')+'</td>'+
         '<td style="font-size:12px">'+(r.patient_initials||r.patient||'—')+(r.fo_number?'<br><span style="font-size:10px;color:var(--txtL)">'+(r.fo_number.toUpperCase().startsWith('FO')?'':'FO: ')+esc(r.fo_number)+'</span>':'')+'</td>'+
         '<td><span class="compl-badge '+complCls+'">'+comp+'%</span></td>'+
-        '<td class="act"><button onclick="editIAAM('+r.id+')" title="'+(isEN?'Edit':'Editeaza')+'">&#9998;</button>'+
-        '<button onclick="genFisaIAAM('+r.id+')" title="'+(isEN?'IAAM Sheet':'Fisa IAAM')+'">&#128203;</button>'+
-        '<button onclick="genAnchetaWord('+r.id+')" title="'+(isEN?'Epidemiological Investigation':'Ancheta Epidemiologica')+'">&#128196;</button>'+
-        '<button onclick="duplicateIAAM('+r.id+')" title="'+(isEN?'Duplicate — copies section, doctor, origin; clears patient data':'Duplica — copiaza sectia, doctorul, originea; sterge datele pacient')+'">&#128464;</button>'+
-        '<button onclick="delRec(\'iaam\','+r.id+')" title="'+(isEN?'Delete':'Sterge')+'">&#128465;</button></td></tr>';
+        '<td class="act"><button onclick="editIAAM('+_jsArg(r.id)+')" title="'+(isEN?'Edit':'Editeaza')+'">&#9998;</button>'+
+        '<button onclick="genFisaIAAM('+_jsArg(r.id)+')" title="'+(isEN?'IAAM Sheet':'Fisa IAAM')+'">&#128203;</button>'+
+        '<button onclick="genAnchetaWord('+_jsArg(r.id)+')" title="'+(isEN?'Epidemiological Investigation':'Ancheta Epidemiologica')+'">&#128196;</button>'+
+        '<button onclick="duplicateIAAM('+_jsArg(r.id)+')" title="'+(isEN?'Duplicate — copies section, doctor, origin; clears patient data':'Duplica — copiaza sectia, doctorul, originea; sterge datele pacient')+'">&#128464;</button>'+
+        '<button onclick="delRec(\'iaam\','+_jsArg(r.id)+')" title="'+(isEN?'Delete':'Sterge')+'">&#128465;</button></td></tr>';
     }).join('')+
     '</tbody></table>')+
   '</div></div>';
@@ -5524,7 +5607,7 @@ function renderIaamSection(step){
     let f='<div>';
     if(step>0)f+='<button class="btn bo" onclick="iaamNavTo('+(_iaamStep-1)+')">&larr; '+(isEN?'Previous':'Inapoi')+'</button>';
     f+='</div><div style="display:flex;gap:8px">';
-    if(_iaamEditId)f+='<button class="btn bo" onclick="genFisaIAAM('+_iaamEditId+')">&#128203; Fisa</button><button class="btn bo" onclick="genAnchetaWord('+_iaamEditId+')">&#128196; Ancheta</button>';
+    if(_iaamEditId)f+='<button class="btn bo" onclick="genFisaIAAM('+_jsArg(_iaamEditId)+')">&#128203; Fisa</button><button class="btn bo" onclick="genAnchetaWord('+_jsArg(_iaamEditId)+')">&#128196; Ancheta</button>';
     f+='<button class="btn bp" onclick="saveIAAM()">&#128190; '+(isEN?'Save':'Salveaza')+'</button>';
     if(step<9)f+='<button class="btn bp" onclick="iaamNavTo('+(_iaamStep+1)+')">'+(isEN?'Next':'Urmatorul')+' &rarr;</button>';
     f+='</div>';
@@ -6530,8 +6613,8 @@ function _renderTimeline(allData,isEN){
       if(c.st==='d')tD++;
       var catLabel='';
       try{var cl2=iaamCatLabel(c.r.iaam_category||c.r.infection_type);catLabel=cl2?cl2.split(' \u2014 ')[0]||cl2:''}catch(e){}
-      h+='<div class="tl-row"><div class="tl-row-cb"><input type="checkbox" data-id="'+c.r.id+'"'+(_tlChecked.has(c.r.id)?' checked':'')+' onchange="_tlCheck('+c.r.id+')"></div>';
-      h+='<div class="tl-row-info" onclick="editIAAM('+c.r.id+')" style="cursor:pointer">';
+      h+='<div class="tl-row"><div class="tl-row-cb"><input type="checkbox" data-id="'+c.r.id+'"'+(_tlChecked.has(c.r.id)?' checked':'')+' onchange="_tlCheck('+_jsArg(c.r.id)+')"></div>';
+      h+='<div class="tl-row-info" onclick="editIAAM('+_jsArg(c.r.id)+')" style="cursor:pointer">';
       if(cm[c.r.id])h+='<div class="tl-cluster-dot" style="background:'+(DK?'#FF4444':'#DC2626')+'"></div>';
       h+='<span class="tl-r-id">'+(c.r.patient_initials||c.r.patient||'P-'+c.r.id)+'</span>';
       h+='<span class="tl-r-type">'+esc(catLabel)+'</span>';
@@ -6715,8 +6798,8 @@ function _renderTimeline(allData,isEN){
     var catLabel='';
     try{var cl2=iaamCatLabel(c.r.iaam_category||c.r.infection_type);catLabel=cl2?cl2.split(' \u2014 ')[0]||cl2:''}catch(e){}
 
-    h+='<div class="tl-row"><div class="tl-row-cb"><input type="checkbox" data-id="'+c.r.id+'"'+(_tlChecked.has(c.r.id)?' checked':'')+' onchange="_tlCheck('+c.r.id+')"></div>';
-    h+='<div class="tl-row-info" onclick="editIAAM('+c.r.id+')" style="cursor:pointer">';
+    h+='<div class="tl-row"><div class="tl-row-cb"><input type="checkbox" data-id="'+c.r.id+'"'+(_tlChecked.has(c.r.id)?' checked':'')+' onchange="_tlCheck('+_jsArg(c.r.id)+')"></div>';
+    h+='<div class="tl-row-info" onclick="editIAAM('+_jsArg(c.r.id)+')" style="cursor:pointer">';
     if(cm[c.r.id])h+='<div class="tl-cluster-dot" style="background:'+(DK?'#FF4444':'#DC2626')+'"></div>';
     h+='<span class="tl-r-id">'+(c.r.patient_initials||c.r.patient||'P-'+c.r.id)+'</span>';
     h+='<span class="tl-r-type">'+esc(catLabel)+'</span>';
@@ -6921,7 +7004,7 @@ async function rFocare(el){
       const acts=(f.actions||[]);
       const actDone=acts.filter(function(a){return a.status==='finalizat'}).length;
       h+='<div style="border-bottom:1px solid var(--brd)">'+
-        '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;flex-wrap:wrap" onclick="_focToggle('+f.id+')">'+
+        '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;flex-wrap:wrap" onclick="_focToggle('+_jsArg(f.id)+')">'+
           '<span style="font-size:13px;width:12px;display:inline-block;transition:transform .2s;transform:rotate('+(open?'90':'0')+'deg)">&#9654;</span>'+
           '<div style="flex:1;min-width:200px">'+
             '<div style="font-weight:700;font-size:13px">'+esc(f.name||'(fara denumire)')+'</div>'+
@@ -6935,9 +7018,9 @@ async function rFocare(el){
           (acts.length?'<span class="bdg '+(actDone===acts.length?'bdg-g':'bdg-a')+'" style="font-size:10px">'+actDone+'/'+acts.length+' masuri</span>':'')+
           '<span class="bdg '+st.cls+'" style="font-size:10px">'+st.n+'</span>'+
           '<div onclick="event.stopPropagation()" style="display:flex;gap:4px">'+
-            '<button class="btn bo bsm" onclick="genFocarWord('+f.id+')" title="Raport Word">&#128196;</button>'+
-            '<button class="btn bo bsm" onclick="editFocar('+f.id+')" title="Editeaza">&#9998;</button>'+
-            '<button class="btn bo bsm" onclick="delFocar('+f.id+')" title="Sterge" style="color:var(--red)">&#128465;</button>'+
+            '<button class="btn bo bsm" onclick="genFocarWord('+_jsArg(f.id)+')" title="Raport Word">&#128196;</button>'+
+            '<button class="btn bo bsm" onclick="editFocar('+_jsArg(f.id)+')" title="Editeaza">&#9998;</button>'+
+            '<button class="btn bo bsm" onclick="delFocar('+_jsArg(f.id)+')" title="Sterge" style="color:var(--red)">&#128465;</button>'+
           '</div>'+
         '</div>';
       if(open)h+='<div style="padding:4px 14px 16px 14px;background:var(--bg)">'+_focDetail(f,cs)+'</div>';
@@ -6963,7 +7046,7 @@ function _focDetail(f,cs){
         '<td>'+(focCaseDate(c)?fmtDate(focCaseDate(c)):'—')+'</td>'+
         '<td>'+esc(focCaseGerms(c).join(', ')||'—')+'</td>'+
         '<td>'+esc(typeof classifLabel==='function'?classifLabel(c):(c.classification||'—'))+'</td>'+
-        '<td class="act"><button onclick="editIAAM('+c.id+')" title="Deschide cazul">&#9998;</button></td></tr>';
+        '<td class="act"><button onclick="editIAAM('+_jsArg(c.id)+')" title="Deschide cazul">&#9998;</button></td></tr>';
     });
     h+='</tbody></table></div>';
   } else {
@@ -6980,7 +7063,7 @@ function _focDetail(f,cs){
       const late=a.status!=='finalizat'&&a.deadline&&new Date(a.deadline+'T00:00:00')<new Date();
       h+='<tr'+(late?' style="background:#fef2f2"':'')+'><td>'+esc(a.action||'—')+'</td><td>'+esc(a.responsible||'—')+'</td>'+
         '<td>'+(a.deadline?fmtDate(a.deadline):'—')+(late?' <span style="color:var(--red);font-size:9px">depasit</span>':'')+'</td>'+
-        '<td><select onchange="focSetActionStatus('+f.id+','+i+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:2px;font-size:11px">'+
+        '<td><select onchange="focSetActionStatus('+_jsArg(f.id)+','+i+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:2px;font-size:11px">'+
           ['neinceput','in_lucru','finalizat'].map(function(s){return '<option value="'+s+'"'+((a.status||'neinceput')===s?' selected':'')+'>'+({neinceput:'Neinceput',in_lucru:'In lucru',finalizat:'Finalizat'})[s]+'</option>'}).join('')+
         '</select></td></tr>';
     });
@@ -7076,7 +7159,7 @@ async function editFocar(id,preset){
     '<div class="fg"><label>Data inchidere</label><input type="date" id="f-foc-stop" value="'+(_focDraft.date_stop||'')+'">'+
       '<small style="color:var(--txtL);font-size:10px;display:block;margin-top:2px">Lasa gol daca focarul e in desfasurare</small></div></div>'+
     '<div class="fg"><label>Sectii implicate</label><div id="f-foc-secs" style="display:flex;flex-wrap:wrap;gap:8px;max-height:120px;overflow-y:auto;border:1px solid var(--brd);border-radius:6px;padding:8px">'+
-      (CFG.sections||[]).map(function(s){return '<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;white-space:nowrap"><input type="checkbox" value="'+s.id+'"'+(_focDraft.sections.indexOf(s.id)>=0?' checked':'')+' onchange="_focToggleSec(\''+s.id+'\',this.checked)"> '+esc(_secDisplayName?_secDisplayName(s):s.name)+'</label>'}).join('')+
+      (CFG.sections||[]).map(function(s){return '<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;white-space:nowrap"><input type="checkbox" value="'+s.id+'"'+(_focDraft.sections.indexOf(s.id)>=0?' checked':'')+' onchange="_focToggleSec(\''+JSON.stringify(s.id)+'\',this.checked)"> '+esc(_secDisplayName?_secDisplayName(s):s.name)+'</label>'}).join('')+
     '</div></div>'+
     '<div class="fg"><label>Cazuri IAAM legate <span style="font-size:11px;color:var(--txtL)">('+_focDraft.case_ids.length+' selectate)</span></label>'+
       '<div id="f-foc-cases" style="max-height:160px;overflow-y:auto;border:1px solid var(--brd);border-radius:6px;padding:8px">'+_focCaseChecks(iaamAll)+'</div></div>'+
@@ -7084,7 +7167,7 @@ async function editFocar(id,preset){
     '<div class="fg"><label>Plan de masuri</label><div id="f-foc-acts">'+_focActRows()+'</div>'+
       '<button class="btn bo bsm" onclick="focAddAction()" style="margin-top:6px">+ Adauga masura</button></div>'+
     '<div class="fg"><label>Concluzii</label><textarea id="f-foc-concl" rows="2">'+esc(_focDraft.conclusions)+'</textarea></div>',
-    '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveFocar('+JSON.stringify(id||null)+')">Salveaza</button>');
+    '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveFocar('+_jsArg(id||null)+')">Salveaza</button>');
   setTimeout(function(){addDatePreview('f-foc-start');addDatePreview('f-foc-stop');attachDirtyTracking()},50);
 }
 function _focCaseChecks(iaamAll){
@@ -7092,7 +7175,7 @@ function _focCaseChecks(iaamAll){
   return iaamAll.slice().sort(function(a,b){return (focCaseDate(b)||'').localeCompare(focCaseDate(a)||'')}).map(function(c){
     const g=focCaseGerms(c).join(', ');
     return '<label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;padding:2px 0">'+
-      '<input type="checkbox" value="'+c.id+'"'+(_focDraft.case_ids.indexOf(c.id)>=0?' checked':'')+' onchange="_focToggleCase('+c.id+',this.checked)"> '+
+      '<input type="checkbox" value="'+c.id+'"'+(_focDraft.case_ids.indexOf(c.id)>=0?' checked':'')+' onchange="_focToggleCase('+_jsArg(c.id)+',this.checked)"> '+
       '<span>'+esc(c.patient||('P-'+c.id))+(c.fo_number?' (FO '+esc(c.fo_number)+')':'')+' · '+esc(rSec(c.section))+' · '+(focCaseDate(c)?fmtDate(focCaseDate(c)):'—')+(g?' · '+esc(g):'')+'</span></label>';
   }).join('');
 }
@@ -7461,7 +7544,7 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
           else{cls='ac-cell-rd';txt=cell.total}
         }
         var isClickable=cell.total>0;
-        o+='<td class="'+cls+(isClickable?' ac-cell-c':'')+'"'+(isClickable?' onclick="showAutoPopup(event,\''+pt.id+'\',\''+s.id+'\')"':'')+'>'+txt+'</td>';
+        o+='<td class="'+cls+(isClickable?' ac-cell-c':'')+'"'+(isClickable?' onclick="showAutoPopup(event,\''+JSON.stringify(pt.id)+'\',\''+JSON.stringify(s.id)+'\')"':'')+'>'+txt+'</td>';
       });
       o+='</tr>';
     });
@@ -7891,7 +7974,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
         '<td>'+(r.result==='conform'?'<span class="bdg bdg-g">Conform</span>':'<span class="bdg bdg-r">Neconform</span>')+'</td>'+
         '<td>'+(r.dsp_parallel?'<span class="bdg bdg-b" title="Proba prelucrata si cu DSP in paralel">&#10003; DSP</span>':'<span style="color:var(--txtL)">—</span>')+'</td>'+
         '<td style="font-size:11px">'+(r.organism?(r.organism+(r.ufc_count?' ('+r.ufc_count+' UFC)':'')):(r.details||r.notes||'—'))+(r.details&&r.organism?'<br><span style="color:var(--txtL)">'+esc(r.details)+'</span>':'')+'</td>'+
-        '<td class="act"><button onclick="editAuto('+r.id+')">&#9998;</button><button onclick="delRec(\'autocontrol\','+r.id+')">&#128465;</button></td></tr>';
+        '<td class="act"><button onclick="editAuto('+_jsArg(r.id)+')">&#9998;</button><button onclick="delRec(\'autocontrol\','+_jsArg(r.id)+')">&#128465;</button></td></tr>';
     });
     h+='</tbody></table>';
   }
@@ -8000,7 +8083,7 @@ async function editAuto(id){
     '</div>'+
     '<div class="fg"><label>'+(isEN?'Notes':'Observatii')+'</label><textarea id="f-auto-n" rows="2">'+(r.notes||'')+'</textarea></div>',
   '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaza')+'</button>'+(!id?'<button class="btn bp" style="background:var(--teal);opacity:.85" onclick="saveAutoAndNew()">'+(isEN?'Save + New':'Salveaza + Noua')+'</button>':'')+
-  '<button class="btn bp" onclick="saveAuto('+JSON.stringify(id||null)+')">'+(isEN?'Save & Close':'Salveaza')+'</button>');
+  '<button class="btn bp" onclick="saveAuto('+_jsArg(id||null)+')">'+(isEN?'Save & Close':'Salveaza')+'</button>');
   setTimeout(()=>{addDatePreview('f-auto-dt');attachDirtyTracking();
     // v13.27 - in modul EDIT, marcheaza form-ul ca dirty implicit pentru ca user sa primeasca avertisment la click in afara (consistent cu introducerea de probe noi - data e oricum incarcata, click pe overlay nu trebuie sa inchida silentios fara confirm)
     if(id)markFormDirty();
@@ -8049,7 +8132,7 @@ function expAutoCSV(){ga('autocontrol').then(d=>{const rows=d.filter(r=>r.year==
 // pe cel din toolbar; iar un re-import al aceluiasi fisier dubla tacit toate probele.
 function impAutoCSV(){const inp=document.createElement('input');inp.type='file';inp.accept='.csv,.txt';inp.onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
-  let t;try{t=await f.text()}catch(err){alert('Nu pot citi fisierul: '+(err&&err.message?err.message:err));return}
+  let t;try{t=await f.text()}catch(err){alert(_Mf('Nu pot citi fisierul: {e}',{e:(err&&err.message?err.message:err)}));return}
   const lines=t.split(/\r?\n/).filter(l=>l.trim());
   if(lines.length<2){alert(_M('Fisierul este gol sau contine doar antetul \u2014 nu am ce importa.'));return}
   const first=lines[0].replace(/^\uFEFF/,'');
@@ -8065,7 +8148,7 @@ function impAutoCSV(){const inp=document.createElement('input');inp.type='file';
     return;
   }
   const existing=(await ga('autocontrol')).filter(r=>r.year===A.year).length;
-  if(existing&&!confirm('Exista deja '+existing+' probe inregistrate pe anul '+A.year+'.\n\nImportul le ADAUGA \u2014 nu inlocuieste si nu detecteaza duplicate.\nDaca ai importat deja acest fisier, probele se vor dubla.\n\nContinui?'))return;
+  if(existing&&!confirm(_Mf('Exista deja {n} probe inregistrate pe anul {y}.',{n:existing,y:A.year})+'\n\nImportul le ADAUGA \u2014 nu inlocuieste si nu detecteaza duplicate.\nDaca ai importat deja acest fisier, probele se vor dubla.\n\nContinui?'))return;
   // Potrivim si pe numele afisat, ca sa mearga si fisierele exportate cu versiunile vechi.
   const findBy=(arr,nm)=>(arr||[]).find(x=>sn(x)===nm)||(arr||[]).find(x=>_secDisplayName(x)===nm);
   let cnt=0,skip=0;const otherYears=new Set();
@@ -8088,15 +8171,15 @@ function impAutoCSV(){const inp=document.createElement('input');inp.type='file';
       reg_number:get(ci.reg),nc_details:get(ci.nc),notes:get(ci.notes)});
     cnt++;
   }
-  alert(cnt+' probe importate.'+
-    (skip?'\n'+skip+' randuri sarite (fara tip de proba si fara sectie).':'')+
+  alert(_Mf('{c} probe importate.',{c:cnt})+
+    (skip?'\n'+_Mf('{s} randuri sarite (fara tip de proba si fara sectie).',{s:skip}):'')+
     (otherYears.size?'\n\nAtentie: '+otherYears.size+' probe apartin altor ani ('+[...otherYears].sort().join(', ')+'). Schimba anul din bara de sus ca sa le vezi.':''));
   render()};inp.click()}
 
 // ── Autocontrol Excel (cerinta 3) ──
 async function genAutoExcel(){
   const y=A.year,au=(await ga('autocontrol')).filter(r=>r.year===y).sort((a,b)=>a.month-b.month);
-  if(au.length===0){alert('Nicio proba autocontrol pentru '+y+'.');return}
+  if(au.length===0){alert(_Mf('Nicio proba autocontrol pentru {y}.',{y:y}));return}
   const wb=XLSX.utils.book_new();
   // Sheet 1: Date brute
   const raw=[['Trimestru','Luna','Data','Tip Proba','Sectie','Rezultat','Germen','UFC','Detalii','DSP','Observatii']];
@@ -8187,8 +8270,8 @@ async function renderAutoTab4(isEN){
         '<td style="font-size:12px">'+esc(r.frequency||'—')+'</td>'+
         '<td style="font-size:12px">'+esc(r.measures||'—')+'</td>'+
         '<td style="font-size:12px">'+(r.reviewed_date?fmtDate(r.reviewed_date):'<span style="color:var(--txtL)">—</span>')+'</td>'+
-        '<td class="act"><button onclick="editRiskPoint('+JSON.stringify(r.id)+')" title="Editeaza">&#9998;</button>'+
-        '<button onclick="delRiskPoint('+JSON.stringify(r.id)+')" title="Sterge">&#128465;</button></td></tr>';
+        '<td class="act"><button onclick="editRiskPoint('+_jsArg(r.id)+')" title="Editeaza">&#9998;</button>'+
+        '<button onclick="delRiskPoint('+_jsArg(r.id)+')" title="Sterge">&#128465;</button></td></tr>';
     });
     h+='</tbody></table>';
   }
@@ -8393,7 +8476,7 @@ async function renderAtpModule(isEN){
         '<td><strong>'+r.rlu_value+'</strong></td><td>'+bdg(res1)+'</td>'+
         '<td>'+(r.rlu_repeat!=null&&r.rlu_repeat!==''?'<strong>'+r.rlu_repeat+'</strong>':'\u2014')+'</td>'+
         '<td>'+(res2?bdg(res2):'\u2014')+'</td>'+
-        '<td class="act"><button onclick="editAtp('+r.id+')" title="'+T('btn_edit')+'">&#9998;</button><button onclick="delRec(\'atp\','+r.id+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
+        '<td class="act"><button onclick="editAtp('+_jsArg(r.id)+')" title="'+T('btn_edit')+'">&#9998;</button><button onclick="delRec(\'atp\','+_jsArg(r.id)+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
     });
     h+='</tbody></table></div>';
   }
@@ -8426,7 +8509,7 @@ async function editAtp(id){
     '<div class="fg"><label>RLU '+(isEN?'(repeat reading)':'(repeti\u021Bie)')+' <span style="color:var(--txtL);font-size:11px">('+( isEN?'optional':'op\u021Bional')+')</span></label><input type="number" id="f-atp-rlu2" value="'+(r.rlu_repeat!=null&&r.rlu_repeat!==''?r.rlu_repeat:'')+'" min="0" step="1" oninput="updateAtpResult()"></div></div>'+
     '<div id="f-atp-result-preview" style="margin:8px 0"></div>'+
     '<div class="fg"><label>'+(isEN?'Notes':'Observa\u021Bii')+'</label><textarea id="f-atp-notes" rows="2">'+((r.notes||'').replace(/</g,'&lt;'))+'</textarea></div>',
-    '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaz\u0103')+'</button><button class="btn bp" onclick="saveAtp('+JSON.stringify(id||null)+')">'+(isEN?'Save':'Salveaz\u0103')+'</button>');
+    '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaz\u0103')+'</button><button class="btn bp" onclick="saveAtp('+_jsArg(id||null)+')">'+(isEN?'Save':'Salveaz\u0103')+'</button>');
   setTimeout(()=>{updateAtpResult();addDatePreview('f-atp-date');attachDirtyTracking()},50);
 }
 function updateAtpResult(){
@@ -8607,7 +8690,7 @@ async function renderUvModule(isEN){
         '<td>'+uvSurfName+'</td>'+
         '<td>'+(r.result==='pass'?'<span class="bdg bdg-g">Pass</span>':'<span class="bdg bdg-r">Fail</span>')+'</td>'+
         '<td style="font-size:11px">'+(r.notes||'\u2014')+'</td>'+
-        '<td class="act"><button onclick="editUv('+r.id+')" title="'+T('btn_edit')+'">&#9998;</button><button onclick="delRec(\'uvcheck\','+r.id+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
+        '<td class="act"><button onclick="editUv('+_jsArg(r.id)+')" title="'+T('btn_edit')+'">&#9998;</button><button onclick="delRec(\'uvcheck\','+_jsArg(r.id)+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
     });
     h+='</tbody></table></div>';
   }
@@ -8629,7 +8712,7 @@ async function editUv(id){
     '<div class="fr"><div class="fg"><label>'+(isEN?'Surface type':'Tip suprafa\u021B\u0103')+'</label><select id="f-uv-surf"><option value="">\u2014</option>'+uvSurfOpts+'</select></div>'+
     '<div class="fg"><label>'+(isEN?'Result':'Rezultat')+'</label><select id="f-uv-res"><option value="pass"'+(r.result==='pass'?' selected':'')+'>Pass (marker '+( isEN?'removed':'\u00EEndep\u0103rtat')+')</option><option value="fail"'+(r.result==='fail'?' selected':'')+'>Fail (marker '+(isEN?'visible':'vizibil')+')</option></select></div></div>'+
     '<div class="fg"><label>'+(isEN?'Notes':'Observa\u021Bii')+'</label><textarea id="f-uv-notes" rows="2">'+((r.notes||'').replace(/</g,'&lt;'))+'</textarea></div>',
-    '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaz\u0103')+'</button><button class="btn bp" onclick="saveUv('+JSON.stringify(id||null)+')">'+(isEN?'Save':'Salveaz\u0103')+'</button>');
+    '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaz\u0103')+'</button><button class="btn bp" onclick="saveUv('+_jsArg(id||null)+')">'+(isEN?'Save':'Salveaz\u0103')+'</button>');
   setTimeout(()=>{addDatePreview('f-uv-date');attachDirtyTracking()},50);
 }
 async function saveUv(id){
@@ -9220,14 +9303,14 @@ async function rDes(el){
 
   el.innerHTML='<div class="kg">'+
     '<div class="kc am"><div class="kl">Total Deseuri</div><div class="kv" id="des-kpi-total">'+fn(Math.round(gt*100)/100)+' kg</div></div>'+
-    activeWC.filter(w=>w.category==='periculos'||w.dangerous).map(w=>'<div class="kc rd"><div class="kl">'+w.code+'</div><div class="kv" id="des-kpi-'+w.id+'">'+fn(Math.round(ct[w.id]*100)/100)+' kg</div><div class="ks">'+(w.name||w.code)+'</div></div>').join('')+
+    activeWC.filter(w=>w.category==='periculos'||w.dangerous).map(w=>'<div class="kc rd"><div class="kl">'+w.code+'</div><div class="kv" id="des-kpi-'+JSON.stringify(w.id)+'">'+fn(Math.round(ct[w.id]*100)/100)+' kg</div><div class="ks">'+(w.name||w.code)+'</div></div>').join('')+
   '</div>'+
   '<div class="ib inf">Completeaza cantitatile lunare (kg). Datele se salveaza la modificarea fiecarui camp.</div>'+
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
     '<table class="dt"><thead><tr><th style="min-width:130px">Cod</th>'+MO.map(m=>'<th style="text-align:right;min-width:65px">'+m+'</th>').join('')+'<th style="text-align:right;min-width:80px">TOTAL</th></tr></thead><tbody>'+
     activeWC.map(w=>{var noteHtml=w.note_populatie?'<br><span style="font-size:9px;color:var(--warnTxt);font-style:italic">&#9888; '+w.note_populatie+'</span>':'';return '<tr><td><strong>'+w.code+'</strong><br><span style="font-size:10px;color:var(--txtL)">'+(w.name||w.code)+'</span>'+noteHtml+'</td>'+
-      MO.map((_,mi)=>{const v=byM[mi+1]?byM[mi+1][w.id]||'':'';return'<td style="padding:3px"><input type="number" step="0.01" min="0" value="'+v+'" style="width:100%;padding:4px 3px;border:1px solid var(--brd);border-radius:4px;font-size:11px;text-align:right;font-family:var(--f)" onchange="sDes('+(mi+1)+',\''+w.id+'\',this.value)"></td>'}).join('')+
-      '<td style="text-align:right" id="des-rt-'+w.id+'"><strong>'+fn(Math.round(ct[w.id]*100)/100)+'</strong> <span style="font-size:10px;opacity:.7">kg</span></td></tr>'}).join('')+
+      MO.map((_,mi)=>{const v=byM[mi+1]?byM[mi+1][w.id]||'':'';return'<td style="padding:3px"><input type="number" step="0.01" min="0" value="'+v+'" style="width:100%;padding:4px 3px;border:1px solid var(--brd);border-radius:4px;font-size:11px;text-align:right;font-family:var(--f)" onchange="sDes('+(mi+1)+',\''+JSON.stringify(w.id)+'\',this.value)"></td>'}).join('')+
+      '<td style="text-align:right" id="des-rt-'+JSON.stringify(w.id)+'"><strong>'+fn(Math.round(ct[w.id]*100)/100)+'</strong> <span style="font-size:10px;opacity:.7">kg</span></td></tr>'}).join('')+
     '<tr style="background:var(--navy);color:var(--onAccent);font-weight:700"><td>TOTAL (kg)</td>'+
       MO.map((_,mi)=>{let mt=0;activeWC.forEach(w=>{mt+=+(byM[mi+1]?.[w.id])||0});return'<td style="text-align:right" id="des-mt-'+(mi+1)+'">'+(mt>0?fn(Math.round(mt*100)/100)+' kg':'')+'</td>'}).join('')+
       '<td style="text-align:right" id="des-gt">'+fn(Math.round(gt*100)/100)+' kg</td></tr>'+
@@ -9358,9 +9441,9 @@ async function wRecipPrePopulate(){
   // v12.99 - duplicate detection dupa nume (in caz ca user apasa de 2 ori sau sync aduce date)
   var existingNames={};(CFG.waste_recipients||[]).forEach(function(r){existingNames[(r.name||'').toLowerCase()]=true});
   var toAdd=DEFAULT_WASTE_RECIPIENTS.filter(function(d){return !existingNames[(d.name||'').toLowerCase()]});
-  if(toAdd.length===0){alert('Toate cele '+DEFAULT_WASTE_RECIPIENTS.length+' tipuri standard sunt deja in catalog.');return}
+  if(toAdd.length===0){alert(_Mf('Toate cele {n} tipuri standard sunt deja in catalog.',{n:DEFAULT_WASTE_RECIPIENTS.length}));return}
   var skipped=DEFAULT_WASTE_RECIPIENTS.length-toAdd.length;
-  if(!confirm('Vor fi adaugate '+toAdd.length+' tipuri standard de recipiente conform Ord. MS 1226/2012'+(skipped>0?' ('+skipped+' deja existente vor fi pastrate intacte)':'')+'. Le poti edita / sterge ulterior. Continui?'))return;
+  if(!confirm(_Mf('Vor fi adaugate {n} tipuri standard de recipiente conform Ord. MS 1226/2012',{n:toAdd.length})+(skipped>0?' ('+skipped+' deja existente vor fi pastrate intacte)':'')+'. Le poti edita / sterge ulterior. Continui?'))return;
   toAdd.forEach(function(d){
     var copy=JSON.parse(JSON.stringify(d));
     copy.id=_wasteRecipId();
@@ -9427,7 +9510,7 @@ async function wRecipSave(idx){
 }
 async function wRecipDelete(idx){
   var r=(CFG.waste_recipients||[])[idx];if(!r)return;
-  if(!confirm('Stergi recipientul "'+(r.name||'')+'"?'))return;
+  if(!confirm(_Mf('Stergi recipientul „{n}"?',{n:(r.name||'')})))return;
   CFG.waste_recipients.splice(idx,1);
   await saveCfg(); // v12.99 - await pentru a preveni racing la click rapid
   if(typeof showToast==='function')showToast('Recipient sters');
@@ -9575,7 +9658,7 @@ async function rBio(el){
     // v12.90 — filtru TP produs (categorie biocida EU)
     '<select onchange="_bioFilters.tp=this.value;render()" title="Filtru dupa categoria TP a produsului biocid (EU Reg 528/2012)" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
       '<option value="">Toate categoriile TP</option>'+
-      BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(bf.tp===t.id?' selected':'')+'>'+t.id+' — '+t.name+'</option>'}).join('')+
+      BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(bf.tp===t.id?' selected':'')+'>'+JSON.stringify(t.id)+' — '+t.name+'</option>'}).join('')+
     '</select>'+
     '<select onchange="_bioFilters.month=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
       '<option value="">Toate lunile</option>'+MO.map((m,i)=>'<option value="'+(i+1)+'"'+(bf.month===(i+1)+''?' selected':'')+'>'+m+'</option>').join('')+'</select>'+
@@ -9791,7 +9874,7 @@ async function rBio(el){
           '<td style="padding:3px 4px"><input type="date" value="'+(a.date_issued||'')+'" onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].date_issued=this.value;saveCfg();render()" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
           '<td style="padding:3px 4px"><input type="date" value="'+(a.date_expiry||'')+'" onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].date_expiry=this.value;saveCfg();render()" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
           '<td style="padding:3px 4px">'+stat+'</td>'+
-          '<td style="padding:3px 4px"><button onclick="if(confirm(\'Stergi acest aviz?\')){CFG.biocide_products['+pidx+'].avize.splice('+ai+',1);saveCfg();render()}" title="Sterge aviz" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">&#128465;</button></td>'+
+          '<td style="padding:3px 4px"><button onclick="if(confirm(\''+_M('Stergi acest aviz?')+'\')){CFG.biocide_products['+pidx+'].avize.splice('+ai+',1);saveCfg();render()}" title="Sterge aviz" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">&#128465;</button></td>'+
           '</tr>';
       });
       avizPanel+='</table>';
@@ -9825,7 +9908,7 @@ async function rBio(el){
       // v12.88 — guard r.id: daca e undefined, afisam rand fara butoane ca sa evitam editBio(undefined)/delRec(undefined)
       var hasId=r.id!=null&&r.id!=='';
       var actions=hasId
-        ?'<button onclick="editBio('+JSON.stringify(r.id)+')" title="Editare">&#9998;</button><button onclick="delRec(\'biocide\','+JSON.stringify(r.id)+')" title="Sterge">&#128465;</button>'
+        ?'<button onclick="editBio('+_jsArg(r.id)+')" title="Editare">&#9998;</button><button onclick="delRec(\'biocide\','+_jsArg(r.id)+')" title="Sterge">&#128465;</button>'
         :'<span title="Inregistrare fara ID — deschide editor manual pentru a o corecta" style="color:var(--red);font-size:14px">&#9888;</span>';
       balancePanel+='<tr><td>'+(i+1)+'</td><td>'+(r.month?MO[r.month-1]:'')+'</td>'+
         '<td><span class="bdg '+(r.type==='intrare'?'bdg-g':r.type==='iesire'?'bdg-a':'bdg-b')+'">'+(r.type==='stoc_initial'?'Stoc initial':r.type==='intrare'?'Intrare':'Iesire')+'</span></td>'+
@@ -9964,7 +10047,7 @@ function _renderBioAvizeInDialog(prodId){
 }
 // v12.83 — Dialog rapid creare produs in catalog, din editBio. Dupa salvare, revine la editBio cu produsul preselectat.
 function bioQuickAddProduct(){
-  var tpOpts=BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'">'+t.id+' — '+t.name+'</option>'}).join('');
+  var tpOpts=BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'">'+JSON.stringify(t.id)+' — '+t.name+'</option>'}).join('');
   var umList=['buc','flacon','bidon','cutie','tablete','L','mL','kg','g'];
   var umOpts=umList.map(function(u){return '<option value="'+u+'">'+u+'</option>'}).join('');
   // Pre-fill from f-prod-custom daca user scrisese acolo ceva
@@ -9990,7 +10073,7 @@ async function bioQuickAddProductSave(){
   var v=function(id){var el=document.getElementById(id);return el?el.value.trim():''};
   var name=v('bqap-name');if(!name){alert(_M('Numele produsului este obligatoriu.'));return}
   if((CFG.biocide_products||[]).some(function(p){return(p.name||'').toLowerCase()===name.toLowerCase()})){
-    alert('Produsul „'+name+'" exista deja in catalog.');return;
+    alert(_Mf('Produsul „{n}" exista deja in catalog.',{n:name}));return;
   }
   var pid=(typeof genId==='function'?genId('bp'):'bp_'+Date.now());
   var newProd={id:pid,name:name,code:v('bqap-code'),product_type:v('bqap-tp'),unit:v('bqap-um'),manufacturer:v('bqap-mfr'),distributor:v('bqap-dist'),avize:[],documents:{aviz:[],fisa_tehnica:[],sds:[],alte_doc:[]}};
@@ -10051,7 +10134,7 @@ async function editBio(id){
     '<div class="fg"><label>Valoare (lei)</label><input type="number" step="0.01" id="f-val" value="'+(r.value_lei||'')+'"></div></div>'+
     '<div class="fr3"><div class="fg"><label>Producator</label><input id="f-bio-mfr" value="'+esc(r.manufacturer||'')+'" list="dl-bio-mfr" placeholder="Producator"></div>'+
     '<div class="fg"><label>Distribuitor</label><input id="f-bio-dist" value="'+esc(r.distributor||'')+'" list="dl-bio-dist" placeholder="Distribuitor"></div>'+
-    '<div class="fg"><label>Tip produs (EU)</label><select id="f-bio-ptype"><option value="">— Neselectat —</option>'+BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(r.product_type===t.id?' selected':'')+' title="'+esc(t.desc)+'">'+t.id+' — '+esc(t.name)+'</option>'}).join('')+'</select></div></div>'+
+    '<div class="fg"><label>Tip produs (EU)</label><select id="f-bio-ptype"><option value="">— Neselectat —</option>'+BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(r.product_type===t.id?' selected':'')+' title="'+esc(t.desc)+'">'+JSON.stringify(t.id)+' — '+esc(t.name)+'</option>'}).join('')+'</select></div></div>'+
     '<datalist id="dl-bio-mfr">'+[...new Set(CFG.biocide_products.map(p=>p.manufacturer).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('')+'</datalist>'+
     '<datalist id="dl-bio-dist">'+[...new Set(CFG.biocide_products.map(p=>p.distributor).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('')+'</datalist>'+
     _renderBioAvizeInDialog(selProd)+attHtml,
@@ -10059,7 +10142,7 @@ async function editBio(id){
   // au id string (genId('bio')), deci onclick devenea saveBio(bio_a1b2c3…) → ReferenceError:
   // butonul „Salveaza" nu facea nimic, fara niciun mesaj, iar corectura userului se pierdea.
   // Butonul de editare din tabel trimitea deja id-ul corect, cu JSON.stringify.
-  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveBio('+JSON.stringify(id||null)+')">Salveaza</button>');
+  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveBio('+_jsArg(id||null)+')">Salveaza</button>');
   setTimeout(()=>attachDirtyTracking(),50);
 }
 // Normalize attachments: old format (single object) → array
@@ -10081,14 +10164,14 @@ function uploadBioAttModal(key){
   inp.onchange=async e=>{const files=Array.from(e.target.files);if(!files.length)return;
     _migrateBioAtt(_editBioRec,key);
     for(const f of files){
-      if(f.size>10*1024*1024){alert('Fisierul '+f.name+' depaseste 10MB.');continue}
+      if(f.size>10*1024*1024){alert(_Mf('Fisierul {n} depaseste 10MB.',{n:f.name}));continue}
       if(!_attDirHandle){
         alert(CFG.lang==='en'?'Please configure the attachments folder first.\nGo to: Configure > Data & Backup > Storage Attachments > Choose folder':'Configureaza mai intai folderul de atasamente.\nMergi la: Configurare > Date & Backup > Stocare Atasamente > Alege folder atasamente');
         return;
       }
       const idx=_editBioRec.attachments[key].length;
       try{const ext=f.name.split('.').pop()||'bin';
-        const fname='bio_'+_editBioRec.id+'_'+key+'_'+idx+'_'+Date.now()+'.'+ext;
+        const fname='bio_'+JSON.stringify(_editBioRec.id)+'_'+key+'_'+idx+'_'+Date.now()+'.'+ext;
         await attWriteFile('biocide',fname,f);
         _editBioRec.attachments[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});
       }catch(err){errAlert(err,'Nu am putut salva fisierul atasat.','Could not save the attached file.');return}
@@ -10127,7 +10210,7 @@ function _bioOpenInNewTab(promiseOrUrl){
     w.location=url;
   }).catch(function(e){
     try{w.close()}catch(_){}
-    alert('Nu pot citi fisierul: '+(e&&e.message||e));
+    alert(_Mf('Nu pot citi fisierul: {e}',{e:(e&&e.message||e)}));
   });
 }
 function viewBioAttModal(key,idx){
@@ -10176,7 +10259,7 @@ function bioEditProduct(pid){
   // propaga in TOATE miscarile produsului — un dezinfectant de suprafete devenea „igiena umana"
   // in filtre si in tabelul sumar, iar UM-ul scris liber pe miscari era inlocuit cu „buc".
   var tpOpts='<option value=""'+(p.product_type?'':' selected')+'>— Neselectat —</option>'+
-    BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(p.product_type===t.id?' selected':'')+'>'+t.id+' — '+esc(t.name)+'</option>'}).join('');
+    BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(p.product_type===t.id?' selected':'')+'>'+JSON.stringify(t.id)+' — '+esc(t.name)+'</option>'}).join('');
   var umList=['buc','flacon','bidon','cutie','tablete','L','mL','kg','g'];
   var umOpts='<option value=""'+(p.unit?'':' selected')+'>— Neselectat —</option>'+
     umList.map(function(u){return '<option value="'+u+'"'+(p.unit===u?' selected':'')+'>'+u+'</option>'}).join('');
@@ -10196,7 +10279,7 @@ function bioEditProduct(pid){
         '<td style="padding:3px 4px"><input type="date" value="'+(a.date_issued||'')+'" onchange="CFG.biocide_products['+idx+'].avize['+ai+'].date_issued=this.value;saveCfg();bioEditProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
         '<td style="padding:3px 4px"><input type="date" value="'+(a.date_expiry||'')+'" onchange="CFG.biocide_products['+idx+'].avize['+ai+'].date_expiry=this.value;saveCfg();bioEditProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
         '<td style="padding:3px 4px">'+stat+'</td>'+
-        '<td style="padding:3px 4px"><button onclick="if(confirm(\'Stergi aviz?\')){CFG.biocide_products['+idx+'].avize.splice('+ai+',1);saveCfg();bioEditProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')}" title="Sterge" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">&#128465;</button></td>'+
+        '<td style="padding:3px 4px"><button onclick="if(confirm(\''+_M('Stergi aviz?')+'\')){CFG.biocide_products['+idx+'].avize.splice('+ai+',1);saveCfg();bioEditProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')}" title="Sterge" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">&#128465;</button></td>'+
       '</tr>';
     });
     avizHtml+='</table>';
@@ -10473,7 +10556,7 @@ function bioDeleteUsageProfile(pid,idx){
 async function bioApplyTemplateToProduct(pid){
   var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p)return;
   var tpl=_matchBioTemplate(p.name,p.product_type);
-  if(!tpl){alert('Nu exista template generic pentru numele „'+p.name+'". Foloseste dropdown-ul manual.');return}
+  if(!tpl){alert(_Mf('Nu exista template generic pentru numele „{n}". Foloseste dropdown-ul manual.',{n:p.name}));return}
   var applied=_applyBioTemplate(p,tpl);
   await saveCfg();
   if(typeof showToast==='function')showToast('Template aplicat: '+applied+' campuri populate');
@@ -10485,7 +10568,7 @@ async function bioApplyTemplateByKey(pid){
   var key=sel?sel.value:'';
   if(!key){alert(_M('Selecteaza un template din dropdown.'));return}
   var tpl=_getBioTemplateByKey(key);
-  if(!tpl){alert('Template invalid: '+key);return}
+  if(!tpl){alert(_Mf('Template invalid: {k}',{k:key}));return}
   var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p)return;
   // Salveaza modificarile curente din formular inainte de aplicare template (sa nu se piarda)
   await bioSaveProduct(pid,true);
@@ -10510,7 +10593,7 @@ async function bioMergeProduct(sourcePid){
   var sourceAvize=(source.avize||[]).length;
   var sourceDocs=0;BIO_ATT_TYPES.forEach(function(t){sourceDocs+=((source.documents||{})[t.key]||[]).length});
   var sourceProfiles=(source.usage_profiles||[]).length;
-  if(!confirm('Fuzionezi „'+(source.name||'')+'" in „'+(target.name||'')+'"?\n\n'+
+  if(!confirm(_Mf('Fuzionezi „{s}" in „{t}"?',{s:(source.name||''),t:(target.name||'')})+'\n\n'+
     '\u2022 '+recs.length+' miscari vor fi reatribuite\n'+
     '\u2022 '+sourceAvize+' avize vor fi combinate (deduplicare dupa Nr+data expirare)\n'+
     '\u2022 '+sourceDocs+' documente vor fi combinate (deduplicare dupa nume fisier)\n'+
@@ -10606,10 +10689,10 @@ function bioAddProductDoc(pid,key){
     var files=Array.from(e.target.files);if(!files.length)return;
     if(!_attDirHandle){alert(_M('Configureaza mai intai folderul de atasamente: Configurare → Date & Backup → Stocare Atasamente'));return}
     for(var i=0;i<files.length;i++){var f=files[i];
-      if(f.size>10*1024*1024){alert('Fisierul '+f.name+' depaseste 10MB.');continue}
+      if(f.size>10*1024*1024){alert(_Mf('Fisierul {n} depaseste 10MB.',{n:f.name}));continue}
       try{
         var ext=f.name.split('.').pop()||'bin';
-        var fname='bp_'+p.id+'_'+key+'_'+Date.now()+'_'+i+'.'+ext;
+        var fname='bp_'+JSON.stringify(p.id)+'_'+key+'_'+Date.now()+'_'+i+'.'+ext;
         await attWriteFile('biocide',fname,f);
         p.documents[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});
       }catch(err){errAlert(err,'Nu am putut salva fisierul atasat.','Could not save the attached file.');return}
@@ -10644,7 +10727,7 @@ async function bioDownloadAllProductDocs(pid){
   var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p||!p.documents)return;
   var all=[];BIO_ATT_TYPES.forEach(function(t){(p.documents[t.key]||[]).forEach(function(f){all.push({file:f,label:t.label})})});
   if(all.length===0){alert(_M('Nu exista documente pentru acest produs.'));return}
-  if(!confirm('Descarci '+all.length+' fisiere pentru „'+(p.name||'produs')+'"? Browserul va cere permisiune pentru descarcari multiple.'))return;
+  if(!confirm(_Mf('Descarci {c} fisiere pentru „{p}"? Browserul va cere permisiune pentru descarcari multiple.',{c:all.length,p:(p.name||'produs')})))return;
   for(var i=0;i<all.length;i++){
     var it=all[i];
     try{
@@ -10691,7 +10774,7 @@ async function bioMigrateDocsToProduct(pid){
     r.attachments={};await pt('biocide',r,true);
   }
   await saveCfg();render();
-  alert('Migratie completa:\n• '+moved+' documente mutate la produs\n• '+deduped+' duplicate eliminate\n\nFisierele raman pe disc — au fost doar re-referentiate.');
+  alert(_Mf('Migratie completa:\n\u2022 {m} documente mutate la produs\n\u2022 {d} duplicate eliminate\n\nFisierele raman pe disc \u2014 au fost doar re-referentiate.',{m:moved,d:deduped}));
 }
 async function saveBio(id){
   const v=s=>document.getElementById(s).value;
@@ -10725,7 +10808,7 @@ function bioAttIcons(r){
     const files=_getBioAttFiles(r,t.key);
     if(!files.length)return '';
     const cnt=files.length>1?' ('+files.length+')':'';
-    return '<button onclick="showBioAttPopup(event,'+JSON.stringify(r.id)+',\''+t.key+'\')" title="'+t.title+cnt+'" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid '+t.brd+';background:'+t.bg+';color:'+t.color+'">'+t.icon+' '+t.label+cnt+'</button>';
+    return '<button onclick="showBioAttPopup(event,'+_jsArg(r.id)+',\''+t.key+'\')" title="'+t.title+cnt+'" style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid '+t.brd+';background:'+t.bg+';color:'+t.color+'">'+t.icon+' '+t.label+cnt+'</button>';
   }).join('')+'</div>';
 }
 function showBioAttPopup(evt,id,key){
@@ -10742,12 +10825,12 @@ function showBioAttPopup(evt,id,key){
     files.forEach(function(f,fi){
       h+='<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--brd)">'+
         '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(f.name)+'">'+esc(f.name)+'</span>'+
-        '<button onclick="viewBioAttIdx('+JSON.stringify(id)+',\''+key+'\','+fi+')" title="Vizualizeaza" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px">&#128065;</button>'+
-        '<button onclick="downloadBioAttIdx('+JSON.stringify(id)+',\''+key+'\','+fi+')" title="Descarca" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px">&#11015;</button></div>';
+        '<button onclick="viewBioAttIdx('+_jsArg(id)+',\''+key+'\','+fi+')" title="Vizualizeaza" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px">&#128065;</button>'+
+        '<button onclick="downloadBioAttIdx('+_jsArg(id)+',\''+key+'\','+fi+')" title="Descarca" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px">&#11015;</button></div>';
     });
     h+='<div style="margin-top:8px;display:flex;gap:6px">'+
-      '<button class="btn bsm" style="font-size:10px" onclick="editBio('+JSON.stringify(id)+');document.getElementById(\'bio-att-popup\').remove()">&#9998; Editare</button>'+
-      (files.length>1?'<button class="btn bsm bo" style="font-size:10px" onclick="downloadBioAttAll('+JSON.stringify(id)+',\''+key+'\')">&#11015; Descarca toate</button>':'')+
+      '<button class="btn bsm" style="font-size:10px" onclick="editBio('+_jsArg(id)+');document.getElementById(\'bio-att-popup\').remove()">&#9998; Editare</button>'+
+      (files.length>1?'<button class="btn bsm bo" style="font-size:10px" onclick="downloadBioAttAll('+_jsArg(id)+',\''+key+'\')">&#11015; Descarca toate</button>':'')+
       '</div></div>';
     var popup=document.createElement('div');popup.innerHTML=h;var el=popup.firstChild;
     document.body.appendChild(el);
@@ -10794,14 +10877,14 @@ function uploadBioAtt(id,key){
     const data=await ga('biocide');const rec=data.find(x=>String(x.id)===String(id));if(!rec)return;
     _migrateBioAtt(rec,key);
     for(const f of files){
-      if(f.size>10*1024*1024){alert('Fisierul '+f.name+' depaseste 10MB.');continue}
+      if(f.size>10*1024*1024){alert(_Mf('Fisierul {n} depaseste 10MB.',{n:f.name}));continue}
       if(!_attDirHandle){
         alert(CFG.lang==='en'?'Please configure the attachments folder first.\nGo to: Configure > Data & Backup > Storage Attachments > Choose folder':'Configureaza mai intai folderul de atasamente.\nMergi la: Configurare > Date & Backup > Stocare Atasamente > Alege folder atasamente');
         return;
       }
       const idx=rec.attachments[key].length;
       try{const ext=f.name.split('.').pop()||'bin';
-        const fname='bio_'+id+'_'+key+'_'+idx+'_'+Date.now()+'.'+ext;
+        const fname='bio_'+JSON.stringify(id)+'_'+key+'_'+idx+'_'+Date.now()+'.'+ext;
         await attWriteFile('biocide',fname,f);
         rec.attachments[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});
       }catch(err){errAlert(err,'Nu am putut salva fisierul atasat.','Could not save the attached file.');return}
@@ -12204,7 +12287,7 @@ async function processPpsMdb(e){
     // userul ramanea cu un fisier pps_pre_IR_backup descarcat degeaba, plus dialogul blocat
     // pe „⏳ Se parseaza" (return fara sa curete statusul), fara niciun mesaj de abandon.
     if(yr !== A.year){
-      if(!confirm('Studiul PPS este din anul '+yr+' (anul curent in aplicatie: '+A.year+'). Continui importul pentru '+yr+'?')){
+      if(!confirm(_Mf('Studiul PPS este din anul {y} (anul curent in aplicatie: {a}). Continui importul pentru {y}?',{y:yr,a:A.year}))){
         status.innerHTML = 'Import anulat. Nu s-a modificat nimic.';
         return;
       }
@@ -12368,7 +12451,7 @@ async function processHelicsWin(){
   // un re-import al aceluiasi fisier dubla prevalenta PPS, tacit. Calea .mdb face curatenie
   // corect inainte de scriere; aici cel putin spunem ce exista deja.
   const existPps=(await ga('pps')).filter(r=>r.year===A.year&&r.type!=='pps_ir');
-  if(existPps.length&&!confirm('Exista deja '+existPps.length+' inregistrari PPS pe anul '+A.year+'.\n\n'+
+  if(existPps.length&&!confirm(_Mf('Exista deja {n} inregistrari PPS pe anul {y}.',{n:existPps.length,y:A.year})+'\n\n'+
     'Importul le ADAUGA — nu le inlocuieste. Daca ai importat deja acest fisier, cifrele PPS se vor dubla.\n\nContinui?'))return;
   let cnt=0;
   for(let i=1;i<rows.length;i++){
@@ -12379,7 +12462,7 @@ async function processHelicsWin(){
     const section=secMatch?secMatch.id:secName;
     await pt('pps',{year:A.year,section,patients:+r[ci.pat]||0,patients_au:+r[ci.au]||0,iaam_found:+r[ci.ia]||0,prescriptions:+r[ci.rx]||0,date_pps:todayISO(),documented:0,notes:'Import HelicsWin'});cnt++;
   }
-  alert(cnt+' sectii PPS importate din HelicsWin.');closeM();render();
+  alert(_Mf('{c} sectii PPS importate din HelicsWin.',{c:cnt}));closeM();render();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -12453,7 +12536,7 @@ async function rPPS(el){
       h+='<tr><td>'+rSec(r.section)+'</td><td>'+(r.date_pps||'')+'</td><td>'+(r.patients||0)+'</td>'+
         '<td>'+(r.patients_au||0)+'</td><td>'+rAU+'</td><td>'+(r.iaam_found||0)+'</td>'+
         '<td>'+(r.prescriptions||0)+'</td><td>'+rDoc+'</td>'+
-        '<td class="act"><button onclick="editPPS('+r.id+')">&#9998;</button><button onclick="delRec(\'pps\','+r.id+')">&#128465;</button></td></tr>';
+        '<td class="act"><button onclick="editPPS('+_jsArg(r.id)+')">&#9998;</button><button onclick="delRec(\'pps\','+_jsArg(r.id)+')">&#128465;</button></td></tr>';
     });
     h+='<tr style="background:var(--navy);color:var(--onAccent);font-weight:700"><td>TOTAL</td><td></td><td>'+totPat+'</td><td>'+totAU+'</td><td>'+auPct+'%</td>'+
       '<td>'+totIAAM+'</td><td>'+totRx+'</td><td>'+docPct+'%</td><td></td></tr>';
@@ -12548,7 +12631,7 @@ async function exportPPSWord(){
   const manualRecs=all.filter(r=>r.year===A.year&&r.type!=='study_meta'&&r.type!=='pps_ir'&&!r._fromIR);
   const meta=all.find(r=>r.year===A.year&&r.type==='study_meta')||{};
   if(!irRec && manualRecs.length===0){
-    alert('Nu exista date PPS pentru anul '+A.year+'. Importa din HelicsWin sau adauga manual.');
+    alert(_Mf('Nu exista date PPS pentru anul {y}. Importa din HelicsWin sau adauga manual.',{y:A.year}));
     return;
   }
   if(!irRec){
@@ -12856,7 +12939,7 @@ async function editPPS(id){
     '<div class="fr"><div class="fg"><label>Nr. total prescriptii AB</label><input type="number" id="f-rx" value="'+(r.prescriptions||'')+'" min="0"></div>'+
     '<div class="fg"><label>Indicatie documentata (nr.)</label><input type="number" id="f-ddoc" value="'+(r.documented||'')+'" min="0"></div></div>'+
     '<div class="fg"><label>Observatii / antibiotice frecvente</label><textarea id="f-n" rows="3">'+esc(r.notes||'')+'</textarea></div>',
-  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="savePPS('+JSON.stringify(id||null)+')">Salveaza</button>');
+  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="savePPS('+_jsArg(id||null)+')">Salveaza</button>');
   setTimeout(()=>{addDatePreview('f-dt');attachDirtyTracking()},50);
 }
 async function savePPS(id){
@@ -12886,7 +12969,7 @@ async function savePPS(id){
 async function ppsShowIRDetails(){
   const all=await ga('pps');
   const irRec=all.find(r=>r.year===A.year&&r.type==='pps_ir');
-  if(!irRec){alert('Nu exista import IR pentru anul '+A.year);return}
+  if(!irRec){alert(_Mf('Nu exista import IR pentru anul {y}',{y:A.year}));return}
   const ir=irRec.ir;
 
   // HAI by site
@@ -13511,7 +13594,7 @@ function previewLabCSV(txt){
   // fiecare intrare primea numarul buletinului drept nume de antibiotic, atb_code ramanea gol si
   // antibiograma se afisa goala — fara nicio explicatie. Acum coloana nemapata se vede si
   // importul se opreste pana e aleasa.
-  function selFor(id,def){return '<select id="lab-col-'+id+'"><option value="-1"'+(def<0?' selected':'')+'>— alege coloana —</option>'+header.map((h,i)=>'<option value="'+i+'"'+(i===def?' selected':'')+'>'+esc(h)+'</option>').join('')+'</select>'}
+  function selFor(id,def){return '<select id="lab-col-'+JSON.stringify(id)+'"><option value="-1"'+(def<0?' selected':'')+'>— alege coloana —</option>'+header.map((h,i)=>'<option value="'+i+'"'+(i===def?' selected':'')+'>'+esc(h)+'</option>').join('')+'</select>'}
 
   const bi=defaults.buletin,gi=defaults.germen;
   const uniqBul=bi>=0?new Set(rows.map(r=>r[bi])).size:null;
@@ -13555,7 +13638,7 @@ async function processLabCSV(){
   // importul cu mesaj explicit cand ATC sau Cantitatea raman nemapate.
   const oblig=[['Nr. Buletin',ci.buletin],['Data',ci.date],['Sectie',ci.section],
     ['Germen',ci.germen],['Antibiotic',ci.atb],['Rezultat S/I/R',ci.result]].filter(x=>!(x[1]>=0));
-  if(oblig.length){alert('Alege coloana pentru: '+oblig.map(x=>x[0]).join(', ')+'.\n\nImportul nu poate continua fara ele.');return}
+  if(oblig.length){alert(_Mf('Alege coloana pentru: {c}.\n\nImportul nu poate continua fara ele.',{c:oblig.map(x=>x[0]).join(', ')}));return}
   const batch=document.getElementById('f-lab-batch')?.value||A.year;
 
   // Group rows by nr_buletin + germen → one record per isolate
@@ -13639,7 +13722,7 @@ async function processLabCSV(){
     imported++;
   }
 
-  alert('Import finalizat:\n• '+imported+' izolate importate\n• '+matchedIAAM+' legate de cazuri IAAM\n• '+skipped+' duplicate (skip)');
+  alert(_Mf('Import finalizat:\n\u2022 {i} izolate importate\n\u2022 {m} legate de cazuri IAAM\n\u2022 {s} duplicate (skip)',{i:imported,m:matchedIAAM,s:skipped}));
   closeM();render();
 }
 
@@ -13692,7 +13775,7 @@ async function processLabRegistru(){
     imported++;
   }
 
-  alert('Import finalizat:\n• '+imported+' izolate importate\n• '+matchedIAAM+' legate de cazuri IAAM\n• '+skipped+' duplicate (skip)');
+  alert(_Mf('Import finalizat:\n\u2022 {i} izolate importate\n\u2022 {m} legate de cazuri IAAM\n\u2022 {s} duplicate (skip)',{i:imported,m:matchedIAAM,s:skipped}));
   closeM();render();
 }
 
@@ -13944,7 +14027,7 @@ function _dddBuildTable(data,mx){
       h+='<td style="text-align:right">'+(r.quantity_g||0).toFixed(1)+'g</td>';
       h+='<td>'+(r.route||'—')+'</td>';
       h+='<td style="text-align:right">'+ddds.toFixed(1)+'</td>';
-      h+='<td class="act"><button onclick="editConsumATB('+r.id+')">&#9998;</button><button onclick="delRec(\'atb_consum\','+r.id+')">&#128465;</button></td></tr>';
+      h+='<td class="act"><button onclick="editConsumATB('+_jsArg(r.id)+')">&#9998;</button><button onclick="delRec(\'atb_consum\','+_jsArg(r.id)+')">&#128465;</button></td></tr>';
     });
     h+='</tbody></table></div>';
   }
@@ -14039,7 +14122,7 @@ async function editConsumATB(id){
       '<input id="f-doc" list="ddd-doc-list" value="'+esc(r.doctor||'')+'" placeholder="ex: Dr. Popescu Ion" autocomplete="off">'+docList+'</div>'+
     '<div id="ddd-preview" style="padding:8px 12px;background:var(--bg);border-radius:6px;font-size:12px;margin-top:6px"></div>'+
     '<div class="fg" style="margin-top:8px"><label>Observatii</label><textarea id="f-n" rows="2">'+(r.notes||'')+'</textarea></div>',
-  '<button class="btn bo" onclick="safeCloseM()">'+T('btn_cancel')+'</button><button class="btn bp" onclick="saveConsumATB('+JSON.stringify(id||null)+')">'+T('btn_save')+'</button>');
+  '<button class="btn bo" onclick="safeCloseM()">'+T('btn_cancel')+'</button><button class="btn bp" onclick="saveConsumATB('+_jsArg(id||null)+')">'+T('btn_save')+'</button>');
   setTimeout(()=>{dddUpdatePreview();attachDirtyTracking()},50);
 }
 
@@ -14306,7 +14389,7 @@ function _dddApplyFallbackSec(){
 async function dddDoImport(){
   if(_dddImportRows.length===0){alert(_M('Nu exista randuri de importat.'));return}
   var noSec=_dddImportRows.filter(function(r){return!r.section});
-  if(noSec.length>0&&!confirm(noSec.length+' randuri nu au sectie atribuita. Continui importul?'))return;
+  if(noSec.length>0&&!confirm(_Mf('{n} randuri nu au sectie atribuita. Continui importul?',{n:noSec.length})))return;
   // v13.62 - avertisment la suprapunere. `pt` fara id creeaza mereu o inregistrare noua
   // (store autoIncrement), deci un al doilea import al aceluiasi fisier dubla tacit cantitatile
   // pe lunile respective — si odata cu ele DDD/100 zile-pacient din Raportul Anual, fara niciun
@@ -14315,7 +14398,7 @@ async function dddDoImport(){
   var existente=(await ga('atb_consum')).filter(function(r){return r.year===A.year&&luni[r.month]});
   if(existente.length){
     var lstr=Object.keys(luni).map(Number).sort(function(a,b){return a-b}).map(function(m){return MO[m-1]||m}).join(', ');
-    if(!confirm('Exista deja '+existente.length+' inregistrari de consum pe '+A.year+', in lunile: '+lstr+'.\n\n'+
+    if(!confirm(_Mf('Exista deja {n} inregistrari de consum pe {y}, in lunile: {l}.',{n:existente.length,y:A.year,l:lstr})+'\n\n'+
       'Importul le ADAUGA — nu le inlocuieste. Daca ai importat deja acest fisier, cantitatile se vor dubla.\n\n'+
       'Continui?'))return;
   }
@@ -14695,8 +14778,8 @@ function _dddApprovalsHTML(approvals,data){
       h+='<tr><td>'+fmtDate(a.date)+'</td><td>'+esc(a.fo||'')+'</td>'+
         '<td>'+esc(a.atb_name||atbName(a.atc||''))+'</td><td>'+(a.section?esc(rSec(a.section)):'—')+'</td>'+
         '<td>'+esc(a.requested_by||'')+'</td><td>'+esc(a.approved_by||'')+'</td><td>'+dec+'</td>'+
-        '<td class="act"><button onclick="editAtbApproval('+JSON.stringify(a.id)+')" title="Editeaza">&#9998;</button>'+
-        '<button onclick="delAtbApproval('+JSON.stringify(a.id)+')" title="Sterge">&#128465;</button></td></tr>';
+        '<td class="act"><button onclick="editAtbApproval('+_jsArg(a.id)+')" title="Editeaza">&#9998;</button>'+
+        '<button onclick="delAtbApproval('+_jsArg(a.id)+')" title="Sterge">&#128465;</button></td></tr>';
     });
     h+='</tbody></table></div>';
   }
@@ -14830,8 +14913,8 @@ async function rDoc(el){
       // v13.62 - conditia era doar d.file_data, dar saveDoc scrie fisierul pe disc si sterge
       // file_data (pastreaza file_meta). Butonul de descarcare nu se mai randa niciodata:
       // userul atasa autorizatia sanitara si vedea „—" in coloana Fisier, ca si cum nu ar exista.
-      '<td>'+((d.file_data||(d.file_meta&&d.file_meta.on_disk))?'<button class="btn bo bsm" onclick="downloadDocFile('+d.id+')" title="Descarca">&#128229; '+esc(d.file_name||(d.file_meta&&d.file_meta.filename)||'fisier')+'</button>':'<span style="color:var(--txtL);font-size:11px">—</span>')+'</td>'+
-      '<td class="act"><button onclick="editDoc('+d.id+')">&#9998;</button><button onclick="delRec(\'documents\','+d.id+')">&#128465;</button></td></tr>'}).join('')+
+      '<td>'+((d.file_data||(d.file_meta&&d.file_meta.on_disk))?'<button class="btn bo bsm" onclick="downloadDocFile('+_jsArg(d.id)+')" title="Descarca">&#128229; '+esc(d.file_name||(d.file_meta&&d.file_meta.filename)||'fisier')+'</button>':'<span style="color:var(--txtL);font-size:11px">—</span>')+'</td>'+
+      '<td class="act"><button onclick="editDoc('+_jsArg(d.id)+')">&#9998;</button><button onclick="delRec(\'documents\','+_jsArg(d.id)+')">&#128465;</button></td></tr>'}).join('')+
     '</tbody></table>')+
   '</div></div>';
 
@@ -14869,7 +14952,7 @@ async function editDoc(id){
     '<div class="fg"><label>Observatii</label><textarea id="f-obs" rows="2">'+esc(r.observations||'')+'</textarea></div>'+
     '<div class="fg"><label>Fisier atasat (PDF, imagine — max 10MB)</label><input type="file" id="f-file" accept=".pdf,.doc,.docx,.jpg,.png,.jpeg"></div>'+
     (r.file_data||r.file_meta?'<div class="ib inf">Fisier existent: '+esc(r.file_name||'')+(r.file_meta?.on_disk?' (pe disc)':'')+' — va fi inlocuit daca incarci unul nou.</div>':''),
-  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveDoc('+JSON.stringify(id||null)+')">Salveaza</button>');
+  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveDoc('+_jsArg(id||null)+')">Salveaza</button>');
   setTimeout(()=>{addDatePreview('f-di');addDatePreview('f-de');attachDirtyTracking()},50);
 }
 async function saveDoc(id){
@@ -14979,8 +15062,8 @@ function _regReportsHTML(list){
       '<td>'+esc(rSec(r.section))+'</td><td style="font-size:12px">'+esc(r.reported_by||'—')+'</td>'+
       '<td style="font-size:12px">'+esc(r.subject||'')+(r.findings?'<div style="font-size:11px;color:var(--txtL)">'+esc(r.findings)+'</div>':'')+'</td>'+
       '<td>'+st+'</td>'+
-      '<td class="act"><button onclick="editIpcReport('+JSON.stringify(r.id)+')" title="Editeaza">&#9998;</button>'+
-      '<button onclick="delIpcRegistry('+JSON.stringify(r.id)+',\'raport\')" title="Sterge">&#128465;</button></td></tr>';
+      '<td class="act"><button onclick="editIpcReport('+_jsArg(r.id)+')" title="Editeaza">&#9998;</button>'+
+      '<button onclick="delIpcRegistry('+_jsArg(r.id)+',\'raport\')" title="Sterge">&#128465;</button></td></tr>';
   });
   h+='</tbody></table></div>';
   return h;
@@ -15071,8 +15154,8 @@ function _regSanctHTML(list){
       '<td style="font-size:12px">'+esc(r.proposal||'')+'</td>'+
       '<td style="font-size:12px">'+esc(r.submitted_to||'—')+'</td>'+
       '<td><span class="bdg '+st.bdg+'">'+esc(isEN?st.en:st.ro)+'</span></td>'+
-      '<td class="act"><button onclick="editSanct('+JSON.stringify(r.id)+')" title="Editeaza">&#9998;</button>'+
-      '<button onclick="delIpcRegistry('+JSON.stringify(r.id)+',\'sanctiune\')" title="Sterge">&#128465;</button></td></tr>';
+      '<td class="act"><button onclick="editSanct('+_jsArg(r.id)+')" title="Editeaza">&#9998;</button>'+
+      '<button onclick="delIpcRegistry('+_jsArg(r.id)+',\'sanctiune\')" title="Sterge">&#128465;</button></td></tr>';
   });
   h+='</tbody></table></div>';
   return h;
@@ -15244,7 +15327,7 @@ async function rTerm(el){
       const pctDone=allInstances.length?Math.round(done/allInstances.length*100):0;
       const badgeColor=pctDone===100?'#27AE60':pctDone>=50?'#D4A017':'#C0392B';
 
-      h+='<div id="dl-tpl-'+t.id+'" class="term-group" style="border-bottom:1px solid var(--brd)">'+
+      h+='<div id="dl-tpl-'+JSON.stringify(t.id)+'" class="term-group" style="border-bottom:1px solid var(--brd)">'+
         '<div style="display:flex;align-items:center;padding:10px 14px;gap:12px;cursor:pointer;background:'+(expanded?'var(--bg2,#f8fafc)':'transparent')+'" onclick="_termToggle('+_jsArg(t.name)+')">'+
           '<span style="font-size:14px;transition:transform .2s;transform:rotate('+(expanded?'90':'0')+'deg);display:inline-block;width:14px">&#9654;</span>'+
           '<div style="flex:1;min-width:0">'+
@@ -15259,7 +15342,7 @@ async function rTerm(el){
           '</div>'+
           '<div style="min-width:80px;text-align:right"><div style="font-size:10px;color:var(--txtL)">'+pctDone+'%</div><div style="background:var(--bg);border:1px solid var(--brd);border-radius:4px;width:60px;height:8px;overflow:hidden"><div style="background:'+badgeColor+';width:'+pctDone+'%;height:100%"></div></div></div>'+
           '<div onclick="event.stopPropagation()" style="display:flex;gap:4px">'+
-            '<button class="btn bo bsm" onclick="editDeadline('+t.id+')" title="'+(isEN?'Edit template':'Editeaza template')+'">&#9998;</button>'+
+            '<button class="btn bo bsm" onclick="editDeadline('+_jsArg(t.id)+')" title="'+(isEN?'Edit template':'Editeaza template')+'">&#9998;</button>'+
             '<button class="btn bo bsm" onclick="if(confirm(\''+(isEN?'Delete template AND all its instances?':'Sterge template + toate instantele?')+'\'))_termDeleteTemplate('+_jsArg(t.id)+','+_jsArg(t.name)+')" title="'+(isEN?'Delete':'Sterge')+'" style="color:var(--red)">&#128465;</button>'+
           '</div>'+
         '</div>';
@@ -15273,12 +15356,12 @@ async function rTerm(el){
           h+='<table class="dt" style="font-size:11px"><thead><tr><th>'+(isEN?'Instance':'Instanta')+'</th><th>'+(isEN?'Due date':'Termen')+'</th><th>'+(isEN?'Status':'Status')+'</th><th>'+(isEN?'Actions':'Actiuni')+'</th></tr></thead><tbody>';
           instances.forEach(d=>{
             const isOverdue=d.status!=='finalizat'&&d.status!=='trimis'&&d.due_date&&new Date(d.due_date)<new Date();
-            h+='<tr id="dl-row-'+d.id+'"'+(isOverdue?' style="background:#fef2f2"':'')+'><td>'+esc(d.name)+'</td><td>'+fmtDate(d.due_date)+'</td>'+
-              '<td><select onchange="updateDeadlineStatus('+d.id+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px">'+
+            h+='<tr id="dl-row-'+JSON.stringify(d.id)+'"'+(isOverdue?' style="background:#fef2f2"':'')+'><td>'+esc(d.name)+'</td><td>'+fmtDate(d.due_date)+'</td>'+
+              '<td><select onchange="updateDeadlineStatus('+_jsArg(d.id)+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px">'+
                 '<option value="neinceput"'+(d.status==='neinceput'?' selected':'')+'>'+(isEN?'Not started':'Neinceput')+'</option>'+
                 '<option value="in_lucru"'+(d.status==='in_lucru'?' selected':'')+'>'+(isEN?'In progress':'In lucru')+'</option>'+
                 '<option value="finalizat"'+(d.status==='finalizat'||d.status==='trimis'?' selected':'')+'>'+(isEN?'Completed':'Finalizat')+'</option></select></td>'+
-              '<td class="act"><button onclick="editDeadline('+d.id+')">&#9998;</button><button onclick="delRec(\'deadlines\','+d.id+')">&#128465;</button></td></tr>';
+              '<td class="act"><button onclick="editDeadline('+_jsArg(d.id)+')">&#9998;</button><button onclick="delRec(\'deadlines\','+_jsArg(d.id)+')">&#128465;</button></td></tr>';
           });
           h+='</tbody></table>';
         }
@@ -15337,15 +15420,15 @@ async function rTerm(el){
       h+='<table class="dt"><thead><tr><th>'+(isEN?'Name':'Denumire')+'</th><th>'+(isEN?'Recipient':'Destinatar')+'</th><th>'+(isEN?'Due date':'Termen')+'</th><th>'+(isEN?'Status':'Status')+'</th><th>'+(isEN?'Actions':'Actiuni')+'</th></tr></thead><tbody>';
       standaloneFiltered.forEach(d=>{
         const isOverdue=d.status!=='finalizat'&&d.status!=='trimis'&&d.due_date&&new Date(d.due_date)<new Date();
-        h+='<tr id="dl-row-'+d.id+'"'+(isOverdue?' style="background:#fef2f2"':'')+'><td><strong>'+esc(d.name)+'</strong></td><td>'+esc(d.recipient||'—')+'</td>'+
+        h+='<tr id="dl-row-'+JSON.stringify(d.id)+'"'+(isOverdue?' style="background:#fef2f2"':'')+'><td><strong>'+esc(d.name)+'</strong></td><td>'+esc(d.recipient||'—')+'</td>'+
           // v13.51 - arata FEREASTRA cand exista data de inceput (raportare care trebuie facuta intr-un interval)
           '<td style="font-size:11px">'+(d.start_date?fmtDate(d.start_date)+' — '+fmtDate(d.due_date):fmtDate(d.due_date))+
             (d.start_date&&d.status!=='finalizat'&&d.status!=='trimis'&&new Date(d.start_date+'T00:00:00')>new Date()?'<div style="font-size:9px;color:var(--txtL)">se deschide '+fmtDate(d.start_date)+'</div>':'')+'</td>'+
-          '<td><select onchange="updateDeadlineStatus('+d.id+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px">'+
+          '<td><select onchange="updateDeadlineStatus('+_jsArg(d.id)+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px">'+
             '<option value="neinceput"'+(d.status==='neinceput'?' selected':'')+'>'+(isEN?'Not started':'Neinceput')+'</option>'+
             '<option value="in_lucru"'+(d.status==='in_lucru'?' selected':'')+'>'+(isEN?'In progress':'In lucru')+'</option>'+
             '<option value="finalizat"'+(d.status==='finalizat'||d.status==='trimis'?' selected':'')+'>'+(isEN?'Completed':'Finalizat')+'</option></select></td>'+
-          '<td class="act"><button onclick="editDeadline('+d.id+')">&#9998;</button><button onclick="delRec(\'deadlines\','+d.id+')">&#128465;</button></td></tr>';
+          '<td class="act"><button onclick="editDeadline('+_jsArg(d.id)+')">&#9998;</button><button onclick="delRec(\'deadlines\','+_jsArg(d.id)+')">&#128465;</button></td></tr>';
       });
       h+='</tbody></table>';
     }
@@ -15473,7 +15556,7 @@ async function editDeadline(id){
       '<option value="finalizat"'+(r.status==='finalizat'||r.status==='trimis'?' selected':'')+'>Finalizat</option></select></div></div>'+
     '<div class="fg"><label>Link / URL extern (optional)</label><input id="f-url" value="'+(r.url||'')+'"></div>'+
     '<div class="fg"><label>Observatii</label><textarea id="f-obs" rows="2">'+(r.observations||'')+'</textarea></div>',
-  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveDeadline('+JSON.stringify(id||null)+')">Salveaza</button>');
+  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveDeadline('+_jsArg(id||null)+')">Salveaza</button>');
   setTimeout(()=>{addDatePreview('f-start');addDatePreview('f-due');attachDirtyTracking()},50);
 }
 function _dlFreqChange(){
@@ -15623,7 +15706,7 @@ async function genRecurringDeadlines(){
   if(templates.length===0){alert(_M('Nu exista raportari repetitive.'));return}
   var cnt=0;
   for(var i=0;i<templates.length;i++){cnt+=await _genInstancesForTemplate(templates[i])}
-  alert(cnt+' instante generate pentru '+y+'.');render();
+  alert(_Mf('{c} instante generate pentru {y}.',{c:cnt,y:y}));render();
 }
 
 
@@ -15775,8 +15858,8 @@ async function calDayClick(dateStr){
       '<div style="flex:1"><strong>'+ev.label+'</strong><br><span style="font-size:11px;color:var(--txtL)">'+typeLabel+'</span>'+
       (ev.description?'<br><span style="font-size:11px">'+ev.description+'</span>':'')+
       (ev.link?'<br><a href="#" onclick="event.preventDefault();_calNavToEvent(\''+ev.link+'\','+(ev._dlId||'null')+')" style="font-size:11px;color:var(--blue)">'+(isEN?'Go to module':'Mergi la modul')+' →</a>':'')+
-      (ev.type==='manual'?'<br><button onclick="closeCalPopup();editCalEvent('+ev.id+')" style="font-size:11px;color:var(--blue);background:none;border:none;cursor:pointer;margin-top:4px">&#9998; '+(isEN?'Edit':'Editeaza')+'</button>'+
-      '<button onclick="deleteCalEvent('+ev.id+')" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;margin-top:4px;margin-left:8px">'+T('cal_delete')+'</button>':'')+
+      (ev.type==='manual'?'<br><button onclick="closeCalPopup();editCalEvent('+_jsArg(ev.id)+')" style="font-size:11px;color:var(--blue);background:none;border:none;cursor:pointer;margin-top:4px">&#9998; '+(isEN?'Edit':'Editeaza')+'</button>'+
+      '<button onclick="deleteCalEvent('+_jsArg(ev.id)+')" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;margin-top:4px;margin-left:8px">'+T('cal_delete')+'</button>':'')+
     '</div></div>'})}
   h+='<div style="text-align:center;padding-top:8px"><button class="btn bp bsm" onclick="closeCalPopup();editCalEvent(null,\''+dateStr+'\')">+ '+T('cal_add_event')+'</button></div></div>';
   pop.innerHTML=h;pop.style.display='block';ov.classList.add('sh');
@@ -15810,8 +15893,8 @@ async function editCalEvent(id,prefillDate){
     '<div class="fg"><label>'+(isEN?'Description':'Descriere')+'</label><textarea id="f-evt-desc" rows="3">'+((r.description||'').replace(/</g,'&lt;'))+'</textarea></div>'+
     '<div class="fg"><label>'+(isEN?'Notes':'Observatii')+'</label><textarea id="f-evt-notes" rows="2">'+((r.notes||'').replace(/</g,'&lt;'))+'</textarea></div>',
     '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anuleaza')+'</button>'+
-    (id?'<button class="btn bd" onclick="deleteCalEvent('+id+');closeM()">'+(isEN?'Delete':'Sterge')+'</button>':'')+
-    '<button class="btn bp" onclick="saveCalEvent('+JSON.stringify(id||null)+')">'+(isEN?'Save':'Salveaza')+'</button>');
+    (id?'<button class="btn bd" onclick="deleteCalEvent('+_jsArg(id)+');closeM()">'+(isEN?'Delete':'Sterge')+'</button>':'')+
+    '<button class="btn bp" onclick="saveCalEvent('+_jsArg(id||null)+')">'+(isEN?'Save':'Salveaza')+'</button>');
   setTimeout(()=>{addDatePreview('f-evt-date');addDatePreview('f-evt-date-end');attachDirtyTracking()},50);
 }
 async function saveCalEvent(id){
@@ -15939,7 +16022,7 @@ const OMS_RAPORTARI=[
    obs:'Supraveghere activa prin analiza foilor de observatie. Ritm cerut: minim la 2 zile, maxim la 7 zile.'}
 ];
 async function creeazaRaportariOMS(){
-  if(!confirm('Se creeaza '+OMS_RAPORTARI.length+' raportari repetitive cu termenele din noul ordin (Anexa 2).\n\nCele care exista deja NU se dubleaza. Continui?'))return;
+  if(!confirm(_Mf('Se creeaza {n} raportari repetitive cu termenele din noul ordin (Anexa 2).\n\nCele care exista deja NU se dubleaza. Continui?',{n:OMS_RAPORTARI.length})))return;
   var existing=await ga('deadlines');
   var created=0,skipped=0;
   for(const t of OMS_RAPORTARI){
@@ -16605,7 +16688,7 @@ async function rAudit(el){
     var cnt=allData.filter(r=>r.audit_type===c.id).length;
     var avg=cnt>0?Math.round(allData.filter(r=>r.audit_type===c.id).reduce((s,r)=>s+(r.compliance_pct||0),0)/cnt):0;
     var clr=avg>=80?'#16A34A':avg>=60?'#F59E0B':'#DC2626';
-    return '<div class="aud-type-card" onclick="_startNewAudit(\''+c.id+'\')">'+
+    return '<div class="aud-type-card" onclick="_startNewAudit(\''+JSON.stringify(c.id)+'\')">'+
       '<div class="aud-tc-icon" style="color:'+c.color+'">&#128203;</div>'+
       '<div class="aud-tc-name" style="color:'+c.color+'">'+esc(_audCatName(c.id))+'</div>'+
       '<div class="aud-tc-count">'+cnt+' '+T('aud_total').toLowerCase()+'</div>'+
@@ -16616,7 +16699,7 @@ async function rAudit(el){
   h+='<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:14px">'+
     '<button class="btn '+(f?'bo':'bp')+' bsm" onclick="_auditFilter=\'\';render()">'+T('aud_toate')+' ('+allData.length+')</button>'+
     cats.map(c=>{var cnt=allData.filter(r=>r.audit_type===c.id).length;
-      return '<button class="btn '+(f===c.id?'bp':'bo')+' bsm" style="'+(f===c.id?'background:'+c.color+';border-color:'+c.color:'')+'" onclick="_auditFilter=\''+c.id+'\';render()">'+esc(_audCatName(c.id))+' ('+cnt+')</button>';
+      return '<button class="btn '+(f===c.id?'bp':'bo')+' bsm" style="'+(f===c.id?'background:'+c.color+';border-color:'+c.color:'')+'" onclick="_auditFilter=\''+JSON.stringify(c.id)+'\';render()">'+esc(_audCatName(c.id))+' ('+cnt+')</button>';
     }).join('')+
     '<input type="text" placeholder="'+T('aud_toate')+'..." value="'+esc(_auditSearch)+'" oninput="_auditSearch=this.value;render()" style="padding:5px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px;margin-left:auto">'+
   '</div>';
@@ -16645,9 +16728,9 @@ async function rAudit(el){
         '<td>'+rSec(r.section)+'</td><td>'+esc(_persName(r.auditor))+'</td>'+
         '<td><span class="bdg '+pCls+'">'+pct+'%</span></td>'+
         '<td class="act">'+
-          '<button onclick="_editExistingAudit('+r.id+')" title="'+T('btn_edit')+'">&#9998;</button>'+
-          '<button onclick="_genAuditWord('+r.id+')" title="Export Word">&#128196;</button>'+
-          '<button onclick="delRec(\'audits\','+r.id+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
+          '<button onclick="_editExistingAudit('+_jsArg(r.id)+')" title="'+T('btn_edit')+'">&#9998;</button>'+
+          '<button onclick="_genAuditWord('+_jsArg(r.id)+')" title="Export Word">&#128196;</button>'+
+          '<button onclick="delRec(\'audits\','+_jsArg(r.id)+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
     });
     h+='</tbody></table>';
   }
@@ -16659,7 +16742,7 @@ async function rAudit(el){
 function _showAuditTypeModal(){
   var cats=_getAuditCats();
   var body='<div class="aud-type-grid">'+cats.map(c=>{
-    return '<div class="aud-type-card" onclick="closeM();_startNewAudit(\''+c.id+'\')">'+
+    return '<div class="aud-type-card" onclick="closeM();_startNewAudit(\''+JSON.stringify(c.id)+'\')">'+
       '<div class="aud-tc-icon" style="color:'+c.color+'">&#128203;</div>'+
       '<div class="aud-tc-name" style="color:'+c.color+'">'+esc(_audCatName(c.id))+'</div>'+
     '</div>';
@@ -16763,15 +16846,15 @@ async function _renderIgmAudit(el,id){
     _igmSecs.forEach(sec=>{
       var sc=_igmCalcScore(sec);
       var scBdg=sc.pct!=null?'<span class="bdg '+(sc.pct>=80?'bdg-g':sc.pct>=50?'bdg-a':'bdg-r')+'">'+sc.pct+'% ('+sc.da+'/'+sc.tot+')</span>':'<span style="font-size:11px;color:var(--txtL)">fara date</span>';
-      h+='<div class="aud-scard" id="igm-sec-'+sec.id+'">';
-      h+='<div class="aud-shdr" onclick="_igmTogSec(\''+sec.id+'\')">'+
+      h+='<div class="aud-scard" id="igm-sec-'+JSON.stringify(sec.id)+'">';
+      h+='<div class="aud-shdr" onclick="_igmTogSec(\''+JSON.stringify(sec.id)+'\')">'+
         '<div><h4 style="margin:0;display:inline">'+esc(sec.name)+'</h4> <span style="font-size:11px;color:var(--txtL)">('+sec.calups.length+' observatii)</span></div>'+
         '<div style="display:flex;align-items:center;gap:8px">'+
-          '<span id="igm-sc-'+sec.id+'">'+scBdg+'</span>'+
-          '<button class="btn bo bsm" onclick="event.stopPropagation();_igmRemSec(\''+sec.id+'\')" style="padding:2px 8px;font-size:14px">&#215;</button>'+
+          '<span id="igm-sc-'+JSON.stringify(sec.id)+'">'+scBdg+'</span>'+
+          '<button class="btn bo bsm" onclick="event.stopPropagation();_igmRemSec(\''+JSON.stringify(sec.id)+'\')" style="padding:2px 8px;font-size:14px">&#215;</button>'+
         '</div>'+
       '</div>';
-      h+='<div class="aud-sbody" id="igm-bd-'+sec.id+'" style="display:block">';
+      h+='<div class="aud-sbody" id="igm-bd-'+JSON.stringify(sec.id)+'" style="display:block">';
       // v12.68 — Checklist Cunoastere si Conformitate Proces (grupate pe parti)
       if(!sec.knowledge)sec.knowledge={};
       h+='<details style="margin-bottom:14px;border:1px solid var(--brd);border-radius:6px;overflow:hidden"><summary style="padding:8px 12px;cursor:pointer;background:var(--bg);font-size:12px;font-weight:600;color:var(--navy)">&#128218; Checklist Cunoastere si Conformitate Proces ('+_igmKnowledgeScore(sec).done+'/'+IGM_KNOWLEDGE.length+' evaluate)</summary>';
@@ -16787,9 +16870,9 @@ async function _renderIgmAudit(el,id){
         h+='<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--brd)">'+
           '<div style="flex:1;font-size:11px">'+esc(k.text_ro)+(k.ref?'<span style="font-size:9px;color:var(--txtL);margin-left:6px">['+esc(k.ref)+']</span>':'')+'</div>'+
           '<div style="display:flex;gap:3px">'+
-            '<span class="aud-gen-btn'+(val==='C'?' c-on':'')+'" onclick="_igmSetKnow(\''+sec.id+'\',\''+k.id+'\',\'C\')" style="cursor:pointer">C</span>'+
-            '<span class="aud-gen-btn'+(val==='NC'?' nc-on':'')+'" onclick="_igmSetKnow(\''+sec.id+'\',\''+k.id+'\',\'NC\')" style="cursor:pointer">NC</span>'+
-            '<span class="aud-gen-btn'+(val==='NA'?' na-on':'')+'" onclick="_igmSetKnow(\''+sec.id+'\',\''+k.id+'\',\'NA\')" style="cursor:pointer">NA</span>'+
+            '<span class="aud-gen-btn'+(val==='C'?' c-on':'')+'" onclick="_igmSetKnow(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(k.id)+'\',\'C\')" style="cursor:pointer">C</span>'+
+            '<span class="aud-gen-btn'+(val==='NC'?' nc-on':'')+'" onclick="_igmSetKnow(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(k.id)+'\',\'NC\')" style="cursor:pointer">NC</span>'+
+            '<span class="aud-gen-btn'+(val==='NA'?' na-on':'')+'" onclick="_igmSetKnow(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(k.id)+'\',\'NA\')" style="cursor:pointer">NA</span>'+
           '</div>'+
         '</div>';
       });
@@ -16802,10 +16885,10 @@ async function _renderIgmAudit(el,id){
       WHO_MOM.forEach(m=>{
         h+='<th style="background:'+m.bg+';border-bottom:2px solid '+m.border+';min-width:80px"><div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span class="'+m.cl+'">'+m.n+'</span><span style="font-size:9px;color:'+m.border+'">M'+m.n+'</span></div></th>';
       });
-      h+='<th style="width:30px"></th></tr></thead><tbody id="igm-tb-'+sec.id+'">';
+      h+='<th style="width:30px"></th></tr></thead><tbody id="igm-tb-'+JSON.stringify(sec.id)+'">';
       sec.calups.forEach(c=>{h+=_igmRowHTML(sec,c)});
       h+='</tbody></table></div>';
-      h+='<div style="margin-top:8px"><button class="btn bo bsm" onclick="_igmAddCalup(\''+sec.id+'\')">'+T('aud_igm_adauga_calup')+'</button></div>';
+      h+='<div style="margin-top:8px"><button class="btn bo bsm" onclick="_igmAddCalup(\''+JSON.stringify(sec.id)+'\')">'+T('aud_igm_adauga_calup')+'</button></div>';
       h+='</div></div>';
     });
   }
@@ -16827,20 +16910,20 @@ function _igmRowHTML(sec,c){
     var subHtml='';
     if(v==='DA'){
       subHtml='<div class="aud-sub-sel">'+
-        '<span class="aud-fr'+(obs.met==='FR'?' on':'')+'" onclick="_igmSetMet(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\',\'FR\')" title="Frecare cu solutie hidroalcoolica (SHA)">FR</span>'+
-        '<span class="aud-sp'+(obs.met==='SP'?' on':'')+'" onclick="_igmSetMet(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\',\'SP\')" title="Spalare cu apa si sapun">SP</span></div>';
+        '<span class="aud-fr'+(obs.met==='FR'?' on':'')+'" onclick="_igmSetMet(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',\''+JSON.stringify(m.id)+'\',\'FR\')" title="Frecare cu solutie hidroalcoolica (SHA)">FR</span>'+
+        '<span class="aud-sp'+(obs.met==='SP'?' on':'')+'" onclick="_igmSetMet(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',\''+JSON.stringify(m.id)+'\',\'SP\')" title="Spalare cu apa si sapun">SP</span></div>';
     } else if(v==='NU'){
       subHtml='<div class="aud-sub-sel">'+
-        '<span class="aud-man'+(obs.man?' on':'')+'" onclick="_igmSetMan(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\')" title="Manusi">&#129380;</span></div>';
+        '<span class="aud-man'+(obs.man?' on':'')+'" onclick="_igmSetMan(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',\''+JSON.stringify(m.id)+'\')" title="Manusi">&#129380;</span></div>';
     }
     return '<td style="background:'+m.bg+'"><div class="aud-mcell">'+
       '<div style="display:flex;gap:3px">'+
-        '<span class="aud-da'+(v==='DA'?' on':'')+'" id="da-'+pref+'" onclick="_igmSetVal(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\',\'DA\')">DA</span>'+
-        '<span class="aud-nu'+(v==='NU'?' on':'')+'" id="nu-'+pref+'" onclick="_igmSetVal(\''+sec.id+'\',\''+c.id+'\',\''+m.id+'\',\'NU\')">NU</span>'+
+        '<span class="aud-da'+(v==='DA'?' on':'')+'" id="da-'+pref+'" onclick="_igmSetVal(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',\''+JSON.stringify(m.id)+'\',\'DA\')">DA</span>'+
+        '<span class="aud-nu'+(v==='NU'?' on':'')+'" id="nu-'+pref+'" onclick="_igmSetVal(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',\''+JSON.stringify(m.id)+'\',\'NU\')">NU</span>'+
       '</div><div id="sub-'+pref+'">'+subHtml+'</div></div></td>';
   }).join('');
-  return '<tr id="igm-r-'+c.id+'"><td><select style="font-size:11px;padding:3px;border:1px solid var(--brd);border-radius:4px;max-width:120px" onchange="_igmSetCat(\''+sec.id+'\',\''+c.id+'\',this.value)">'+catOpts+'</select></td>'+mc+
-    '<td><button style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--txtL)" onclick="_igmRemCalup(\''+sec.id+'\',\''+c.id+'\')" title="Sterge observatie">&#215;</button></td></tr>';
+  return '<tr id="igm-r-'+JSON.stringify(c.id)+'"><td><select style="font-size:11px;padding:3px;border:1px solid var(--brd);border-radius:4px;max-width:120px" onchange="_igmSetCat(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',this.value)">'+catOpts+'</select></td>'+mc+
+    '<td><button style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--txtL)" onclick="_igmRemCalup(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\')" title="Sterge observatie">&#215;</button></td></tr>';
 }
 
 function _igmAddSec(){
@@ -17135,9 +17218,9 @@ async function _renderDotareAudit(el,id){
       var d=sd[key];
       h+='<tr><td style="text-align:left;font-size:12px">'+esc(txt)+'</td>';
       ['p','f','c','a'].forEach(fld=>{
-        h+='<td><input type="checkbox" '+(d[fld]?'checked':'')+' onchange="_dotareData.sections[\''+sec.id+'\']['+key+'].'+fld+'=this.checked"></td>';
+        h+='<td><input type="checkbox" '+(d[fld]?'checked':'')+' onchange="_dotareData.sections[\''+JSON.stringify(sec.id)+'\']['+key+'].'+fld+'=this.checked"></td>';
       });
-      h+='<td><input value="'+esc(d.obs||'')+'" onchange="_dotareData.sections[\''+sec.id+'\']['+key+'].obs=this.value" style="width:80px;padding:2px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td></tr>';
+      h+='<td><input value="'+esc(d.obs||'')+'" onchange="_dotareData.sections[\''+JSON.stringify(sec.id)+'\']['+key+'].obs=this.value" style="width:80px;padding:2px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td></tr>';
     });
     h+='</tbody></table></div></div>';
   });
@@ -17261,7 +17344,7 @@ async function _renderAgregatAudit(el,id){
         // v12.73: stil diferit pentru auto vs override (italic = auto, normal = override manual)
         var fontStyle=hasOverride?'font-weight:700':(val!=null?'font-style:italic;color:var(--txtL)':'');
         var title=hasOverride?'Override manual':(val!=null?'Auto-calculat din '+matching.length+' audit(uri)':'Fara date — completeaza auditul respectiv');
-        h+='<td style="background:'+bg+'" title="'+title+'"><input type="number" min="0" max="100" value="'+(val!=null?val:'')+'" onchange="_agregatOverride(\''+sec.id+'\',\''+c.id+'\',this.value)" style="width:60px;padding:2px;border:1px solid var(--brd);border-radius:3px;font-size:11px;text-align:center;'+fontStyle+'"></td>';
+        h+='<td style="background:'+bg+'" title="'+title+'"><input type="number" min="0" max="100" value="'+(val!=null?val:'')+'" onchange="_agregatOverride(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',this.value)" style="width:60px;padding:2px;border:1px solid var(--brd);border-radius:3px;font-size:11px;text-align:center;'+fontStyle+'"></td>';
       });
       var avg=rowVals.length>0?Math.round(rowVals.reduce((s,v)=>s+v,0)/rowVals.length):null;
       var avgClr=avg!=null?(avg>=80?'#16A34A':avg>=60?'#F59E0B':'#DC2626'):'var(--txtL)';
@@ -17281,15 +17364,15 @@ async function _renderAgregatAudit(el,id){
     var fb=_agregatData.feedback[sec.id];
     h+='<tr>'+
       '<td style="text-align:left;font-weight:600;white-space:nowrap">'+esc(sec.name||sec.id)+'</td>'+
-      '<td><input value="'+esc(fb.action||'')+'" onchange="_agregatData.feedback[\''+sec.id+'\'].action=this.value" placeholder="Ex: re-instruire igiena maini, reparatie dozator" style="width:100%;padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
-      '<td><select onchange="_agregatData.feedback[\''+sec.id+'\'].status=this.value" style="padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px;min-width:130px">'+
+      '<td><input value="'+esc(fb.action||'')+'" onchange="_agregatData.feedback[\''+JSON.stringify(sec.id)+'\'].action=this.value" placeholder="Ex: re-instruire igiena maini, reparatie dozator" style="width:100%;padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
+      '<td><select onchange="_agregatData.feedback[\''+JSON.stringify(sec.id)+'\'].status=this.value" style="padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px;min-width:130px">'+
         '<option value="">—</option>'+
         '<option value="implemented"'+(fb.status==='implemented'?' selected':'')+'>&#10004; Implementat</option>'+
         '<option value="partial"'+(fb.status==='partial'?' selected':'')+'>&#9203; Partial</option>'+
         '<option value="not_implemented"'+(fb.status==='not_implemented'?' selected':'')+'>&#10060; Ne-implementat</option>'+
         '<option value="na"'+(fb.status==='na'?' selected':'')+'>N/A</option>'+
       '</select></td>'+
-      '<td><input value="'+esc(fb.reason||'')+'" onchange="_agregatData.feedback[\''+sec.id+'\'].reason=this.value" placeholder="Opt." style="width:100%;padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
+      '<td><input value="'+esc(fb.reason||'')+'" onchange="_agregatData.feedback[\''+JSON.stringify(sec.id)+'\'].reason=this.value" placeholder="Opt." style="width:100%;padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
     '</tr>';
   });
   h+='</tbody></table></div>'+
@@ -18028,7 +18111,7 @@ function _foRowsHTML(){
       // deci scap de scaparea de apostrofuri in sir imbricat in sir.
       var btn=function(val,cls,lbl,ttl){
         return '<span class="aud-gen-btn'+(v===val?' '+cls:'')+'" style="width:24px;height:22px;line-height:22px"'+
-          ' onclick="_foSet('+idx+',&quot;'+i.id+'&quot;,&quot;'+val+'&quot;)" title="'+ttl+'">'+lbl+'</span>';
+          ' onclick="_foSet('+idx+',&quot;'+JSON.stringify(i.id)+'&quot;,&quot;'+val+'&quot;)" title="'+ttl+'">'+lbl+'</span>';
       };
       return '<td style="text-align:center;padding:3px"><div class="aud-gen-btns" style="justify-content:center">'+
         btn('C','c-on','D','Da / conform')+btn('NC','nc-on','N','Nu / neconform')+btn('NA','na-on','-','Nu se aplica')+
@@ -18373,7 +18456,7 @@ async function _calcAutoValue(obj,year){
     var trained=new Set();
     trainAll.forEach(function(t){
       (Array.isArray(t.participants)?t.participants:[]).forEach(function(p){if(p&&p.name)trained.add(p.name);else if(p)trained.add(p)});
-      if(t.participant_count)for(var i=0;i<t.participant_count;i++)trained.add('p_'+t.id+'_'+i);
+      if(t.participant_count)for(var i=0;i<t.participant_count;i++)trained.add('p_'+JSON.stringify(t.id)+'_'+i);
     });
     return Math.round(Math.min(trained.size,totalPersonnel)/totalPersonnel*1000)/10;
   }
@@ -18544,7 +18627,7 @@ async function rObiective(el){
         var opSymbol=o.operator==='gte'?'\u2265':'\u2264';
         var isExpanded=_objExpanded[o.id];
 
-        h+='<div style="padding:12px 16px;border-bottom:1px solid var(--brd);cursor:pointer" onclick="_objExpanded[\''+o.id+'\']=!_objExpanded[\''+o.id+'\'];render()">'+
+        h+='<div style="padding:12px 16px;border-bottom:1px solid var(--brd);cursor:pointer" onclick="_objExpanded[\''+JSON.stringify(o.id)+'\']=!_objExpanded[\''+JSON.stringify(o.id)+'\'];render()">'+
           '<div style="display:grid;grid-template-columns:1fr 200px auto;gap:12px;align-items:center">'+
             '<div><span style="font-weight:700;color:var(--navy);margin-right:6px">'+esc(o.code)+'</span>'+esc(title)+'<div style="font-size:11px;color:var(--txtL);margin-top:2px">'+esc(indicator)+'</div></div>'+
             '<div style="text-align:center"><div style="font-size:13px;margin-bottom:4px">'+valStr+' / '+opSymbol+' '+targetStr+'</div>'+_progressBar(curVal,o.target,o.operator,o._status)+'</div>'+
@@ -18573,10 +18656,10 @@ async function rObiective(el){
             h+='<div style="background:var(--color-background-secondary,#f8fafc);padding:10px;border-radius:8px">'+
               '<h4 style="font-size:12px;margin-bottom:6px">'+T('obj_inregistreaza')+'</h4>'+
               '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">'+
-                '<div class="fg" style="flex:1;min-width:100px"><label>'+T('obj_perioada')+'</label><input id="obj-rv-per-'+o.id+'" placeholder="ex: T1 2025, Ian 2025"></div>'+
-                '<div class="fg" style="width:100px"><label>'+T('obj_valoare')+' ('+o.unit+')</label><input type="number" id="obj-rv-val-'+o.id+'" step="0.1"></div>'+
-                '<div class="fg" style="flex:1;min-width:100px"><label>'+T('obj_nota')+'</label><input id="obj-rv-note-'+o.id+'"></div>'+
-                '<button class="btn bp bsm" onclick="var p=document.getElementById(\'obj-rv-per-'+o.id+'\').value.trim(),v=document.getElementById(\'obj-rv-val-'+o.id+'\').value;if(p&&v!==\'\'){_recordManualValue(\''+o.id+'\',p,v,document.getElementById(\'obj-rv-note-'+o.id+'\').value)}else{alert(\'Completeaza perioada si valoarea\')}">'+T('btn_save')+'</button>'+
+                '<div class="fg" style="flex:1;min-width:100px"><label>'+T('obj_perioada')+'</label><input id="obj-rv-per-'+JSON.stringify(o.id)+'" placeholder="ex: T1 2025, Ian 2025"></div>'+
+                '<div class="fg" style="width:100px"><label>'+T('obj_valoare')+' ('+o.unit+')</label><input type="number" id="obj-rv-val-'+JSON.stringify(o.id)+'" step="0.1"></div>'+
+                '<div class="fg" style="flex:1;min-width:100px"><label>'+T('obj_nota')+'</label><input id="obj-rv-note-'+JSON.stringify(o.id)+'"></div>'+
+                '<button class="btn bp bsm" onclick="var p=document.getElementById(\'obj-rv-per-'+JSON.stringify(o.id)+'\').value.trim(),v=document.getElementById(\'obj-rv-val-'+JSON.stringify(o.id)+'\').value;if(p&&v!==\'\'){_recordManualValue(\''+JSON.stringify(o.id)+'\',p,v,document.getElementById(\'obj-rv-note-'+JSON.stringify(o.id)+'\').value)}else{alert(\'Completeaza perioada si valoarea\')}">'+T('btn_save')+'</button>'+
               '</div></div>';
           }
           h+='</div>';
@@ -18612,19 +18695,19 @@ async function rObiective(el){
         var title=isEN?(o.title_en||o.title_ro):o.title_ro;
         var diffTarget=o.target!==o.target_default;
         h+='<div style="padding:10px 16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
-          '<div style="width:60px"><input value="'+esc(o.code)+'" onchange="_updateObj(\''+o.id+'\',\'code\',this.value)" style="width:50px;text-align:center;border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:12px;font-weight:700"></div>'+
+          '<div style="width:60px"><input value="'+esc(o.code)+'" onchange="_updateObj(\''+JSON.stringify(o.id)+'\',\'code\',this.value)" style="width:50px;text-align:center;border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:12px;font-weight:700"></div>'+
           '<div style="flex:1;min-width:200px"><strong>'+esc(title)+'</strong>'+
             '<div style="font-size:10px;color:var(--txtL)">'+esc(isEN?(o.indicator_en||o.indicator_ro):o.indicator_ro)+'</div></div>'+
           '<div style="width:120px;text-align:center">'+
             '<label style="font-size:10px;color:var(--txtL)">'+T('obj_tinta')+' ('+(o.operator==='gte'?'\u2265':o.operator==='lte'?'\u2264':'=')+') '+(o.unit||'')+'</label>'+
-            '<input type="number" value="'+(o.target||0)+'" onchange="_updateObj(\''+o.id+'\',\'target\',+this.value)" style="width:80px;text-align:center;border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:13px;font-weight:600">'+
+            '<input type="number" value="'+(o.target||0)+'" onchange="_updateObj(\''+JSON.stringify(o.id)+'\',\'target\',+this.value)" style="width:80px;text-align:center;border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:13px;font-weight:600">'+
             (diffTarget?'<div style="font-size:9px;color:var(--txtL)">Standard: '+(o.target_default||'—')+' '+(o.unit||'')+'</div>':'')+
           '</div>'+
           '<div style="display:flex;gap:6px;align-items:center">'+
             '<span class="bdg '+(o.standard?'bdg-b':'bdg-g')+'" style="font-size:9px">'+(o.standard?T('obj_standard'):T('obj_personalizat'))+'</span>'+
-            '<label style="font-size:11px;cursor:pointer"><input type="checkbox" '+(o.active?'checked':'')+' onchange="_updateObj(\''+o.id+'\',\'active\',this.checked)" style="accent-color:#0D9488"> '+T('obj_activ')+'</label>'+
-            (diffTarget?'<button class="btn bo bsm" onclick="_updateObj(\''+o.id+'\',\'target\','+o.target_default+')" style="font-size:10px" title="'+T('obj_reseteaza_obj')+'">\u21BA</button>':'')+
-            (!o.standard?'<button class="btn bo bsm" onclick="_deleteObj(\''+o.id+'\')" style="font-size:10px;color:var(--red)">&#128465;</button>':'')+
+            '<label style="font-size:11px;cursor:pointer"><input type="checkbox" '+(o.active?'checked':'')+' onchange="_updateObj(\''+JSON.stringify(o.id)+'\',\'active\',this.checked)" style="accent-color:#0D9488"> '+T('obj_activ')+'</label>'+
+            (diffTarget?'<button class="btn bo bsm" onclick="_updateObj(\''+JSON.stringify(o.id)+'\',\'target\','+o.target_default+')" style="font-size:10px" title="'+T('obj_reseteaza_obj')+'">\u21BA</button>':'')+
+            (!o.standard?'<button class="btn bo bsm" onclick="_deleteObj(\''+JSON.stringify(o.id)+'\')" style="font-size:10px;color:var(--red)">&#128465;</button>':'')+
           '</div>'+
         '</div>';
       });
@@ -18869,9 +18952,9 @@ async function rInstr(el){
       '<td>'+(r.topic||'—')+'</td><td>'+rSec(r.section)+'</td>'+
       '<td>'+esc(_getTrainers(r))+'</td><td>'+(Array.isArray(r.participants)?r.participants.length:(+r.participants||0))+'</td>'+
       '<td>'+(r.duration_hours||'—')+' h</td>'+
-      '<td class="act"><button onclick="editTraining('+r.id+')" title="Editeaza">&#9998;</button>'+
-        '<button onclick="genTrainingWord('+r.id+')" title="PV Word">&#128196;</button>'+
-        '<button onclick="delRec(\'trainings\','+r.id+')" title="Sterge">&#128465;</button></td></tr>').join('')+
+      '<td class="act"><button onclick="editTraining('+_jsArg(r.id)+')" title="Editeaza">&#9998;</button>'+
+        '<button onclick="genTrainingWord('+_jsArg(r.id)+')" title="PV Word">&#128196;</button>'+
+        '<button onclick="delRec(\'trainings\','+_jsArg(r.id)+')" title="Sterge">&#128465;</button></td></tr>').join('')+
     '</tbody></table>';
   }
   h+='</div></div>';
@@ -18919,7 +19002,7 @@ async function editTraining(id){
     '<div id="train-part-container">'+renderTrainParticipants()+'</div>'+
     '<button class="btn bo bsm" onclick="addTrainParticipant()" style="margin-top:6px">+ Adauga participant</button></div>'+
     '<div class="fg"><label>Observatii</label><textarea id="f-tobs" rows="2">'+(r.observations||'')+'</textarea></div>',
-  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveTraining('+JSON.stringify(id||null)+')">Salveaza</button>');
+  '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveTraining('+_jsArg(id||null)+')">Salveaza</button>');
   setTimeout(()=>{addDatePreview('f-tdate');attachDirtyTracking();_instrRefreshTest()},50);
 }
 
@@ -19499,7 +19582,7 @@ async function genAnchetaWord(id){
   ch.push(wP([wTR('Responsabil ancheta: ',{size:20,color:WC.gray}),wTR(getCoord().name,{size:20,bold:true})]));
   ch.push(wP(getCoord().title,{size:18,color:WC.gray}));
   const children=ch;
-  await saveDocx(makeDoc(children,'Ancheta Epidemiologica','Ancheta_IAAM'),'Ancheta_Epid_'+(r.patient||'caz')+'_'+rSec(r.section).replace(/[^a-zA-Z0-9]/g,'_')+'_'+A.year+'.docx');
+  await saveDocx(makeDoc(children,'Ancheta Epidemiologica','Ancheta_IAAM'),'Ancheta_Epid_'+(r.patient||'caz')+'_'+_secFileName(r.section)+'_'+A.year+'.docx');
 }
 
 // ── Fisa IAAM (conform Ordinul 1101/2016 — Fisa de inregistrare a IAAM) ──
@@ -19679,7 +19762,7 @@ async function genFisaIAAM(id){
   );
 
   // Build document with Courier New defaults, US Letter page (same as original)
-  const fn='Fisa_IAAM_'+(pName||'caz').replace(/[^a-zA-Z0-9]/g,'_')+'_'+rSec(r.section).replace(/[^a-zA-Z0-9]/g,'_')+'_'+A.year+'.docx';
+  const fn='Fisa_IAAM_'+(pName||'caz').replace(/[^a-zA-Z0-9]/g,'_')+'_'+_secFileName(r.section)+'_'+A.year+'.docx';
   const doc=new Document({
     styles:{default:{document:{run:{font:CN,size:SZ}}}},
     sections:[{properties:{page:{size:{width:12240,height:15840},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]
@@ -21169,7 +21252,7 @@ function _renderProbeApplicabilityUI(){
     var row='<tr class="cfg-pa-row cfg-pa-grp-'+groupKey+'"'+hidden+'><td style="position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;font-weight:600;font-size:11px">'+_secDisplayName(s)+'</td>';
     pts.forEach(function(pt){
       var checked=allChecked||ap.includes(pt.id);
-      row+='<td style="text-align:center"><input type="checkbox" data-sec="'+si+'" data-pt="'+pt.id+'" '+(checked?'checked':'')+' onchange="toggleProbeApplicability('+si+',\''+pt.id+'\',this.checked)" style="accent-color:var(--teal);width:14px;height:14px;cursor:pointer"></td>';
+      row+='<td style="text-align:center"><input type="checkbox" data-sec="'+si+'" data-pt="'+pt.id+'" '+(checked?'checked':'')+' onchange="toggleProbeApplicability('+si+',\''+JSON.stringify(pt.id)+'\',this.checked)" style="accent-color:var(--teal);width:14px;height:14px;cursor:pointer"></td>';
     });
     row+='<td style="text-align:center"><button class="btn bsm" style="font-size:9px;padding:2px 6px" onclick="toggleAllProbes('+si+')">&#8645;</button></td></tr>';
     return row;
@@ -21332,7 +21415,7 @@ async function rCfg(el){
       '<div class="ib inf">Sectiile, compartimentele si structurile spitalului (sectie, compartiment, CPU/UPU, bloc operator, bloc alimentar, spalatorie, laboratoare, explorari, radiologie, servicii auxiliare).</div>'+
       '<table class="dt"><thead><tr><th>Denumire</th><th style="width:70px">Cod</th><th style="width:120px">Tip</th><th style="width:160px">Paturi</th><th style="width:50px">&#215;</th></tr></thead>'+
       '<tbody>'+spitalSec.map(function(s){return secRow(s,null)}).join('')+'</tbody></table>'+
-      '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn bp" onclick="saveCfg();alert(\'Salvat!\')">Salveaza</button><button class="btn bp bsm" onclick="addSection(\'spital\')">+ Adauga sectie/structura</button></div>'+
+      '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn bp" onclick="saveCfg();alert(\''+_M('Salvat!')+'\')">Salveaza</button><button class="btn bp bsm" onclick="addSection(\'spital\')">+ Adauga sectie/structura</button></div>'+
     '</div></div>';
     // II. SPITALIZARE DE ZI (v13.26)
     h+=
@@ -21341,7 +21424,7 @@ async function rCfg(el){
       '<table class="dt"><thead><tr><th>Denumire</th><th style="width:70px">Cod</th><th style="width:160px">Paturi</th><th style="width:50px">&#215;</th></tr></thead>'+
       '<tbody>'+spziSec.map(function(s){return secRow(s,'spitalizare_zi')}).join('')+'</tbody></table>'+
       (spziSec.length===0?'<div style="font-size:11px;color:var(--txtL);font-style:italic;padding:8px 0">Nicio unitate de spitalizare de zi inregistrata. Click pe „+ Adauga unitate spitalizare zi" pentru a incepe.</div>':'')+
-      '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn bp" onclick="saveCfg();alert(\'Salvat!\')">Salveaza</button><button class="btn bp bsm" onclick="addSection(\'spitalizare_zi\')">+ Adauga unitate spitalizare zi</button></div>'+
+      '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn bp" onclick="saveCfg();alert(\''+_M('Salvat!')+'\')">Salveaza</button><button class="btn bp bsm" onclick="addSection(\'spitalizare_zi\')">+ Adauga unitate spitalizare zi</button></div>'+
     '</div></div>';
     // III. AMBULATORIU
     h+=
@@ -21349,7 +21432,7 @@ async function rCfg(el){
       '<div class="ib inf">Cabinetele din ambulatoriul spitalului. Fiecare cabinet apare separat in autocontrol pentru monitorizarea probelor microbiologice.<br><strong>Important:</strong> Foloseste prefixul "Cab." in denumire (ex: "Cab. Pediatrie") pentru a diferentia cabinetele de sectiile cu acelasi nume.</div>'+
       '<table class="dt"><thead><tr><th>Denumire cabinet</th><th style="width:70px">Cod</th><th style="width:160px">Paturi</th><th style="width:50px">&#215;</th></tr></thead>'+
       '<tbody>'+ambulSec.map(function(s){return secRow(s,'cabinet')}).join('')+'</tbody></table>'+
-      '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn bp" onclick="saveCfg();alert(\'Salvat!\')">Salveaza</button><button class="btn bp bsm" onclick="addSection(\'ambulatoriu\')">+ Adauga cabinet</button></div>'+
+      '<div style="display:flex;gap:8px;margin-top:8px"><button class="btn bp" onclick="saveCfg();alert(\''+_M('Salvat!')+'\')">Salveaza</button><button class="btn bp bsm" onclick="addSection(\'ambulatoriu\')">+ Adauga cabinet</button></div>'+
     '</div></div>';
   })();
 
@@ -21591,7 +21674,7 @@ async function rCfg(el){
       '<div class="fg" style="min-width:120px;max-width:140px"><label style="font-size:11px">Categorie</label><select id="new-wc-cat" style="border:1px solid var(--brd);border-radius:4px;padding:5px;font-size:12px;width:100%"><option value="periculos">Periculos</option><option value="nepericulos" selected>Nepericulos</option><option value="reciclabil">Reciclabil</option></select></div>'+
       '<div><button class="btn bp" onclick="var c=document.getElementById(\'new-wc-code\').value.trim(),n=document.getElementById(\'new-wc-name\').value.trim(),cat=document.getElementById(\'new-wc-cat\').value;if(!c||!n){alert(\'Completeaza codul si denumirea\');return}CFG.waste_codes.push({id:genId(\'waste\'),code:c,name:n,category:cat,dangerous:cat===\'periculos\',standard:false});saveCfg();render()" style="white-space:nowrap">+ Adauga cod</button></div>'+
     '</div>'+
-    '<button class="btn bp" onclick="saveCfg();alert(\'Salvat!\')" style="margin-top:10px">Salveaza</button>'+
+    '<button class="btn bp" onclick="saveCfg();alert(\''+_M('Salvat!')+'\')" style="margin-top:10px">Salveaza</button>'+
   '</div></div>';
 
   } else if(_cfgTab==='date'){
@@ -21644,7 +21727,7 @@ async function rCfg(el){
     '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);background:var(--bg)"><input type="radio" name="cfg-floc" value="cloud"'+(CFG.file_location==='cloud'?' checked':'')+' onchange="saveFileLocationCfg(this.value)" style="accent-color:var(--navy)"> '+T('sync_cloud')+'</label>'+
     '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);background:var(--bg)"><input type="radio" name="cfg-floc" value="unknown"'+(CFG.file_location==='unknown'?' checked':'')+' onchange="saveFileLocationCfg(this.value)" style="accent-color:var(--navy)"> '+T('sync_nu_stiu')+'</label>'+
     '</div>'+
-    '<div style="margin-top:12px"><button class="btn bp" onclick="var v=document.querySelector(\'input[name=cfg-floc]:checked\');if(v){saveFileLocationCfg(v.value);showToast(\'Salvat!\')}">Salveaza</button></div>'+
+    '<div style="margin-top:12px"><button class="btn bp" onclick="var v=document.querySelector(\'input[name=cfg-floc]:checked\');if(v){saveFileLocationCfg(v.value);showToast(\''+_M('Salvat!')+'\')}">Salveaza</button></div>'+
     '<p style="font-size:11px;color:var(--txtL);margin-top:8px">'+T('sync_nota_cloud')+'</p>'+
   '</div></div>'+
 
@@ -21955,7 +22038,7 @@ async function testAiConnection(){
   try{
     const msg='Raspunde cu un singur cuvant: OK';
     const resp=await callAI(msg);
-    hideGen();alert('Conexiune reusita! Raspuns: '+(resp||'(gol)').substring(0,100));
+    hideGen();alert(_Mf('Conexiune reusita! Raspuns: {r}',{r:(resp||'(gol)').substring(0,100)}));
   }catch(e){hideGen();errAlert(e,'Nu am putut contacta serviciul AI.','Could not reach the AI service.')}
 }
 
@@ -21994,7 +22077,7 @@ async function renameProbe(idx){
   newName=newName.trim();
   // Verific duplicate
   if(CFG.probe_types.some(function(x,i){return i!==idx&&((typeof x==='string'?x:x.name)||'').toLowerCase()===newName.toLowerCase()})){
-    alert('Tipul de proba "'+newName+'" exista deja.');return;
+    alert(_Mf('Tipul de proba „{n}" exista deja.',{n:newName}));return;
   }
   if(typeof p==='string'){CFG.probe_types[idx]=newName} // legacy
   else{CFG.probe_types[idx].name=newName}
@@ -22014,7 +22097,7 @@ async function renameCfgItem(arrName,idx,labelFriendly){
   newName=newName.trim();
   // Verific duplicate
   if(arr.some(function(x,i){return i!==idx&&((typeof x==='string'?x:x.name)||'').toLowerCase()===newName.toLowerCase()})){
-    alert(labelFriendly+' "'+newName+'" exista deja.');return;
+    alert(_Mf('{l} „{n}" exista deja.',{l:labelFriendly,n:newName}));return;
   }
   if(typeof item==='string')arr[idx]=newName;
   else arr[idx].name=newName;
@@ -23565,6 +23648,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.69',date:'2026-07-30',summary:'Cele doua decizii lasate userului, luate si implementate. Inregistrarile noi primesc identificator unic, deci doua calculatoare nu se mai suprascriu tacit la sincronizare. Referintele sterse din configurare nu mai apar ca un cod intern in rapoartele Word. Pe parcurs a iesit la iveala ca reparatia A1-11 era incompleta: JSON.stringify singur nu e sigur intr-un atribut HTML.'},
+  {version:'13.68',date:'2026-07-30',summary:'Incheierea traducerii mesajelor: cele cu valori interpolate (bilanturi de import, confirmari de suprascriere) erau ultimele in romana. Acoperirea bilingva a ajuns de la 41 la 208 din 216 de mesaje, iar cele 8 ramase sunt mecanismul de traducere in sine si doua mesaje interne de diagnostic.'},
   {version:'13.67',date:'2026-07-30',summary:'Incheierea modulelor neparcurse din auditul functional (PPS si antibiograma) plus ultimele puncte din auditul UX. Cea mai importanta reparatie: o corectie manuala pe o sectie importata din HelicsWin isi pierdea legatura cu importul, deci la reimport sectia se dubla si prevalenta PPS iesea umflata.'},
   {version:'13.66',date:'2026-07-30',summary:'Reparat ecranul alb de la pornire, semnalat de user pe PWA-ul instalat pe desktop. Mesajul de incarcare ramane acum pana cand aplicatia e efectiv randata. Investigatia a masurat si de unde vine restul intarzierii: 1,65 MB de biblioteci externe incarcate inainte de aplicatie, din care niciuna nu e necesara la pornire.'},
   {version:'13.65',date:'2026-07-30',summary:'A doua transa din auditul UX. Cifrele mari din cardurile de indicatori erau prea palide pe alb ca sa fie lizibile — nuantele au fost inchise strict cat era nevoie, calculat, nu la ochi. Pe telefon paginile cu tabele late intindeau toata interfata la trei ori latimea ecranului; acum tabelul deruleaza in panoul lui. Aceeasi reparatie a eliminat scroll-ul orizontal si pe monitoare inguste.'},
@@ -24731,7 +24816,7 @@ function impAll(){if(!confirm(CFG.lang==='en'?'Import replaces the data categori
             if(att&&att.data&&!att.on_disk){
               try{const resp=await fetch(att.data);const blob=await resp.blob();
                 const ext=att.name?.split('.').pop()||'bin';
-                const fname='bio_'+rec.id+'_'+key+'_'+Math.random().toString(36).slice(2,6)+'.'+ext;
+                const fname='bio_'+JSON.stringify(rec.id)+'_'+key+'_'+Math.random().toString(36).slice(2,6)+'.'+ext;
                 await attWriteFile('biocide',fname,blob);
                 att.filename=fname;att.on_disk=true;delete att.data;bioChanged=true;
               }catch(err){console.warn('Import: cannot write bio att to disk:',err)}
@@ -24744,7 +24829,7 @@ function impAll(){if(!confirm(CFG.lang==='en'?'Import replaces the data categori
         if(rec.file_data&&!(rec.file_meta&&rec.file_meta.on_disk)){
           try{const resp=await fetch(rec.file_data);const blob=await resp.blob();
             const ext=rec.file_name?.split('.').pop()||'bin';
-            const fname='doc_'+rec.id+'.'+ext;
+            const fname='doc_'+JSON.stringify(rec.id)+'.'+ext;
             await attWriteFile('documents',fname,blob);
             rec.file_meta={filename:fname,size:blob.size,type:blob.type,on_disk:true};
             delete rec.file_data;await pt('documents',rec);
@@ -24753,7 +24838,7 @@ function impAll(){if(!confirm(CFG.lang==='en'?'Import replaces the data categori
       }
     }
     localStorage.setItem('cpiaam_last_version',APP_VERSION);
-    alert('Import finalizat din v'+fromVer+'! ('+ST.filter(s=>d[s]&&d[s].length).length+' module importate)');
+    alert(_Mf('Import finalizat din v{v}! ({n} module importate)',{v:fromVer,n:ST.filter(s=>d[s]&&d[s].length).length}));
     await loadCfg();render()}catch(e){errAlert(e,'Importul nu a reusit. Datele existente nu au fost modificate.','The import failed. Existing data was left unchanged.')}};inp.click()}
 
 

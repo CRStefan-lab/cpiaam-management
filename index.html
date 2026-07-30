@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.62</title>
+<title>CPIAAM Management v13.63</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2363,7 +2363,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.62';
+const APP_VERSION='13.63';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -23344,6 +23344,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.63',date:'2026-07-30',summary:"Reparat motivul pentru care sagetile de pliere din meniul lateral nu se vedeau deloc: orice salvare de configurare — inclusiv fiecare sincronizare — le stergea din pagina. Restul transei repara importurile: valorile cu separator de mii intrau de o mie de ori mai mici, o coloana nerecunoscuta la importul din laborator cadea tacit pe prima coloana din fisier, iar re-importul aceluiasi fisier dubla datele fara niciun avertisment. Plus: sincronizarea nu potrivea niciodata sectiile cu acelasi nume dar id-uri diferite."},
   {version:'13.62',date:'2026-07-30',summary:"Meniul lateral arata in sfarsit ca grupurile se pot plia — sageata e vizibila, randul se aprinde la trecerea mouse-ului, iar grupul pliat isi arata numarul de module ascunse. Restul transei repara cifre false ajunse in documente oficiale: obiectivele CAUTI/CLABSI/VAP erau verzi „conform\" intr-un spital cu infectii reale, inelul AWaRe din Raportul Anual iesea integral gri, iar Raportul Trimestrial aduna instruirile din toti anii. Plus: documentele cu atasament afisau „—\" in coloana Fisier, butonul Salveaza de la biocide era mort pentru mişcarile importate din Excel, iar o proba ATP fara citirea RLU se salva ca CONFORMA."},
   {version:'13.61',date:'2026-07-29',summary:"Auditul functional continua si scoate cea mai grava problema de pana acum: motorul de analiza citea campuri disparute din model, asa ca Raportul Anual afisa rata IAAM lipsa, „0,0 DDD\" consum de antibiotice si „0,0 %\" conformitate audit pe date complete, plus o alerta rosie falsa. Auditurile apareau cu cod intern in loc de denumire. Dashboard-ul nu afisa niciodata cardurile de rate. Generarea raportului ramanea blocata daca inchideai avertismentul cu X. Ecranul „Se genereaza\" nu se mai poate bloca definitiv."},
   {version:'13.60',date:'2026-07-29',summary:"Doua reparatii gasite la auditul functional. (1) Data curenta era calculata gresit intre miezul noptii si ora 3: toate formularele care pre-completau „azi\" puneau ziua precedenta — probe, audituri, instruiri, documente, focare, avizari — la fel si etichetele „Astazi\"/„Maine\" din calendar. Afecta tura de noapte, zilnic. (2) Stergerile din Configurare erau un singur click fara confirmare; acum cer confirmare si arata cate inregistrari salvate folosesc elementul."},

@@ -1,14 +1,9 @@
 {
-  "version": "13.64",
+  "version": "13.66",
+  "version_note": "Ecranul alb de la pornire",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Modul întunecat era parțial ilizibil. Rândurile TOTAL din Deșeuri, Consum Antibiotice și PPS, antetul calendarului, matricea antibiogramei și — cel mai important — mesajele de confirmare apăreau cu text alb pe fundal deschis. Cauza: toate culorile paletei devin pasteluri deschise pe întuneric, dar textul rămăsese alb. Modul luminos arată exact ca înainte.",
-    "Butoanele de editare și ștergere din tabele erau aproape invizibile pe întuneric (negru pe fundal închis), în toate modulele.",
-    "La salvare apare acum o confirmare. Înainte dialogul se închidea și nu aveai niciun semn că înregistrarea a intrat — se vedea doar dacă rândul apărea în tabel, ceea ce nu se întâmplă când e ascuns de un filtru, într-o secțiune pliată sau în alt an.",
-    "Când deschizi un formular, cursorul e deja în primul câmp. Nu mai trebuie să iei mouse-ul ca să începi să scrii.",
-    "Dacă nu ai încă nicio secție configurată, mesajul „Selectează secția\" spunea ceva imposibil de făcut din acel ecran. Acum îți spune exact unde se configurează.",
-    "Mesajele de eroare nu mai arată textul tehnic al erorii. În loc de „Failed to execute 'getFileHandle'...\" primești ce s-a întâmplat și ce poți face; detaliul tehnic rămâne în consolă, pentru diagnostic. 44 de locuri.",
-    "Aplicația vorbește acum englezește și când apare o problemă: 79 de mesaje de validare și eroare erau hardcodate în română, deci în modul EN toată interfața era engleză până la prima eroare.",
-    "Un spital care tocmai a instalat aplicația vede pe Dashboard cei doi pași cu care începe, în loc de un tablou de indicatori pe zero. Panoul dispare de la prima secție adăugată. La fel în Autocontrol, care spune acum de unde se pornește."
+    "La deschidere nu mai apare fereastra alba. Mesajul „Se incarca\" ramane pe ecran pana cand aplicatia e chiar gata de folosit, in loc sa dispara mai devreme si sa lase cateva secunde de ecran gol. Durata pornirii nu s-a schimbat inca — s-a eliminat doar intervalul in care parea blocata.",
+    "Daca prima randare esueaza din orice motiv, ecranul de incarcare dispare oricum si aplicatia nu mai ramane blocata pe el."
   ]
 }

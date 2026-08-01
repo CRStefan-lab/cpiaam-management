@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.69</title>
+<title>CPIAAM Management v13.74</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1072,6 +1072,7 @@ body{display:block!important;background:#fff!important}
     <div class="ns nsg" data-grp="sb_g_supraveghere"><span data-t="sb_g_supraveghere">Supraveghere</span></div>
     <a class="ni" data-grp="sb_g_supraveghere" data-p="iaam" data-tooltip="IAAM / Anchete" onclick="nav('iaam')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span data-t="sb_iaam">IAAM / Anchete</span></a>
     <a class="ni" data-grp="sb_g_supraveghere" data-p="focare" data-tooltip="Focare" onclick="nav('focare')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7.5" stroke-dasharray="3 3"/><path d="M12 1v2M12 21v2M1 12h2M21 12h2"/></svg><span data-t="sb_focare">Focare</span></a>
+    <a class="ni" data-grp="sb_g_supraveghere" data-p="icd" data-tooltip="Registrul ICD" onclick="nav('icd')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6l1 4H8z"/><path d="M7 7h10l-1 12a2 2 0 01-2 2h-4a2 2 0 01-2-2z"/><path d="M10 12h4M12 10v4"/></svg><span>Registrul ICD</span></a>
     <a class="ni" data-grp="sb_g_supraveghere" data-p="statistici" data-tooltip="Statistici Spital" onclick="nav('statistici')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="17" y="4" width="4" height="17" rx="1"/></svg><span>Statistici Spital</span></a>
     <div class="ns nsg" data-grp="sb_g_igiena"><span data-t="sb_g_igiena">Igiena si mediu</span></div>
     <a class="ni" data-grp="sb_g_igiena" data-p="autocontrol" data-tooltip="Autocontrol" onclick="nav('autocontrol')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg><span data-t="sb_autocontrol">Autocontrol</span></a>
@@ -1174,7 +1175,11 @@ body{display:block!important;background:#fff!important}
 // separate prin campul kind: harta punctelor de risc, rapoartele primite de la responsabilii pe
 // sectii si propunerile de sanctiuni. Un singur store, nu trei: sunt inregistrari administrative
 // de aceeasi natura (data + sectie + subiect + stare) si evita 3 bump-uri de versiune DB.
-const DB='CPIAAM4',VER=11,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum','objectives','lab_isolates','hospital_activity','outbreaks','atb_approvals','ipc_registry'];
+// v13.70 - VER 11→12: store nou 'icd_cases' (registrul ICD cerut de noul OMS). Tine doua feluri
+// de inregistrari, separate prin campul kind: 'case' = cazurile individuale, 'lab' = totalurile
+// anuale de probe de scaun testate/pozitive (indicator de intensitate a testarii, dat de laborator).
+// Un singur store, ca la ipc_registry — evita inca un bump de versiune pentru doua numere pe an.
+const DB='CPIAAM4',VER=12,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum','objectives','lab_isolates','hospital_activity','outbreaks','atb_approvals','ipc_registry','icd_cases'];
 function odb(){return new Promise((ok,no)=>{const r=indexedDB.open(DB,VER);r.onupgradeneeded=e=>{const d=e.target.result;ST.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id',autoIncrement:true})})};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function ga(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result.filter(function(x){return!x._deleted}));r.onerror=()=>no(r.error)})}
 async function gaAll(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
@@ -2380,7 +2385,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.69';
+const APP_VERSION='13.74';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -3182,7 +3187,7 @@ ro:{
   sb_gen_rapoarte:'Generare Rapoarte',sb_config:'Configurare',sb_despre:'Despre',sb_ajutor:'Ajutor / FAQ',
   sb_manual:'Manual de Utilizare',sb_backup:'Salveaza Backup',sb_termeni:'Termeni si Conditii',
   // Page titles
-  pt_dashboard:'Dashboard',pt_iaam:'IAAM / Anchete Epidemiologice',pt_autocontrol:'Autocontrol Microbiologic',
+  pt_dashboard:'Dashboard',pt_icd:'Registrul ICD — Clostridioides difficile',pt_focare:'Focare Epidemice',pt_statistici:'Statistici Spital',pt_iaam:'IAAM / Anchete Epidemiologice',pt_autocontrol:'Autocontrol Microbiologic',
   pt_deseuri:'Deseuri Medicale',pt_biocide:'Gestiune Biocide',pt_pps:'PPS — Studiu de Prevalenta de Moment',
   pt_documente:'Documente / Autorizatii',pt_termene:'Raportari / Termene',pt_calendar:'Calendar',
   pt_audituri:'Audituri IPC',pt_instruire:'Instruire Personal',pt_rapoarte:'Generare Rapoarte',pt_multian:'Analiza Comparativa Multi-An',
@@ -3363,7 +3368,7 @@ en:{
   sb_calendar:'Calendar',
   sb_gen_rapoarte:'Generate Reports',sb_config:'Settings',sb_despre:'About',sb_ajutor:'Help / FAQ',
   sb_manual:'User Manual',sb_backup:'Save Backup',sb_termeni:'Terms and Conditions',
-  pt_dashboard:'Dashboard',pt_iaam:'HAI / Epidemiological Investigations',pt_autocontrol:'Microbiological Quality Control',
+  pt_dashboard:'Dashboard',pt_icd:'ICD Register — Clostridioides difficile',pt_focare:'Epidemic Outbreaks',pt_statistici:'Hospital Statistics',pt_iaam:'HAI / Epidemiological Investigations',pt_autocontrol:'Microbiological Quality Control',
   pt_deseuri:'Medical Waste Management',pt_biocide:'Biocide Management',pt_pps:'PPS — Point Prevalence Survey',
   pt_documente:'Documents / Authorizations',pt_termene:'Reports / Deadlines',pt_calendar:'Calendar',
   pt_audituri:'IPC Audits',pt_instruire:'Staff Training',pt_rapoarte:'Generate Reports',pt_multian:'Multi-Year Comparative Analysis',
@@ -4362,10 +4367,10 @@ function updateSidebar(){
 
 // NAVIGATION, MODAL, UTILITIES
 // ═══════════════════════════════════════════════════════════════
-const PT={dashboard:'Dashboard',iaam:'IAAM / Anchete Epidemiologice',autocontrol:'Autocontrol Microbiologic',
-  deseuri:'Deseuri Medicale',statistici:'Statistici Spital',biocide:'Gestiune Biocide',pps:'PPS — Studiu de Prevalenta',consum_atb:'Consum Antibiotice — DDD / AWaRe',obiective:'Obiective SMART IPC',
-  documente:'Documente / Autorizatii',termene:'Raportari / Termene',multian:'Analiza Comparativa Multi-An',
-  rapoarte:'Generare Rapoarte',config:'Configurare Sistem',ajutor:'Ajutor / FAQ',changelog:'Istoric Versiuni',about:'Despre',terms:'Termeni si Conditii'};
+// PT a fost sters in v13.74: constanta cu titlurile paginilor era COD MORT (zero utilizari).
+// Titlul din bara de sus vine din getPageTitle(), care are propria harta de chei de traducere.
+// Descoperit cand pagina ICD noua afisa „Dashboard" desi ii adaugasem titlul in PT.
+
 
 function nav(p,opts){A.page=p;document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('a',n.dataset.p===p));
   document.querySelectorAll('.sb-hl').forEach(function(n){n.classList.toggle('a',n.dataset.p===p)});
@@ -4460,7 +4465,7 @@ async function delRec(store,id){if(!confirm(T('confirma_stergere')))return;await
 // ROUTER
 // ═══════════════════════════════════════════════════════════════
 async function renderPage(p){const el=document.getElementById('pc');dch();switch(p){
-  case'dashboard':return rDash(el);case'iaam':return rIAAM(el);case'focare':return rFocare(el);case'autocontrol':return rAuto(el);
+  case'dashboard':return rDash(el);case'iaam':return rIAAM(el);case'focare':return rFocare(el);case'icd':return rICD(el);case'autocontrol':return rAuto(el);
   case'deseuri':return rDes(el);case'statistici':return rStatistici(el);case'biocide':return rBio(el);case'pps':return rPPS(el);case'consum_atb':return rConsumATB(el);
   case'antibiograma':return rAntibiograma(el);case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
   case'audituri':return rAudit(el);case'obiective':return rObiective(el);case'instruire':return rInstr(el);
@@ -4509,7 +4514,7 @@ function updateLangUI(){
   updateSidebar();updateSyncIndicator();
   document.getElementById('pt').textContent=getPageTitle(A.page);}
 function getPageTitle(p){
-  const map={dashboard:'pt_dashboard',iaam:'pt_iaam',autocontrol:'pt_autocontrol',deseuri:'pt_deseuri',
+  const map={icd:'pt_icd',focare:'pt_focare',statistici:'pt_statistici',dashboard:'pt_dashboard',iaam:'pt_iaam',autocontrol:'pt_autocontrol',deseuri:'pt_deseuri',
     biocide:'pt_biocide',pps:'pt_pps',consum_atb:'pt_consum_atb',antibiograma:'pt_antibiograma',documente:'pt_documente',termene:'pt_termene',calendar:'pt_calendar',
     audituri:'pt_audituri',obiective:'pt_obiective',instruire:'pt_instruire',rapoarte:'pt_rapoarte',multian:'pt_multian',
     config:'pt_config',ajutor:'pt_ajutor',manual:'pt_manual',changelog:'pt_changelog',about:'pt_despre',terms:'pt_terms'};
@@ -7288,6 +7293,615 @@ async function genFocarWord(id){
   ch.push(...wSigBlock());
   await saveDocx(makeDoc(ch,'Raport Focar','Raport_Focar'),'Raport_Focar_'+(f.name||'focar').replace(/[^a-zA-Z0-9]/g,'_').slice(0,40)+'_'+A.year+'.docx');
   logActivity('Generat raport focar — '+f.name);
+}
+
+</script>
+<script>
+// ═════════════════════════════════════════════════════════════
+// CPIAAM — Registrul ICD (Clostridioides difficile) — noul OMS
+// ═════════════════════════════════════════════════════════════
+// Store: 'icd_cases', doua feluri de inregistrari separate prin `kind`:
+//   kind:'case' — cazurile individuale
+//   kind:'lab'  — totalurile anuale de probe de scaun (id: 'icdlab_YYYY')
+//
+// DE CE REGISTRU DE SINE STATATOR si nu extensie a fisei IAAM: ordinul cere TOATE cazurile ICD,
+// nu doar cele nosocomiale, iar cazurile se prezinta si in UPU/CPU, in spitalizare de zi sau la
+// laborator contra cost — deci multe NU au fost internate. Fisa IAAM presupune internare (foaie
+// de observatie, sectie, data internarii), deci un caz din ambulatoriu nu ar fi avut unde sa intre,
+// iar rubricile „comunitare" si „nedeterminate" din fisa unitatii ar fi iesit mereu goale.
+// Sursa cazului e primul camp, nu sectia. Legatura cu o fisa IAAM existenta e OPTIONALA, ca sa nu
+// se introduca acelasi caz nosocomial de doua ori.
+//
+// CORECTIE de la user (v13.71): „nu cere foaie de observatie" NU inseamna „nu cere niciun numar".
+// Spitalizarea de zi si CPU/UPU au registrele lor de inregistrare (SZ, respectiv CPU), iar
+// laboratorul da numar de buletin. Fara numarul locului unde s-a prezentat pacientul, cazul nu mai
+// poate fi regasit in evidenta spitalului si nu se poate verifica la un control. Deci numarul de
+// inregistrare exista MEREU ca si camp — isi schimba doar eticheta, dupa sursa.
+
+// `reg` = eticheta numarului de inregistrare, DIFERITA pe sursa. Nu toate cazurile au foaie de
+// observatie, dar aproape toate au un numar in registrul locului unde s-au prezentat: spitalizarea
+// de zi are registrul SZ, CPU/UPU are registrul propriu, laboratorul da numar de buletin.
+// Fara numarul acela cazul nu mai poate fi regasit in evidenta spitalului — deci campul exista
+// mereu, doar ca isi schimba numele. `sec` spune daca selectorul de structura are sens.
+const ICD_SOURCES=[
+  {v:'sectie',           ro:'Sectie cu paturi',        en:'Inpatient ward',        reg:{ro:'Nr. foaie de observatie (FO)',en:'Medical record no. (FO)'},          sec:true},
+  {v:'upu',              ro:'UPU / CPU',               en:'Emergency department',  reg:{ro:'Nr. inregistrare CPU/UPU',    en:'Emergency register no.'},           sec:false},
+  {v:'spitalizare_zi',   ro:'Spitalizare de zi',       en:'Day hospitalisation',   reg:{ro:'Nr. inregistrare SZ',         en:'Day-hospitalisation register no.'}, sec:true},
+  {v:'ambulatoriu',      ro:'Ambulatoriu',             en:'Outpatient clinic',     reg:{ro:'Nr. registru de consultatii', en:'Consultation register no.'},        sec:true},
+  {v:'laborator_extern', ro:'Laborator extern',        en:'External laboratory',   reg:{ro:'Nr. buletin de analiza',      en:'Lab report no.'},                   sec:false}
+];
+function icdRegLabel(v){
+  var o=ICD_SOURCES.find(function(x){return x.v===v});
+  if(!o)return CFG.lang==='en'?'Registration no.':'Nr. inregistrare';
+  return CFG.lang==='en'?o.reg.en:o.reg.ro;
+}
+function icdHasSection(v){var o=ICD_SOURCES.find(function(x){return x.v===v});return !!(o&&o.sec)}
+const ICD_CLASS=[
+  {v:'nosocomial',   ro:'Nosocomial',   en:'Healthcare-associated', cls:'bdg-r'},
+  {v:'comunitar',    ro:'Comunitar',    en:'Community-associated',  cls:'bdg-g'},
+  {v:'nedeterminat', ro:'Nedeterminat', en:'Indeterminate',         cls:'bdg-a'}
+];
+const ICD_TESTS=[
+  {v:'toxine', ro:'Toxine A/B',            en:'Toxin A/B'},
+  {v:'pcr',    ro:'PCR gene toxine',       en:'PCR toxin genes'},
+  {v:'ambele', ro:'Ambele',                en:'Both'}
+];
+// Factorii de risc din Figura 1.2 a ordinului. Cheie stabila + eticheta bilingva.
+const ICD_RISK=[
+  {k:'atb3m',        ro:'Antibiotic in ultimele 3 luni',            en:'Antibiotic in the last 3 months'},
+  {k:'ppi',          ro:'Antisecretorii gastrice (IPP / anti-H2)',  en:'Gastric antisecretory drugs (PPI / H2)'},
+  {k:'immunosupp',   ro:'Imunosupresoare',                          en:'Immunosuppressants'},
+  {k:'cytostatic',   ro:'Citostatice',                              en:'Cytostatics'},
+  {k:'immunodep',    ro:'Pacient imunodeprimat',                    en:'Immunocompromised patient'},
+  {k:'contact_icd',  ro:'Contact cu un caz ICD',                    en:'Contact with an ICD case'},
+  {k:'gi_surgery',   ro:'Interventie chirurgicala GI (2 saptamani)',en:'GI surgery (last 2 weeks)'}
+];
+function _icdL(o){return CFG.lang==='en'?o.en:o.ro}
+function icdSourceName(v){var o=ICD_SOURCES.find(function(x){return x.v===v});return o?_icdL(o):(v||'—')}
+function icdClassName(v){var o=ICD_CLASS.find(function(x){return x.v===v});return o?_icdL(o):(v||'—')}
+function icdClassCls(v){var o=ICD_CLASS.find(function(x){return x.v===v});return o?o.cls:'bdg-b'}
+
+// ═══ CLASIFICARE AUTOMATA ═══
+// Regulile din metodologia ICD a ordinului. Intoarce null cand datele nu permit incadrarea —
+// NICIODATA o incadrare „din oficiu": clasificarea o valideaza medicul epidemiolog din DSP, iar
+// o eticheta gresita pusa automat ar calatori mai departe in raportul catre DSP ca si cum ar fi
+// verificata. Userul o poate suprascrie manual, si atunci se marcheaza ca atare.
+const _ICD_WEEK=7*864e5;
+function icdClassify(r){
+  var onset=parseDate(r.date_onset);
+  if(!onset)return null;
+  var lastD=parseDate(r.date_last_discharge);
+  if(r.onset_place==='spital'){
+    var adm=parseDate(r.date_admission);
+    if(!adm)return null;                       // fara data internarii nu se poate calcula pragul de 48h
+    var ore=(onset-adm)/36e5;
+    if(ore>=48)return 'nosocomial';            // debut in spital, la 48h sau mai mult de la internare
+    // debut in primele 48h: nosocomial DOAR daca a mai fost spitalizat in ultimele 4 saptamani
+    if(lastD&&(onset-lastD)<4*_ICD_WEEK)return 'nosocomial';
+    return 'comunitar';
+  }
+  if(r.onset_place==='domiciliu'){
+    if(!lastD)return 'comunitar';              // niciun contact spitalicesc anterior
+    var sapt=(onset-lastD)/_ICD_WEEK;
+    if(sapt<0)return null;                     // externare dupa debut — date incoerente
+    if(sapt<4)return 'nosocomial';
+    if(sapt<=12)return 'nedeterminat';
+    return 'comunitar';
+  }
+  return null;
+}
+// Recidiva e o axa SEPARATA de nosocomial/comunitar: fisa unitatii le numara distinct.
+// Test pozitiv in scaun diareic la 2–8 saptamani dupa remiterea episodului anterior.
+function icdIsRecurrence(r){
+  var prev=parseDate(r.prev_episode_end),onset=parseDate(r.date_onset);
+  if(!prev||!onset)return false;
+  var sapt=(onset-prev)/_ICD_WEEK;
+  return sapt>=2&&sapt<=8;
+}
+// Incadrarea efectiva: manuala daca userul a pus una, altfel cea calculata.
+function icdClassOf(r){return r.classification_manual||icdClassify(r)}
+
+// ═══ AGREGAREA PENTRU FISA UNITATII (Figura 1.3) ═══
+// Intoarce exact rubricile cerute de ordin. Ratele lipsa raman null, nu 0.
+async function icdUnitSheet(year){
+  var all=(await ga('icd_cases')).filter(function(r){return r.kind!=='lab'&&r.year===year});
+  var lab=(await ga('icd_cases')).find(function(r){return r.kind==='lab'&&r.year===year})||{};
+  var out={an:year,total:all.length,nosocomiale:0,comunitare:0,nedeterminate:0,neincadrate:0,recurente:0};
+  all.forEach(function(r){
+    var c=icdClassOf(r);
+    if(c==='nosocomial')out.nosocomiale++;
+    else if(c==='comunitar')out.comunitare++;
+    else if(c==='nedeterminat')out.nedeterminate++;
+    else out.neincadrate++;
+    if(r.is_recurrence||icdIsRecurrence(r))out.recurente++;
+  });
+  out.probeTestate=(lab.tested!=null&&lab.tested!=='')?+lab.tested:null;
+  out.probePozitive=(lab.positive!=null&&lab.positive!=='')?+lab.positive:null;
+  // Numitorii de activitate vin din Statistici Spital — sursa unica, ca peste tot in aplicatie.
+  out.omZile=await getOmZileForPeriod(year,1,12);
+  out.externati=await getExternatiForPeriod(year,1,12);
+  var ha=await getHospitalActivity(year);
+  var ps=0,pc=0;(ha.months||[]).forEach(function(m){if(m&&m.paturi_medii){ps+=+m.paturi_medii;pc++}});
+  out.paturi=pc?Math.round(ps/pc*10)/10:null;
+  // Incidenta nosocomiala la 10.000 zile-pacient (numitorul cerut de metodologie)
+  out.incidentaNoso=(out.omZile>0)?Math.round(out.nosocomiale/out.omZile*10000*100)/100:null;
+  // Pozitivitatea testarii — indicator de intensitate, NU incidenta
+  out.pozitivitate=(out.probeTestate>0&&out.probePozitive!=null)?Math.round(out.probePozitive/out.probeTestate*1000)/10:null;
+  return out;
+}
+
+// ═══ PAGINA ═══
+var _icdFilters={q:'',cls:'',src:''};
+function _icdSetFilter(k,v){_icdFilters[k]=v;render()}
+
+async function rICD(el){
+  const isEN=CFG.lang==='en';
+  const all=(await ga('icd_cases')).filter(function(r){return r.kind!=='lab'&&r.year===A.year});
+  const fisa=await icdUnitSheet(A.year);
+
+  let h='<div class="kg">'+
+    '<div class="kc bl"><div class="kl">'+(isEN?'TOTAL ICD CASES':'TOTAL CAZURI ICD')+'</div><div class="kv">'+fisa.total+'</div><div class="ks">'+A.year+'</div></div>'+
+    '<div class="kc rd"><div class="kl">'+(isEN?'HEALTHCARE-ASSOCIATED':'NOSOCOMIALE')+'</div><div class="kv">'+fisa.nosocomiale+'</div><div class="ks">'+(fisa.incidentaNoso!==null?indFmt(fisa.incidentaNoso)+(isEN?' / 10,000 patient-days':' / 10.000 zile-pacient'):(isEN?'no patient-days':'fara om-zile'))+'</div></div>'+
+    '<div class="kc gn"><div class="kl">'+(isEN?'COMMUNITY':'COMUNITARE')+'</div><div class="kv">'+fisa.comunitare+'</div></div>'+
+    '<div class="kc am"><div class="kl">'+(isEN?'INDETERMINATE':'NEDETERMINATE')+'</div><div class="kv">'+fisa.nedeterminate+'</div></div>'+
+    '<div class="kc tl"><div class="kl">'+(isEN?'RECURRENCES':'RECURENTE')+'</div><div class="kv">'+fisa.recurente+'</div></div>'+
+  '</div>';
+
+  // Cazuri care nu se pot incadra automat — semnalate explicit, nu ascunse
+  if(fisa.neincadrate>0){
+    h+='<div class="ib wrn" style="margin-bottom:12px">'+
+      (isEN?'<strong>'+fisa.neincadrate+'</strong> case(s) cannot be classified automatically — the onset place, the admission date or the last discharge date is missing. They are counted in the total but not in any category of the unit sheet.'
+           :'<strong>'+fisa.neincadrate+'</strong> caz(uri) nu se pot incadra automat — lipseste locul debutului, data internarii sau data ultimei externari. Intra in total, dar in nicio rubrica a fisei unitatii.')+
+      '</div>';
+  }
+
+  // Filtre
+  h+='<div class="ac-filters">'+
+    '<div class="fg"><label>'+(isEN?'Search':'Cauta')+'</label><input value="'+esc(_icdFilters.q)+'" placeholder="'+(isEN?'initials or notes':'initiale sau observatii')+'" oninput="_icdFilters.q=this.value;_icdRedrawTable()"></div>'+
+    '<div class="fg"><label>'+(isEN?'Classification':'Incadrare')+'</label><select onchange="_icdSetFilter(\'cls\',this.value)"><option value="">'+(isEN?'All':'Toate')+'</option>'+
+      ICD_CLASS.map(function(c){return '<option value="'+c.v+'"'+(_icdFilters.cls===c.v?' selected':'')+'>'+_icdL(c)+'</option>'}).join('')+
+      '<option value="_none"'+(_icdFilters.cls==='_none'?' selected':'')+'>'+(isEN?'Not classified':'Neincadrate')+'</option></select></div>'+
+    '<div class="fg"><label>'+(isEN?'Source':'Sursa cazului')+'</label><select onchange="_icdSetFilter(\'src\',this.value)"><option value="">'+(isEN?'All':'Toate')+'</option>'+
+      ICD_SOURCES.map(function(s){return '<option value="'+s.v+'"'+(_icdFilters.src===s.v?' selected':'')+'>'+_icdL(s)+'</option>'}).join('')+'</select></div>'+
+  '</div>';
+
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button class="btn bo bsm" onclick="icdEditLab()">'+(isEN?'Stool samples tested':'Probe de scaun testate')+'</button>'+
+      '<button class="btn bo bsm" onclick="genICDUnitSheetWord()">'+(isEN?'Unit sheet (Word)':'Fisa unitatii (Word)')+'</button>'+
+    '</div>'+
+    '<button class="btn bp" onclick="editICD()">+ '+(isEN?'New ICD case':'Caz ICD nou')+'</button></div>';
+
+  h+='<div id="icd-tbl">'+_icdTableHTML(all)+'</div>';
+
+  // Fisa unitatii, pe scurt, ca sa se vada ce se trimite la DSP
+  h+='<div class="pn" style="margin-top:16px"><div class="ph"><h3>'+(isEN?'Unit sheet — what goes to the public health authority':'Fisa unitatii — ce se trimite la DSP')+'</h3></div><div class="pb">'+
+    '<table class="dt"><tbody>'+
+    _icdRow(isEN?'Average beds':'Numar paturi (medie)',fisa.paturi)+
+    _icdRow(isEN?'Discharges':'Numar externari',fisa.externati)+
+    _icdRow(isEN?'Patient-days':'Numar zile-pacient',fisa.omZile)+
+    _icdRow(isEN?'Healthcare-associated ICD cases':'Cazuri ICD nosocomiale',fisa.nosocomiale)+
+    _icdRow(isEN?'Community ICD cases':'Cazuri ICD comunitare',fisa.comunitare)+
+    _icdRow(isEN?'Indeterminate-origin ICD cases':'Cazuri ICD de origine nedeterminata',fisa.nedeterminate)+
+    _icdRow(isEN?'Recurrent ICD cases':'Cazuri ICD recurente',fisa.recurente)+
+    _icdRow(isEN?'Total stool samples tested':'Numar total probe de scaun testate',fisa.probeTestate)+
+    _icdRow(isEN?'Positive stool samples':'Numar probe de scaun pozitive',fisa.probePozitive)+
+    '</tbody></table>'+
+    '<div class="ib inf" style="margin-top:10px;font-size:12px">'+
+      (isEN?'The total of tested samples is an indicator of <strong>testing intensity</strong>, not a denominator for incidence. The classification of each case is validated by the public health epidemiologist.'
+           :'Totalul probelor testate e un indicator de <strong>intensitate a testarii</strong>, nu numitor de incidenta. Incadrarea fiecarui caz o valideaza medicul epidemiolog din DSP.')+
+    '</div>'+
+  '</div></div>';
+
+  el.innerHTML=h;
+}
+function _icdRow(label,val){
+  return '<tr><td>'+label+'</td><td style="text-align:right;font-weight:700;width:130px">'+
+    (val===null||val===undefined||val===''?'—':fn(val))+'</td></tr>';
+}
+
+// Tabelul se redeseneaza SINGUR la cautare — nu render() global, ca sa nu se piarda focusul
+// din campul in care userul inca scrie (regula din CLAUDE.md).
+function _icdRedrawTable(){
+  var box=document.getElementById('icd-tbl');if(!box)return;
+  ga('icd_cases').then(function(rows){
+    var all=rows.filter(function(r){return r.kind!=='lab'&&r.year===A.year});
+    box.innerHTML=_icdTableHTML(all);
+  });
+}
+function _icdTableHTML(all){
+  const isEN=CFG.lang==='en';
+  var data=all.filter(function(r){
+    if(_icdFilters.src&&r.source!==_icdFilters.src)return false;
+    if(_icdFilters.cls){
+      var c=icdClassOf(r);
+      if(_icdFilters.cls==='_none'){if(c)return false}
+      else if(c!==_icdFilters.cls)return false;
+    }
+    if(_icdFilters.q){
+      var q=_icdFilters.q.toLowerCase();
+      var f=[r.patient_initials||'',r.notes||'',icdSourceName(r.source),r.reg_number||''];
+      if(!f.some(function(x){return String(x).toLowerCase().indexOf(q)>=0}))return false;
+    }
+    return true;
+  }).sort(function(a,b){return (b.date_onset||'').localeCompare(a.date_onset||'')});
+
+  if(all.length===0){
+    return '<div class="es"><p>'+(isEN?'No ICD case recorded for ':'Niciun caz ICD inregistrat pentru ')+A.year+'.</p>'+
+      '<p style="font-size:12px;color:var(--txtL)">'+(isEN?'The order requires <strong>all</strong> ICD cases, not only the healthcare-associated ones — including those diagnosed in the emergency department, day hospitalisation or an external laboratory.'
+        :'Ordinul cere <strong>toate</strong> cazurile ICD, nu doar cele nosocomiale — inclusiv cele diagnosticate in UPU, in spitalizare de zi sau la un laborator extern.')+'</p>'+
+      '<button class="btn bp" onclick="editICD()">+ '+(isEN?'Add the first case':'Adauga primul caz')+'</button></div>';
+  }
+  if(data.length===0)return '<div class="es"><p>'+(isEN?'No case matches the filters.':'Niciun caz nu corespunde filtrelor.')+'</p></div>';
+
+  var h='<div class="pn"><div class="pb" style="overflow-x:auto"><table class="dt"><thead><tr>'+
+    '<th>#</th><th>'+(isEN?'Onset':'Debut')+'</th><th>'+(isEN?'Patient':'Pacient')+'</th><th>'+(isEN?'Source':'Sursa')+'</th>'+
+    '<th>'+(isEN?'Classification':'Incadrare')+'</th><th>'+(isEN?'Test':'Test')+'</th><th>'+(isEN?'Rec.':'Rec.')+'</th><th>'+(isEN?'Actions':'Actiuni')+'</th></tr></thead><tbody>';
+  data.forEach(function(r,i){
+    var c=icdClassOf(r);
+    var rec=r.is_recurrence||icdIsRecurrence(r);
+    var t=ICD_TESTS.find(function(x){return x.v===r.test_type});
+    h+='<tr><td>'+(i+1)+'</td>'+
+      '<td style="font-size:11px">'+fmtDate(r.date_onset)+'</td>'+
+      '<td><strong>'+esc(r.patient_initials||'—')+'</strong>'+(r.age?'<br><span style="font-size:10px;color:var(--txtL)">'+esc(String(r.age))+(r.sex?' · '+esc(r.sex):'')+'</span>':'')+'</td>'+
+      '<td style="font-size:11px">'+esc(icdSourceName(r.source))+(r.section?'<br><span style="font-size:10px;color:var(--txtL)">'+esc(rSec(r.section))+'</span>':'')+(r.reg_number?'<br><span style="font-size:10px;color:var(--txtL)">'+esc(icdRegLabel(r.source))+': '+esc(r.reg_number)+'</span>':'')+'</td>'+
+      '<td><span class="bdg '+icdClassCls(c)+'">'+(c?esc(icdClassName(c)):(isEN?'not classified':'neincadrat'))+'</span>'+
+        (r.classification_manual?'<br><span style="font-size:9px;color:var(--txtL)">'+(isEN?'set manually':'pus manual')+'</span>':'')+'</td>'+
+      '<td style="font-size:11px">'+(t?esc(_icdL(t)):'—')+'</td>'+
+      '<td>'+(rec?'<span class="bdg bdg-a">'+(isEN?'yes':'da')+'</span>':'—')+'</td>'+
+      '<td class="act"><button onclick="editICD('+_jsArg(r.id)+')" title="'+T('btn_edit')+'">&#9998;</button>'+'<button onclick="genICDCaseWord('+_jsArg(r.id)+')" title="'+(isEN?'Case record (Word)':'Fisa de caz (Word)')+'">&#128196;</button>'+
+        '<button onclick="delRec(\'icd_cases\','+_jsArg(r.id)+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
+  });
+  return h+'</tbody></table></div></div>';
+}
+
+// ═══ DIALOG CAZ ═══
+async function editICD(id){
+  const isEN=CFG.lang==='en';
+  let r=id?(await ga('icd_cases')).find(function(x){return x.id===id}):null;
+  // Fisele IAAM din acelasi an, pentru selectorul de legatura. Doar cele confirmate.
+  const iaamList=(await ga('iaam')).filter(function(x){return x.year===A.year&&x.classification!=='infirmat'});
+  if(!r)r={source:'',onset_place:'',test_type:'',risk:{}};
+  const risk=r.risk||{};
+  const opt=function(arr,sel){return arr.map(function(o){return '<option value="'+o.v+'"'+(sel===o.v?' selected':'')+'>'+esc(_icdL(o))+'</option>'}).join('')};
+
+  openM(id?(isEN?'Edit ICD case':'Editare caz ICD'):(isEN?'New ICD case':'Caz ICD nou'),
+    // Sursa e PRIMUL camp: ea decide daca sectia are sens, nu invers.
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Case source':'Sursa cazului')+' *</label>'+
+      '<select id="f-icd-src" onchange="_icdToggleSection()"><option value="">—</option>'+opt(ICD_SOURCES,r.source)+'</select></div>'+
+      // Numarul de inregistrare isi schimba eticheta dupa sursa (FO / SZ / CPU / buletin).
+      '<div class="fg"><label id="f-icd-reglbl">'+esc(icdRegLabel(r.source))+'</label>'+
+      '<input id="f-icd-reg" value="'+esc(r.reg_number||'')+'"></div></div>'+
+    '<div class="fr"><div class="fg" id="f-icd-secwrap" style="'+(icdHasSection(r.source)?'':'display:none')+'"><label>'+(isEN?'Structure':'Structura')+'</label>'+
+      '<select id="f-icd-sec"><option value="">—</option>'+secOptsGrouped(r.section)+'</select></div>'+
+      '<div class="fg"></div></div>'+
+
+    '<div class="fr3"><div class="fg"><label>'+(isEN?'Initials':'Initiale')+'</label><input id="f-icd-ini" value="'+esc(r.patient_initials||'')+'" placeholder="A.B."></div>'+
+      '<div class="fg"><label>'+(isEN?'Age':'Varsta')+'</label><input type="number" id="f-icd-age" value="'+esc(r.age!=null?String(r.age):'')+'" min="0" max="120"></div>'+
+      '<div class="fg"><label>'+(isEN?'Sex':'Sex')+'</label><select id="f-icd-sex"><option value="">—</option>'+
+        ['M','F'].map(function(s){return '<option value="'+s+'"'+(r.sex===s?' selected':'')+'>'+s+'</option>'}).join('')+'</select></div></div>'+
+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Onset date':'Data debutului')+' *</label><input type="date" id="f-icd-onset" value="'+esc(r.date_onset||'')+'" onchange="_icdPreview()"></div>'+
+      '<div class="fg"><label>'+(isEN?'Onset place':'Locul debutului')+'</label><select id="f-icd-place" onchange="_icdPreview()"><option value="">—</option>'+
+        '<option value="spital"'+(r.onset_place==='spital'?' selected':'')+'>'+(isEN?'In hospital':'In spital')+'</option>'+
+        '<option value="domiciliu"'+(r.onset_place==='domiciliu'?' selected':'')+'>'+(isEN?'At home':'La domiciliu')+'</option></select></div></div>'+
+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Admission date (if onset in hospital)':'Data internarii (daca debutul e in spital)')+'</label><input type="date" id="f-icd-adm" value="'+esc(r.date_admission||'')+'" onchange="_icdPreview()"></div>'+
+      '<div class="fg"><label>'+(isEN?'Last discharge date':'Data ultimei externari')+'</label><input type="date" id="f-icd-disch" value="'+esc(r.date_last_discharge||'')+'" onchange="_icdPreview()"></div></div>'+
+    '<div class="ib inf" style="font-size:11px;margin-bottom:10px">'+
+      (isEN?'The last discharge date is what separates <strong>healthcare-associated</strong> (&lt;4 weeks), <strong>indeterminate</strong> (4–12 weeks) and <strong>community</strong> (&gt;12 weeks). Without it, a case with onset at home is counted as community.'
+           :'Data ultimei externari e cea care separa <strong>nosocomial</strong> (&lt;4 saptamani), <strong>nedeterminat</strong> (4–12 saptamani) si <strong>comunitar</strong> (&gt;12 saptamani). Fara ea, un caz cu debut la domiciliu se considera comunitar.')+'</div>'+
+
+    '<div id="f-icd-preview" style="margin-bottom:10px"></div>'+
+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Confirmation test':'Test de confirmare')+'</label><select id="f-icd-test"><option value="">—</option>'+opt(ICD_TESTS,r.test_type)+'</select></div>'+
+      '<div class="fg"><label>'+(isEN?'End of previous episode (for recurrence)':'Sfarsitul episodului anterior (pentru recidiva)')+'</label><input type="date" id="f-icd-prev" value="'+esc(r.prev_episode_end||'')+'" onchange="_icdPreview()"></div></div>'+
+
+    '<div class="fg"><label>'+(isEN?'Risk factors':'Factori de risc')+'</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px">'+
+      ICD_RISK.map(function(f){return '<label style="display:flex;align-items:center;gap:6px;font-weight:400"><input type="checkbox" id="f-icd-rk-'+f.k+'"'+(risk[f.k]?' checked':'')+'> '+esc(_icdL(f))+'</label>'}).join('')+
+    '</div></div>'+
+
+    '<div class="fr3"><div class="fg"><label>'+(isEN?'Pseudomembranous colitis':'Colita pseudomembranoasa')+'</label><select id="f-icd-colo"><option value="">—</option>'+
+      '<option value="da"'+(r.colonoscopy==='da'?' selected':'')+'>'+(isEN?'yes':'da')+'</option><option value="nu"'+(r.colonoscopy==='nu'?' selected':'')+'>'+(isEN?'no':'nu')+'</option></select></div>'+
+      '<div class="fg"><label>'+(isEN?'Histopathology':'Histopatologie')+'</label><select id="f-icd-histo"><option value="">—</option>'+
+      '<option value="da"'+(r.histopathology==='da'?' selected':'')+'>'+(isEN?'yes':'da')+'</option><option value="nu"'+(r.histopathology==='nu'?' selected':'')+'>'+(isEN?'no':'nu')+'</option></select></div>'+
+      '<div class="fg"><label>'+(isEN?'Complicated ICD':'ICD complicat')+'</label><select id="f-icd-compl"><option value="">—</option>'+
+      '<option value="da"'+(r.complicated==='da'?' selected':'')+'>'+(isEN?'yes':'da')+'</option><option value="nu"'+(r.complicated==='nu'?' selected':'')+'>'+(isEN?'no':'nu')+'</option></select></div></div>'+
+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Override classification (optional)':'Incadrare manuala (optional)')+'</label>'+
+      '<select id="f-icd-manual"><option value="">'+(isEN?'— use the automatic one —':'— foloseste incadrarea automata —')+'</option>'+opt(ICD_CLASS,r.classification_manual)+'</select></div>'+
+      // Selector, nu text liber: o referinta scrisa de mana nu se poate verifica si nu duce nicaieri.
+      // Cu id-ul fisei, cazul nosocomial din registru si fisa IAAM raman legate verificabil.
+      '<div class="fg"><label>'+(isEN?'Linked HAI record (optional)':'Fisa IAAM legata (optional)')+'</label>'+
+      '<select id="f-icd-iaam">'+_icdIaamOptions(iaamList,r.iaam_ref)+'</select></div></div>'+
+
+    '<div class="fg"><label>'+(isEN?'Notes':'Observatii')+'</label><textarea id="f-icd-notes" rows="2">'+esc(r.notes||'')+'</textarea></div>',
+  '<button class="btn bo" onclick="safeCloseM()">'+T('btn_cancel')+'</button><button class="btn bp" onclick="saveICD('+_jsArg(id||null)+')">'+T('btn_save')+'</button>');
+  setTimeout(function(){_icdPreview();attachDirtyTracking()},60);
+}
+// Formularul se muleaza pe sursa: eticheta numarului de inregistrare se schimba (FO / SZ / CPU /
+// buletin), iar selectorul de structura apare doar acolo unde exista una in configurare — sectii,
+// spitalizare de zi si cabinete de ambulatoriu. Pentru CPU/UPU si pentru laboratorul extern nu are
+// ce alege, deci nu-l aratam ca sa nu para un camp neconpletat.
+function _icdToggleSection(){
+  var s=document.getElementById('f-icd-src');if(!s)return;
+  var w=document.getElementById('f-icd-secwrap');
+  if(w)w.style.display=icdHasSection(s.value)?'':'none';
+  var lbl=document.getElementById('f-icd-reglbl');
+  if(lbl)lbl.textContent=icdRegLabel(s.value);
+}
+// Previzualizarea incadrarii, live, ca userul sa vada CE produc datele introduse si sa observe
+// imediat daca ii lipseste data ultimei externari. Doar zona de previzualizare se redeseneaza.
+function _icdPreview(){
+  var box=document.getElementById('f-icd-preview');if(!box)return;
+  var v=function(id){var e=document.getElementById(id);return e?e.value:''};
+  var draft={date_onset:v('f-icd-onset'),onset_place:v('f-icd-place'),
+    date_admission:v('f-icd-adm'),date_last_discharge:v('f-icd-disch'),prev_episode_end:v('f-icd-prev')};
+  var c=icdClassify(draft),rec=icdIsRecurrence(draft);
+  const isEN=CFG.lang==='en';
+  if(!c){
+    box.innerHTML='<div class="ib wrn" style="font-size:12px;margin:0">'+
+      (isEN?'Not classifiable yet — fill in the onset date, the onset place and (for onset in hospital) the admission date.'
+           :'Inca nu se poate incadra — completeaza data debutului, locul debutului si, pentru debut in spital, data internarii.')+'</div>';
+    return;
+  }
+  box.innerHTML='<div class="ib inf" style="font-size:12px;margin:0">'+
+    (isEN?'Automatic classification: ':'Incadrare automata: ')+'<span class="bdg '+icdClassCls(c)+'">'+esc(icdClassName(c))+'</span>'+
+    (rec?' &middot; <span class="bdg bdg-a">'+(isEN?'recurrence':'recidiva')+'</span>':'')+
+    '</div>';
+}
+
+async function saveICD(id){
+  const v=function(s){var e=document.getElementById(s);return e?e.value:''};
+  const src=v('f-icd-src');
+  if(!src){alert(_M('Selecteaza sursa cazului.'));return}
+  const onset=v('f-icd-onset');
+  if(!onset){alert(_M('Completeaza data debutului.'));return}
+  var risk={};ICD_RISK.forEach(function(f){var e=document.getElementById('f-icd-rk-'+f.k);risk[f.k]=!!(e&&e.checked)});
+  // Anul urmeaza DATA DEBUTULUI, nu bara de sus (regula A1-30).
+  const rec={kind:'case',year:yearOfDate(onset),source:src,
+    section:icdHasSection(src)?v('f-icd-sec'):'',reg_number:v('f-icd-reg').trim(),
+    patient_initials:v('f-icd-ini').trim(),age:v('f-icd-age')!==''?+v('f-icd-age'):null,sex:v('f-icd-sex'),
+    date_onset:onset,onset_place:v('f-icd-place'),
+    date_admission:v('f-icd-adm'),date_last_discharge:v('f-icd-disch'),
+    prev_episode_end:v('f-icd-prev'),test_type:v('f-icd-test'),
+    risk:risk,colonoscopy:v('f-icd-colo'),histopathology:v('f-icd-histo'),complicated:v('f-icd-compl'),
+    classification_manual:v('f-icd-manual'),iaam_ref:v('f-icd-iaam'),notes:v('f-icd-notes').trim()};
+  rec.is_recurrence=icdIsRecurrence(rec);
+  if(id){
+    rec.id=id;
+    // Pastram campurile interne ale inregistrarii existente (regula A1-15 / A1-33).
+    var ex=(await gaAll('icd_cases')).find(function(x){return x.id===id});
+    if(ex)Object.keys(ex).forEach(function(k){if(k.charAt(0)==='_'&&!(k in rec))rec[k]=ex[k]});
+  }
+  await pt('icd_cases',rec);
+  logActivity((id?'Editat':'Adaugat')+' caz ICD — '+icdSourceName(rec.source));
+  toastSaved();closeM();render();
+}
+
+// ═══ TOTALURILE DE LABORATOR (probe de scaun) ═══
+async function icdEditLab(){
+  const isEN=CFG.lang==='en';
+  const y=A.year;
+  const r=(await ga('icd_cases')).find(function(x){return x.kind==='lab'&&x.year===y})||{};
+  openM((isEN?'Stool samples tested — ':'Probe de scaun testate — ')+y,
+    '<div class="ib inf" style="font-size:12px">'+
+      (isEN?'Two numbers the laboratory can provide for the whole year. They measure <strong>testing intensity</strong> — a low number of tests with a high positivity rate means under-testing, not a low incidence.'
+           :'Doua numere pe care le poate da laboratorul pentru tot anul. Masoara <strong>intensitatea testarii</strong> — putine teste cu pozitivitate mare inseamna subtestare, nu incidenta mica.')+'</div>'+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Total stool samples tested':'Numar total probe de scaun testate')+'</label>'+
+      '<input type="number" id="f-icdlab-t" min="0" value="'+esc(r.tested!=null?String(r.tested):'')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Positive samples':'Numar probe pozitive')+'</label>'+
+      '<input type="number" id="f-icdlab-p" min="0" value="'+esc(r.positive!=null?String(r.positive):'')+'"></div></div>',
+  '<button class="btn bo" onclick="safeCloseM()">'+T('btn_cancel')+'</button><button class="btn bp" onclick="saveICDLab()">'+T('btn_save')+'</button>');
+  setTimeout(function(){attachDirtyTracking()},60);
+}
+async function saveICDLab(){
+  const y=A.year;
+  const v=function(s){var e=document.getElementById(s);return e?e.value:''};
+  const t=v('f-icdlab-t'),p=v('f-icdlab-p');
+  if(t!==''&&p!==''&&(+p)>(+t)){alert(_M('Probele pozitive nu pot fi mai multe decat cele testate.'));return}
+  // Id determinist pe an: doua calculatoare care completeaza acelasi an scriu aceeasi inregistrare,
+  // deci merge-ul pe _modifiedAt decide, in loc sa creeze doua randuri de laborator pentru un an.
+  const rec={id:'icdlab_'+y,kind:'lab',year:y,tested:t!==''?+t:null,positive:p!==''?+p:null};
+  await pt('icd_cases',rec);
+  toastSaved();closeM();render();
+}
+
+// ═══ RAPORT WORD — FISA UNITATII (Figura 1.3 din ordin) ═══
+async function genICDUnitSheetWord(){
+  showGen(T('gen_se_genereaza'));
+  try{
+    const isEN=CFG.lang==='en';
+    const y=A.year;
+    const f=await icdUnitSheet(y);
+    const cases=(await ga('icd_cases')).filter(function(r){return r.kind!=='lab'&&r.year===y});
+    var children=[];
+    var title=(isEN?'ICD unit sheet — ':'Fisa unitatii ICD — ')+y;
+    children.push(wH1(title));
+    children.push(wP(CFG.hospital_name||'',{size:22,bold:true}));
+    children.push(wSp(120));
+
+    // Tabelul cerut de ordin, in ordinea din Figura 1.3
+    var W=[6200,2800];
+    var randuri=[
+      [isEN?'Number of beds (average)':'Numar paturi (medie)',f.paturi],
+      [isEN?'Number of discharges':'Numar externari',f.externati],
+      [isEN?'Patient-days':'Numar zile pacienti',f.omZile],
+      [isEN?'Healthcare-associated ICD cases':'Numar cazuri ICD nosocomiale',f.nosocomiale],
+      [isEN?'Community-associated ICD cases':'Numar cazuri ICD comunitare',f.comunitare],
+      [isEN?'Indeterminate-origin ICD cases':'Numar cazuri ICD de origine nedeterminata',f.nedeterminate],
+      [isEN?'Recurrent ICD cases':'Numar cazuri ICD recurente',f.recurente],
+      [isEN?'Total stool samples tested':'Numar total probe de scaun testate',f.probeTestate],
+      [isEN?'Positive stool samples':'Numar probe de scaun pozitive',f.probePozitive]
+    ];
+    children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:W,rows:[
+      wTblHead([isEN?'Indicator':'Indicator',isEN?'Value':'Valoare'],W)
+    ].concat(randuri.map(function(x,i){
+      return wTblRow([x[0],(x[1]===null||x[1]===undefined||x[1]==='')?'—':fn(x[1])],W,i%2===1);
+    }))}));
+    children.push(wSp(160));
+
+    // Indicatorii derivati — cu numitor lipsa raportat ca atare, niciodata 0
+    children.push(wH1(isEN?'Derived indicators':'Indicatori derivati'));
+    var W2=[6200,2800];
+    children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:W2,rows:[
+      wTblHead([isEN?'Indicator':'Indicator',isEN?'Value':'Valoare'],W2),
+      wTblRow([isEN?'Healthcare-associated incidence / 10,000 patient-days':'Incidenta nosocomiala / 10.000 zile-pacient',
+        f.incidentaNoso===null?(isEN?'— (no patient-days recorded)':'— (fara om-zile inregistrate)'):indFmt(f.incidentaNoso)],W2),
+      wTblRow([isEN?'Stool test positivity rate':'Rata de pozitivitate a testarii',
+        f.pozitivitate===null?(isEN?'— (lab totals not filled in)':'— (totalurile de laborator necompletate)'):indFmt(f.pozitivitate,' %')],W2,true)
+    ]}));
+    children.push(wSp(120));
+    children.push(wP(isEN
+      ?'The total of tested samples is an indicator of testing intensity, not a denominator for incidence. A small number of tests with a high positivity rate indicates under-testing, not a low incidence.'
+      :'Totalul probelor testate este un indicator de intensitate a testarii, nu numitor de incidenta. Un numar mic de teste cu pozitivitate mare indica subtestare, nu incidenta scazuta.',
+      {size:18,italics:true}));
+
+    if(f.neincadrate>0){
+      children.push(wSp(120));
+      children.push(wP((isEN?'Note: ':'Nota: ')+f.neincadrate+(isEN
+        ?' case(s) could not be classified (missing onset place, admission date or last discharge date). They are included in the total but in none of the categories above.'
+        :' caz(uri) nu au putut fi incadrate (lipseste locul debutului, data internarii sau data ultimei externari). Sunt incluse in total, dar in niciuna dintre rubricile de mai sus.'),
+        {size:18,bold:true}));
+    }
+
+    // Defalcarea pe sursa cazului — arata de unde vin cazurile, inclusiv cele neinternate
+    children.push(wPB());
+    children.push(wH1(isEN?'Breakdown by case source':'Defalcare pe sursa cazului'));
+    var W3=[5000,2000,2000];
+    var perSursa={};
+    cases.forEach(function(r){var k=r.source||'';perSursa[k]=(perSursa[k]||0)+1});
+    var rows3=[wTblHead([isEN?'Source':'Sursa',isEN?'Cases':'Cazuri',isEN?'% of total':'% din total'],W3)];
+    ICD_SOURCES.forEach(function(s,i){
+      var n=perSursa[s.v]||0;
+      rows3.push(wTblRow([_icdL(s),String(n),f.total>0?fp(n,f.total):'—'],W3,i%2===1));
+    });
+    children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:W3,rows:rows3}));
+
+    children.push(wPB());
+    children.push(...wSigBlock());
+
+    var docName=(isEN?'ICD_Unit_Sheet_':'Fisa_Unitatii_ICD_')+y;
+    var doc=makeDoc(children,title,docName);
+    var blob=await docx.Packer.toBlob(doc);
+    saveAs(blob,docName+'.docx');
+    hideGen();
+  }catch(e){
+    hideGen();
+    console.error('ICD Word export error:',e);
+    errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.');
+  }
+}
+
+// Optiunile pentru legatura cu o fisa IAAM: initiale + sectie + data confirmarii, ca sa fie
+// recunoscibila. Daca fisa legata nu mai exista (stearsa intre timp), pastram optiunea cu o
+// eticheta explicita — altfel selectorul ar cadea tacit pe „fara legatura" si legatura s-ar
+// pierde la prima re-salvare, fara ca nimeni sa observe.
+function _icdIaamOptions(list,sel){
+  const isEN=CFG.lang==='en';
+  var h='<option value="">'+(isEN?'— no linked record —':'— fara fisa legata —')+'</option>';
+  var gasit=false;
+  (list||[]).forEach(function(x){
+    if(x.id===sel)gasit=true;
+    var et=[x.patient_initials||'?',rSec(x.section),fmtDate(x.date_confirmed||x.date_reported||'')].filter(Boolean).join(' · ');
+    h+='<option value="'+esc(String(x.id))+'"'+(x.id===sel?' selected':'')+'>'+esc(et)+'</option>';
+  });
+  if(sel&&!gasit){
+    h+='<option value="'+esc(String(sel))+'" selected>'+
+      (isEN?'(linked record no longer exists)':'(fisa legata nu mai exista)')+'</option>';
+  }
+  return h;
+}
+
+// ═══ FISA DE CAZ INDIVIDUALA (Figura 1.2 din ordin) ═══
+// Documentul care insoteste cazul: identificare, incadrare, factori de risc, confirmare.
+// Fara nume, prenume sau CNP — regula GDPR a aplicatiei, confirmata de user la analiza ordinului.
+async function genICDCaseWord(id){
+  showGen(T('gen_se_genereaza'));
+  try{
+    const isEN=CFG.lang==='en';
+    const r=(await ga('icd_cases')).find(function(x){return x.id===id});
+    if(!r){hideGen();alert(_M('Inregistrarea nu mai exista.'));return}
+    const cls=icdClassOf(r);
+    const rec=r.is_recurrence||icdIsRecurrence(r);
+    var children=[];
+    var title=(isEN?'ICD case record — ':'Fisa de caz ICD — ')+(r.patient_initials||'—');
+    children.push(wH1(title));
+    children.push(wP(CFG.hospital_name||'',{size:22,bold:true}));
+    children.push(wSp(120));
+
+    const W=[3600,5400];
+    const rand=function(et,val){return wTblRow([et,(val===null||val===undefined||val==='')?'—':String(val)],W)};
+    const da=function(b){return b?(isEN?'yes':'da'):(isEN?'no':'nu')};
+
+    // 1. Identificare — initiale, varsta, sex. Fara identificatori de pacient.
+    children.push(wH1(isEN?'1. Identification':'1. Identificare',WC.navy));
+    children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:W,rows:[
+      rand(isEN?'Patient initials':'Initiale pacient',r.patient_initials),
+      rand(isEN?'Age':'Varsta',r.age),
+      rand(isEN?'Sex':'Sex',r.sex),
+      rand(isEN?'Case source':'Sursa cazului',icdSourceName(r.source)),
+      rand(icdRegLabel(r.source),r.reg_number),
+      rand(isEN?'Structure':'Structura',r.section?rSec(r.section):'')
+    ]}));
+    children.push(wSp(160));
+
+    // 2. Incadrarea si datele care o produc — ca cititorul sa poata reface rationamentul
+    children.push(wH1(isEN?'2. Classification':'2. Incadrarea cazului',WC.navy));
+    children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:W,rows:[
+      rand(isEN?'Onset date':'Data debutului',fmtDate(r.date_onset)),
+      rand(isEN?'Onset place':'Locul debutului',r.onset_place==='spital'?(isEN?'In hospital':'In spital'):(r.onset_place==='domiciliu'?(isEN?'At home':'La domiciliu'):'')),
+      rand(isEN?'Admission date':'Data internarii',r.date_admission?fmtDate(r.date_admission):''),
+      rand(isEN?'Last discharge date':'Data ultimei externari',r.date_last_discharge?fmtDate(r.date_last_discharge):''),
+      rand(isEN?'Classification':'Incadrare',cls?icdClassName(cls):(isEN?'not classifiable with the available data':'nu se poate incadra cu datele disponibile')),
+      rand(isEN?'Classification set':'Incadrarea a fost',r.classification_manual?(isEN?'manually':'pusa manual'):(cls?(isEN?'computed automatically':'calculata automat'):'—')),
+      rand(isEN?'End of previous episode':'Sfarsitul episodului anterior',r.prev_episode_end?fmtDate(r.prev_episode_end):''),
+      rand(isEN?'Recurrence':'Recidiva',da(rec))
+    ]}));
+    children.push(wSp(80));
+    children.push(wP(isEN
+      ?'The classification is validated by the public health epidemiologist. Rules: healthcare-associated — onset in hospital at 48h or more after admission, or onset within the first 48h in a patient hospitalised in the last 4 weeks, or onset at home less than 4 weeks after discharge; indeterminate — onset at home 4 to 12 weeks after discharge; community — onset at home more than 12 weeks after discharge.'
+      :'Incadrarea se valideaza de catre medicul epidemiolog din DSP. Reguli: nosocomial — debut in spital la 48h sau mai mult de la internare, sau debut in primele 48h la un pacient spitalizat in ultimele 4 saptamani, sau debut la domiciliu la mai putin de 4 saptamani de la externare; nedeterminat — debut la domiciliu la 4-12 saptamani de la externare; comunitar — debut la domiciliu la peste 12 saptamani de la externare.',
+      {size:16,italics:true}));
+    children.push(wSp(160));
+
+    // 3. Confirmarea de laborator
+    children.push(wH1(isEN?'3. Laboratory confirmation':'3. Confirmarea de laborator',WC.navy));
+    var t=ICD_TESTS.find(function(x){return x.v===r.test_type});
+    children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:W,rows:[
+      rand(isEN?'Confirmation test':'Test de confirmare',t?_icdL(t):''),
+      rand(isEN?'Pseudomembranous colitis (colonoscopy)':'Colita pseudomembranoasa (colonoscopie)',r.colonoscopy),
+      rand(isEN?'Histopathology':'Histopatologie',r.histopathology),
+      rand(isEN?'Complicated ICD':'ICD complicat',r.complicated)
+    ]}));
+    children.push(wSp(160));
+
+    // 4. Factorii de risc din Figura 1.2
+    children.push(wH1(isEN?'4. Risk factors':'4. Factori de risc',WC.navy));
+    var risk=r.risk||{};
+    children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:W,
+      rows:ICD_RISK.map(function(f,i){return wTblRow([_icdL(f),da(risk[f.k])],W,i%2===1,!!risk[f.k])})}));
+
+    if(r.notes){
+      children.push(wSp(160));
+      children.push(wH1(isEN?'5. Notes':'5. Observatii',WC.navy));
+      children.push(wP(r.notes,{size:20}));
+    }
+
+    children.push(wPB());
+    children.push(...wSigBlock());
+
+    var docName=(isEN?'ICD_Case_':'Fisa_Caz_ICD_')+
+      String(r.patient_initials||'caz').replace(/[^a-zA-Z0-9]/g,'_')+'_'+(r.date_onset||'');
+    var doc=makeDoc(children,title,docName);
+    var blob=await docx.Packer.toBlob(doc);
+    saveAs(blob,docName+'.docx');
+    hideGen();
+  }catch(e){
+    hideGen();
+    console.error('ICD case Word error:',e);
+    errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.');
+  }
 }
 
 </script>
@@ -22644,6 +23258,18 @@ function rAjutor(el){
     ['Where can I find expiring documents?','On the Dashboard you see a KPI with valid/expired documents. In the Documents module, each has a colored indicator: green >30 days, yellow ≤30 days, red ≤7 days, black expired.'],
     ['Can I use the app offline?','Yes! The app works 100% offline. Data is stored locally in IndexedDB. The only feature that requires internet is the AI analysis (optional).'],
     ['How can I recover data from an earlier version?','Both Google Drive and OneDrive keep an automatic history of the sync JSON file. <strong>Google Drive</strong>: right-click the file → File information → Manage versions (kept for <strong>30 days OR up to 100 versions</strong>). <strong>OneDrive</strong>: right-click → Version history (up to 500 versions Business / 25 Personal). <strong>Tip</strong>: on important versions click the 3 dots → <strong>"Keep forever"</strong> so they are not auto-deleted. To restore: click Download on the version you want, then in the app: Settings → Sync → Open file → choose the downloaded JSON → <strong>Merge data</strong>.']
+  ,
+    ['Why do I see "—" instead of a number for the HAI rate or antibiotic consumption?','It means the DENOMINATOR is missing, not that the value is zero. Rates are computed per patient-days, which are entered monthly in <strong>Hospital Statistics</strong>. Without them there is no rate. The application deliberately writes "—" and not "0", because a false zero in an official report is indistinguishable from real performance.'],
+    ['Where do I enter patient-days and why do they matter so much?','In the <strong>Hospital Statistics</strong> module, monthly: patient-days, discharges, admissions and the average bed count. They are the denominator for the HAI rate, for antibiotic consumption density (DDD/100 patient-days) and for waste indicators. Device-days (urinary catheter, central line, ventilation) are entered there too — without them the CAUTI, CLABSI and VAP objectives cannot be computed.'],
+    ['How do I record an ICD case that was never admitted?','In the <strong>ICD Register</strong>, the first field is the case source: emergency department, day hospitalisation, outpatient clinic or external laboratory. No medical record number or admission date is required. The registration number changes its label with the source. The order requires <strong>all</strong> ICD cases, not only healthcare-associated ones.'],
+    ['Why is an ICD case not classified automatically?','Because the data is not sufficient. Classification needs the onset date, the onset place and — when onset is in hospital — the admission date. For onset at home, the <strong>last discharge date</strong> is what separates healthcare-associated (under 4 weeks) from indeterminate (4-12) and community (over 12). The application prefers to say it cannot classify rather than guess: the classification is validated by the public health epidemiologist. You can always set it manually.'],
+    ['What happens if two colleagues work on the same file at the same time?','The application merges changes automatically, every 30 seconds, comparing each record\'s last-modified timestamp. Two different records added simultaneously on different computers are both kept. If the same record was changed in both places, the later save wins — which is why it is best if each person works on their own modules.'],
+    ['I imported the same file twice. What now?','The application warns you beforehand if records already exist for the period in the file — the import <strong>adds</strong>, it does not replace. If you confirmed anyway and the figures doubled, the cleanest fix is to restore the backup from before the import (Settings > Data & Backup). If you sync through OneDrive or Google Drive, you can also recover an earlier version of the file from the service history.'],
+    ['What happens to records if I delete a ward in Settings?','The records are NOT deleted. Before deleting, the application counts how many records use that ward and asks you explicitly. If you delete anyway, they stay in the database and will show "(deleted from settings)" instead of the name, including in Word reports. In per-ward distribution tables, all deleted items collapse into a single row.'],
+    ['The Annual Report has empty sections. Why?','Each report section relies on its own module. An empty section means there is no data for the selected year in that module — check the year in the top bar. If only the <strong>rates</strong> are missing while raw figures appear, then patient-days are missing from Hospital Statistics. Before generating, the application also warns you if there are incomplete HAI cases, and tells you which ones.'],
+    ['How do I declare an outbreak?','The application flags possible outbreaks on its own: at least 3 cases with the same organism, in the same ward, less than 30 days apart. From the alert, <strong>Declare outbreak</strong> carries over the organism, ward, period and cases. You can also declare manually with <strong>New outbreak</strong>. The 3-case threshold is required by the new order and can be changed in Settings.'],
+    ['I imported a wrong isolate from the laboratory. How do I fix it?','The Antibiogram module is import and viewing only — there is no per-isolate editing. Correct it in the file received from the laboratory and import again. The reason is traceability: the data must match what the laboratory reported.'],
+    ['The application starts slowly. Can anything be done?','At startup the application loads a few external libraries (for Word documents, Excel and charts). The first time you open it after an update they are downloaded again, so startup takes longer than usual. Subsequent starts are faster because everything is already cached. If the application is installed as a desktop app (PWA), closing and reopening the window does not clear anything.']
   ]:[
     ['Cum adaug o sectie noua?','Mergi la Configurare > Sectii > Click "Adauga sectie". Completeaza numele si numarul de paturi.'],
     ['Cum generez un raport Word?','Mergi la Generare Rapoarte, alege tipul de raport dorit si click pe butonul de generare. Documentul se descarca automat.'],
@@ -22658,6 +23284,18 @@ function rAjutor(el){
     ['Unde gasesc documentele care expira?','Pe Dashboard vezi un KPI cu documentele valabile/expirate. In modulul Documente, fiecare are indicator colorat: verde >30 zile, galben ≤30 zile, rosu ≤7 zile, negru expirat.'],
     ['Pot folosi aplicatia offline?','Da! Aplicatia functioneaza 100% offline. Datele sunt stocate local in IndexedDB. Singura functionalitate care necesita internet este analiza AI (optionala).'],
     ['Cum recuperez datele dintr-o versiune anterioara?','Atat Google Drive cat si OneDrive pastreaza automat istoricul fisierului de sincronizare JSON. <strong>Google Drive</strong>: click dreapta pe fisier → Informatii despre fisier → Gestioneaza versiunile (pastrate <strong>30 zile SAU max 100 versiuni</strong>). <strong>OneDrive</strong>: click dreapta → Istoric versiuni (pana la 500 versiuni Business / 25 Personal). <strong>Recomandare</strong>: la versiunile importante (ex: sfarsit de luna / trimestru / an) da click pe cele 3 puncte langa versiune si alege <strong>„Pastreaza definitiv"</strong> ca sa nu fie sterse automat. Pentru recuperare: click Descarca pe versiunea dorita, apoi in aplicatie: Configurare → Sincronizare → Deschide fisier → alege JSON-ul descarcat → <strong>Combina datele</strong>.']
+  ,
+    ['De ce imi apare „—" in loc de o cifra la rata IAAM sau la consumul de antibiotice?','Inseamna ca lipseste NUMITORUL, nu ca valoarea e zero. Ratele se calculeaza la om-zile de spitalizare, iar acestea se introduc in <strong>Statistici Spital</strong>, lunar. Fara ele nu exista rata. Aplicatia scrie intentionat „—" si nu „0", pentru ca un zero fals intr-un raport oficial nu se distinge de o performanta reala.'],
+    ['Unde introduc om-zilele si de ce conteaza atat?','In modulul <strong>Statistici Spital</strong>, lunar: om-zile, externati, internati si numarul mediu de paturi. Sunt numitorul pentru rata IAAM, pentru densitatea consumului de antibiotice (DDD/100 zile-pacient) si pentru indicatorii de deseuri. Tot acolo se introduc si zilele-dispozitiv (sonda urinara, cateter venos central, ventilatie), fara de care obiectivele CAUTI, CLABSI si VAP nu se pot calcula.'],
+    ['Cum inregistrez un caz ICD care nu a fost internat?','In <strong>Registrul ICD</strong>, primul camp este sursa cazului: UPU/CPU, spitalizare de zi, ambulatoriu sau laborator extern. Nu se cere foaie de observatie si nici data internarii. Numarul de inregistrare isi schimba eticheta dupa sursa — nr. SZ pentru spitalizarea de zi, nr. CPU pentru urgenta, nr. buletin pentru laborator. Ordinul cere <strong>toate</strong> cazurile ICD, nu doar cele nosocomiale.'],
+    ['De ce nu se incadreaza automat un caz ICD?','Pentru ca datele nu ajung. Incadrarea are nevoie de data debutului, locul debutului si — cand debutul e in spital — data internarii. Pentru un debut la domiciliu, <strong>data ultimei externari</strong> este cea care separa nosocomial (sub 4 saptamani) de nedeterminat (4-12) si de comunitar (peste 12). Aplicatia prefera sa spuna ca nu poate incadra decat sa ghiceasca: incadrarea o valideaza medicul epidemiolog din DSP. Poti oricand sa o pui manual.'],
+    ['Ce se intampla daca doua colege lucreaza in acelasi timp pe acelasi fisier?','Aplicatia combina automat modificarile, la fiecare 30 de secunde, comparand ora ultimei modificari a fiecarei inregistrari. Doua inregistrari diferite, adaugate simultan pe calculatoare diferite, se pastreaza amandoua. Daca aceeasi inregistrare a fost modificata in ambele locuri, castiga cea salvata mai tarziu — de aceea e bine ca fiecare sa lucreze pe modulele ei.'],
+    ['Am importat acelasi fisier de doua ori. Ce fac?','Aplicatia te avertizeaza inainte, daca exista deja inregistrari pe perioada din fisier — importul <strong>adauga</strong>, nu inlocuieste. Daca ai confirmat oricum si cifrele s-au dublat, cea mai curata solutie e sa restaurezi backupul dinainte de import (Configurare > Date & Backup). Daca sincronizezi prin OneDrive sau Google Drive, poti recupera si o versiune anterioara a fisierului direct din istoricul serviciului.'],
+    ['Ce se intampla cu inregistrarile daca sterg o sectie din Configurare?','Inregistrarile NU se sterg. Inainte de stergere, aplicatia numara cate inregistrari folosesc sectia si te intreaba explicit. Daca stergi oricum, ele raman in baza si vor afisa „(sters din configurare)" in locul denumirii, inclusiv in rapoartele Word. In tabelele de distributie pe sectii, toate elementele sterse se aduna intr-un singur rand.'],
+    ['Raportul Anual iese cu sectiuni goale. De ce?','Fiecare sectiune a raportului se bazeaza pe modulul ei. O sectiune goala inseamna ca nu exista date pe anul selectat in modulul respectiv — verifica anul din bara de sus. Daca lipsesc doar <strong>ratele</strong>, dar cifrele brute apar, atunci lipsesc om-zilele din Statistici Spital. Inainte de generare, aplicatia te avertizeaza si daca exista cazuri IAAM incomplete, si iti spune care sunt.'],
+    ['Cum declar un focar?','Aplicatia semnaleaza singura posibilele focare: cel putin 3 cazuri cu acelasi germen, in aceeasi sectie, la mai putin de 30 de zile unul de altul. Din alerta, butonul <strong>Declara focar</strong> preia automat germenul, sectia, perioada si cazurile. Poti declara si manual, cu <strong>Focar nou</strong>. Pragul de 3 cazuri e cerut de noul ordin si se poate modifica din Configurare.'],
+    ['Am importat un izolat gresit din laborator. Cum il corectez?','Modulul Antibiograma este doar import si vizualizare — nu are editare pe izolat. Corectia se face in fisierul primit de la laborator si se reimporta. Motivul e trasabilitatea: datele trebuie sa corespunda cu ce a raportat laboratorul.'],
+    ['Aplicatia porneste greu. Se poate face ceva?','Aplicatia incarca la pornire cateva biblioteci externe (pentru documente Word, Excel si grafice). La prima deschidere dupa o actualizare, ele se descarca din nou, deci pornirea dureaza mai mult decat de obicei. Urmatoarele porniri sunt mai rapide, pentru ca totul e deja in memoria browserului. Daca aplicatia e instalata ca aplicatie desktop (PWA), inchiderea si redeschiderea ferestrei nu sterge nimic.']
   ];
   const shortcuts=isEN?[
     ['Quick backup','Button "Save Backup" in sidebar'],
@@ -22721,6 +23359,10 @@ function rAjutor(el){
 
   el.innerHTML='<div class="print-header"></div>'+ghidSync+
     '<div class="pn"><div class="ph"><h3>'+(isEN?'Help / Frequently Asked Questions':'Ajutor / Intrebari Frecvente')+'</h3></div><div class="pb">'+
+    // A4 - filtru live peste intrebari. Cu 24 de intrari, lista plata devine greu de parcurs.
+    // Filtreaza DOM-ul direct, nu prin render(), ca sa nu se piarda focusul din campul de cautare.
+    '<input id="faq-q" type="text" placeholder="'+(isEN?'Search the questions...':'Cauta in intrebari...')+'" oninput="_faqFilter(this.value)" style="width:100%;padding:8px 12px;border:1px solid var(--brd);border-radius:8px;font-size:13px;font-family:var(--f);margin-bottom:14px">'+
+    '<div id="faq-none" style="display:none;padding:14px;color:var(--txtL);font-size:13px">'+(isEN?'No question matches.':'Nicio intrebare nu corespunde.')+'</div>'+
     faq.map(([q,a])=>'<details style="margin-bottom:10px;border-bottom:1px solid var(--brd);padding-bottom:10px"><summary style="cursor:pointer;font-weight:600;font-size:13px;color:var(--navy);padding:4px 0">'+q+'</summary><p style="font-size:12.5px;color:var(--txt);line-height:1.6;margin-top:6px;padding-left:12px">'+a+'</p></details>').join('')+
     '</div></div>'+
     '<div class="pn" style="margin-top:14px"><div class="ph"><h3>'+(isEN?'Useful Shortcuts':'Scurtaturi utile')+'</h3></div><div class="pb">'+
@@ -22911,15 +23553,22 @@ function rManual(el){
     ['General Interface','Sidebar, toolbar, navigation, dark mode, language'],
     ['Dashboard','Quick actions, KPIs, charts, mini-calendar, notifications'],
     ['IAAM / Epidemiological Investigations','Case list, 10-section wizard, Word reports'],
+    ['Outbreaks','Automatic cluster detection, epidemic curve, action plan'],
+    ['ICD Register','Clostridioides difficile — all cases, automatic classification'],
+    ['Hospital Statistics','Patient-days, discharges, beds — the denominator of every rate'],
     ['Microbiological Quality Control','Coverage matrix, planning, sample management'],
     ['Medical Waste','Monthly data entry by waste codes, auto-totals'],
     ['Biocide Management','Products with attachments, monthly entries/exits'],
     ['PPS / Antibiotics','Prescription recording, HelicsWin import'],
+    ['Antibiotic Consumption','DDD, AWaRe classification, restricted antibiotic approvals'],
+    ['Local Antibiogram','Laboratory import, resistance profile, WHONET export'],
     ['Documents / Authorizations','Categories, expiry alerts, attachments'],
     ['Calendar & Reporting Deadlines','Monthly/yearly calendar, recurring deadlines'],
     ['Audits','Hand hygiene, cleaning, isolation, custom checklists'],
+    ['SMART IPC Objectives','20 standard objectives, automatic computation, follow-up'],
     ['Staff Training','Training sessions with participants, Word reports'],
     ['Report Generation','Annual, quarterly, analysis, epidemiological investigation'],
+    ['Multi-Year Analysis','Year-over-year comparison, trends, export'],
     ['System Settings','Hospital, data entry, backup, AI configuration'],
     ['Synchronization & Backup','3 states, live file vs manual backup, updates']
   ]:[
@@ -22928,15 +23577,22 @@ function rManual(el){
     ['Interfata Generala','Sidebar, toolbar, navigare, mod noapte, limba'],
     ['Dashboard','Actiuni rapide, KPI-uri, grafice, mini-calendar, notificari'],
     ['IAAM / Anchete Epidemiologice','Lista cazuri, wizard 10 sectiuni, rapoarte Word'],
+    ['Focare Epidemice','Detectie automata clustere, curba epidemica, plan de masuri'],
+    ['Registrul ICD','Clostridioides difficile — toate cazurile, incadrare automata'],
+    ['Statistici Spital','Om-zile, externati, paturi — numitorul tuturor ratelor'],
     ['Autocontrol Microbiologic','Matrice acoperire, planificare, gestiune probe'],
     ['Deseuri Medicale','Introducere lunara pe coduri, totaluri automate'],
     ['Gestiune Biocide','Produse cu atasamente, intrari/iesiri lunare'],
     ['PPS / Antibiotice','Inregistrare prescriptii, import HelicsWin'],
+    ['Consum Antibiotice','DDD, clasificare AWaRe, avizarea antibioticelor restrictionate'],
+    ['Antibiograma Locala','Import din laborator, profil de rezistenta, export WHONET'],
     ['Documente / Autorizatii','Categorii, alerte expirare, atasamente'],
     ['Calendar si Termene Raportare','Calendar lunar/anual, termene recurente'],
     ['Audituri','Igiena mainilor, curatenie, izolare, checklist-uri custom'],
+    ['Obiective SMART IPC','20 de obiective standard, calcul automat, urmarire'],
     ['Instruire Personal','Sesiuni cu participanti, rapoarte Word'],
     ['Generare Rapoarte','Raport anual, trimestrial, analize, ancheta epidemiologica'],
+    ['Analiza Multi-An','Comparatie intre ani, tendinte, export'],
     ['Configurare Sistem','Spital, introducere date, backup, AI'],
     ['Sincronizare si Backup','Cele 3 stari, fisier live vs backup manual, update-uri']
   ];
@@ -23196,9 +23852,39 @@ function rManual(el){
   }
   h+=goBtn('iaam',E?'IAAM / Investigations':'IAAM / Anchete')+topBtn+'</div></div>';
 
-  // ── SECTION 5: Autocontrol ──
+  // ── SECTION 5: focare ──
   h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s5">'+
-    '<h3><span class="sec-num">6</span> '+(E?'Microbiological Quality Control':'Autocontrol Microbiologic')+'</h3>';
+    '<h3><span class="sec-num">6</span> '+(E?'Outbreaks':'Focare Epidemice')+'</h3>';
+  if(E){
+    h+="<p>Register of epidemic outbreaks: declaration, follow-up, action plan and report to the public health authority.</p><h4>Automatic cluster detection</h4><p>The application scans HAI cases on its own and flags <strong>possible undeclared outbreaks</strong>: at least 3 cases with the <strong>same organism, in the same ward</strong>, occurring less than 30 days apart. The 3-case threshold is required by the new order and can be changed in Settings.</p><div class=\"man-tip\"><strong>Why the ward matters too:</strong> two cases with the same organism in unrelated wards are not an outbreak. Grouping by pathogen alone produced false alarms.</div><h4>Declaring an outbreak</h4><ul><li>From the cluster alert: <strong>Declare outbreak</strong> carries over the organism, ward, period and cases</li><li>Manually: <strong>New outbreak</strong></li><li>Status: suspicion, confirmed active, under control, closed</li></ul><h4>Epidemic curve and action plan</h4><p>Attached cases automatically produce the epidemic curve. The action plan is filled in row by row, with a responsible person and a deadline for each action.</p><div class=\"man-tip\"><strong>Key indicator:</strong> \"Days since last case\" — over 14 days means two incubation periods with no new case, the argument for closing the outbreak.</div>";
+  } else {
+    h+="<p>Registrul focarelor epidemice: declarare, urmarire, plan de masuri si raport catre DSP.</p><h4>Detectia automata a clusterelor</h4><p>Aplicatia scaneaza singura cazurile IAAM si semnaleaza <strong>posibile focare nedeclarate</strong>: cel putin 3 cazuri cu <strong>acelasi germen, in aceeasi sectie</strong>, aparute la mai putin de 30 de zile unul de altul. Pragul de 3 cazuri e cerut de noul ordin si se poate schimba din Configurare.</p><div class=\"man-tip\"><strong>De ce si sectia, nu doar germenul:</strong> doua cazuri cu acelasi germen in sectii fara legatura intre ele nu sunt un focar. Gruparea doar pe patogen producea alarme false.</div><h4>Declararea unui focar</h4><ul><li>Din alerta de cluster: butonul <strong>Declara focar</strong> preia automat germenul, sectia, perioada si cazurile</li><li>Manual: butonul <strong>Focar nou</strong></li><li>Status: suspiciune, confirmat activ, sub control, inchis</li></ul><h4>Curba epidemica si planul de masuri</h4><p>Cazurile atasate produc automat curba epidemica. Planul de masuri se completeaza pe rand, cu responsabil si termen pentru fiecare actiune.</p><div class=\"man-tip\"><strong>Indicator urmarit:</strong> „Zile de la ultimul caz\" — peste 14 zile inseamna doua perioade de incubatie fara caz nou, argumentul cu care se inchide focarul.</div>";
+  }
+  h+=goBtn('focare',E?'Outbreaks':'Focare')+topBtn+'</div></div>';
+
+// ── SECTION 6: icd ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s6">'+
+    '<h3><span class="sec-num">7</span> '+(E?'ICD Register':'Registrul ICD')+'</h3>';
+  if(E){
+    h+="<p>Register of <strong>Clostridioides difficile</strong> infection cases, required by the new order.</p><div class=\"man-tip\"><strong>Note — not only healthcare-associated cases.</strong> The order requires <strong>all</strong> ICD cases. Many present in the emergency department, in day hospitalisation, or come from an external laboratory, so the patient was never admitted.</div><h4>Case source — the first field</h4><p>The source drives the rest of the form. The registration number changes its label accordingly:</p><ul><li><strong>Inpatient ward</strong> &rarr; medical record no. (FO)</li><li><strong>Day hospitalisation</strong> &rarr; day-hospitalisation register no.</li><li><strong>Emergency department</strong> &rarr; emergency register no.</li><li><strong>Outpatient clinic</strong> &rarr; consultation register no.</li><li><strong>External laboratory</strong> &rarr; lab report no.</li></ul><h4>Classification is computed automatically</h4><p>From the onset date, the onset place and the last discharge date:</p><ul><li><strong>Healthcare-associated</strong> — onset in hospital 48h or more after admission; or onset within the first 48h in a patient hospitalised in the last 4 weeks; or onset at home less than 4 weeks after discharge</li><li><strong>Indeterminate</strong> — onset at home 4-12 weeks after discharge</li><li><strong>Community</strong> — onset at home more than 12 weeks after discharge</li><li><strong>Recurrence</strong> — positive test 2-8 weeks after the previous episode (counted separately)</li></ul><div class=\"man-tip\"><strong>The last discharge date is what decides.</strong> Without it, a case with onset at home counts as community. The classification is shown live as you fill in the form.</div><div class=\"man-tip\"><strong>When the data is not enough, the application says so — it does not guess.</strong> The classification is validated by the public health epidemiologist, and an automatically applied wrong label would reach the report as if it had been checked. You can always set it manually.</div><h4>Stool samples and the unit sheet</h4><p>The <strong>Stool samples tested</strong> button stores two numbers per year, provided by the laboratory: total tested and positive. They are an indicator of <strong>testing intensity</strong> — few tests with a high positivity rate means under-testing, not low incidence.</p><p><strong>Unit sheet (Word)</strong> generates the table required by the order. Beds, discharges and patient-days come from Hospital Statistics.</p><p>Each case also has an <strong>individual case record</strong> in Word, with the classification rules written into the document so the recipient can retrace the reasoning.</p>";
+  } else {
+    h+="<p>Registrul cazurilor de infectie cu <strong>Clostridioides difficile</strong>, cerut de noul ordin.</p><div class=\"man-tip\"><strong>Atentie — nu doar cazurile nosocomiale.</strong> Ordinul cere <strong>toate</strong> cazurile ICD. Multe se prezinta in UPU/CPU, in spitalizare de zi sau vin de la un laborator extern, deci pacientul nu a fost internat.</div><h4>Sursa cazului — primul camp</h4><p>Sursa comanda restul formularului. Numarul de inregistrare isi schimba eticheta dupa ea:</p><ul><li><strong>Sectie cu paturi</strong> &rarr; nr. foaie de observatie (FO)</li><li><strong>Spitalizare de zi</strong> &rarr; nr. inregistrare SZ</li><li><strong>UPU / CPU</strong> &rarr; nr. inregistrare CPU/UPU</li><li><strong>Ambulatoriu</strong> &rarr; nr. registru de consultatii</li><li><strong>Laborator extern</strong> &rarr; nr. buletin de analiza</li></ul><h4>Incadrarea se calculeaza singura</h4><p>Din data debutului, locul debutului si data ultimei externari:</p><ul><li><strong>Nosocomial</strong> — debut in spital la 48h sau mai mult de la internare; sau debut in primele 48h la un pacient spitalizat in ultimele 4 saptamani; sau debut la domiciliu la mai putin de 4 saptamani de la externare</li><li><strong>Nedeterminat</strong> — debut la domiciliu la 4-12 saptamani de la externare</li><li><strong>Comunitar</strong> — debut la domiciliu la peste 12 saptamani de la externare</li><li><strong>Recidiva</strong> — test pozitiv la 2-8 saptamani dupa episodul anterior (se numara separat)</li></ul><div class=\"man-tip\"><strong>Data ultimei externari e cea care decide.</strong> Fara ea, un caz cu debut la domiciliu se considera comunitar. Incadrarea se vede in timp real, in timp ce completezi.</div><div class=\"man-tip\"><strong>Cand datele nu ajung, aplicatia spune ca nu se poate incadra — nu ghiceste.</strong> Incadrarea o valideaza medicul epidemiolog din DSP, iar o eticheta pusa automat gresit ar ajunge in raport ca si cum ar fi verificata. Poti oricand sa o pui manual.</div><h4>Probele de scaun si fisa unitatii</h4><p>Butonul <strong>Probe de scaun testate</strong> retine doua numere pe an, date de laborator: total testate si pozitive. Sunt indicator de <strong>intensitate a testarii</strong> — putine teste cu pozitivitate mare inseamna subtestare, nu incidenta mica.</p><p><strong>Fisa unitatii (Word)</strong> genereaza tabelul cerut de ordin. Paturile, externarile si zilele-pacient vin din Statistici Spital.</p><p>Fiecare caz are si <strong>fisa de caz individuala</strong> in Word, cu regulile de incadrare scrise in document, ca destinatarul sa poata reface rationamentul.</p>";
+  }
+  h+=goBtn('icd',E?'ICD Register':'Registrul ICD')+topBtn+'</div></div>';
+
+// ── SECTION 7: statistici ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s7">'+
+    '<h3><span class="sec-num">8</span> '+(E?'Hospital Statistics':'Statistici Spital')+'</h3>';
+  if(E){
+    h+="<div class=\"man-tip\"><strong>Read this even if you skip the rest.</strong> This is where <strong>patient-days</strong> are entered. Without them, the HAI rate, antibiotic consumption density and waste indicators cannot be computed and appear everywhere as <strong>\"—\"</strong>, both in the application and in the Annual Report.</div><h4>What to enter</h4><p>Monthly, for the whole hospital: <strong>patient-days</strong>, <strong>discharges</strong>, <strong>admissions</strong> and the <strong>average number of beds</strong>. The data comes from the hospital's statistics department.</p><h4>Device-days</h4><p>Also monthly, for device-associated rates: urinary catheter days, central venous catheter days, mechanical ventilation days. They are the denominator for CAUTI, CLABSI and VAP in SMART Objectives.</p><h4>Outpatient and per-ward detail</h4><p>Separate sections for total outpatient consultations and for the per-ward breakdown, where the hospital has it available.</p><div class=\"man-tip\"><strong>The indicators at the top recalculate themselves</strong> on every change. If an indicator shows \"—\", it means the denominator is missing, not that the value is zero — the distinction matters in an official report.</div>";
+  } else {
+    h+="<div class=\"man-tip\"><strong>Citeste asta chiar daca sari peste restul.</strong> Aici se introduc <strong>om-zilele</strong>. Fara ele, rata IAAM, densitatea consumului de antibiotice si indicatorii de deseuri nu se pot calcula si apar peste tot ca <strong>„—\"</strong>, in aplicatie si in Raportul Anual.</div><h4>Ce se introduce</h4><p>Lunar, pentru tot spitalul: <strong>om-zile de spitalizare</strong>, <strong>pacienti externati</strong>, <strong>pacienti internati</strong> si <strong>numarul mediu de paturi</strong>. Datele vin de la serviciul de statistica al spitalului.</p><h4>Zile-dispozitiv</h4><p>Tot lunar, pentru ratele asociate dispozitivelor: zile de sonda urinara, zile de cateter venos central, zile de ventilatie mecanica. Sunt numitorul pentru CAUTI, CLABSI si VAP din Obiective SMART.</p><h4>Ambulatoriu si detalii pe sectie</h4><p>Sectiuni separate pentru totalul consultatiilor de ambulatoriu si pentru defalcarea pe sectii, acolo unde spitalul o are disponibila.</p><div class=\"man-tip\"><strong>Indicatorii de sus se recalculeaza singuri</strong> la fiecare modificare. Daca un indicator arata „—\", inseamna ca ii lipseste numitorul, nu ca valoarea e zero — distinctia conteaza intr-un raport oficial.</div>";
+  }
+  h+=goBtn('statistici',E?'Hospital Statistics':'Statistici Spital')+topBtn+'</div></div>';
+
+// ── SECTION 8: Autocontrol ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s8">'+
+    '<h3><span class="sec-num">9</span> '+(E?'Microbiological Quality Control':'Autocontrol Microbiologic')+'</h3>';
   if(E){
     h+='<p>The Quality Control module manages microbiological sampling with three specialized tabs and period filtering.</p>'+
     '<h4>Period Filter</h4>'+
@@ -23252,9 +23938,9 @@ function rManual(el){
   }
   h+=goBtn('autocontrol',E?'Quality Control':'Autocontrol')+topBtn+'</div></div>';
 
-  // ── SECTION 6: Waste ──
-  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s6">'+
-    '<h3><span class="sec-num">7</span> '+(E?'Medical Waste':'Deseuri Medicale')+'</h3>';
+  // ── SECTION 9: Waste ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s9">'+
+    '<h3><span class="sec-num">10</span> '+(E?'Medical Waste':'Deseuri Medicale')+'</h3>';
   if(E){
     h+='<p>Monthly tracking of medical waste by waste code (per Romanian waste legislation).</p>'+
     '<h4>Data Entry</h4>'+
@@ -23278,9 +23964,9 @@ function rManual(el){
   }
   h+=goBtn('deseuri',E?'Medical Waste':'Deseuri Medicale')+topBtn+'</div></div>';
 
-  // ── SECTION 7: Biocide ──
-  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s7">'+
-    '<h3><span class="sec-num">8</span> '+(E?'Biocide Management':'Gestiune Biocide')+'</h3>';
+  // ── SECTION 10: Biocide ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s10">'+
+    '<h3><span class="sec-num">11</span> '+(E?'Biocide Management':'Gestiune Biocide')+'</h3>';
   if(E){
     h+='<p>Manage biocide products used in the hospital, including regulatory attachments and monthly usage tracking.</p>'+
     '<h4>Product List</h4>'+
@@ -23316,9 +24002,9 @@ function rManual(el){
   }
   h+=goBtn('biocide',E?'Biocide Management':'Gestiune Biocide')+topBtn+'</div></div>';
 
-  // ── SECTION 8: PPS ──
-  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s8">'+
-    '<h3><span class="sec-num">9</span> '+(E?'PPS / Antibiotics':'PPS / Antibiotice')+'</h3>';
+  // ── SECTION 11: PPS ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s11">'+
+    '<h3><span class="sec-num">12</span> '+(E?'PPS / Antibiotics':'PPS / Antibiotice')+'</h3>';
   if(E){
     h+='<p>The PPS module records Point Prevalence Survey (antimicrobial use) data.</p>'+
     '<h4>Data Entry</h4>'+
@@ -23346,9 +24032,29 @@ function rManual(el){
   }
   h+=goBtn('pps','PPS / '+(E?'Antibiotics':'Antibiotice'))+topBtn+'</div></div>';
 
-  // ── SECTION 9: Documents ──
-  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s9">'+
-    '<h3><span class="sec-num">10</span> '+(E?'Documents / Authorizations':'Documente / Autorizatii')+'</h3>';
+  // ── SECTION 12: consum_atb ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s12">'+
+    '<h3><span class="sec-num">13</span> '+(E?'Antibiotic Consumption':'Consum Antibiotice')+'</h3>';
+  if(E){
+    h+="<p>Antibiotic consumption in DDD (defined daily dose) and the WHO AWaRe classification.</p><h4>Entering consumption</h4><p>Per month and ward: the antibiotic (with ATC code), the quantity in <strong>grams</strong> and the route of administration. Optionally, the prescribing physician.</p><div class=\"man-tip\"><strong>DDD and the AWaRe class are not entered — they are computed</strong> from the ATC code and the quantity in grams. Enter only the grams.</div><h4>Import from a file</h4><p>The import button recognises the structure of the pharmacy file on its own. If records already exist for the months in the file, the application warns you first — the import <strong>adds</strong>, it does not replace, so a file imported twice would double the quantities.</p><h4>Consumption density</h4><p>DDD per 100 patient-days, with the denominator from Hospital Statistics. Without patient-days entered, the indicator shows \"—\".</p><h4>Restricted antibiotic approvals</h4><p>A separate panel for the record of approvals. The list of antibiotics requiring approval is a <strong>hospital decision</strong> and is configured in Settings; the application does not assume it. There is a button that loads the WHO suggestion (Reserve group plus carbapenems) if you want a starting point.</p>";
+  } else {
+    h+="<p>Consumul de antibiotice in DDD (doza zilnica definita) si clasificarea AWaRe a OMS.</p><h4>Introducerea consumului</h4><p>Pe luna si sectie: antibioticul (cu cod ATC), cantitatea in <strong>grame</strong> si calea de administrare. Optional, medicul curant.</p><div class=\"man-tip\"><strong>DDD si clasa AWaRe nu se introduc — se calculeaza</strong> din codul ATC si cantitatea in grame. Introdu doar gramele.</div><h4>Import din fisier</h4><p>Butonul de import recunoaste singur structura fisierului de la farmacie. Daca exista deja inregistrari pe lunile din fisier, aplicatia te avertizeaza inainte — importul <strong>adauga</strong>, nu inlocuieste, deci un fisier importat de doua ori ar dubla cantitatile.</p><h4>Densitatea consumului</h4><p>DDD la 100 de zile-pacient, cu numitorul din Statistici Spital. Fara om-zile introduse, indicatorul apare ca „—\".</p><h4>Avizarea antibioticelor cu regim restrictionat</h4><p>Panou separat pentru evidenta avizarilor. Lista antibioticelor care necesita avizare e o <strong>decizie a spitalului</strong> si se configureaza din Configurare; aplicatia nu o presupune. Exista un buton care incarca sugestia OMS (grupa Reserve plus carbapeneme), daca vrei sa pornesti de la ea.</p>";
+  }
+  h+=goBtn('consum_atb',E?'Antibiotic Consumption':'Consum Antibiotice')+topBtn+'</div></div>';
+
+// ── SECTION 13: antibiograma ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s13">'+
+    '<h3><span class="sec-num">14</span> '+(E?'Local Antibiogram':'Antibiograma Locala')+'</h3>';
+  if(E){
+    h+="<p>The local antimicrobial resistance profile, built from isolates imported from the laboratory.</p><h4>Laboratory import</h4><p>Accepts XLS, HTML or CSV files exported from the laboratory system. During import you choose which column means what.</p><div class=\"man-tip\"><strong>If a required column is not recognised, the import stops and asks you to pick it.</strong> It does not continue on a guess — otherwise it would report \"480 isolates imported\" and leave the matrix empty.</div><h4>Susceptibility matrix</h4><p>Organisms in rows, antibiotics in columns, the susceptibility percentage in the cells. Filters by year, ward, sample type and source (laboratory or HAI cases).</p><div class=\"man-tip\"><strong>First isolate per patient:</strong> a filtering option recommended for the resistance profile, so a repeatedly tested patient is not counted several times.</div><h4>Export</h4><p>Word for the internal report and WHONET format for reporting to the national network.</p><div class=\"man-tip\"><strong>The module is import and viewing only.</strong> A wrong isolate cannot be corrected from the application — correct it in the laboratory file and import again.</div>";
+  } else {
+    h+="<p>Profilul local de rezistenta antimicrobiana, construit din izolatele importate de la laborator.</p><h4>Importul din laborator</h4><p>Accepta fisiere XLS, HTML sau CSV exportate din sistemul laboratorului. La import alegi ce coloana inseamna ce.</p><div class=\"man-tip\"><strong>Daca o coloana obligatorie nu e recunoscuta, importul se opreste si iti cere sa o alegi.</strong> Nu continua pe ghicite — altfel ar raporta „480 izolate importate\" si matricea ar ramane goala.</div><h4>Matricea de sensibilitate</h4><p>Germeni pe randuri, antibiotice pe coloane, procentul de sensibilitate in celule. Filtre pe an, sectie, tip de proba si sursa (laborator sau cazuri IAAM).</p><div class=\"man-tip\"><strong>Primul izolat per pacient:</strong> optiune de filtrare recomandata pentru profilul de rezistenta, ca sa nu numeri de mai multe ori acelasi pacient testat repetat.</div><h4>Export</h4><p>Word pentru raportul intern si format WHONET pentru raportarea catre reteaua nationala.</p><div class=\"man-tip\"><strong>Modulul e doar import si vizualizare.</strong> Un izolat gresit nu se poate corecta din aplicatie — se corecteaza in fisierul de la laborator si se reimporta.</div>";
+  }
+  h+=goBtn('antibiograma',E?'Local Antibiogram':'Antibiograma Locala')+topBtn+'</div></div>';
+
+// ── SECTION 14: Documents ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s14">'+
+    '<h3><span class="sec-num">15</span> '+(E?'Documents / Authorizations':'Documente / Autorizatii')+'</h3>';
   if(E){
     h+='<p>Digital hospital dossier for inspections — track all authorizations and regulatory documents.</p>'+
     '<h4>Predefined Categories</h4>'+
@@ -23386,9 +24092,9 @@ function rManual(el){
   }
   h+=goBtn('documente',E?'Documents':'Documente')+topBtn+'</div></div>';
 
-  // ── SECTION 10: Calendar ──
-  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s10">'+
-    '<h3><span class="sec-num">11</span> '+(E?'Calendar & Reporting Deadlines':'Calendar si Termene Raportare')+'</h3>';
+  // ── SECTION 15: Calendar ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s15">'+
+    '<h3><span class="sec-num">16</span> '+(E?'Calendar & Reporting Deadlines':'Calendar si Termene Raportare')+'</h3>';
   if(E){
     h+='<p>Visual calendar with reporting deadline management.</p>'+
     '<h4>Calendar Views</h4>'+
@@ -23428,9 +24134,9 @@ function rManual(el){
   }
   h+=goBtn('calendar','Calendar')+topBtn+'</div></div>';
 
-  // ── SECTION 11: Audits ──
-  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s11">'+
-    '<h3><span class="sec-num">12</span> '+(E?'Audits':'Audituri')+'</h3>';
+  // ── SECTION 16: Audits ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s16">'+
+    '<h3><span class="sec-num">17</span> '+(E?'Audits':'Audituri')+'</h3>';
   if(E){
     h+='<p>Conduct and track quality audits with predefined or custom checklists.</p>'+
     '<h4>Audit Types</h4>'+
@@ -23464,9 +24170,19 @@ function rManual(el){
   }
   h+=goBtn('audituri',E?'Audits':'Audituri')+topBtn+'</div></div>';
 
-  // ── SECTION 12: Training ──
-  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s12">'+
-    '<h3><span class="sec-num">13</span> '+(E?'Staff Training':'Instruire Personal')+'</h3>';
+  // ── SECTION 17: obiective ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s17">'+
+    '<h3><span class="sec-num">18</span> '+(E?'SMART IPC Objectives':'Obiective SMART IPC')+'</h3>';
+  if(E){
+    h+="<p>SMART objectives of the infection prevention programme, with targets and follow-up.</p><h4>Getting started</h4><p>The <strong>Load standard template</strong> button brings in the 20 common objectives, each with an indicator, a default target and a frequency. You can edit or delete them.</p><h4>Automatic and manual objectives</h4><p>Objectives marked <strong>auto</strong> take their value from the data already in the application: audit compliance, HAI rate, the Access share of antibiotic consumption, the percentage of trained staff.</p><div class=\"man-tip\"><strong>If an automatic objective has nothing to compute from</strong> — device-days missing for CAUTI, or the number of procedures for the SSI rate — the manual entry field appears. It does not stay stuck on \"not recorded\".</div><h4>Status</h4><p>Compliant, warning (within 20% of target) or non-compliant, computed against the target and its direction (at least / at most). The value history is kept per period.</p><div class=\"man-tip\"><strong>Device-associated rates</strong> (CAUTI, CLABSI, VAP) need device-days from Hospital Statistics. Without them they cannot be computed — and that is correct: a false \"0\" would show as compliant in a hospital with real infections.</div>";
+  } else {
+    h+="<p>Obiectivele SMART ale programului de prevenire a infectiilor, cu tinta si urmarire.</p><h4>Pornirea</h4><p>Butonul <strong>Incarca template standard</strong> aduce cele 20 de obiective uzuale, fiecare cu indicator, tinta implicita si frecventa. Le poti modifica sau sterge.</p><h4>Obiective automate si manuale</h4><p>Obiectivele marcate <strong>auto</strong> isi iau valoarea singure din datele din aplicatie: conformitatea auditurilor, rata IAAM, procentul Access din consumul de antibiotice, procentul de personal instruit.</p><div class=\"man-tip\"><strong>Daca un obiectiv automat nu are de unde sa se calculeze</strong> — lipsesc zilele-dispozitiv pentru CAUTI, sau numarul de interventii pentru rata SSI — apare campul de introducere manuala. Nu ramane blocat pe „neinregistrat\".</div><h4>Status</h4><p>Conform, atentie (in 20% de tinta) sau neconform, calculat fata de tinta si sensul ei (cel putin / cel mult). Istoricul valorilor se pastreaza pe perioade.</p><div class=\"man-tip\"><strong>Ratele asociate dispozitivelor</strong> (CAUTI, CLABSI, VAP) au nevoie de zilele-dispozitiv din Statistici Spital. Fara ele nu se pot calcula — si e corect asa: un „0\" fals ar arata conform intr-un spital cu infectii reale.</div>";
+  }
+  h+=goBtn('obiective',E?'SMART Objectives':'Obiective SMART')+topBtn+'</div></div>';
+
+// ── SECTION 18: Training ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s18">'+
+    '<h3><span class="sec-num">19</span> '+(E?'Staff Training':'Instruire Personal')+'</h3>';
   if(E){
     h+='<p>Track staff training sessions with participant management and Word report generation.</p>'+
     '<h4>Recording a Training Session</h4>'+
@@ -23494,9 +24210,9 @@ function rManual(el){
   }
   h+=goBtn('instruire',E?'Staff Training':'Instruire Personal')+topBtn+'</div></div>';
 
-  // ── SECTION 13: Reports ──
-  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s13">'+
-    '<h3><span class="sec-num">14</span> '+(E?'Report Generation':'Generare Rapoarte')+'</h3>';
+  // ── SECTION 19: Reports ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s19">'+
+    '<h3><span class="sec-num">20</span> '+(E?'Report Generation':'Generare Rapoarte')+'</h3>';
   if(E){
     h+='<p>Generate professional Word documents (.docx) from your data. All reports use consistent formatting with hospital branding.</p>'+
     '<h4>Available Reports</h4>'+
@@ -23540,9 +24256,19 @@ function rManual(el){
   }
   h+=goBtn('rapoarte',E?'Generate Reports':'Generare Rapoarte')+topBtn+'</div></div>';
 
-  // ── SECTION 14: Settings ──
-  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s14">'+
-    '<h3><span class="sec-num">15</span> '+(E?'System Settings':'Configurare Sistem')+'</h3>';
+  // ── SECTION 20: multian ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s20">'+
+    '<h3><span class="sec-num">21</span> '+(E?'Multi-Year Analysis':'Analiza Multi-An')+'</h3>';
+  if(E){
+    h+="<p>Comparison of indicators across several years, for the annual report and for programme evaluation.</p><h4>How to use it</h4><ul><li>Select the years to compare</li><li>Charts and tables rebuild automatically</li><li>Word export for the annual report annex</li></ul><h4>What is compared</h4><p>HAI cases and their rate, quality control compliance, waste quantities, antibiotic consumption and audit compliance.</p><div class=\"man-tip\"><strong>A year with no patient-days entered shows a rate of \"—\", not zero.</strong> The comparison stays honest: missing data is not confused with good performance.</div>";
+  } else {
+    h+="<p>Compararea indicatorilor pe mai multi ani, pentru raportul anual si pentru evaluarea programului.</p><h4>Cum se foloseste</h4><ul><li>Selecteaza anii de comparat</li><li>Graficele si tabelele se refac automat</li><li>Export Word pentru anexa la raportul anual</li></ul><h4>Ce se compara</h4><p>Cazurile IAAM si rata lor, conformitatea autocontrolului, cantitatile de deseuri, consumul de antibiotice si conformitatea auditurilor.</p><div class=\"man-tip\"><strong>Un an fara om-zile introduse apare cu rata „—\", nu cu zero.</strong> Comparatia ramane onesta: lipsa datelor nu se confunda cu o performanta buna.</div>";
+  }
+  h+=goBtn('multian',E?'Multi-Year Analysis':'Analiza Multi-An')+topBtn+'</div></div>';
+
+// ── SECTION 21: Settings ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s21">'+
+    '<h3><span class="sec-num">22</span> '+(E?'System Settings':'Configurare Sistem')+'</h3>';
   if(E){
     h+='<p>Settings is organized in 4 tabs:</p>'+
     '<h4>Tab 1: Hospital</h4>'+
@@ -23604,9 +24330,9 @@ function rManual(el){
   }
   h+=goBtn('config',E?'System Settings':'Configurare Sistem')+topBtn+'</div></div>';
 
-  // ── SECTION 15: Sync & Backup ──
-  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s15">'+
-    '<h3><span class="sec-num">16</span> '+(E?'Synchronization & Backup':'Sincronizare si Backup')+'</h3>';
+  // ── SECTION 22: Sync & Backup ──
+  h+='<div class="pn" style="margin-top:16px"><div class="pb man-sec" id="man-s22">'+
+    '<h3><span class="sec-num">23</span> '+(E?'Synchronization & Backup':'Sincronizare si Backup')+'</h3>';
   if(E){
     h+='<h4>The 3 Application States</h4>'+
     '<div class="man-step"><span class="step-n" style="background:var(--red)">&#128308;</span><span class="step-t"><strong>Not synced</strong> — data only in the browser. If you reinstall the browser or clear data, everything is lost. Save to a JSON file or do manual backup.</span></div>'+
@@ -23648,6 +24374,11 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.74',date:'2026-07-30',summary:'Inchiderea auditurilor: regulile scoase din A1 si A2 au fost scrise in CLAUDE.md, unde le va citi orice sesiune viitoare. Plus aducerea la zi a faptelor din CLAUDE.md si stergerea unei constante moarte. Nimic vizibil pentru utilizator.'},
+  {version:'13.73',date:'2026-07-30',summary:'A3 si A4 — manualul si Ajutorul, aduse la zi. Manualul avea 16 capitole si ii lipseau 7 module intregi; are acum 23, in ordinea meniului. Ajutorul are 11 intrebari noi, scoase din ce a iesit la audit ca sursa reala de confuzie, plus un camp de cautare care filtreaza pe masura ce scrii.'},
+  {version:'13.72',date:'2026-07-30',summary:'Verificarea modulului ICD contra regulilor din A1/A2 si completarea lui: fisa de caz individuala in Word (Figura 1.2) si legatura cu fisa IAAM printr-un selector, nu prin text liber.'},
+  {version:'13.71',date:'2026-07-30',summary:'Corectie de domeniu semnalata de user la registrul ICD: „nu cere foaie de observatie" nu inseamna „nu cere niciun numar". Spitalizarea de zi si CPU/UPU au registrele lor, iar laboratorul da numar de buletin. Numarul de inregistrare exista acum mereu ca si camp, cu eticheta care se schimba dupa sursa.'},
+  {version:'13.70',date:'2026-07-30',summary:'Modul nou: Registrul ICD (Clostridioides difficile) cerut de noul ordin. Registru de sine statator pentru TOATE cazurile, nu extensie a fisei IAAM — pentru ca multe cazuri ICD nu au fost internate. Incadrarea nosocomial/comunitar/nedeterminat se calculeaza automat din date, cu previzualizare live, si NU ghiceste cand datele nu ajung. Include fisa unitatii pentru DSP, in Word.'},
   {version:'13.69',date:'2026-07-30',summary:'Cele doua decizii lasate userului, luate si implementate. Inregistrarile noi primesc identificator unic, deci doua calculatoare nu se mai suprascriu tacit la sincronizare. Referintele sterse din configurare nu mai apar ca un cod intern in rapoartele Word. Pe parcurs a iesit la iveala ca reparatia A1-11 era incompleta: JSON.stringify singur nu e sigur intr-un atribut HTML.'},
   {version:'13.68',date:'2026-07-30',summary:'Incheierea traducerii mesajelor: cele cu valori interpolate (bilanturi de import, confirmari de suprascriere) erau ultimele in romana. Acoperirea bilingva a ajuns de la 41 la 208 din 216 de mesaje, iar cele 8 ramase sunt mecanismul de traducere in sine si doua mesaje interne de diagnostic.'},
   {version:'13.67',date:'2026-07-30',summary:'Incheierea modulelor neparcurse din auditul functional (PPS si antibiograma) plus ultimele puncte din auditul UX. Cea mai importanta reparatie: o corectie manuala pe o sectie importata din HelicsWin isi pierdea legatura cu importul, deci la reimport sectia se dubla si prevalenta PPS iesea umflata.'},
@@ -23944,6 +24675,35 @@ function rTerms(el){
     '<div style="white-space:pre-wrap;font-size:13px;line-height:1.8;color:var(--txt)">'+TERMS_TEXT+'</div>'+
   '</div></div>'}
 
+
+// A4 - filtrul viu al intrebarilor din Ajutor. Umbla direct pe DOM, NU cheama render():
+// altfel s-ar pierde focusul din campul de cautare la fiecare litera tastata (regula A1-25).
+// Cauta si in intrebare, si in raspuns, fara diacritice si fara sa tina cont de majuscule,
+// pentru ca userul tasteaza „om zile" cand textul scrie „om-zile".
+function _faqNorm(t){
+  return String(t||'').toLowerCase()
+    .replace(/[ăâà]/g,'a').replace(/[îï]/g,'i').replace(/[șşs]/g,'s')
+    .replace(/[țţt]/g,'t').replace(/[éèê]/g,'e')
+    .replace(/[^a-z0-9]+/g,' ').trim();
+}
+function _faqFilter(q){
+  var box=document.getElementById('faq-q');if(!box)return;
+  var lista=box.parentElement.querySelectorAll('details');
+  var nq=_faqNorm(q);
+  var termeni=nq?nq.split(' ').filter(Boolean):[];
+  var vizibile=0;
+  lista.forEach(function(d){
+    if(!termeni.length){d.style.display='';d.open=false;vizibile++;return}
+    var txt=_faqNorm(d.textContent);
+    var potrivit=termeni.every(function(t){return txt.indexOf(t)>=0});
+    d.style.display=potrivit?'':'none';
+    // deschidem automat cand a ramas putin de ales — userul cauta un raspuns, nu o lista
+    d.open=potrivit&&termeni.length>0;
+    if(potrivit)vizibile++;
+  });
+  var gol=document.getElementById('faq-none');
+  if(gol)gol.style.display=vizibile?'none':'';
+}
 
 </script>
 <script>

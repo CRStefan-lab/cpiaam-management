@@ -1,11 +1,9 @@
 {
-  "version": "13.69",
-  "version_note": "Sincronizare intre calculatoare + coduri in rapoarte",
+  "version": "13.74",
+  "version_note": "Titluri de pagina + curatenie interna",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "REPARAT — pe doua calculatoare care lucreaza pe acelasi fisier de sincronizare, doua inregistrari adaugate in acelasi timp puteau primi acelasi numar intern, iar la sincronizare una o stergea tacit pe cealalta. Inregistrarile noi primesc acum un identificator unic. Inregistrarile deja existente nu au fost atinse — vezi nota de mai jos.",
-    "REPARAT — cand o sectie, un tip de proba, un produs biocid sau o categorie de documente era stearsa din Configurare, in rapoartele Word aparea un cod intern de tipul „s_a3f9c2d1e8b04a7f\" — inclusiv in Ancheta Epidemiologica si chiar in numele fisierului. Acum scrie „(sters din configurare)\".",
-    "ATENTIE la punctul de mai sus: in tabelele de distributie pe sectii, toate elementele sterse se aduna acum intr-un singur rand, in loc de cate un rand cu cod pentru fiecare. Totalul ramane acelasi.",
-    "REPARAT — butoanele de editare si stergere din tabele nu ar fi functionat pentru inregistrarile cu identificator de tip text. Problema nu se manifesta inca, dar ar fi aparut odata cu identificatorii noi."
+    "REPARAT — paginile Focare si Statistici Spital afisau „Dashboard\" in bara de sus, in loc de propriul titlu. Acelasi lucru se intamplase si la Registrul ICD.",
+    "Restul versiunii e curatenie interna: documentatia tehnica a proiectului a fost adusa la zi si a fost eliminat un fragment de cod nefolosit. Nimic altceva nu se schimba in aplicatie."
   ]
 }

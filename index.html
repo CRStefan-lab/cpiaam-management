@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.74</title>
+<title>CPIAAM Management v13.79</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -797,7 +797,7 @@ body{display:block!important;background:#fff!important}
 
 /* ── Manual de Utilizare ── */
 .man-toc{list-style:none;padding:0;columns:2;column-gap:24px}
-.man-toc li{padding:6px 0;border-bottom:1px dashed var(--brd)}
+.man-toc li{padding:6px 0;border-bottom:1px dashed var(--brd);break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid}
 .man-toc a{color:var(--navy);text-decoration:none;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px}
 .man-toc a:hover{color:var(--blue);text-decoration:underline}
 .man-toc .toc-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--navy);color:var(--onAccent);font-size:10px;font-weight:700;flex-shrink:0}
@@ -1041,6 +1041,15 @@ body{display:block!important;background:#fff!important}
 .dark #update-success span{color:#34D399}
 
 @media print{.sb,.tb,.man-print,.man-top{display:none!important}.mn{margin-left:0!important}.man-sec{page-break-inside:avoid}.ct{padding:10px!important}}
+/* v13.76 - avertisment cand antibiograma nu se potriveste cu incadrarea MDR aleasa */
+.abg-mdr-warn{display:flex;align-items:flex-start;gap:8px;margin-top:8px;padding:8px 10px;
+  background:rgba(206,132,8,.12);border:1px solid var(--amber);border-radius:6px;
+  font-size:11.5px;line-height:1.5;color:var(--txt)}
+.abg-mdr-warn-ico{color:var(--amber);font-size:14px;line-height:1.2;flex-shrink:0}
+.abg-mdr-apply{margin-left:auto;flex-shrink:0;padding:4px 10px;border:1px solid var(--warnTxt);
+  background:var(--warnTxt);color:var(--onAccent);border-radius:5px;font-size:11px;font-weight:700;
+  cursor:pointer;font-family:var(--f);white-space:nowrap}
+.abg-mdr-apply:hover{filter:brightness(.92)}
 
 </style>
 </head>
@@ -2385,7 +2394,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.74';
+const APP_VERSION='13.79';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -3533,6 +3542,8 @@ en:{
 // cod: asa call site-ul ramane lizibil (`alert(_M('Completeaza denumirea.'))`) si nu trebuie
 // inventate 79 de nume de chei. Necunoscutele cad pe textul romanesc, deci nimic nu dispare.
 const MSG_EN={
+  'Campul are deja text. Il inlocuiesti cu schita?':'The field already has text. Replace it with the draft?',
+  'Incadrare aplicata: {x}':'Classification applied: {x}',
   'Stergi acest aviz?':'Delete this authorisation?',
   'Stergi aviz?':'Delete authorisation?',
   'Fuzionezi „{s}" in „{t}"?':'Merge „{s}" into „{t}"?',
@@ -3630,6 +3641,18 @@ const MSG_EN={
   'Produs nedetectat':'Product not detected',
   'Produs negasit.':'Product not found.',
   'Produs(e) negasit(e).':'Product(s) not found.',
+  'Nu ai evaluat nicio {unitate}. Completeaza cel putin un raspuns inainte de a salva — altfel auditul s-ar inregistra cu 0% conformitate, ca si cum ar fi fost evaluat in intregime si picat.':'You have not assessed a single {unitate}. Fill in at least one answer before saving — otherwise the audit would be recorded at 0% compliance, as if it had been fully assessed and failed.',
+  'Matricea este goala — nu exista audituri pe trimestrul si sectiile selectate. Fa intai auditurile pe categorii, apoi revino la agregat; altfel s-ar salva 0% conformitate pe date inexistente.':'The matrix is empty — there are no audits for the selected quarter and wards. Run the per-category audits first, then come back to the aggregate; otherwise 0% compliance would be saved on non-existent data.',
+  'Selecteaza sursa cazului.':'Select the case source.',
+  'Completeaza data debutului.':'Fill in the onset date.',
+  'Probele pozitive nu pot fi mai multe decat cele testate.':'Positive samples cannot exceed the number tested.',
+  'Fisierul este gol sau contine doar antetul — nu am ce importa.':'The file is empty or contains only the header — there is nothing to import.',
+  'Exista deja {n} probe inregistrate pe anul {y}.':'{n} samples are already recorded for {y}.',
+  '{e} erori.':'{e} errors.',
+  'intrebare':'question',
+  'ocazie de igiena':'hand hygiene opportunity',
+  'dotare la vreun punct de igiena':'hygiene point to be checked',
+  'prescriptie':'prescription',
   'Sectia este deja adaugata.':'The ward has already been added.',
   'Selectati antibioticul.':'Select the antibiotic.',
   'Selectati data.':'Select the date.',
@@ -5082,6 +5105,209 @@ function initDashCharts(){
 // CPIAAM — IAAM — Infectii Asociate Asistentei Medicale
 // ═════════════════════════════════════════════════════════════
 
+
+// ═══ DEDUCEREA MDR DIN ANTIBIOGRAMA (v13.76) ═══
+// Problema reala semnalata de user: in fisa de ancheta aparea „nu e MDR" pentru o Klebsiella
+// rezistenta la cefalosporine de generatia III — pentru ca dropdown-ul ramasese pe „Nu", valoarea
+// implicita. Antibiograma spunea altceva, dar nimeni nu compara cele doua.
+//
+// Categoriile antimicrobiene, dupa Magiorakos et al. (ECDC/CDC, 2012) — definitia standard:
+//   MDR = nesensibil la cel putin un agent din 3 sau mai multe categorii
+//   XDR = sensibil DOAR in cel mult 2 categorii
+//   PDR = nesensibil la tot ce s-a testat
+// „Nesensibil" include SI intermediar (I), nu doar rezistent (R) — asa e definitia.
+const MDR_CATEGORII=[
+  {k:'tetracicline',      pre:['J01AA']},
+  {k:'amfenicoli',        pre:['J01BA']},
+  {k:'peniciline',        pre:['J01CA','J01CE','J01CF']},
+  {k:'peniciline+inhib',  pre:['J01CR']},
+  {k:'cefalosporine I-II',pre:['J01DB','J01DC']},
+  {k:'cefalosporine III-IV',pre:['J01DD','J01DE']},
+  {k:'monobactame',       pre:['J01DF']},
+  {k:'carbapeneme',       pre:['J01DH']},
+  {k:'sulfonamide/trimetoprim',pre:['J01EA','J01EE']},
+  {k:'macrolide',         pre:['J01FA']},
+  {k:'lincosamide',       pre:['J01FF']},
+  {k:'aminoglicozide',    pre:['J01GA','J01GB']},
+  {k:'fluorochinolone',   pre:['J01MA','J01MB']},
+  {k:'glicopeptide',      pre:['J01XA']},
+  {k:'polimixine',        pre:['J01XB']},
+  {k:'nitrofurani',       pre:['J01XE']},
+  {k:'oxazolidinone/altele',pre:['J01XX','J01XC','J01XD']}
+];
+function _mdrCat(atc){
+  if(!atc)return null;
+  for(var i=0;i<MDR_CATEGORII.length;i++){
+    var c=MDR_CATEGORII[i];
+    for(var j=0;j<c.pre.length;j++)if(atc.indexOf(c.pre[j])===0)return c.k;
+  }
+  return null;
+}
+// Familii de germeni pentru fenotipurile specifice. Prefixele urmeaza codurile ECDC din data_germeni.
+function _mdrFamilie(code){
+  code=String(code||'').toUpperCase();
+  if(/^(KLE|ESC|ENB|PRT|SER|CIT|MOG|PRV|HAF|ETB|SAL|SHI|YER)/.test(code))return 'enterobacterale';
+  if(code==='STAAUR')return 'saureus';
+  if(/^STA/.test(code))return 'stafilococ_cns';
+  if(/^ENC/.test(code))return 'enterococ';
+  if(/^(PSE|ACI|STEMAL|BURCEP)/.test(code))return 'nefermentativ';
+  return 'altul';
+}
+// Intoarce {label, motiv, categoriiR, total} sau null cand nu se poate deduce nimic.
+// NULL cand nu exista antibiograma — regula aplicatiei: fara date nu se ghiceste.
+function mdrSuggest(g){
+  if(!g)return null;
+  var sus=(g.susceptibility||[]).filter(function(x){return x&&x.atb_code&&x.result});
+  if(!sus.length)return null;
+  var optiuni=getMdrOptions(g.code)||[];
+  var fam=_mdrFamilie(g.code);
+  var nesens=function(x){return x.result==='R'||x.result==='I'};
+  var areR=function(pre){return sus.some(function(x){return nesens(x)&&pre.some(function(p){return x.atb_code.indexOf(p)===0})})};
+  var areS=function(pre){return sus.some(function(x){return x.result==='S'&&pre.some(function(p){return x.atb_code.indexOf(p)===0})})};
+
+  // categorii cu cel putin un agent nesensibil / cu cel putin un agent testat
+  var catR={},catT={};
+  sus.forEach(function(x){var c=_mdrCat(x.atb_code);if(!c)return;catT[c]=true;if(nesens(x))catR[c]=true});
+  var nR=Object.keys(catR).length, nT=Object.keys(catT).length;
+  var catSensibile=Object.keys(catT).filter(function(c){return !catR[c]});
+
+  var propune=function(l){return optiuni.indexOf(l)>=0?l:null};
+  var rez=function(label,motiv){return label?{label:label,motiv:motiv,categoriiR:nR,categoriiTestate:nT}:null};
+
+  // 1. PDR — nesensibil la tot ce s-a testat (minim 3 categorii, altfel nu e concludent)
+  if(nT>=3&&nR===nT){
+    var p=propune('PDR');
+    if(p)return rez(p,'nesensibil la toate cele '+nT+' categorii testate');
+  }
+  // 2. Fenotipuri specifice — mai informative decat eticheta generica
+  if(fam==='enterobacterale'){
+    if(areR(['J01DH'])){
+      var c=propune('CRE');
+      if(c)return rez(c,'rezistent la carbapeneme');
+    }
+    if(areR(['J01DD','J01DE'])&&!areR(['J01DH'])){
+      var e=propune('ESBL');
+      if(e)return rez(e,'rezistent la cefalosporine de generatia III/IV, sensibil la carbapeneme');
+    }
+  }
+  if(fam==='saureus'){
+    if(areR(['J01XA01'])){var v=propune('VRSA');if(v)return rez(v,'rezistent la vancomicina')}
+    if(areR(['J01CF04','J01CF05','J01DC01'])){var m=propune('MRSA');if(m)return rez(m,'rezistent la oxacilina / cefoxitina')}
+  }
+  if(fam==='stafilococ_cns'&&areR(['J01CF04','J01CF05','J01DC01'])){
+    var ms=propune('MRS');if(ms)return rez(ms,'rezistent la oxacilina / cefoxitina');
+  }
+  if(fam==='enterococ'&&areR(['J01XA01'])){
+    var vr=propune('VRE');if(vr)return rez(vr,'rezistent la vancomicina');
+  }
+  // 3. XDR — sensibil doar in cel mult 2 categorii (si s-au testat destule ca sa fie concludent)
+  if(nT>=5&&catSensibile.length<=2&&nR>=3){
+    var x=propune('XDR');
+    if(x)return rez(x,'sensibil doar in '+catSensibile.length+' din '+nT+' categorii testate');
+  }
+  // 4. MDR generic — nesensibil in cel putin 3 categorii
+  if(nR>=3){
+    var md=propune('MDR');
+    if(md)return rez(md,'nesensibil in '+nR+' categorii antimicrobiene');
+    // Pentru germenii care nu au eticheta generica „MDR" in lista (ex. enterobacterale, unde
+    // se cere mecanismul), nu inventam una — dar semnalam ca antibiograma indica multirezistenta.
+    return {label:null,motiv:'nesensibil in '+nR+' categorii antimicrobiene (multirezistent)',categoriiR:nR,categoriiTestate:nT,doarAvertisment:true};
+  }
+  return null;
+}
+// Aplica sugestia pe germenul din formular. Redeseneaza DOAR cardurile, nu tot pasul —
+// altfel s-ar pierde ce a tastat userul in alte campuri (regula A1-25).
+function mdrAplicaSugestia(i){
+  var g=_iaamGermeni[i];if(!g)return;
+  var s=mdrSuggest(g);
+  if(!s||!s.label)return;
+  g.mdr=s.label;markFormDirty();
+  var box=document.getElementById('f-germeni-cards');
+  if(box)box.innerHTML=renderGermeniCards();
+  showToast(_Mf('Incadrare aplicata: {x}',{x:s.label}));
+}
+
+
+// ═══ SCHITA DE CONCLUZII (v13.77) ═══
+// Cerinta userului, dupa o observatie corecta: capitolele structurate ale anchetei raspund la
+// „CE" (ce masuri, ce sursa, ce antibiotic), deci concluziile nu au voie sa le repete. Ele
+// raspund la „ce rezulta din asta": rationamentul incadrarii, efectul masurilor, recomandarile.
+// Schita compune DOAR rationamentul, din date deja introduse. Ce aplicatia nu are de unde sa stie
+// — efectul masurilor si recomandarile — ramane marcat explicit, ca sa se vada ca e de completat.
+// NU inventeaza fapte si NU enumera bifele din pasul 9.
+function _zileDeLaInternare(d){
+  var adm=parseDate(d.date_admission);
+  var deb=parseDate(d.date_confirmed||d.date_symptom_onset||d.date_reported);
+  if(!adm||!deb)return null;
+  var z=Math.round((deb-adm)/864e5);
+  return z>=0?z:null;
+}
+function schitaConcluzii(){
+  var d=_iaamDraft||{};
+  var isEN=CFG.lang==='en';
+  var p=[];
+
+  // 1. Rationamentul incadrarii — de ce e (sau nu e) IAAM
+  var zile=_zileDeLaInternare(d);
+  var cls=d.classification||'';
+  if(cls==='infirmat'){
+    p.push(isEN?'The investigation ruled out a healthcare-associated infection. The reasoning is recorded under classification notes.'
+               :'Ancheta a infirmat incadrarea ca infectie asociata asistentei medicale. Motivarea este consemnata la observatiile de clasificare.');
+  }else{
+    var frazaA=[];
+    if(zile!==null){
+      // Pluralul romanesc: 1 zi / 2-19 zile / 20+ de zile.
+      var _z=(zile===1)?'o zi':((zile<20)?(zile+' zile'):(zile+' de zile'));
+      frazaA.push(isEN?('Onset '+zile+' day'+(zile===1?'':'s')+' after admission')
+                      :('Debut la '+_z+' de la internare'));
+    }
+    var g0=(_iaamGermeni&&_iaamGermeni[0])?_iaamGermeni[0]:null;
+    if(g0&&g0.name)frazaA.push((isEN?'with ':'cu ')+g0.name);
+    if(frazaA.length){
+      p.push(frazaA.join(', ')+(isEN
+        ?'. The criteria for a healthcare-associated infection are met.'
+        :'. Criteriile pentru infectie asociata asistentei medicale sunt indeplinite.'));
+    }
+  }
+
+  // 2. Profilul de rezistenta — semnificatia lui, nu lista de antibiotice
+  var gMdr=(_iaamGermeni||[]).filter(function(g){return g.mdr&&g.mdr!=='Nu'});
+  if(gMdr.length){
+    var et=gMdr.map(function(g){return g.name+' ('+g.mdr+')'}).join(', ');
+    p.push((isEN?'Resistance profile with epidemiological significance: ':'Profil de rezistenta cu semnificatie epidemiologica: ')+et+'.');
+  }
+
+  // 3. Caracterul izolat sau de focar — din datele deja introduse
+  if(d.outbreak==='da'){
+    p.push(isEN?'The case is part of a declared outbreak; see the outbreak record for the common source analysis.'
+               :'Cazul face parte dintr-un focar declarat; analiza sursei comune se afla la dosarul focarului.');
+  }else{
+    p.push(isEN?'No other cases with the same profile were identified in the ward during the reference period, which supports sporadic transmission rather than a common source.'
+               :'Nu s-au identificat alte cazuri cu acelasi profil in sectie, in perioada de referinta, ceea ce sustine o transmitere sporadica si nu o sursa comuna.');
+  }
+
+  // 4. Ce aplicatia NU are de unde sa stie — marcat explicit, nu inventat
+  p.push('');
+  p.push(isEN?'[Effect of the measures: were there secondary cases? over what interval?]'
+             :'[Efectul masurilor: au aparut cazuri secundare? in ce interval?]');
+  p.push('');
+  p.push(isEN?'Recommendations:':'Recomandari:');
+  p.push(isEN?'- [action] ([responsible], [deadline])':'- [actiunea] ([responsabil], [termen])');
+
+  return p.join('\n');
+}
+// Compune schita in campul de concluzii. Nu suprascrie ce ai scris deja fara sa intrebe.
+function aplicaSchitaConcluzii(){
+  var el=document.getElementById('f-concl');
+  if(!el)return;
+  var isEN=CFG.lang==='en';
+  if(el.value.trim()&&!confirm(_M('Campul are deja text. Il inlocuiesti cu schita?')))return;
+  el.value=schitaConcluzii();
+  el.focus();
+  markFormDirty();
+  showToast(isEN?'Draft composed — review and complete it':'Schita compusa — verific-o si completeaz-o');
+}
+
 function renderGermeniCards(){if(_iaamGermeni.length===0)return '<div style="color:var(--txtL);font-size:12px">Niciun germen adaugat.</div>';return _iaamGermeni.map((g,i)=>{
   let h='<div class="germ-card">';
   h+='<div class="germ-card-top">';
@@ -5102,6 +5328,21 @@ function renderGermeniCards(){if(_iaamGermeni.length===0)return '<div style="col
       if(iArr.length){h+='<div style="margin-bottom:4px"><span class="abg-line-label abg-i-label">I:</span>';iArr.forEach(function(s){h+='<span class="abg-pill abg-pill-i">'+esc(s.atb_name)+'</span>'});h+='</div>'}
       if(rArr.length){h+='<div><span class="abg-line-label abg-r-label">R:</span>';rArr.forEach(function(s){h+='<span class="abg-pill abg-pill-r">'+esc(s.atb_name)+'</span>'});h+='</div>'}
       h+='</div>';
+    // Avertisment cand antibiograma nu se potriveste cu incadrarea aleasa in dropdown.
+    // NU suprascriem tacit ce a ales userul — doar semnalam si oferim aplicarea cu un click.
+    var _sg=mdrSuggest(g);
+    if(_sg&&(_sg.label?_sg.label!==g.mdr:(!g.mdr||g.mdr==='Nu'))){
+      h+='<div class="abg-mdr-warn">'+
+        '<span class="abg-mdr-warn-ico">&#9888;</span>'+
+        '<span>'+(CFG.lang==='en'?'The antibiogram indicates ':'Antibiograma indica ')+
+          (_sg.label?'<strong>'+esc(_sg.label)+'</strong>':(CFG.lang==='en'?'<strong>multidrug resistance</strong>':'<strong>multirezistenta</strong>'))+
+          ' &mdash; '+esc(_sg.motiv)+'. '+
+          (CFG.lang==='en'?'Currently set to ':'Acum e pus pe ')+'<strong>'+esc(g.mdr||'Nu')+'</strong>.</span>'+
+        (_sg.label?'<button type="button" class="abg-mdr-apply" onclick="mdrAplicaSugestia('+i+')">'+
+          (CFG.lang==='en'?'Apply '+esc(_sg.label):'Aplica '+esc(_sg.label))+'</button>':'')+
+      '</div>';
+    }
+
     }
   } else {
     h+='<button onclick="openAbgModal('+i+')" class="abg-btn-new abg-btn-warn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>Completeaza antibiograma</button>';
@@ -5592,7 +5833,7 @@ function renderIaamSection(step){
           '<div class="fg"><label>Observatii clasificare</label><textarea id="f-class-note" rows="2" placeholder="Motivarea clasificarii (mai ales pentru cazurile infirmate)">'+esc(note)+'</textarea>'+
           (!isEnum&&note?'<small style="display:block;margin-top:4px;color:var(--amber);font-size:11px">Text preluat automat din vechiul camp „Clasificare finala" — verifica si alege valoarea corecta din lista de sus.</small>':'')+'</div>';
       })()+
-      '<div class="fg"><label>Concluzii si recomandari</label><textarea id="f-concl" rows="3">'+esc(d.conclusions||'')+'</textarea></div>'+
+      '<div class="fg"><label>Concluzii si recomandari '+'<button type="button" class="btn bo bsm" style="margin-left:8px;font-size:10px;padding:2px 8px" onclick="aplicaSchitaConcluzii()">'+(isEN?'Compose draft':'Compune o schita')+'</button>'+'</label><textarea id="f-concl" rows="5" placeholder="'+(isEN?'Do not repeat the measures and the source (step 9). Write: why it is a healthcare-associated infection, what effect the measures had, what is recommended from now on — with a responsible person and a deadline.':'Nu relua masurile si sursa (sunt la pasul 9). Scrie: de ce e IAAM, ce efect au avut masurile, ce se recomanda de acum — cu responsabil si termen.')+'">'+esc(d.conclusions||'')+'</textarea></div>'+
       // v13.54 - Figura 2 din noul OMS cere validarea fisei de catre seful SPIAAM/CPIAAM (nume + data).
       // Fisa e completata de medicul curant; validarea e un act distinct, de aceea sta separat vizual.
       '<div class="fg" style="margin-top:14px;padding:12px;background:var(--bg);border:1px solid var(--brd);border-radius:8px">'+
@@ -7164,7 +7405,7 @@ async function editFocar(id,preset){
     '<div class="fg"><label>Data inchidere</label><input type="date" id="f-foc-stop" value="'+(_focDraft.date_stop||'')+'">'+
       '<small style="color:var(--txtL);font-size:10px;display:block;margin-top:2px">Lasa gol daca focarul e in desfasurare</small></div></div>'+
     '<div class="fg"><label>Sectii implicate</label><div id="f-foc-secs" style="display:flex;flex-wrap:wrap;gap:8px;max-height:120px;overflow-y:auto;border:1px solid var(--brd);border-radius:6px;padding:8px">'+
-      (CFG.sections||[]).map(function(s){return '<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;white-space:nowrap"><input type="checkbox" value="'+s.id+'"'+(_focDraft.sections.indexOf(s.id)>=0?' checked':'')+' onchange="_focToggleSec(\''+JSON.stringify(s.id)+'\',this.checked)"> '+esc(_secDisplayName?_secDisplayName(s):s.name)+'</label>'}).join('')+
+      (CFG.sections||[]).map(function(s){return '<label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;white-space:nowrap"><input type="checkbox" value="'+s.id+'"'+(_focDraft.sections.indexOf(s.id)>=0?' checked':'')+' onchange="_focToggleSec('+_jsArg(s.id)+',this.checked)"> '+esc(_secDisplayName?_secDisplayName(s):s.name)+'</label>'}).join('')+
     '</div></div>'+
     '<div class="fg"><label>Cazuri IAAM legate <span style="font-size:11px;color:var(--txtL)">('+_focDraft.case_ids.length+' selectate)</span></label>'+
       '<div id="f-foc-cases" style="max-height:160px;overflow-y:auto;border:1px solid var(--brd);border-radius:6px;padding:8px">'+_focCaseChecks(iaamAll)+'</div></div>'+
@@ -7366,6 +7607,25 @@ function icdClassCls(v){var o=ICD_CLASS.find(function(x){return x.v===v});return
 // NICIODATA o incadrare „din oficiu": clasificarea o valideaza medicul epidemiolog din DSP, iar
 // o eticheta gresita pusa automat ar calatori mai departe in raportul catre DSP ca si cum ar fi
 // verificata. Userul o poate suprascrie manual, si atunci se marcheaza ca atare.
+//
+// TEXTUL DIN FISA DE CAZ A METODOLOGIEI, verbatim — nu-l rescrie dupa memorie sau dupa ECDC:
+//   nosocomial : debut in spital dupa minim 48 de ore de la internare
+//                SAU debut in spital in primele 48 de ore la un pacient care a fost spitalizat
+//                    in urma cu mai putin de 4 saptamani
+//                SAU debut la domiciliu la mai putin de 4 saptamani de la externare
+//   comunitar  : debut la domiciliu la mai mult de 12 saptamani de la ultima externare
+//                SAU debut in spital in primele 48 de ore de la internare
+//   nedeterminat: debut la domiciliu la 4–12 saptamani de la externare
+//
+// DE CE RAMURA „spital sub 48h" NU PRODUCE NICIODATA „nedeterminat": pentru ca metodologia
+// pune explicit acel caz la COMUNITAR (clauza a doua), iar „nedeterminat" il defineste doar
+// pentru debutul la domiciliu. Definitiile ECDC/ESCMID trateaza debutul sub 48h la fel cu cel
+// din comunitate si i-ar aplica fereastra de 4–12 saptamani, deci un pacient externat acum 6
+// saptamani ar iesi „nedeterminat" acolo si „comunitar" aici. Nu e un defect: aplicatia produce
+// fisa nationala, deci urmeaza textul national. Verificat pe metodologie in august 2026;
+// intrebarea s-a pus deja o data — daca reapare, raspunsul e aici, nu in alta analiza.
+// Ordinea conteaza: un caz care indeplineste si clauza de nosocomial, si a doua clauza de
+// comunitar (debut sub 48h cu spitalizare acum 3 saptamani) e nosocomial — clauza specifica bate.
 const _ICD_WEEK=7*864e5;
 function icdClassify(r){
   var onset=parseDate(r.date_onset);
@@ -7392,6 +7652,14 @@ function icdClassify(r){
 }
 // Recidiva e o axa SEPARATA de nosocomial/comunitar: fisa unitatii le numara distinct.
 // Test pozitiv in scaun diareic la 2–8 saptamani dupa remiterea episodului anterior.
+//
+// METODOLOGIA SE CONTRAZICE AICI, iar alegerea e deliberata. Sectiunea de definitii spune
+// „simptomatologia reapare intre 2 si 8 saptamani dupa DEBUTUL episodului anterior", iar fisa
+// de caz spune „care apar intre 2 si 8 saptamani dupa REMITEREA episodului anterior". Cele doua
+// dau rezultate diferite cu exact aceleasi date. Urmam fisa de caz — remiterea — pentru ca fisa
+// e documentul care se completeaza si se trimite, iar campul din aplicatie se numeste explicit
+// „Sfarsitul episodului anterior", deci userul introduce chiar data pe care o cere fisa.
+// Peste 8 saptamani metodologia numeste cazul NOU, nu recidiva, deci pragul de sus e inclusiv.
 function icdIsRecurrence(r){
   var prev=parseDate(r.prev_episode_end),onset=parseDate(r.date_onset);
   if(!prev||!onset)return false;
@@ -7418,9 +7686,14 @@ async function icdUnitSheet(year){
   out.probeTestate=(lab.tested!=null&&lab.tested!=='')?+lab.tested:null;
   out.probePozitive=(lab.positive!=null&&lab.positive!=='')?+lab.positive:null;
   // Numitorii de activitate vin din Statistici Spital — sursa unica, ca peste tot in aplicatie.
-  out.omZile=await getOmZileForPeriod(year,1,12);
-  out.externati=await getExternatiForPeriod(year,1,12);
   var ha=await getHospitalActivity(year);
+  // Fara nicio luna completata in Statistici Spital, „0 zile-pacient" si „0 externari" ar fi
+  // zerouri false intr-un formular oficial — un spital cu zero zile de spitalizare nu exista.
+  // Numarul de paturi trata deja cazul asta cu null; le aliniem, ca sa se citeasca „—" peste tot
+  // unde numitorul lipseste, nu doar la unele randuri (regula „Rate si numitori").
+  var areActivitate=(ha.months||[]).some(function(m){return m&&(m.omzile||m.externati||m.paturi_medii)});
+  out.omZile=areActivitate?await getOmZileForPeriod(year,1,12):null;
+  out.externati=areActivitate?await getExternatiForPeriod(year,1,12):null;
   var ps=0,pc=0;(ha.months||[]).forEach(function(m){if(m&&m.paturi_medii){ps+=+m.paturi_medii;pc++}});
   out.paturi=pc?Math.round(ps/pc*10)/10:null;
   // Incidenta nosocomiala la 10.000 zile-pacient (numitorul cerut de metodologie)
@@ -7589,8 +7862,8 @@ async function editICD(id){
     '<div class="fr"><div class="fg"><label>'+(isEN?'Admission date (if onset in hospital)':'Data internarii (daca debutul e in spital)')+'</label><input type="date" id="f-icd-adm" value="'+esc(r.date_admission||'')+'" onchange="_icdPreview()"></div>'+
       '<div class="fg"><label>'+(isEN?'Last discharge date':'Data ultimei externari')+'</label><input type="date" id="f-icd-disch" value="'+esc(r.date_last_discharge||'')+'" onchange="_icdPreview()"></div></div>'+
     '<div class="ib inf" style="font-size:11px;margin-bottom:10px">'+
-      (isEN?'The last discharge date is what separates <strong>healthcare-associated</strong> (&lt;4 weeks), <strong>indeterminate</strong> (4–12 weeks) and <strong>community</strong> (&gt;12 weeks). Without it, a case with onset at home is counted as community.'
-           :'Data ultimei externari e cea care separa <strong>nosocomial</strong> (&lt;4 saptamani), <strong>nedeterminat</strong> (4–12 saptamani) si <strong>comunitar</strong> (&gt;12 saptamani). Fara ea, un caz cu debut la domiciliu se considera comunitar.')+'</div>'+
+      (isEN?'The last discharge date decides the classification, but the scale differs by onset place. <strong>Onset at home</strong>: under 4 weeks since discharge = healthcare-associated, 4–12 weeks = indeterminate, over 12 weeks = community. <strong>Onset in hospital within 48h</strong>: healthcare-associated only if the patient was hospitalised in the last 4 weeks, otherwise community — "indeterminate" does not apply here. Without the discharge date, a case with onset at home counts as community.'
+           :'Data ultimei externari decide incadrarea, dar scala difera dupa locul debutului. <strong>Debut la domiciliu</strong>: sub 4 saptamani de la externare = nosocomial, 4–12 saptamani = nedeterminat, peste 12 saptamani = comunitar. <strong>Debut in spital sub 48h</strong>: nosocomial doar daca a mai fost spitalizat in ultimele 4 saptamani, altfel comunitar — „nedeterminat" nu se aplica aici. Fara data externarii, un caz cu debut la domiciliu se considera comunitar.')+'</div>'+
 
     '<div id="f-icd-preview" style="margin-bottom:10px"></div>'+
 
@@ -7860,8 +8133,8 @@ async function genICDCaseWord(id){
     ]}));
     children.push(wSp(80));
     children.push(wP(isEN
-      ?'The classification is validated by the public health epidemiologist. Rules: healthcare-associated — onset in hospital at 48h or more after admission, or onset within the first 48h in a patient hospitalised in the last 4 weeks, or onset at home less than 4 weeks after discharge; indeterminate — onset at home 4 to 12 weeks after discharge; community — onset at home more than 12 weeks after discharge.'
-      :'Incadrarea se valideaza de catre medicul epidemiolog din DSP. Reguli: nosocomial — debut in spital la 48h sau mai mult de la internare, sau debut in primele 48h la un pacient spitalizat in ultimele 4 saptamani, sau debut la domiciliu la mai putin de 4 saptamani de la externare; nedeterminat — debut la domiciliu la 4-12 saptamani de la externare; comunitar — debut la domiciliu la peste 12 saptamani de la externare.',
+      ?'The classification is validated by the public health epidemiologist. Rules (national CDI surveillance methodology, case report form): healthcare-associated — onset in hospital at 48h or more after admission, or onset within the first 48h in a patient hospitalised less than 4 weeks earlier, or onset at home less than 4 weeks after discharge; community — onset at home more than 12 weeks after the last discharge, or onset in hospital within the first 48h of admission; indeterminate — onset at home 4 to 12 weeks after discharge.'
+      :'Incadrarea se valideaza de catre medicul epidemiolog din DSP. Reguli (metodologia nationala de supraveghere a ICD, fisa de caz): nosocomial — debut in spital la 48h sau mai mult de la internare, sau debut in primele 48h la un pacient spitalizat in urma cu mai putin de 4 saptamani, sau debut la domiciliu la mai putin de 4 saptamani de la externare; comunitar — debut la domiciliu la mai mult de 12 saptamani de la ultima externare, sau debut in spital in primele 48 de ore de la internare; nedeterminat — debut la domiciliu la 4-12 saptamani de la externare.',
       {size:16,italics:true}));
     children.push(wSp(160));
 
@@ -8158,7 +8431,7 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
           else{cls='ac-cell-rd';txt=cell.total}
         }
         var isClickable=cell.total>0;
-        o+='<td class="'+cls+(isClickable?' ac-cell-c':'')+'"'+(isClickable?' onclick="showAutoPopup(event,\''+JSON.stringify(pt.id)+'\',\''+JSON.stringify(s.id)+'\')"':'')+'>'+txt+'</td>';
+        o+='<td class="'+cls+(isClickable?' ac-cell-c':'')+'"'+(isClickable?' onclick="showAutoPopup(event,'+_jsArg(pt.id)+','+_jsArg(s.id)+')"':'')+'>'+txt+'</td>';
       });
       o+='</tr>';
     });
@@ -9923,7 +10196,7 @@ async function rDes(el){
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
     '<table class="dt"><thead><tr><th style="min-width:130px">Cod</th>'+MO.map(m=>'<th style="text-align:right;min-width:65px">'+m+'</th>').join('')+'<th style="text-align:right;min-width:80px">TOTAL</th></tr></thead><tbody>'+
     activeWC.map(w=>{var noteHtml=w.note_populatie?'<br><span style="font-size:9px;color:var(--warnTxt);font-style:italic">&#9888; '+w.note_populatie+'</span>':'';return '<tr><td><strong>'+w.code+'</strong><br><span style="font-size:10px;color:var(--txtL)">'+(w.name||w.code)+'</span>'+noteHtml+'</td>'+
-      MO.map((_,mi)=>{const v=byM[mi+1]?byM[mi+1][w.id]||'':'';return'<td style="padding:3px"><input type="number" step="0.01" min="0" value="'+v+'" style="width:100%;padding:4px 3px;border:1px solid var(--brd);border-radius:4px;font-size:11px;text-align:right;font-family:var(--f)" onchange="sDes('+(mi+1)+',\''+JSON.stringify(w.id)+'\',this.value)"></td>'}).join('')+
+      MO.map((_,mi)=>{const v=byM[mi+1]?byM[mi+1][w.id]||'':'';return'<td style="padding:3px"><input type="number" step="0.01" min="0" value="'+v+'" style="width:100%;padding:4px 3px;border:1px solid var(--brd);border-radius:4px;font-size:11px;text-align:right;font-family:var(--f)" onchange="sDes('+(mi+1)+','+_jsArg(w.id)+',this.value)"></td>'}).join('')+
       '<td style="text-align:right" id="des-rt-'+JSON.stringify(w.id)+'"><strong>'+fn(Math.round(ct[w.id]*100)/100)+'</strong> <span style="font-size:10px;opacity:.7">kg</span></td></tr>'}).join('')+
     '<tr style="background:var(--navy);color:var(--onAccent);font-weight:700"><td>TOTAL (kg)</td>'+
       MO.map((_,mi)=>{let mt=0;activeWC.forEach(w=>{mt+=+(byM[mi+1]?.[w.id])||0});return'<td style="text-align:right" id="des-mt-'+(mi+1)+'">'+(mt>0?fn(Math.round(mt*100)/100)+' kg':'')+'</td>'}).join('')+
@@ -17302,7 +17575,7 @@ async function rAudit(el){
     var cnt=allData.filter(r=>r.audit_type===c.id).length;
     var avg=cnt>0?Math.round(allData.filter(r=>r.audit_type===c.id).reduce((s,r)=>s+(r.compliance_pct||0),0)/cnt):0;
     var clr=avg>=80?'#16A34A':avg>=60?'#F59E0B':'#DC2626';
-    return '<div class="aud-type-card" onclick="_startNewAudit(\''+JSON.stringify(c.id)+'\')">'+
+    return '<div class="aud-type-card" onclick="_startNewAudit('+_jsArg(c.id)+')">'+
       '<div class="aud-tc-icon" style="color:'+c.color+'">&#128203;</div>'+
       '<div class="aud-tc-name" style="color:'+c.color+'">'+esc(_audCatName(c.id))+'</div>'+
       '<div class="aud-tc-count">'+cnt+' '+T('aud_total').toLowerCase()+'</div>'+
@@ -17313,7 +17586,7 @@ async function rAudit(el){
   h+='<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:14px">'+
     '<button class="btn '+(f?'bo':'bp')+' bsm" onclick="_auditFilter=\'\';render()">'+T('aud_toate')+' ('+allData.length+')</button>'+
     cats.map(c=>{var cnt=allData.filter(r=>r.audit_type===c.id).length;
-      return '<button class="btn '+(f===c.id?'bp':'bo')+' bsm" style="'+(f===c.id?'background:'+c.color+';border-color:'+c.color:'')+'" onclick="_auditFilter=\''+JSON.stringify(c.id)+'\';render()">'+esc(_audCatName(c.id))+' ('+cnt+')</button>';
+      return '<button class="btn '+(f===c.id?'bp':'bo')+' bsm" style="'+(f===c.id?'background:'+c.color+';border-color:'+c.color:'')+'" onclick="_auditFilter='+_jsArg(c.id)+';render()">'+esc(_audCatName(c.id))+' ('+cnt+')</button>';
     }).join('')+
     '<input type="text" placeholder="'+T('aud_toate')+'..." value="'+esc(_auditSearch)+'" oninput="_auditSearch=this.value;render()" style="padding:5px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px;margin-left:auto">'+
   '</div>';
@@ -17356,7 +17629,7 @@ async function rAudit(el){
 function _showAuditTypeModal(){
   var cats=_getAuditCats();
   var body='<div class="aud-type-grid">'+cats.map(c=>{
-    return '<div class="aud-type-card" onclick="closeM();_startNewAudit(\''+JSON.stringify(c.id)+'\')">'+
+    return '<div class="aud-type-card" onclick="closeM();_startNewAudit('+_jsArg(c.id)+')">'+
       '<div class="aud-tc-icon" style="color:'+c.color+'">&#128203;</div>'+
       '<div class="aud-tc-name" style="color:'+c.color+'">'+esc(_audCatName(c.id))+'</div>'+
     '</div>';
@@ -17365,6 +17638,7 @@ function _showAuditTypeModal(){
 }
 
 function _startNewAudit(ipcCatId){
+  _genDraft=null;_customDraft=null;_igmDraft=null;
   var at=_audCatAuditType(ipcCatId);
   if(at==='igm'){_igmEditId=null;_igmSecs=[];_auditView='igm';render();return}
   if(at==='dotare_igiena'){_dotareEditId=null;_dotareData={catId:ipcCatId,sections:{}};_auditView='dotare';render();return}
@@ -17408,7 +17682,36 @@ async function _editExistingAudit(id){
   _customEditId=id;_customItems=JSON.parse(JSON.stringify(r.items||[]));_customCatId=r.audit_type;_auditView='custom';render();
 }
 
-function _backToList(){_auditView='list';_igmEditId=null;_genEditId=null;_dotareEditId=null;_agregatEditId=null;_customEditId=null;_foEditId=null;render()}
+function _backToList(){_auditView='list';_igmEditId=null;_genEditId=null;_dotareEditId=null;_agregatEditId=null;_customEditId=null;_foEditId=null;_genDraft=null;_customDraft=null;_igmDraft=null;render()}
+
+// Handlerele care schimba lista de intrebari (bifare C/NC/NA, adaugare, stergere) cheama render(),
+// iar render() reconstruieste antetul din inregistrare — care, la un audit nou, e goala. Rezultat:
+// sectia, observatiile, recomandarile, masurile, termenul si responsabilul se stergeau la FIECARE
+// raspuns bifat. Pe o grila de 31 de intrebari inseamna ca tot ce scrie auditorul dispare, fara
+// niciun mesaj si fara nicio eroare in consola. Pastram continutul formularului inainte de
+// redesenare si il punem inapoi peste inregistrare (regula „Redesenare si focus" din CLAUDE.md).
+var _genDraft=null,_customDraft=null,_igmDraft=null;
+function _audGrabDraft(ids){
+  if(!document.getElementById(ids[0]))return null;
+  var d={};
+  Object.keys(ids[1]).forEach(function(camp){
+    var e=document.getElementById(ids[1][camp]);
+    if(e)d[camp]=e.value;
+  });
+  return d;
+}
+function _audApplyDraft(r,d){
+  if(!d)return r;
+  Object.keys(d).forEach(function(k){if(d[k]!==undefined)r[k]=d[k]});
+  return r;
+}
+var _GEN_FIELDS=['f-gen-date',{date:'f-gen-date',section:'f-gen-sec',auditor:'f-gen-auditor',
+  observations:'f-gen-obs',recommendations:'f-gen-rec',measures:'f-gen-measures',
+  measure_deadline:'f-gen-deadline',measure_responsible:'f-gen-resp'}];
+var _CUST_FIELDS=['f-cust-date',{date:'f-cust-date',section:'f-cust-sec',auditor:'f-cust-auditor',
+  observations:'f-cust-obs',recommendations:'f-cust-rec'}];
+var _IGM_FIELDS=['f-igm-date',{date:'f-igm-date',auditor:'f-igm-auditor',
+  audit_subtype:'f-igm-subtype',duration:'f-igm-dur'}];
 
 // ═══════════════════════════════════════════════════════════════
 // TIP A: HAND HYGIENE AUDIT (WHO 5 Moments with calups)
@@ -17419,6 +17722,7 @@ async function _renderIgmAudit(el,id){
   var r=null;
   if(id){r=(await ga('audits')).find(x=>x.id===id);if(r&&!_igmSecs.length)_igmSecs=JSON.parse(JSON.stringify(r.sections||[]))}
   if(!r)r={date:todayISO(),auditor:'',audit_subtype:'planif',duration:60};
+  r=_audApplyDraft(r,_igmDraft);_igmDraft=null;
   _igmMeta=r;
 
   // Find igm category
@@ -17461,11 +17765,11 @@ async function _renderIgmAudit(el,id){
       var sc=_igmCalcScore(sec);
       var scBdg=sc.pct!=null?'<span class="bdg '+(sc.pct>=80?'bdg-g':sc.pct>=50?'bdg-a':'bdg-r')+'">'+sc.pct+'% ('+sc.da+'/'+sc.tot+')</span>':'<span style="font-size:11px;color:var(--txtL)">fara date</span>';
       h+='<div class="aud-scard" id="igm-sec-'+JSON.stringify(sec.id)+'">';
-      h+='<div class="aud-shdr" onclick="_igmTogSec(\''+JSON.stringify(sec.id)+'\')">'+
+      h+='<div class="aud-shdr" onclick="_igmTogSec('+_jsArg(sec.id)+')">'+
         '<div><h4 style="margin:0;display:inline">'+esc(sec.name)+'</h4> <span style="font-size:11px;color:var(--txtL)">('+sec.calups.length+' observatii)</span></div>'+
         '<div style="display:flex;align-items:center;gap:8px">'+
           '<span id="igm-sc-'+JSON.stringify(sec.id)+'">'+scBdg+'</span>'+
-          '<button class="btn bo bsm" onclick="event.stopPropagation();_igmRemSec(\''+JSON.stringify(sec.id)+'\')" style="padding:2px 8px;font-size:14px">&#215;</button>'+
+          '<button class="btn bo bsm" onclick="event.stopPropagation();_igmRemSec('+_jsArg(sec.id)+')" style="padding:2px 8px;font-size:14px">&#215;</button>'+
         '</div>'+
       '</div>';
       h+='<div class="aud-sbody" id="igm-bd-'+JSON.stringify(sec.id)+'" style="display:block">';
@@ -17484,9 +17788,9 @@ async function _renderIgmAudit(el,id){
         h+='<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--brd)">'+
           '<div style="flex:1;font-size:11px">'+esc(k.text_ro)+(k.ref?'<span style="font-size:9px;color:var(--txtL);margin-left:6px">['+esc(k.ref)+']</span>':'')+'</div>'+
           '<div style="display:flex;gap:3px">'+
-            '<span class="aud-gen-btn'+(val==='C'?' c-on':'')+'" onclick="_igmSetKnow(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(k.id)+'\',\'C\')" style="cursor:pointer">C</span>'+
-            '<span class="aud-gen-btn'+(val==='NC'?' nc-on':'')+'" onclick="_igmSetKnow(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(k.id)+'\',\'NC\')" style="cursor:pointer">NC</span>'+
-            '<span class="aud-gen-btn'+(val==='NA'?' na-on':'')+'" onclick="_igmSetKnow(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(k.id)+'\',\'NA\')" style="cursor:pointer">NA</span>'+
+            '<span class="aud-gen-btn'+(val==='C'?' c-on':'')+'" onclick="_igmSetKnow('+_jsArg(sec.id)+','+_jsArg(k.id)+',\'C\')" style="cursor:pointer">C</span>'+
+            '<span class="aud-gen-btn'+(val==='NC'?' nc-on':'')+'" onclick="_igmSetKnow('+_jsArg(sec.id)+','+_jsArg(k.id)+',\'NC\')" style="cursor:pointer">NC</span>'+
+            '<span class="aud-gen-btn'+(val==='NA'?' na-on':'')+'" onclick="_igmSetKnow('+_jsArg(sec.id)+','+_jsArg(k.id)+',\'NA\')" style="cursor:pointer">NA</span>'+
           '</div>'+
         '</div>';
       });
@@ -17502,7 +17806,7 @@ async function _renderIgmAudit(el,id){
       h+='<th style="width:30px"></th></tr></thead><tbody id="igm-tb-'+JSON.stringify(sec.id)+'">';
       sec.calups.forEach(c=>{h+=_igmRowHTML(sec,c)});
       h+='</tbody></table></div>';
-      h+='<div style="margin-top:8px"><button class="btn bo bsm" onclick="_igmAddCalup(\''+JSON.stringify(sec.id)+'\')">'+T('aud_igm_adauga_calup')+'</button></div>';
+      h+='<div style="margin-top:8px"><button class="btn bo bsm" onclick="_igmAddCalup('+_jsArg(sec.id)+')">'+T('aud_igm_adauga_calup')+'</button></div>';
       h+='</div></div>';
     });
   }
@@ -17524,20 +17828,20 @@ function _igmRowHTML(sec,c){
     var subHtml='';
     if(v==='DA'){
       subHtml='<div class="aud-sub-sel">'+
-        '<span class="aud-fr'+(obs.met==='FR'?' on':'')+'" onclick="_igmSetMet(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',\''+JSON.stringify(m.id)+'\',\'FR\')" title="Frecare cu solutie hidroalcoolica (SHA)">FR</span>'+
-        '<span class="aud-sp'+(obs.met==='SP'?' on':'')+'" onclick="_igmSetMet(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',\''+JSON.stringify(m.id)+'\',\'SP\')" title="Spalare cu apa si sapun">SP</span></div>';
+        '<span class="aud-fr'+(obs.met==='FR'?' on':'')+'" onclick="_igmSetMet('+_jsArg(sec.id)+','+_jsArg(c.id)+','+_jsArg(m.id)+',\'FR\')" title="Frecare cu solutie hidroalcoolica (SHA)">FR</span>'+
+        '<span class="aud-sp'+(obs.met==='SP'?' on':'')+'" onclick="_igmSetMet('+_jsArg(sec.id)+','+_jsArg(c.id)+','+_jsArg(m.id)+',\'SP\')" title="Spalare cu apa si sapun">SP</span></div>';
     } else if(v==='NU'){
       subHtml='<div class="aud-sub-sel">'+
-        '<span class="aud-man'+(obs.man?' on':'')+'" onclick="_igmSetMan(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',\''+JSON.stringify(m.id)+'\')" title="Manusi">&#129380;</span></div>';
+        '<span class="aud-man'+(obs.man?' on':'')+'" onclick="_igmSetMan('+_jsArg(sec.id)+','+_jsArg(c.id)+','+_jsArg(m.id)+')" title="Manusi">&#129380;</span></div>';
     }
     return '<td style="background:'+m.bg+'"><div class="aud-mcell">'+
       '<div style="display:flex;gap:3px">'+
-        '<span class="aud-da'+(v==='DA'?' on':'')+'" id="da-'+pref+'" onclick="_igmSetVal(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',\''+JSON.stringify(m.id)+'\',\'DA\')">DA</span>'+
-        '<span class="aud-nu'+(v==='NU'?' on':'')+'" id="nu-'+pref+'" onclick="_igmSetVal(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',\''+JSON.stringify(m.id)+'\',\'NU\')">NU</span>'+
+        '<span class="aud-da'+(v==='DA'?' on':'')+'" id="da-'+pref+'" onclick="_igmSetVal('+_jsArg(sec.id)+','+_jsArg(c.id)+','+_jsArg(m.id)+',\'DA\')">DA</span>'+
+        '<span class="aud-nu'+(v==='NU'?' on':'')+'" id="nu-'+pref+'" onclick="_igmSetVal('+_jsArg(sec.id)+','+_jsArg(c.id)+','+_jsArg(m.id)+',\'NU\')">NU</span>'+
       '</div><div id="sub-'+pref+'">'+subHtml+'</div></div></td>';
   }).join('');
-  return '<tr id="igm-r-'+JSON.stringify(c.id)+'"><td><select style="font-size:11px;padding:3px;border:1px solid var(--brd);border-radius:4px;max-width:120px" onchange="_igmSetCat(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',this.value)">'+catOpts+'</select></td>'+mc+
-    '<td><button style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--txtL)" onclick="_igmRemCalup(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\')" title="Sterge observatie">&#215;</button></td></tr>';
+  return '<tr id="igm-r-'+JSON.stringify(c.id)+'"><td><select style="font-size:11px;padding:3px;border:1px solid var(--brd);border-radius:4px;max-width:120px" onchange="_igmSetCat('+_jsArg(sec.id)+','+_jsArg(c.id)+',this.value)">'+catOpts+'</select></td>'+mc+
+    '<td><button style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--txtL)" onclick="_igmRemCalup('+_jsArg(sec.id)+','+_jsArg(c.id)+')" title="Sterge observatie">&#215;</button></td></tr>';
 }
 
 function _igmAddSec(){
@@ -17545,6 +17849,7 @@ function _igmAddSec(){
   var secId=sel.value;var secName=rSec(secId);
   if(_igmSecs.find(s=>s.id===secId)){alert(_M('Sectia este deja adaugata.'));return}
   var calups=[];for(var i=0;i<10;i++)calups.push(_mkCalup());
+  _igmDraft=_audGrabDraft(_IGM_FIELDS);
   _igmSecs.push({id:secId,name:secName,calups:calups,knowledge:{}});
   render();
 }
@@ -17554,6 +17859,7 @@ function _igmSetKnow(sid,itemId,val){
   if(!s.knowledge)s.knowledge={};
   // Toggle: click pe aceeasi valoare o sterge
   if(s.knowledge[itemId]===val){delete s.knowledge[itemId]}else{s.knowledge[itemId]=val}
+  _igmDraft=_audGrabDraft(_IGM_FIELDS);
   render();
 }
 function _igmKnowledgeScore(sec){
@@ -17565,7 +17871,7 @@ function _igmKnowledgeScore(sec){
   });
   return{done:done,evaluable:done-na,conform:conform,na:na};
 }
-function _igmRemSec(sid){if(!confirm(CFG.lang==='en'?'Remove section from audit?':'Eliminati sectia din audit?'))return;_igmSecs=_igmSecs.filter(s=>s.id!==sid);render()}
+function _igmRemSec(sid){if(!confirm(CFG.lang==='en'?'Remove section from audit?':'Eliminati sectia din audit?'))return;_igmDraft=_audGrabDraft(_IGM_FIELDS);_igmSecs=_igmSecs.filter(s=>s.id!==sid);render()}
 function _igmTogSec(sid){var bd=document.getElementById('igm-bd-'+sid);if(bd)bd.style.display=bd.style.display==='none'?'block':'none'}
 function _igmAddCalup(sid){var s=_igmSecs.find(x=>x.id===sid);if(!s)return;s.calups.push(_mkCalup());_igmRenderTbody(sid);_igmUpdScore(sid)}
 function _igmRemCalup(sid,cid){var s=_igmSecs.find(x=>x.id===sid);if(!s)return;s.calups=s.calups.filter(x=>x.id!==cid);_igmRenderTbody(sid);_igmUpdScore(sid)}
@@ -17639,6 +17945,7 @@ async function _saveIgmAudit(){
   // Global score
   var da=0,nu=0,tot=0;
   _igmSecs.forEach(sec=>{var sc=_igmCalcScore(sec);da+=sc.da;nu+=sc.nu;tot+=sc.tot});
+  if(_audNeedAnswers(tot,_M('ocazie de igiena')))return;
   var pct=tot>0?Math.round(da/tot*100):0;
   var secNames=_igmSecs.map(s=>s.name).filter(Boolean).join(', ');
   var rec={year:A.year,audit_type:catId,date:date,auditor:v('f-igm-auditor'),
@@ -17662,6 +17969,7 @@ async function _renderGenericAudit(el,id){
   var r=null;
   if(id){r=(await ga('audits')).find(x=>x.id===id);if(r&&!_genItems.length)_genItems=JSON.parse(JSON.stringify(r.items||[]))}
   if(!r)r={date:todayISO(),auditor:'',section:'',observations:'',recommendations:'',measures:'',measure_deadline:'',measure_responsible:''};
+  r=_audApplyDraft(r,_genDraft);_genDraft=null;
 
   var catName=_audCatName(_genEditCatId);
   var at=_audCatAuditType(_genEditCatId);
@@ -17749,12 +18057,14 @@ function _genSectionHTML(title,items,sectionId){
 }
 
 function _genSetResult(idx,val){
+  _genDraft=_audGrabDraft(_GEN_FIELDS);
   if(_genItems[idx].result===val)_genItems[idx].result='';
   else _genItems[idx].result=val;
   render();
 }
 function _genRemoveItem(idx){
   if(!confirm(CFG.lang==='en'?'Remove this question?':'Stergi aceasta intrebare?'))return;
+  _genDraft=_audGrabDraft(_GEN_FIELDS);
   _genItems.splice(idx,1);render();
 }
 function _genAddItem(sectionId){
@@ -17762,8 +18072,22 @@ function _genAddItem(sectionId){
   var txt=prompt(isEN?'Question text:':'Textul intrebarii:');
   if(!txt||!txt.trim())return;
   var ref=prompt(isEN?'Reference (optional):':'Referinta (optional):','');
+  _genDraft=_audGrabDraft(_GEN_FIELDS);
   _genItems.push({id:genId('gi'),text_ro:txt.trim(),text_en:txt.trim(),ref:ref||'',section:sectionId||'',result:'',note:''});
   render();
+}
+
+// Un audit fara niciun raspuns s-ar salva cu compliance_pct:0 — nedeosebit de un audit facut
+// si picat integral. Zeroul fals intra apoi in media pe categorie, in KPI-urile dashboard-ului,
+// in auto-calculul obiectivelor si in Raportul Anual trimis la DSP, unde nimeni nu mai poate
+// spune daca e o performanta reala sau un formular inchis din greseala. Il oprim aici, in
+// singurul loc unde inca stim ca lipseste numitorul (regula „Rate si numitori" din CLAUDE.md).
+// Alternativa — sa salvam null si sa filtram in cele 13 locuri care citesc campul — ar fi
+// insemnat sa atingem tot motorul de rapoarte pentru acelasi rezultat.
+function _audNeedAnswers(totalEval,unitate){
+  if(totalEval>0)return false;
+  alert(_Mf('Nu ai evaluat nicio {unitate}. Completeaza cel putin un raspuns inainte de a salva — altfel auditul s-ar inregistra cu 0% conformitate, ca si cum ar fi fost evaluat in intregime si picat.',{unitate:unitate}));
+  return true;
 }
 
 async function _saveGenericAudit(){
@@ -17773,6 +18097,7 @@ async function _saveGenericAudit(){
   var items=_genItems;
   var totalEval=0,conform=0;
   items.forEach(it=>{if(it.result==='C'||it.result==='NC'){totalEval++;if(it.result==='C')conform++}});
+  if(_audNeedAnswers(totalEval,_M('intrebare')))return;
   var pct=totalEval>0?Math.round(conform/totalEval*1000)/10:0;
   var rec={year:A.year,audit_type:_genEditCatId,section:sec,date:date,auditor:v('f-gen-auditor'),
     items:JSON.parse(JSON.stringify(items)),
@@ -17832,9 +18157,9 @@ async function _renderDotareAudit(el,id){
       var d=sd[key];
       h+='<tr><td style="text-align:left;font-size:12px">'+esc(txt)+'</td>';
       ['p','f','c','a'].forEach(fld=>{
-        h+='<td><input type="checkbox" '+(d[fld]?'checked':'')+' onchange="_dotareData.sections[\''+JSON.stringify(sec.id)+'\']['+key+'].'+fld+'=this.checked"></td>';
+        h+='<td><input type="checkbox" '+(d[fld]?'checked':'')+' onchange="_dotareData.sections['+_jsArg(sec.id)+']['+key+'].'+fld+'=this.checked"></td>';
       });
-      h+='<td><input value="'+esc(d.obs||'')+'" onchange="_dotareData.sections[\''+JSON.stringify(sec.id)+'\']['+key+'].obs=this.value" style="width:80px;padding:2px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td></tr>';
+      h+='<td><input value="'+esc(d.obs||'')+'" onchange="_dotareData.sections['+_jsArg(sec.id)+']['+key+'].obs=this.value" style="width:80px;padding:2px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td></tr>';
     });
     h+='</tbody></table></div></div>';
   });
@@ -17867,6 +18192,7 @@ async function _saveDotareAudit(){
       if(d.p||d.f||d.c||d.a){totalEval++;if(d.p&&d.f&&d.c&&d.a)conform++}
     });
   });
+  if(_audNeedAnswers(totalEval,_M('dotare la vreun punct de igiena')))return;
   var pct=totalEval>0?Math.round(conform/totalEval*1000)/10:0;
   var rec={year:A.year,audit_type:catId,section:'',date:date,auditor:v('f-dot-auditor'),
     sections_data:JSON.parse(JSON.stringify(_dotareData.sections)),
@@ -17958,7 +18284,7 @@ async function _renderAgregatAudit(el,id){
         // v12.73: stil diferit pentru auto vs override (italic = auto, normal = override manual)
         var fontStyle=hasOverride?'font-weight:700':(val!=null?'font-style:italic;color:var(--txtL)':'');
         var title=hasOverride?'Override manual':(val!=null?'Auto-calculat din '+matching.length+' audit(uri)':'Fara date — completeaza auditul respectiv');
-        h+='<td style="background:'+bg+'" title="'+title+'"><input type="number" min="0" max="100" value="'+(val!=null?val:'')+'" onchange="_agregatOverride(\''+JSON.stringify(sec.id)+'\',\''+JSON.stringify(c.id)+'\',this.value)" style="width:60px;padding:2px;border:1px solid var(--brd);border-radius:3px;font-size:11px;text-align:center;'+fontStyle+'"></td>';
+        h+='<td style="background:'+bg+'" title="'+title+'"><input type="number" min="0" max="100" value="'+(val!=null?val:'')+'" onchange="_agregatOverride('+_jsArg(sec.id)+','+_jsArg(c.id)+',this.value)" style="width:60px;padding:2px;border:1px solid var(--brd);border-radius:3px;font-size:11px;text-align:center;'+fontStyle+'"></td>';
       });
       var avg=rowVals.length>0?Math.round(rowVals.reduce((s,v)=>s+v,0)/rowVals.length):null;
       var avgClr=avg!=null?(avg>=80?'#16A34A':avg>=60?'#F59E0B':'#DC2626'):'var(--txtL)';
@@ -17978,15 +18304,15 @@ async function _renderAgregatAudit(el,id){
     var fb=_agregatData.feedback[sec.id];
     h+='<tr>'+
       '<td style="text-align:left;font-weight:600;white-space:nowrap">'+esc(sec.name||sec.id)+'</td>'+
-      '<td><input value="'+esc(fb.action||'')+'" onchange="_agregatData.feedback[\''+JSON.stringify(sec.id)+'\'].action=this.value" placeholder="Ex: re-instruire igiena maini, reparatie dozator" style="width:100%;padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
-      '<td><select onchange="_agregatData.feedback[\''+JSON.stringify(sec.id)+'\'].status=this.value" style="padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px;min-width:130px">'+
+      '<td><input value="'+esc(fb.action||'')+'" onchange="_agregatData.feedback['+_jsArg(sec.id)+'].action=this.value" placeholder="Ex: re-instruire igiena maini, reparatie dozator" style="width:100%;padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
+      '<td><select onchange="_agregatData.feedback['+_jsArg(sec.id)+'].status=this.value" style="padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px;min-width:130px">'+
         '<option value="">—</option>'+
         '<option value="implemented"'+(fb.status==='implemented'?' selected':'')+'>&#10004; Implementat</option>'+
         '<option value="partial"'+(fb.status==='partial'?' selected':'')+'>&#9203; Partial</option>'+
         '<option value="not_implemented"'+(fb.status==='not_implemented'?' selected':'')+'>&#10060; Ne-implementat</option>'+
         '<option value="na"'+(fb.status==='na'?' selected':'')+'>N/A</option>'+
       '</select></td>'+
-      '<td><input value="'+esc(fb.reason||'')+'" onchange="_agregatData.feedback[\''+JSON.stringify(sec.id)+'\'].reason=this.value" placeholder="Opt." style="width:100%;padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
+      '<td><input value="'+esc(fb.reason||'')+'" onchange="_agregatData.feedback['+_jsArg(sec.id)+'].reason=this.value" placeholder="Opt." style="width:100%;padding:3px 5px;border:1px solid var(--brd);border-radius:3px;font-size:11px"></td>'+
     '</tr>';
   });
   h+='</tbody></table></div>'+
@@ -18023,6 +18349,12 @@ async function _saveAgregatAudit(){
     var row=_agregatData.matrix[secId];
     Object.keys(row).forEach(cId=>{if(row[cId]!=null)vals.push(row[cId])});
   });
+  // Matricea agregatului se completeaza din auditurile deja facute pe trimestru. Goala inseamna
+  // ca nu exista pe ce calcula, iar un 0% salvat aici ar arata la fel cu un trimestru dezastruos.
+  if(!vals.length){
+    alert(_M('Matricea este goala — nu exista audituri pe trimestrul si sectiile selectate. Fa intai auditurile pe categorii, apoi revino la agregat; altfel s-ar salva 0% conformitate pe date inexistente.'));
+    return;
+  }
   var pct=vals.length>0?Math.round(vals.reduce((s,v)=>s+v,0)/vals.length):0;
   var rec={year:A.year,audit_type:catId,date:date,auditor:v('f-agr-auditor'),
     quarter:parseInt(v('f-agr-q'))||1,
@@ -18048,6 +18380,7 @@ async function _renderCustomAudit(el,id){
   var r=null;
   if(id){r=(await ga('audits')).find(x=>x.id===id);if(r&&!_customItems.length)_customItems=JSON.parse(JSON.stringify(r.items||[]))}
   if(!r)r={date:todayISO(),auditor:'',section:'',observations:'',recommendations:''};
+  r=_audApplyDraft(r,_customDraft);_customDraft=null;
 
   var h='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'+
     '<button class="btn bo bsm" onclick="_backToList()">&#8592; '+T('aud_inapoi')+'</button>'+
@@ -18096,9 +18429,9 @@ async function _renderCustomAudit(el,id){
   el.innerHTML=h;
 }
 
-function _customAddItem(){_customItems.push({id:genId('ci'),text_ro:'',text_en:'',ref:'',result:'',note:''});render()}
-function _customRemItem(i){_customItems.splice(i,1);render()}
-function _customSetResult(i,val){if(_customItems[i].result===val)_customItems[i].result='';else _customItems[i].result=val;render()}
+function _customAddItem(){_customDraft=_audGrabDraft(_CUST_FIELDS);_customItems.push({id:genId('ci'),text_ro:'',text_en:'',ref:'',result:'',note:''});render()}
+function _customRemItem(i){_customDraft=_audGrabDraft(_CUST_FIELDS);_customItems.splice(i,1);render()}
+function _customSetResult(i,val){_customDraft=_audGrabDraft(_CUST_FIELDS);if(_customItems[i].result===val)_customItems[i].result='';else _customItems[i].result=val;render()}
 
 async function _saveCustomAudit(){
   var v=s=>{var el=document.getElementById(s);return el?el.value:''};
@@ -18107,6 +18440,7 @@ async function _saveCustomAudit(){
   var items=_customItems.filter(it=>it.text_ro);
   var totalEval=0,conform=0;
   items.forEach(it=>{if(it.result==='C'||it.result==='NC'){totalEval++;if(it.result==='C')conform++}});
+  if(_audNeedAnswers(totalEval,_M('intrebare')))return;
   var pct=totalEval>0?Math.round(conform/totalEval*1000)/10:0;
   var rec={year:A.year,audit_type:_customCatId,section:sec,date:date,auditor:v('f-cust-auditor'),
     items:JSON.parse(JSON.stringify(items)),
@@ -18794,6 +19128,9 @@ async function _saveFoAudit(){
   });
   if(!rows.length){alert(CFG.lang==='en'?'Add at least one prescription.':'Adaugati cel putin o prescriptie.');return}
   var sc=_foScore(rows);
+  // Randurile pot exista fara niciun indicator bifat (doar Nr. FO si antibioticul): _foScore
+  // intoarce corect pct null, dar inregistrarea l-ar salva ca 0 — vezi _audNeedAnswers.
+  if(_audNeedAnswers(sc.evaluate,_M('prescriptie')))return;
   var rec={year:A.year,audit_type:_foCatId,section:sec,date:date,auditor:v('f-fo-auditor'),
     rows:JSON.parse(JSON.stringify(rows)),
     // compliance_pct / total_items / conform_items pastreaza numele folosite de lista de audituri,
@@ -18863,6 +19200,7 @@ function audSaveTemplate(){
   });
   saveCfg();
   if(typeof showToast==='function')showToast((isEN?'Template saved: ':'Sablon salvat: ')+items.length+(isEN?' questions.':' intrebari.'));
+  _genDraft=_audGrabDraft(_GEN_FIELDS);
   render();
 }
 function audResetTemplate(){
@@ -18875,6 +19213,7 @@ function audResetTemplate(){
   saveCfg();
   _genItems=audTemplateItems(at);
   if(typeof showToast==='function')showToast(isEN?'Standard grid restored.':'S-a revenit la grila standard.');
+  _genDraft=_audGrabDraft(_GEN_FIELDS);
   render();
 }
 
@@ -19241,7 +19580,7 @@ async function rObiective(el){
         var opSymbol=o.operator==='gte'?'\u2265':'\u2264';
         var isExpanded=_objExpanded[o.id];
 
-        h+='<div style="padding:12px 16px;border-bottom:1px solid var(--brd);cursor:pointer" onclick="_objExpanded[\''+JSON.stringify(o.id)+'\']=!_objExpanded[\''+JSON.stringify(o.id)+'\'];render()">'+
+        h+='<div style="padding:12px 16px;border-bottom:1px solid var(--brd);cursor:pointer" onclick="_objExpanded['+_jsArg(o.id)+']=!_objExpanded['+_jsArg(o.id)+'];render()">'+
           '<div style="display:grid;grid-template-columns:1fr 200px auto;gap:12px;align-items:center">'+
             '<div><span style="font-weight:700;color:var(--navy);margin-right:6px">'+esc(o.code)+'</span>'+esc(title)+'<div style="font-size:11px;color:var(--txtL);margin-top:2px">'+esc(indicator)+'</div></div>'+
             '<div style="text-align:center"><div style="font-size:13px;margin-bottom:4px">'+valStr+' / '+opSymbol+' '+targetStr+'</div>'+_progressBar(curVal,o.target,o.operator,o._status)+'</div>'+
@@ -19273,7 +19612,7 @@ async function rObiective(el){
                 '<div class="fg" style="flex:1;min-width:100px"><label>'+T('obj_perioada')+'</label><input id="obj-rv-per-'+JSON.stringify(o.id)+'" placeholder="ex: T1 2025, Ian 2025"></div>'+
                 '<div class="fg" style="width:100px"><label>'+T('obj_valoare')+' ('+o.unit+')</label><input type="number" id="obj-rv-val-'+JSON.stringify(o.id)+'" step="0.1"></div>'+
                 '<div class="fg" style="flex:1;min-width:100px"><label>'+T('obj_nota')+'</label><input id="obj-rv-note-'+JSON.stringify(o.id)+'"></div>'+
-                '<button class="btn bp bsm" onclick="var p=document.getElementById(\'obj-rv-per-'+JSON.stringify(o.id)+'\').value.trim(),v=document.getElementById(\'obj-rv-val-'+JSON.stringify(o.id)+'\').value;if(p&&v!==\'\'){_recordManualValue(\''+JSON.stringify(o.id)+'\',p,v,document.getElementById(\'obj-rv-note-'+JSON.stringify(o.id)+'\').value)}else{alert(\'Completeaza perioada si valoarea\')}">'+T('btn_save')+'</button>'+
+                '<button class="btn bp bsm" onclick="var p=document.getElementById(\'obj-rv-per-'+JSON.stringify(o.id)+'\').value.trim(),v=document.getElementById(\'obj-rv-val-'+JSON.stringify(o.id)+'\').value;if(p&&v!==\'\'){_recordManualValue('+_jsArg(o.id)+',p,v,document.getElementById(\'obj-rv-note-'+JSON.stringify(o.id)+'\').value)}else{alert(\'Completeaza perioada si valoarea\')}">'+T('btn_save')+'</button>'+
               '</div></div>';
           }
           h+='</div>';
@@ -19309,19 +19648,19 @@ async function rObiective(el){
         var title=isEN?(o.title_en||o.title_ro):o.title_ro;
         var diffTarget=o.target!==o.target_default;
         h+='<div style="padding:10px 16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
-          '<div style="width:60px"><input value="'+esc(o.code)+'" onchange="_updateObj(\''+JSON.stringify(o.id)+'\',\'code\',this.value)" style="width:50px;text-align:center;border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:12px;font-weight:700"></div>'+
+          '<div style="width:60px"><input value="'+esc(o.code)+'" onchange="_updateObj('+_jsArg(o.id)+',\'code\',this.value)" style="width:50px;text-align:center;border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:12px;font-weight:700"></div>'+
           '<div style="flex:1;min-width:200px"><strong>'+esc(title)+'</strong>'+
             '<div style="font-size:10px;color:var(--txtL)">'+esc(isEN?(o.indicator_en||o.indicator_ro):o.indicator_ro)+'</div></div>'+
           '<div style="width:120px;text-align:center">'+
             '<label style="font-size:10px;color:var(--txtL)">'+T('obj_tinta')+' ('+(o.operator==='gte'?'\u2265':o.operator==='lte'?'\u2264':'=')+') '+(o.unit||'')+'</label>'+
-            '<input type="number" value="'+(o.target||0)+'" onchange="_updateObj(\''+JSON.stringify(o.id)+'\',\'target\',+this.value)" style="width:80px;text-align:center;border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:13px;font-weight:600">'+
+            '<input type="number" value="'+(o.target||0)+'" onchange="_updateObj('+_jsArg(o.id)+',\'target\',+this.value)" style="width:80px;text-align:center;border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:13px;font-weight:600">'+
             (diffTarget?'<div style="font-size:9px;color:var(--txtL)">Standard: '+(o.target_default||'—')+' '+(o.unit||'')+'</div>':'')+
           '</div>'+
           '<div style="display:flex;gap:6px;align-items:center">'+
             '<span class="bdg '+(o.standard?'bdg-b':'bdg-g')+'" style="font-size:9px">'+(o.standard?T('obj_standard'):T('obj_personalizat'))+'</span>'+
-            '<label style="font-size:11px;cursor:pointer"><input type="checkbox" '+(o.active?'checked':'')+' onchange="_updateObj(\''+JSON.stringify(o.id)+'\',\'active\',this.checked)" style="accent-color:#0D9488"> '+T('obj_activ')+'</label>'+
-            (diffTarget?'<button class="btn bo bsm" onclick="_updateObj(\''+JSON.stringify(o.id)+'\',\'target\','+o.target_default+')" style="font-size:10px" title="'+T('obj_reseteaza_obj')+'">\u21BA</button>':'')+
-            (!o.standard?'<button class="btn bo bsm" onclick="_deleteObj(\''+JSON.stringify(o.id)+'\')" style="font-size:10px;color:var(--red)">&#128465;</button>':'')+
+            '<label style="font-size:11px;cursor:pointer"><input type="checkbox" '+(o.active?'checked':'')+' onchange="_updateObj('+_jsArg(o.id)+',\'active\',this.checked)" style="accent-color:#0D9488"> '+T('obj_activ')+'</label>'+
+            (diffTarget?'<button class="btn bo bsm" onclick="_updateObj('+_jsArg(o.id)+',\'target\','+o.target_default+')" style="font-size:10px" title="'+T('obj_reseteaza_obj')+'">\u21BA</button>':'')+
+            (!o.standard?'<button class="btn bo bsm" onclick="_deleteObj('+_jsArg(o.id)+')" style="font-size:10px;color:var(--red)">&#128465;</button>':'')+
           '</div>'+
         '</div>';
       });
@@ -21866,7 +22205,7 @@ function _renderProbeApplicabilityUI(){
     var row='<tr class="cfg-pa-row cfg-pa-grp-'+groupKey+'"'+hidden+'><td style="position:sticky;left:0;background:var(--bg);z-index:1;white-space:nowrap;font-weight:600;font-size:11px">'+_secDisplayName(s)+'</td>';
     pts.forEach(function(pt){
       var checked=allChecked||ap.includes(pt.id);
-      row+='<td style="text-align:center"><input type="checkbox" data-sec="'+si+'" data-pt="'+pt.id+'" '+(checked?'checked':'')+' onchange="toggleProbeApplicability('+si+',\''+JSON.stringify(pt.id)+'\',this.checked)" style="accent-color:var(--teal);width:14px;height:14px;cursor:pointer"></td>';
+      row+='<td style="text-align:center"><input type="checkbox" data-sec="'+si+'" data-pt="'+pt.id+'" '+(checked?'checked':'')+' onchange="toggleProbeApplicability('+si+','+_jsArg(pt.id)+',this.checked)" style="accent-color:var(--teal);width:14px;height:14px;cursor:pointer"></td>';
     });
     row+='<td style="text-align:center"><button class="btn bsm" style="font-size:9px;padding:2px 6px" onclick="toggleAllProbes('+si+')">&#8645;</button></td></tr>';
     return row;
@@ -24374,6 +24713,11 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.79',date:'2026-08-03',summary:'Pasul 2 al auditului: registrul ICD verificat pe Metodologia nationala de supraveghere a ICD, adusa de user. Incadrarea automata e corecta pe toate clauzele — dar textul de ajutor din formular descria alta regula decat aplica de fapt codul, si tocmai el m-a facut sa banuiesc un defect care nu exista.'},
+  {version:'13.78',date:'2026-08-03',summary:'Auditul de regresie dupa editarile in masa. A scos trei lucruri: 51 de butoane care nu raspundeau la click (regresie proprie), pierderea a tot ce scria auditorul la fiecare raspuns bifat, si auditurile goale salvate cu 0% conformitate — un zero fals care ajungea in Raportul Anual.'},
+  {version:'13.77',date:'2026-08-03',summary:'Campul de concluzii al anchetei avea eticheta generica si niciun indiciu, spre deosebire de vecinul lui. Userul a observat corect ca, asa cum e formulata cerinta, concluziile ajung sa repete capitolele VIII si X. Acum campul spune ce sa NU repeti, iar un buton compune schita rationamentului din datele deja introduse.'},
+  {version:'13.76',date:'2026-08-03',summary:'Problema reala semnalata de user: in fisa de ancheta aparea „nu e MDR" pentru o Klebsiella rezistenta la cefalosporine de generatia III, pentru ca dropdown-ul ramasese pe valoarea implicita „Nu". Aplicatia deduce acum incadrarea din antibiograma si o semnaleaza cand nu se potriveste.'},
+  {version:'13.75',date:'2026-08-03',summary:'Reparat cuprinsul manualului: capitolul 12 se rupea intre cele doua coloane — numarul ramanea in stanga, titlul trecea in dreapta fara numar. Semnalat de user pe captura de ecran.'},
   {version:'13.74',date:'2026-07-30',summary:'Inchiderea auditurilor: regulile scoase din A1 si A2 au fost scrise in CLAUDE.md, unde le va citi orice sesiune viitoare. Plus aducerea la zi a faptelor din CLAUDE.md si stergerea unei constante moarte. Nimic vizibil pentru utilizator.'},
   {version:'13.73',date:'2026-07-30',summary:'A3 si A4 — manualul si Ajutorul, aduse la zi. Manualul avea 16 capitole si ii lipseau 7 module intregi; are acum 23, in ordinea meniului. Ajutorul are 11 intrebari noi, scoase din ce a iesit la audit ca sursa reala de confuzie, plus un camp de cautare care filtreaza pe masura ce scrii.'},
   {version:'13.72',date:'2026-07-30',summary:'Verificarea modulului ICD contra regulilor din A1/A2 si completarea lui: fisa de caz individuala in Word (Figura 1.2) si legatura cu fisa IAAM printr-un selector, nu prin text liber.'},

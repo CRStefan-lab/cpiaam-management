@@ -1,9 +1,11 @@
 {
-  "version": "13.74",
-  "version_note": "Titluri de pagina + curatenie interna",
+  "version": "13.79",
+  "version_note": "Registrul ICD verificat pe metodologia nationala — incadrarea e corecta, textul de ajutor nu era",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "REPARAT — paginile Focare si Statistici Spital afisau „Dashboard\" in bara de sus, in loc de propriul titlu. Acelasi lucru se intamplase si la Registrul ICD.",
-    "Restul versiunii e curatenie interna: documentatia tehnica a proiectului a fost adusa la zi si a fost eliminat un fragment de cod nefolosit. Nimic altceva nu se schimba in aplicatie."
+    "Incadrarea automata a cazurilor ICD a fost verificata clauza cu clauza pe Metodologia de supraveghere a infectiilor cu Clostridium difficile: toate cele opt reguli de incadrare si cele patru praguri de recidiva ies corect, inclusiv la limita exacta (48 de ore, 4 si 12 saptamani, 2 si 8 saptamani). Nu s-a schimbat nimic la calcul.",
+    "REPARAT textul de ajutor de sub „Data ultimei externari\", care spunea gresit ca fereastra de 4-12 saptamani inseamna „nedeterminat\" indiferent unde a debutat boala. In metodologie, acea fereastra se aplica DOAR la debutul la domiciliu; un debut in spital in primele 48 de ore este comunitar, daca pacientul nu a mai fost spitalizat in ultimele 4 saptamani. Textul spune acum exact asta, separat pe cele doua situatii.",
+    "Nota cu regulile de incadrare din fisa de caz Word era incompleta — ii lipsea a doua clauza de la „comunitar\" (debutul in spital in primele 48 de ore). Acum reproduce integral regulile din fisa de caz a metodologiei si spune de unde vin.",
+    "In fisa unitatii, „Numar externari\" si „Numar zile pacienti\" afisau 0 cand in Statistici Spital nu era completat nimic, desi „Numar paturi\" afisa corect „—\". Un spital cu zero zile de spitalizare nu exista, iar un 0 intr-un formular oficial nu se distinge de o valoare reala. Acum toate trei arata „—\"."
   ]
 }

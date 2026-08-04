@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.79</title>
+<title>CPIAAM Management v13.80</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -363,6 +363,13 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .fg{margin-bottom:14px}
 .fg label{display:block;font-size:11.5px;font-weight:600;color:var(--txtL);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
 .fg input,.fg select,.fg textarea{width:100%;padding:8px 10px;border:1px solid var(--brd);border-radius:6px;font-size:13px;font-family:var(--f);transition:.15s}
+/* Regula de mai sus e scrisa pentru CAMPURI DE TEXT, dar prinde si bifele, care nu sunt campuri de
+   text: le dadea width:100%, padding de 8px si bordura. Intr-un <label> cu display:flex, bifa
+   devine element de flex si porneste de la latimea intreaga a randului, apoi se micsoreaza doar
+   cat sa incapa textul — deci patratelul ajungea la 170-240px, DIFERIT pe fiecare rand, si parea
+   ca bifele sar stanga-dreapta. In plus manca din rand, asa ca etichetei ii ramaneau ~110px din
+   319 si se rupea pe trei randuri. Le scoatem din stilul de camp si le lasam la marimea lor. */
+.fg input[type=checkbox],.fg input[type=radio]{width:auto;flex:none;padding:0;border:none;border-radius:0}
 .fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,176,.1)}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
@@ -2394,7 +2401,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.79';
+const APP_VERSION='13.80';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -7861,9 +7868,13 @@ async function editICD(id){
 
     '<div class="fr"><div class="fg"><label>'+(isEN?'Admission date (if onset in hospital)':'Data internarii (daca debutul e in spital)')+'</label><input type="date" id="f-icd-adm" value="'+esc(r.date_admission||'')+'" onchange="_icdPreview()"></div>'+
       '<div class="fg"><label>'+(isEN?'Last discharge date':'Data ultimei externari')+'</label><input type="date" id="f-icd-disch" value="'+esc(r.date_last_discharge||'')+'" onchange="_icdPreview()"></div></div>'+
-    '<div class="ib inf" style="font-size:11px;margin-bottom:10px">'+
+    // `.ib` e display:flex, deci FIECARE copil direct devine coloana — si un nod de text neinvelit
+    // e si el copil. Textul cu <strong> in mijloc iesea in 5 coloane inguste, cu etichetele strivite
+    // la 32-48px. De aceea continutul sta intr-un singur <span>: flex-ul primeste un copil, iar
+    // textul curge normal in interiorul lui. Orice caseta .ib cu marcaj inline are nevoie de asta.
+    '<div class="ib inf" style="font-size:11px;margin-bottom:10px"><span>'+
       (isEN?'The last discharge date decides the classification, but the scale differs by onset place. <strong>Onset at home</strong>: under 4 weeks since discharge = healthcare-associated, 4–12 weeks = indeterminate, over 12 weeks = community. <strong>Onset in hospital within 48h</strong>: healthcare-associated only if the patient was hospitalised in the last 4 weeks, otherwise community — "indeterminate" does not apply here. Without the discharge date, a case with onset at home counts as community.'
-           :'Data ultimei externari decide incadrarea, dar scala difera dupa locul debutului. <strong>Debut la domiciliu</strong>: sub 4 saptamani de la externare = nosocomial, 4–12 saptamani = nedeterminat, peste 12 saptamani = comunitar. <strong>Debut in spital sub 48h</strong>: nosocomial doar daca a mai fost spitalizat in ultimele 4 saptamani, altfel comunitar — „nedeterminat" nu se aplica aici. Fara data externarii, un caz cu debut la domiciliu se considera comunitar.')+'</div>'+
+           :'Data ultimei externari decide incadrarea, dar scala difera dupa locul debutului. <strong>Debut la domiciliu</strong>: sub 4 saptamani de la externare = nosocomial, 4–12 saptamani = nedeterminat, peste 12 saptamani = comunitar. <strong>Debut in spital sub 48h</strong>: nosocomial doar daca a mai fost spitalizat in ultimele 4 saptamani, altfel comunitar — „nedeterminat" nu se aplica aici. Fara data externarii, un caz cu debut la domiciliu se considera comunitar.')+'</span></div>'+
 
     '<div id="f-icd-preview" style="margin-bottom:10px"></div>'+
 
@@ -24713,6 +24724,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.80',date:'2026-08-04',summary:'Userul a trimis o captura din fisa ICD cu „nu sunt aliniate bine". Erau doua lucruri in acelasi ecran: caseta de explicatii pe care o lungisem eu in v13.79 si care iesea in cinci coloane, si un defect vechi de care ea doar a apropiat privirea — casuta de bifat era stilata ca un camp de text, deci se intindea si sarea de la un rand la altul.'},
   {version:'13.79',date:'2026-08-03',summary:'Pasul 2 al auditului: registrul ICD verificat pe Metodologia nationala de supraveghere a ICD, adusa de user. Incadrarea automata e corecta pe toate clauzele — dar textul de ajutor din formular descria alta regula decat aplica de fapt codul, si tocmai el m-a facut sa banuiesc un defect care nu exista.'},
   {version:'13.78',date:'2026-08-03',summary:'Auditul de regresie dupa editarile in masa. A scos trei lucruri: 51 de butoane care nu raspundeau la click (regresie proprie), pierderea a tot ce scria auditorul la fiecare raspuns bifat, si auditurile goale salvate cu 0% conformitate — un zero fals care ajungea in Raportul Anual.'},
   {version:'13.77',date:'2026-08-03',summary:'Campul de concluzii al anchetei avea eticheta generica si niciun indiciu, spre deosebire de vecinul lui. Userul a observat corect ca, asa cum e formulata cerinta, concluziile ajung sa repete capitolele VIII si X. Acum campul spune ce sa NU repeti, iar un buton compune schita rationamentului din datele deja introduse.'},

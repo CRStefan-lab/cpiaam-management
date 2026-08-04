@@ -1,11 +1,9 @@
 {
-  "version": "13.79",
-  "version_note": "Registrul ICD verificat pe metodologia nationala — incadrarea e corecta, textul de ajutor nu era",
+  "version": "13.80",
+  "version_note": "Bifele din formulare stau aliniate, iar caseta de explicatii din fisa ICD se citeste normal",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Incadrarea automata a cazurilor ICD a fost verificata clauza cu clauza pe Metodologia de supraveghere a infectiilor cu Clostridium difficile: toate cele opt reguli de incadrare si cele patru praguri de recidiva ies corect, inclusiv la limita exacta (48 de ore, 4 si 12 saptamani, 2 si 8 saptamani). Nu s-a schimbat nimic la calcul.",
-    "REPARAT textul de ajutor de sub „Data ultimei externari\", care spunea gresit ca fereastra de 4-12 saptamani inseamna „nedeterminat\" indiferent unde a debutat boala. In metodologie, acea fereastra se aplica DOAR la debutul la domiciliu; un debut in spital in primele 48 de ore este comunitar, daca pacientul nu a mai fost spitalizat in ultimele 4 saptamani. Textul spune acum exact asta, separat pe cele doua situatii.",
-    "Nota cu regulile de incadrare din fisa de caz Word era incompleta — ii lipsea a doua clauza de la „comunitar\" (debutul in spital in primele 48 de ore). Acum reproduce integral regulile din fisa de caz a metodologiei si spune de unde vin.",
-    "In fisa unitatii, „Numar externari\" si „Numar zile pacienti\" afisau 0 cand in Statistici Spital nu era completat nimic, desi „Numar paturi\" afisa corect „—\". Un spital cu zero zile de spitalizare nu exista, iar un 0 intr-un formular oficial nu se distinge de o valoare reala. Acum toate trei arata „—\"."
+    "REPARAT, se vede in toate formularele: casuta de bifat era stilata ca un camp de text, deci primea latime pe tot randul. Se micsora doar cat sa incapa eticheta de langa ea, asa ca patratelul ajungea intre 170 si 240 de pixeli si sarea stanga-dreapta de la un rand la altul. Etichetei ii ramaneau vreo 110 pixeli din 319, deci un text ca „Antibiotic in ultimele 3 luni\" se rupea pe trei randuri. Acum bifele au marimea lor normala, stau toate pe aceeasi verticala si etichetele incap pe un rand — la Factori de risc din fisa ICD, in fisa IAAM si la urmarirea masurilor din Documente.",
+    "REPARAT caseta albastra de explicatii de sub „Data ultimei externari\" din fisa ICD: textul iesea in cinci coloane inguste, cu „Debut la domiciliu\" si „Debut in spital sub 48h\" strivite pe cate 30-50 de pixeli. Acum se citeste ca un paragraf normal, pe patru randuri."
   ]
 }

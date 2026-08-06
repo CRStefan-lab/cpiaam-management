@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.83</title>
+<title>CPIAAM Management v13.84</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2407,7 +2407,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.83';
+const APP_VERSION='13.84';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -11152,14 +11152,14 @@ async function rDes(el){
 
   el.innerHTML='<div class="kg">'+
     '<div class="kc am"><div class="kl">Total Deseuri</div><div class="kv" id="des-kpi-total">'+fn(Math.round(gt*100)/100)+' kg</div></div>'+
-    activeWC.filter(w=>w.category==='periculos'||w.dangerous).map(w=>'<div class="kc rd"><div class="kl">'+w.code+'</div><div class="kv" id="des-kpi-'+JSON.stringify(w.id)+'">'+fn(Math.round(ct[w.id]*100)/100)+' kg</div><div class="ks">'+(w.name||w.code)+'</div></div>').join('')+
+    activeWC.filter(w=>w.category==='periculos'||w.dangerous).map(w=>'<div class="kc rd"><div class="kl">'+w.code+'</div><div class="kv" id="des-kpi-'+w.id+'">'+fn(Math.round(ct[w.id]*100)/100)+' kg</div><div class="ks">'+(w.name||w.code)+'</div></div>').join('')+
   '</div>'+
   '<div class="ib inf">Completeaza cantitatile lunare (kg). Datele se salveaza la modificarea fiecarui camp.</div>'+
   '<div class="pn"><div class="pb" style="overflow-x:auto">'+
     '<table class="dt"><thead><tr><th style="min-width:130px">Cod</th>'+MO.map(m=>'<th style="text-align:right;min-width:65px">'+m+'</th>').join('')+'<th style="text-align:right;min-width:80px">TOTAL</th></tr></thead><tbody>'+
     activeWC.map(w=>{var noteHtml=w.note_populatie?'<br><span style="font-size:9px;color:var(--warnTxt);font-style:italic">&#9888; '+w.note_populatie+'</span>':'';return '<tr><td><strong>'+w.code+'</strong><br><span style="font-size:10px;color:var(--txtL)">'+(w.name||w.code)+'</span>'+noteHtml+'</td>'+
       MO.map((_,mi)=>{const v=byM[mi+1]?byM[mi+1][w.id]||'':'';return'<td style="padding:3px"><input type="number" step="0.01" min="0" value="'+v+'" style="width:100%;padding:4px 3px;border:1px solid var(--brd);border-radius:4px;font-size:11px;text-align:right;font-family:var(--f)" onchange="sDes('+(mi+1)+','+_jsArg(w.id)+',this.value)"></td>'}).join('')+
-      '<td style="text-align:right" id="des-rt-'+JSON.stringify(w.id)+'"><strong>'+fn(Math.round(ct[w.id]*100)/100)+'</strong> <span style="font-size:10px;opacity:.7">kg</span></td></tr>'}).join('')+
+      '<td style="text-align:right" id="des-rt-'+w.id+'"><strong>'+fn(Math.round(ct[w.id]*100)/100)+'</strong> <span style="font-size:10px;opacity:.7">kg</span></td></tr>'}).join('')+
     '<tr style="background:var(--navy);color:var(--onAccent);font-weight:700"><td>TOTAL (kg)</td>'+
       MO.map((_,mi)=>{let mt=0;activeWC.forEach(w=>{mt+=+(byM[mi+1]?.[w.id])||0});return'<td style="text-align:right" id="des-mt-'+(mi+1)+'">'+(mt>0?fn(Math.round(mt*100)/100)+' kg':'')+'</td>'}).join('')+
       '<td style="text-align:right" id="des-gt">'+fn(Math.round(gt*100)/100)+' kg</td></tr>'+
@@ -11507,7 +11507,7 @@ async function rBio(el){
     // v12.90 — filtru TP produs (categorie biocida EU)
     '<select onchange="_bioFilters.tp=this.value;render()" title="Filtru dupa categoria TP a produsului biocid (EU Reg 528/2012)" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
       '<option value="">Toate categoriile TP</option>'+
-      BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(bf.tp===t.id?' selected':'')+'>'+JSON.stringify(t.id)+' — '+t.name+'</option>'}).join('')+
+      BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(bf.tp===t.id?' selected':'')+'>'+esc(t.id)+' — '+t.name+'</option>'}).join('')+
     '</select>'+
     '<select onchange="_bioFilters.month=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
       '<option value="">Toate lunile</option>'+MO.map((m,i)=>'<option value="'+(i+1)+'"'+(bf.month===(i+1)+''?' selected':'')+'>'+m+'</option>').join('')+'</select>'+
@@ -11896,7 +11896,7 @@ function _renderBioAvizeInDialog(prodId){
 }
 // v12.83 — Dialog rapid creare produs in catalog, din editBio. Dupa salvare, revine la editBio cu produsul preselectat.
 function bioQuickAddProduct(){
-  var tpOpts=BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'">'+JSON.stringify(t.id)+' — '+t.name+'</option>'}).join('');
+  var tpOpts=BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'">'+esc(t.id)+' — '+t.name+'</option>'}).join('');
   var umList=['buc','flacon','bidon','cutie','tablete','L','mL','kg','g'];
   var umOpts=umList.map(function(u){return '<option value="'+u+'">'+u+'</option>'}).join('');
   // Pre-fill from f-prod-custom daca user scrisese acolo ceva
@@ -11983,7 +11983,7 @@ async function editBio(id){
     '<div class="fg"><label>Valoare (lei)</label><input type="number" step="0.01" id="f-val" value="'+(r.value_lei||'')+'"></div></div>'+
     '<div class="fr3"><div class="fg"><label>Producator</label><input id="f-bio-mfr" value="'+esc(r.manufacturer||'')+'" list="dl-bio-mfr" placeholder="Producator"></div>'+
     '<div class="fg"><label>Distribuitor</label><input id="f-bio-dist" value="'+esc(r.distributor||'')+'" list="dl-bio-dist" placeholder="Distribuitor"></div>'+
-    '<div class="fg"><label>Tip produs (EU)</label><select id="f-bio-ptype"><option value="">— Neselectat —</option>'+BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(r.product_type===t.id?' selected':'')+' title="'+esc(t.desc)+'">'+JSON.stringify(t.id)+' — '+esc(t.name)+'</option>'}).join('')+'</select></div></div>'+
+    '<div class="fg"><label>Tip produs (EU)</label><select id="f-bio-ptype"><option value="">— Neselectat —</option>'+BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(r.product_type===t.id?' selected':'')+' title="'+esc(t.desc)+'">'+esc(t.id)+' — '+esc(t.name)+'</option>'}).join('')+'</select></div></div>'+
     '<datalist id="dl-bio-mfr">'+[...new Set(CFG.biocide_products.map(p=>p.manufacturer).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('')+'</datalist>'+
     '<datalist id="dl-bio-dist">'+[...new Set(CFG.biocide_products.map(p=>p.distributor).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('')+'</datalist>'+
     _renderBioAvizeInDialog(selProd)+attHtml,
@@ -12108,7 +12108,7 @@ function bioEditProduct(pid){
   // propaga in TOATE miscarile produsului — un dezinfectant de suprafete devenea „igiena umana"
   // in filtre si in tabelul sumar, iar UM-ul scris liber pe miscari era inlocuit cu „buc".
   var tpOpts='<option value=""'+(p.product_type?'':' selected')+'>— Neselectat —</option>'+
-    BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(p.product_type===t.id?' selected':'')+'>'+JSON.stringify(t.id)+' — '+esc(t.name)+'</option>'}).join('');
+    BIO_PRODUCT_TYPES.map(function(t){return '<option value="'+t.id+'"'+(p.product_type===t.id?' selected':'')+'>'+esc(t.id)+' — '+esc(t.name)+'</option>'}).join('');
   var umList=['buc','flacon','bidon','cutie','tablete','L','mL','kg','g'];
   var umOpts='<option value=""'+(p.unit?'':' selected')+'>— Neselectat —</option>'+
     umList.map(function(u){return '<option value="'+u+'"'+(p.unit===u?' selected':'')+'>'+u+'</option>'}).join('');
@@ -15012,7 +15012,7 @@ async function rAntibiograma(el){
 
   h+='<div class="pn"><div class="ph" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h3>Antibiograma Locala</h3>'+
     '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
-    '<button class="btn bs bsm" onclick="importLabCSV()">&#128194; Import Date Laborator</button>'+
+    '<button class="btn bs bsm" onclick="importLabCSV()">&#128194; Import Date Laborator</button>'+'<button class="btn bo bsm" onclick="labAliasDialog()" style="margin-left:6px">'+(CFG.lang==='en'?'Unrecognised names':'Denumiri nerecunoscute')+'</button>'+
     '<button class="btn bp bsm" onclick="genAntibiogramaWord()">'+T('abg_export_word')+'</button>'+
     '<button class="btn bo bsm" onclick="genAntibiogramaWHONET()">'+T('abg_export_whonet')+'</button>'+
     '</div></div><div class="pb">';
@@ -15193,8 +15193,11 @@ function importLabCSV(){
     '&#8226; <strong>CSV tabelar</strong> — o linie per antibiotic: nr_buletin; data; sectie; tip_proba; germen; antibiotic; rezultat (S/I/R)</div>'+
     '<div class="fg"><label>Fisier din laborator</label><input type="file" id="f-lab" accept=".csv,.txt,.xls,.xlsx,.html,.htm"></div>'+
     '<div class="fg"><label>Label import (ex: T1-2026)</label><input id="f-lab-batch" value="'+A.year+'" style="width:160px"></div>'+
+    '<div id="lab-profil-box">'+(typeof labProfileOptions==='function'?labProfileOptions():'')+'</div>'+
     '<div id="lab-preview"></div>',
-  '<button class="btn bo" onclick="closeM()">Anuleaza</button><button class="btn bp" id="lab-import-btn" onclick="processLabImport()" disabled>Importa</button>');
+  '<button class="btn bo" onclick="closeM()">Anuleaza</button>'+
+  '<button class="btn bo" onclick="labProfileSave()" id="lab-prof-save" style="display:none">'+(CFG.lang==='en'?'Save mapping as profile':'Salveaza maparea ca profil')+'</button>'+
+  '<button class="btn bp" id="lab-import-btn" onclick="processLabImport()" disabled>Importa</button>');
   document.getElementById('f-lab').onchange=previewLabFile;
 }
 
@@ -15295,6 +15298,7 @@ function previewLabHTML(txt){
 
   document.getElementById('lab-preview').innerHTML=h;
   document.getElementById('lab-import-btn').disabled=false;
+  var _bs=document.getElementById('lab-prof-save');if(_bs)_bs.style.display='';
 }
 
 function parseLabRegistru(rows){
@@ -15377,6 +15381,20 @@ function parseOrganisms(line){
 
 // Eticheta analizei („Sensibil la:", „Intermediar la:", „Rezistent la:") → S / I / R.
 // Intoarce null cand eticheta nu spune nimic, ca sa cada pe euristica pozitionala.
+// GERMENI_LIST e o lista de GRUPURI ({g:'Cocci Gram-pozitivi', items:[{c,n}]}), nu de germeni.
+// Doua locuri o parcurgeau ca si cum ar fi plata si citeau `g.n` direct de pe grup — care nu
+// exista, deci `g.n.toLowerCase()` arunca „Cannot read properties of undefined". Defectul era
+// ASCUNS de un altul: importul murea mai devreme, la cautarea selectoarelor dupa id, deci nu se
+// ajungea niciodata aici. Dupa repararea id-urilor a iesit imediat la suprafata.
+function _germFind(pred){
+  if(typeof GERMENI_LIST==='undefined')return null;
+  for(var i=0;i<GERMENI_LIST.length;i++){
+    var it=GERMENI_LIST[i]&&GERMENI_LIST[i].items;
+    if(!it)continue;
+    for(var j=0;j<it.length;j++){if(pred(it[j]))return it[j]}
+  }
+  return null;
+}
 function _sirFromLabel(lbl){
   var s=String(lbl||'').toLowerCase();
   if(/rezist/.test(s))return 'R';
@@ -15443,7 +15461,14 @@ function previewLabCSV(txt){
   // fiecare intrare primea numarul buletinului drept nume de antibiotic, atb_code ramanea gol si
   // antibiograma se afisa goala — fara nicio explicatie. Acum coloana nemapata se vede si
   // importul se opreste pana e aleasa.
-  function selFor(id,def){return '<select id="lab-col-'+JSON.stringify(id)+'"><option value="-1"'+(def<0?' selected':'')+'>— alege coloana —</option>'+header.map((h,i)=>'<option value="'+i+'"'+(i===def?' selected':'')+'>'+esc(h)+'</option>').join('')+'</select>'}
+  // A doua transa a aceleiasi greseli: JSON.stringify intr-un ATRIBUT. Aici in `id=`, deci iesea
+  // id="lab-col-"buletin"" — parserul HTML taia la al doilea ghilimel si TOATE cele sapte
+  // selectoare primeau acelasi id gol, `lab-col-`. processLabCSV le cauta dupa numele intreg
+  // (`lab-col-buletin`), primea null si crapa cu „Cannot read properties of null" la apasarea
+  // butonului Importa. Importul din CSV era mort de la v13.62, versiunea care a introdus exact
+  // regula asta pentru onclick — dar a lasat-o in id. Cheile sunt literale fixe, nu au nevoie de
+  // niciun fel de escapare.
+  function selFor(id,def){return '<select id="lab-col-'+id+'"><option value="-1"'+(def<0?' selected':'')+'>— alege coloana —</option>'+header.map((h,i)=>'<option value="'+i+'"'+(i===def?' selected':'')+'>'+esc(h)+'</option>').join('')+'</select>'}
 
   const bi=defaults.buletin,gi=defaults.germen;
   const uniqBul=bi>=0?new Set(rows.map(r=>r[bi])).size:null;
@@ -15466,6 +15491,7 @@ function previewLabCSV(txt){
     '</div>';
   document.getElementById('lab-preview').innerHTML=h;
   document.getElementById('lab-import-btn').disabled=false;
+  var _bs=document.getElementById('lab-prof-save');if(_bs)_bs.style.display='';
 }
 
 // ── Unified import dispatcher ──
@@ -15503,7 +15529,7 @@ async function processLabCSV(){
       const secMatch=(CFG.sections||[]).find(s=>s.name.toLowerCase()===secName.toLowerCase())||
         (CFG.sections||[]).find(s=>secName.toLowerCase().includes(s.name.toLowerCase().substring(0,4)));
       // Match germen to GERMENI_LIST
-      const germMatch=typeof GERMENI_LIST!=='undefined'?GERMENI_LIST.find(g=>g.n.toLowerCase()===germ.toLowerCase()||g.c?.toLowerCase()===germ.toLowerCase()):null;
+      const germMatch=_germFind(function(g){return (g.n||'').toLowerCase()===germ.toLowerCase()||(g.c||'').toLowerCase()===germ.toLowerCase()});
 
       isoMap[key]={
         year:A.year,
@@ -15521,7 +15547,12 @@ async function processLabCSV(){
     }
     // Add susceptibility entry
     const atbName=(r[ci.atb]||'').trim();
-    const result=(r[ci.result]||'').trim().toUpperCase();
+    // Interpretare TOLERANTA: laboratoarele scriu „Sensibil", „Rezistent", „Sens", „Rez",
+    // „Sensibil expunere crescuta" — nu doar S/I/R. Varianta veche cerea exact o litera si
+    // ARUNCA TACIT tot restul: dintr-un fisier cu „Sensibil" pe fiecare rand se importa izolatul
+    // fara nicio antibiograma, si nimeni nu afla de ce matricea e goala.
+    const brut=(r[ci.result]||'').trim();
+    const result=(typeof micSIR==='function')?micSIR(brut):brut.toUpperCase();
     if(atbName&&(result==='S'||result==='I'||result==='R')){
       // Try matching ATB to ATB_LIST
       let atbCode='';
@@ -15588,8 +15619,8 @@ async function processLabRegistru(){
     if(p.negative)return;
     p.organisms.forEach(org=>{
       // Match germen to GERMENI_LIST
-      const germMatch=typeof GERMENI_LIST!=='undefined'?GERMENI_LIST.find(g=>
-        matchAtbName(g.n,org.name)||(g.c&&matchAtbName(g.c,org.name))):null;
+      const germMatch=_germFind(function(g){
+        return matchAtbName(g.n||'',org.name)||(g.c&&matchAtbName(g.c,org.name))});
       isolates.push({
         year,nr_buletin:p.cod,date:'',
         section:'',sample_type:sampleType,
@@ -17176,7 +17207,7 @@ async function rTerm(el){
       const pctDone=allInstances.length?Math.round(done/allInstances.length*100):0;
       const badgeColor=pctDone===100?'#27AE60':pctDone>=50?'#D4A017':'#C0392B';
 
-      h+='<div id="dl-tpl-'+JSON.stringify(t.id)+'" class="term-group" style="border-bottom:1px solid var(--brd)">'+
+      h+='<div id="dl-tpl-'+t.id+'" class="term-group" style="border-bottom:1px solid var(--brd)">'+
         '<div style="display:flex;align-items:center;padding:10px 14px;gap:12px;cursor:pointer;background:'+(expanded?'var(--bg2,#f8fafc)':'transparent')+'" onclick="_termToggle('+_jsArg(t.name)+')">'+
           '<span style="font-size:14px;transition:transform .2s;transform:rotate('+(expanded?'90':'0')+'deg);display:inline-block;width:14px">&#9654;</span>'+
           '<div style="flex:1;min-width:0">'+
@@ -17205,7 +17236,7 @@ async function rTerm(el){
           h+='<table class="dt" style="font-size:11px"><thead><tr><th>'+(isEN?'Instance':'Instanta')+'</th><th>'+(isEN?'Due date':'Termen')+'</th><th>'+(isEN?'Status':'Status')+'</th><th>'+(isEN?'Actions':'Actiuni')+'</th></tr></thead><tbody>';
           instances.forEach(d=>{
             const isOverdue=d.status!=='finalizat'&&d.status!=='trimis'&&d.due_date&&new Date(d.due_date)<new Date();
-            h+='<tr id="dl-row-'+JSON.stringify(d.id)+'"'+(isOverdue?' style="background:#fef2f2"':'')+'><td>'+esc(d.name)+'</td><td>'+fmtDate(d.due_date)+'</td>'+
+            h+='<tr id="dl-row-'+d.id+'"'+(isOverdue?' style="background:#fef2f2"':'')+'><td>'+esc(d.name)+'</td><td>'+fmtDate(d.due_date)+'</td>'+
               '<td><select onchange="updateDeadlineStatus('+_jsArg(d.id)+',this.value)" style="border:1px solid var(--brd);border-radius:4px;padding:3px;font-size:11px">'+
                 '<option value="neinceput"'+(d.status==='neinceput'?' selected':'')+'>'+(isEN?'Not started':'Neinceput')+'</option>'+
                 '<option value="in_lucru"'+(d.status==='in_lucru'?' selected':'')+'>'+(isEN?'In progress':'In lucru')+'</option>'+
@@ -17269,7 +17300,7 @@ async function rTerm(el){
       h+='<table class="dt"><thead><tr><th>'+(isEN?'Name':'Denumire')+'</th><th>'+(isEN?'Recipient':'Destinatar')+'</th><th>'+(isEN?'Due date':'Termen')+'</th><th>'+(isEN?'Status':'Status')+'</th><th>'+(isEN?'Actions':'Actiuni')+'</th></tr></thead><tbody>';
       standaloneFiltered.forEach(d=>{
         const isOverdue=d.status!=='finalizat'&&d.status!=='trimis'&&d.due_date&&new Date(d.due_date)<new Date();
-        h+='<tr id="dl-row-'+JSON.stringify(d.id)+'"'+(isOverdue?' style="background:#fef2f2"':'')+'><td><strong>'+esc(d.name)+'</strong></td><td>'+esc(d.recipient||'—')+'</td>'+
+        h+='<tr id="dl-row-'+d.id+'"'+(isOverdue?' style="background:#fef2f2"':'')+'><td><strong>'+esc(d.name)+'</strong></td><td>'+esc(d.recipient||'—')+'</td>'+
           // v13.51 - arata FEREASTRA cand exista data de inceput (raportare care trebuie facuta intr-un interval)
           '<td style="font-size:11px">'+(d.start_date?fmtDate(d.start_date)+' — '+fmtDate(d.due_date):fmtDate(d.due_date))+
             (d.start_date&&d.status!=='finalizat'&&d.status!=='trimis'&&new Date(d.start_date+'T00:00:00')>new Date()?'<div style="font-size:9px;color:var(--txtL)">se deschide '+fmtDate(d.start_date)+'</div>':'')+'</td>'+
@@ -18726,15 +18757,19 @@ async function _renderIgmAudit(el,id){
     _igmSecs.forEach(sec=>{
       var sc=_igmCalcScore(sec);
       var scBdg=sc.pct!=null?'<span class="bdg '+(sc.pct>=80?'bdg-g':sc.pct>=50?'bdg-a':'bdg-r')+'">'+sc.pct+'% ('+sc.da+'/'+sc.tot+')</span>':'<span style="font-size:11px;color:var(--txtL)">fara date</span>';
-      h+='<div class="aud-scard" id="igm-sec-'+JSON.stringify(sec.id)+'">';
+      // Fara JSON.stringify in id: producea id="igm-sec-"s1"", parserul taia la al doilea
+      // ghilimel si TOATE cardurile primeau acelasi id gol. _igmRenderTbody / _igmUpdScore /
+      // _igmTogSec cautau dupa id-ul intreg, primeau null si redesenarea partiala nu mai facea
+      // nimic: la „+ calup" datele cresteau, dar randul nu aparea pe ecran.
+      h+='<div class="aud-scard" id="igm-sec-'+sec.id+'">';
       h+='<div class="aud-shdr" onclick="_igmTogSec('+_jsArg(sec.id)+')">'+
         '<div><h4 style="margin:0;display:inline">'+esc(sec.name)+'</h4> <span style="font-size:11px;color:var(--txtL)">('+sec.calups.length+' observatii)</span></div>'+
         '<div style="display:flex;align-items:center;gap:8px">'+
-          '<span id="igm-sc-'+JSON.stringify(sec.id)+'">'+scBdg+'</span>'+
+          '<span id="igm-sc-'+sec.id+'">'+scBdg+'</span>'+
           '<button class="btn bo bsm" onclick="event.stopPropagation();_igmRemSec('+_jsArg(sec.id)+')" style="padding:2px 8px;font-size:14px">&#215;</button>'+
         '</div>'+
       '</div>';
-      h+='<div class="aud-sbody" id="igm-bd-'+JSON.stringify(sec.id)+'" style="display:block">';
+      h+='<div class="aud-sbody" id="igm-bd-'+sec.id+'" style="display:block">';
       // v12.68 — Checklist Cunoastere si Conformitate Proces (grupate pe parti)
       if(!sec.knowledge)sec.knowledge={};
       h+='<details style="margin-bottom:14px;border:1px solid var(--brd);border-radius:6px;overflow:hidden"><summary style="padding:8px 12px;cursor:pointer;background:var(--bg);font-size:12px;font-weight:600;color:var(--navy)">&#128218; Checklist Cunoastere si Conformitate Proces ('+_igmKnowledgeScore(sec).done+'/'+IGM_KNOWLEDGE.length+' evaluate)</summary>';
@@ -18765,7 +18800,7 @@ async function _renderIgmAudit(el,id){
       WHO_MOM.forEach(m=>{
         h+='<th style="background:'+m.bg+';border-bottom:2px solid '+m.border+';min-width:80px"><div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span class="'+m.cl+'">'+m.n+'</span><span style="font-size:9px;color:'+m.border+'">M'+m.n+'</span></div></th>';
       });
-      h+='<th style="width:30px"></th></tr></thead><tbody id="igm-tb-'+JSON.stringify(sec.id)+'">';
+      h+='<th style="width:30px"></th></tr></thead><tbody id="igm-tb-'+sec.id+'">';
       sec.calups.forEach(c=>{h+=_igmRowHTML(sec,c)});
       h+='</tbody></table></div>';
       h+='<div style="margin-top:8px"><button class="btn bo bsm" onclick="_igmAddCalup('+_jsArg(sec.id)+')">'+T('aud_igm_adauga_calup')+'</button></div>';
@@ -18802,7 +18837,7 @@ function _igmRowHTML(sec,c){
         '<span class="aud-nu'+(v==='NU'?' on':'')+'" id="nu-'+pref+'" onclick="_igmSetVal('+_jsArg(sec.id)+','+_jsArg(c.id)+','+_jsArg(m.id)+',\'NU\')">NU</span>'+
       '</div><div id="sub-'+pref+'">'+subHtml+'</div></div></td>';
   }).join('');
-  return '<tr id="igm-r-'+JSON.stringify(c.id)+'"><td><select style="font-size:11px;padding:3px;border:1px solid var(--brd);border-radius:4px;max-width:120px" onchange="_igmSetCat('+_jsArg(sec.id)+','+_jsArg(c.id)+',this.value)">'+catOpts+'</select></td>'+mc+
+  return '<tr id="igm-r-'+c.id+'"><td><select style="font-size:11px;padding:3px;border:1px solid var(--brd);border-radius:4px;max-width:120px" onchange="_igmSetCat('+_jsArg(sec.id)+','+_jsArg(c.id)+',this.value)">'+catOpts+'</select></td>'+mc+
     '<td><button style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--txtL)" onclick="_igmRemCalup('+_jsArg(sec.id)+','+_jsArg(c.id)+')" title="Sterge observatie">&#215;</button></td></tr>';
 }
 
@@ -20021,7 +20056,9 @@ function _foRowsHTML(){
       // deci scap de scaparea de apostrofuri in sir imbricat in sir.
       var btn=function(val,cls,lbl,ttl){
         return '<span class="aud-gen-btn'+(v===val?' '+cls:'')+'" style="width:24px;height:22px;line-height:22px"'+
-          ' onclick="_foSet('+idx+',&quot;'+JSON.stringify(i.id)+'&quot;,&quot;'+val+'&quot;)" title="'+ttl+'">'+lbl+'</span>';
+          // `&quot;` e DEJA delimitatorul sirului in atribut; JSON.stringify mai adauga o pereche, deci
+          // iesea _foSet(0,""ind"",""da"") — eroare de sintaxa, butonul nu facea nimic.
+          ' onclick="_foSet('+idx+',&quot;'+i.id+'&quot;,&quot;'+val+'&quot;)" title="'+ttl+'">'+lbl+'</span>';
       };
       return '<td style="text-align:center;padding:3px"><div class="aud-gen-btns" style="justify-content:center">'+
         btn('C','c-on','D','Da / conform')+btn('NC','nc-on','N','Nu / neconform')+btn('NA','na-on','-','Nu se aplica')+
@@ -20571,10 +20608,10 @@ async function rObiective(el){
             h+='<div style="background:var(--color-background-secondary,#f8fafc);padding:10px;border-radius:8px">'+
               '<h4 style="font-size:12px;margin-bottom:6px">'+T('obj_inregistreaza')+'</h4>'+
               '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">'+
-                '<div class="fg" style="flex:1;min-width:100px"><label>'+T('obj_perioada')+'</label><input id="obj-rv-per-'+JSON.stringify(o.id)+'" placeholder="ex: T1 2025, Ian 2025"></div>'+
-                '<div class="fg" style="width:100px"><label>'+T('obj_valoare')+' ('+o.unit+')</label><input type="number" id="obj-rv-val-'+JSON.stringify(o.id)+'" step="0.1"></div>'+
-                '<div class="fg" style="flex:1;min-width:100px"><label>'+T('obj_nota')+'</label><input id="obj-rv-note-'+JSON.stringify(o.id)+'"></div>'+
-                '<button class="btn bp bsm" onclick="var p=document.getElementById(\'obj-rv-per-'+JSON.stringify(o.id)+'\').value.trim(),v=document.getElementById(\'obj-rv-val-'+JSON.stringify(o.id)+'\').value;if(p&&v!==\'\'){_recordManualValue('+_jsArg(o.id)+',p,v,document.getElementById(\'obj-rv-note-'+JSON.stringify(o.id)+'\').value)}else{alert(\'Completeaza perioada si valoarea\')}">'+T('btn_save')+'</button>'+
+                '<div class="fg" style="flex:1;min-width:100px"><label>'+T('obj_perioada')+'</label><input id="obj-rv-per-'+o.id+'" placeholder="ex: T1 2025, Ian 2025"></div>'+
+                '<div class="fg" style="width:100px"><label>'+T('obj_valoare')+' ('+o.unit+')</label><input type="number" id="obj-rv-val-'+o.id+'" step="0.1"></div>'+
+                '<div class="fg" style="flex:1;min-width:100px"><label>'+T('obj_nota')+'</label><input id="obj-rv-note-'+o.id+'"></div>'+
+                '<button class="btn bp bsm" onclick="var p=document.getElementById(\'obj-rv-per-'+o.id+'\').value.trim(),v=document.getElementById(\'obj-rv-val-'+o.id+'\').value;if(p&&v!==\'\'){_recordManualValue('+_jsArg(o.id)+',p,v,document.getElementById(\'obj-rv-note-'+o.id+'\').value)}else{alert(\'Completeaza perioada si valoarea\')}">'+T('btn_save')+'</button>'+
               '</div></div>';
           }
           h+='</div>';
@@ -23184,6 +23221,12 @@ function _micNorm(s){
 function micCategorie(numeAtb){
   var n=_micNorm(numeAtb);
   if(!n)return null;
+  // Aliasul invatat are PRIORITATE fata de expresii: e o decizie luata de om pentru laboratorul
+  // lui, iar expresiile sunt doar o presupunere generala. `_ignora` inseamna „nu e antibiotic",
+  // marcat explicit — se trateaza ca nepotrivit, dar nu mai apare in lista de mapat.
+  var al=(CFG&&CFG.atb_aliases)?CFG.atb_aliases[n]:null;
+  if(al==='_ignora')return null;
+  if(al){var g=MIC_CAT.find(function(x){return x.k===al});if(g)return g}
   for(var i=0;i<MIC_CAT.length;i++){if(MIC_CAT[i].re.test(n))return MIC_CAT[i]}
   return null;
 }
@@ -23239,6 +23282,9 @@ const MIC_GERM=[
 ];
 function micGrupGermen(nume){
   var n=_micNorm(nume);
+  if(!n)return null;
+  var al=(CFG&&CFG.germ_aliases)?CFG.germ_aliases[n]:null;
+  if(al){var g=MIC_GERM.find(function(x){return x.k===al});if(g)return g}
   for(var i=0;i<MIC_GERM.length;i++){if(MIC_GERM[i].re.test(n))return MIC_GERM[i]}
   return null;
 }
@@ -23303,7 +23349,13 @@ async function micAggregate(year,q){
     var testatIn={},rIn={};
     (r.susceptibility||[]).forEach(function(s){
       var c=micCategorie(s.atb_name||s.atb_code);
-      if(!c){var nn=(s.atb_name||'').trim();if(nn)nepotrivite[nn]=(nepotrivite[nn]||0)+1;return}
+      if(!c){
+        var nn=(s.atb_name||'').trim();
+        // Cele marcate explicit „nu e antibiotic" nu se mai raporteaza ca nerecunoscute.
+        var ign=(CFG&&CFG.atb_aliases)&&CFG.atb_aliases[_micNorm(nn)]==='_ignora';
+        if(nn&&!ign)nepotrivite[nn]=(nepotrivite[nn]||0)+1;
+        return;
+      }
       // Interpretarea e TOLERANTA si se face la citire, nu ne bazam pe ce a scris importul:
       // acelasi camp poate contine „R", „Rez", „rezistenta" sau „Sensibil expunere crescuta".
       var sir=micSIR(s.result);
@@ -23663,6 +23715,189 @@ async function genRaportMicroWord(q){
     saveAs(blob,'Raport_Microbiologic_'+(q?('T'+q+'_'):'')+y+'.docx');
   }catch(e){errAlert(e,'Nu am putut genera raportul microbiologic.','Could not generate the microbiology report.')}
   finally{hideGen()}
+}
+
+</script>
+<script>
+// ═════════════════════════════════════════════════════════════
+// CPIAAM — Profiluri de import laborator + aliasuri de denumiri
+// ═════════════════════════════════════════════════════════════
+// DE CE EXISTA. La 50 de spitale sunt 50 de programe de laborator, iar exporturile sunt de obicei
+// xlsx cu introducere libera manuala. Nu se pot scrie 50 de parsere, si nici nu trebuie: formele
+// in care poti aseza o antibiograma intr-un tabel sunt trei (o coloana per antibiotic, un rand per
+// antibiotic, sau rezultatul ca text liber), iar restul e MAPARE. Ce lipsea ca sa fie utilizabil
+// nu era inca un format, ci MEMORIA:
+//   1. profilul de import — spitalul mapeaza coloanele o data si le salveaza sub un nume;
+//   2. aliasurile — ce nu s-a potrivit se mapeaza o data si ramane mapat.
+// Fara ele, maparea se reface la fiecare import si se renunta la ea dupa a doua luna.
+//
+// NU incercam sa ghicim mai bine. Ghicitul merge la primul spital si esueaza la al treilea, iar
+// esecul e TACUT: iese un procent gresit, nu o eroare.
+
+// ═══ PROFILURI DE IMPORT ═══
+// Campurile mapate sunt exact cele din dialogul de import existent din antibiograma.js.
+const LAB_PROF_CAMPURI=['buletin','date','section','sample','germen','atb','result'];
+
+function labProfiles(){if(!CFG.lab_profiles)CFG.lab_profiles=[];return CFG.lab_profiles}
+
+function labProfileOptions(){
+  var p=labProfiles();
+  if(!p.length)return '';
+  var isEN=CFG.lang==='en';
+  return '<div class="fg" style="margin-bottom:10px"><label>'+(isEN?'Saved import profile':'Profil de import salvat')+'</label>'+
+    '<select id="lab-profil" onchange="labProfileApply(this.value)">'+
+    '<option value="">'+(isEN?'— choose a profile —':'— alege un profil —')+'</option>'+
+    p.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.nume)+'</option>'}).join('')+
+    '</select></div>';
+}
+
+// Citeste maparea curenta din selectoarele dialogului de import.
+function _labCitesteMaparea(){
+  var col={},gasit=false;
+  LAB_PROF_CAMPURI.forEach(function(k){
+    var el=document.getElementById('lab-col-'+JSON.stringify(k))||document.getElementById('lab-col-'+k);
+    if(el){col[k]=el.value;gasit=true}
+  });
+  return gasit?col:null;
+}
+
+async function labProfileSave(){
+  var isEN=CFG.lang==='en';
+  var col=_labCitesteMaparea();
+  if(!col){alert(_M('Nu am gasit maparea de coloane. Incarca intai un fisier.'));return}
+  var nume=prompt(isEN?'Name for this profile (e.g. the laboratory program):'
+                      :'Numele profilului (de ex. programul laboratorului):','');
+  if(nume===null)return;
+  nume=nume.trim();
+  if(!nume){alert(_M('Profilul are nevoie de un nume.'));return}
+  var p=labProfiles();
+  // Acelasi nume => se suprascrie, nu se creeaza al doilea. Altfel dupa cateva luni lista are
+  // cinci profiluri „laborator" si nimeni nu stie care e cel bun.
+  var vechi=p.find(function(x){return x.nume.toLowerCase()===nume.toLowerCase()});
+  if(vechi){
+    if(!confirm(_Mf('Exista deja un profil numit „{n}". Il inlocuiesti?',{n:vechi.nume})))return;
+    vechi.col=col;vechi.format=window._labFormat||'csv';
+  } else {
+    p.push({id:genId('prof'),nume:nume,format:window._labFormat||'csv',col:col});
+  }
+  await saveCfg();
+  toastSaved();
+  var box=document.getElementById('lab-profil-box');
+  if(box)box.innerHTML=labProfileOptions();
+}
+
+function labProfileApply(id){
+  if(!id)return;
+  var p=labProfiles().find(function(x){return x.id===id});
+  if(!p)return;
+  var lipsa=[];
+  LAB_PROF_CAMPURI.forEach(function(k){
+    var el=document.getElementById('lab-col-'+JSON.stringify(k))||document.getElementById('lab-col-'+k);
+    if(!el)return;
+    var v=p.col[k];
+    // Profilul poate trimite la o coloana care nu exista in fisierul de acum (antetul s-a
+    // schimbat, sau e alt export). Nu o punem tacit pe 0 — o lasam nemapata si o spunem.
+    var exista=[].slice.call(el.options).some(function(o){return o.value===String(v)});
+    if(v!==undefined&&exista)el.value=v; else lipsa.push(k);
+  });
+  if(lipsa.length){
+    alert(_Mf('Profilul „{n}" s-a aplicat partial. Coloanele urmatoare nu exista in fisierul de acum si au ramas nemapate: {c}.',
+      {n:p.nume,c:lipsa.join(', ')}));
+  }
+}
+
+async function labProfileDelete(id){
+  var p=labProfiles();var i=p.findIndex(function(x){return x.id===id});
+  if(i<0)return;
+  if(!confirm(_Mf('Stergi profilul de import „{n}"?',{n:p[i].nume})))return;
+  p.splice(i,1);await saveCfg();render();
+}
+
+// ═══ ALIASURI DE DENUMIRI ═══
+// Ce nu se potriveste se mapeaza O DATA si ramane mapat. Asta e raspunsul la „introducere libera
+// manuala": nu anticipam greselile posibile, le invatam pe cele care apar efectiv la ei.
+function labAtbAliases(){if(!CFG.atb_aliases)CFG.atb_aliases={};return CFG.atb_aliases}
+function labGermAliases(){if(!CFG.germ_aliases)CFG.germ_aliases={};return CFG.germ_aliases}
+
+// Scaneaza TOATE izolatele si intoarce denumirile care nu se potrivesc nicaieri, cu numarul de
+// aparitii. Scaneaza tot, nu doar ultimul raport generat: altfel o denumire dintr-un trimestru
+// vechi ramane nemapata si strica retroactiv orice raport pe acea perioada.
+async function labNepotrivite(){
+  var toate=await ga('lab_isolates');
+  var atb={},germ={};
+  toate.forEach(function(r){
+    if(!micGrupGermen(r.organism)){var g=(r.organism||'').trim();if(g)germ[g]=(germ[g]||0)+1}
+    (r.susceptibility||[]).forEach(function(s){
+      if(!micCategorie(s.atb_name||s.atb_code)){
+        var n=(s.atb_name||'').trim();if(n)atb[n]=(atb[n]||0)+1;
+      }
+    });
+  });
+  return {atb:atb,germ:germ};
+}
+
+async function labAliasDialog(){
+  const isEN=CFG.lang==='en';
+  const nep=await labNepotrivite();
+  const aA=labAtbAliases(),aG=labGermAliases();
+  const chAtb=Object.keys(nep.atb).sort(function(a,b){return nep.atb[b]-nep.atb[a]});
+  const chGerm=Object.keys(nep.germ).sort(function(a,b){return nep.germ[b]-nep.germ[a]});
+
+  let h='<div class="ib inf"><span>'+
+    (isEN?'Names the app could not match. Map each one once and it stays mapped — for this import and for every one after it. What stays unmapped is <strong>left out of the counts</strong>, which changes a percentage without producing any error, so it is worth clearing this list.'
+         :'Denumiri pe care aplicatia nu le-a putut potrivi. Mapeaza-le o data si raman mapate — si la importul asta, si la toate cele viitoare. Ce ramane nemapat <strong>iese din numaratori</strong>, deci schimba un procent fara sa dea vreo eroare; merita golita lista.')+
+    '</span></div>';
+
+  if(!chAtb.length&&!chGerm.length){
+    h+='<div class="ib suc"><span>'+(isEN?'Everything in the imported data is recognised. Nothing to map.'
+      :'Tot ce e in datele importate e recunoscut. Nimic de mapat.')+'</span></div>';
+  }
+  if(chAtb.length){
+    h+='<div class="pn"><div class="ph"><h3>'+(isEN?'Antimicrobials':'Antibiotice')+' ('+chAtb.length+')</h3></div><div class="pb">'+
+      '<table class="dt"><thead><tr><th>'+(isEN?'Name in the file':'Denumirea din fisier')+'</th><th style="width:80px">'+
+      (isEN?'Times':'Apariti')+'</th><th style="width:280px">'+(isEN?'Maps to':'Se potriveste cu')+'</th></tr></thead><tbody>';
+    chAtb.forEach(function(n,i){
+      h+='<tr><td>'+esc(n)+'</td><td style="text-align:right">'+nep.atb[n]+'</td>'+
+        '<td><select id="al-atb-'+i+'" data-nume="'+esc(n)+'"><option value="">— '+(isEN?'not mapped':'nemapat')+' —</option>'+
+        MIC_CAT.map(function(c){return '<option value="'+c.k+'"'+(aA[_micNorm(n)]===c.k?' selected':'')+'>'+esc(_micL(c))+'</option>'}).join('')+
+        '<option value="_ignora"'+(aA[_micNorm(n)]==='_ignora'?' selected':'')+'>— '+(isEN?'ignore (not an antimicrobial)':'ignora (nu e antibiotic)')+' —</option>'+
+        '</select></td></tr>';
+    });
+    h+='</tbody></table></div></div>';
+  }
+  if(chGerm.length){
+    h+='<div class="pn"><div class="ph"><h3>'+(isEN?'Organisms':'Germeni')+' ('+chGerm.length+')</h3></div><div class="pb">'+
+      '<table class="dt"><thead><tr><th>'+(isEN?'Name in the file':'Denumirea din fisier')+'</th><th style="width:80px">'+
+      (isEN?'Times':'Aparitii')+'</th><th style="width:280px">'+(isEN?'Maps to':'Se potriveste cu')+'</th></tr></thead><tbody>';
+    chGerm.forEach(function(n,i){
+      h+='<tr><td>'+esc(n)+'</td><td style="text-align:right">'+nep.germ[n]+'</td>'+
+        '<td><select id="al-germ-'+i+'" data-nume="'+esc(n)+'"><option value="">— '+(isEN?'not mapped':'nemapat')+' —</option>'+
+        MIC_GERM.map(function(g){return '<option value="'+g.k+'"'+(aG[_micNorm(n)]===g.k?' selected':'')+'>'+esc(_micL(g))+'</option>'}).join('')+
+        '</select></td></tr>';
+    });
+    h+='</tbody></table></div></div>';
+  }
+  openM(isEN?'Unrecognised names':'Denumiri nerecunoscute',h,
+    '<button class="btn bo" onclick="closeM()">'+T('btn_cancel')+'</button>'+
+    ((chAtb.length||chGerm.length)?'<button class="btn bp" onclick="labAliasSave()">'+T('btn_save')+'</button>':''));
+}
+
+async function labAliasSave(){
+  var aA=labAtbAliases(),aG=labGermAliases(),n=0;
+  document.querySelectorAll('[id^="al-atb-"]').forEach(function(el){
+    var nume=el.getAttribute('data-nume');if(!nume)return;
+    var k=_micNorm(nume);
+    if(el.value){aA[k]=el.value;n++} else delete aA[k];
+  });
+  document.querySelectorAll('[id^="al-germ-"]').forEach(function(el){
+    var nume=el.getAttribute('data-nume');if(!nume)return;
+    var k=_micNorm(nume);
+    if(el.value){aG[k]=el.value;n++} else delete aG[k];
+  });
+  await saveCfg();
+  closeM();
+  showToast(_Mf('{n} denumiri mapate.',{n:n}));
+  render();
 }
 
 </script>
@@ -26225,6 +26460,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.84',date:'2026-08-04',summary:"Profilurile de import si aliasurile de denumiri, cerute pentru ca la 50 de spitale sunt 50 de programe. Pe drum a iesit ca importul de laborator era complet nefunctional de peste douazeci de versiuni, impreuna cu inca patru locuri stricate de aceeasi greseala."},
   {version:'13.83',date:'2026-08-04',summary:"Raportul microbiologic citeste acum orice forma in care laboratorul scrie S/I/R si scoate trei lucruri care lipseau: evolutia fata de perioada anterioara, antibioticele ramase eficiente, si fenotipurile pe germen. Pornit de la observatia userului ca la 50 de spitale sunt 50 de programe si introducere libera."},
   {version:'13.82',date:'2026-08-04',summary:"Raportul microbiologic trimestrial si anual, cerut de colege, care faceau manual enumerarea tulpinilor si tabelul de rezistenta. Verificat pe raportul lor real din trim. I 2025 — se potriveste, si a scos doua erori de numarare manuala."},
   {version:'13.81',date:'2026-08-04',summary:'Modul nou, pornit de la o intrebare a colegelor despre inregistrarea AES: ce putem tine noi fara sa ne suprapunem peste medicina muncii. Raspunsul e in proiectul de ordin, si e mai clar decat ne asteptam — CPIAAM primeste explicit analiza circumstantelor, evaluarea factorilor de risc si masurile de prevenire.'},

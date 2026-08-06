@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.80</title>
+<title>CPIAAM Management v13.82</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1089,6 +1089,7 @@ body{display:block!important;background:#fff!important}
     <a class="ni" data-grp="sb_g_supraveghere" data-p="iaam" data-tooltip="IAAM / Anchete" onclick="nav('iaam')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span data-t="sb_iaam">IAAM / Anchete</span></a>
     <a class="ni" data-grp="sb_g_supraveghere" data-p="focare" data-tooltip="Focare" onclick="nav('focare')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7.5" stroke-dasharray="3 3"/><path d="M12 1v2M12 21v2M1 12h2M21 12h2"/></svg><span data-t="sb_focare">Focare</span></a>
     <a class="ni" data-grp="sb_g_supraveghere" data-p="icd" data-tooltip="Registrul ICD" onclick="nav('icd')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6l1 4H8z"/><path d="M7 7h10l-1 12a2 2 0 01-2 2h-4a2 2 0 01-2-2z"/><path d="M10 12h4M12 10v4"/></svg><span>Registrul ICD</span></a>
+    <a class="ni" data-grp="sb_g_supraveghere" data-p="aes" data-tooltip="Expuneri accidentale" onclick="nav('aes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.5c2.6 3.6 5 6.6 5 9.4a5 5 0 01-10 0c0-2.8 2.4-5.8 5-9.4z"/><path d="M18 16.5l3.5 3.5M21.5 16.5L18 20"/></svg><span data-t="sb_aes">Expuneri accidentale</span></a>
     <a class="ni" data-grp="sb_g_supraveghere" data-p="statistici" data-tooltip="Statistici Spital" onclick="nav('statistici')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="17" y="4" width="4" height="17" rx="1"/></svg><span>Statistici Spital</span></a>
     <div class="ns nsg" data-grp="sb_g_igiena"><span data-t="sb_g_igiena">Igiena si mediu</span></div>
     <a class="ni" data-grp="sb_g_igiena" data-p="autocontrol" data-tooltip="Autocontrol" onclick="nav('autocontrol')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg><span data-t="sb_autocontrol">Autocontrol</span></a>
@@ -1195,7 +1196,12 @@ body{display:block!important;background:#fff!important}
 // de inregistrari, separate prin campul kind: 'case' = cazurile individuale, 'lab' = totalurile
 // anuale de probe de scaun testate/pozitive (indicator de intensitate a testarii, dat de laborator).
 // Un singur store, ca la ipc_registry — evita inca un bump de versiune pentru doua numere pe an.
-const DB='CPIAAM4',VER=12,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum','objectives','lab_isolates','hospital_activity','outbreaks','atb_approvals','ipc_registry','icd_cases'];
+// v13.81 - VER 12→13: store nou 'aes_events' (expunerile accidentale la produse biologice).
+// Tine doua feluri de inregistrari, separate prin campul kind: 'event' = analiza circumstantelor
+// fiecarei expuneri (partea pe care ordinul o da CPIAAM), 'fig2' = tabelul anual primit de la
+// medicina muncii (id: 'aesfig2_YYYY'). Acelasi tipar ca la ipc_registry si icd_cases — un singur
+// store, ca sa nu fie nevoie de inca un bump de versiune pentru cateva totaluri pe an.
+const DB='CPIAAM4',VER=13,ST=['iaam','autocontrol','deseuri','biocide','pps','config','documents','deadlines','events','audits','trainings','atp','uvcheck','atb_consum','objectives','lab_isolates','hospital_activity','outbreaks','atb_approvals','ipc_registry','icd_cases','aes_events'];
 function odb(){return new Promise((ok,no)=>{const r=indexedDB.open(DB,VER);r.onupgradeneeded=e=>{const d=e.target.result;ST.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id',autoIncrement:true})})};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
 async function ga(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result.filter(function(x){return!x._deleted}));r.onerror=()=>no(r.error)})}
 async function gaAll(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAll();r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
@@ -2401,7 +2407,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.80';
+const APP_VERSION='13.82';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -2476,6 +2482,10 @@ Contact: cpiaam.app@gmail.com`;
 var CFG={
   id:1, hospital_name:'', hospital_short:'', cpiaam_name:'C.P.I.A.A.M.', hospital_code:'',
   author_name:'', personnel:[], sections:[],
+  // v13.81 - granularitatea datei la expunerile accidentale. „zi" (implicit) permite
+  // analiza pe zile si ore; „luna" e pentru spitalele mici, unde sectie + categorie + data ar
+  // putea identifica persoana. Vezi comentariul de scop din aes.js.
+  aes_date_mode:'zi',
   // v13.57 - ultimele trei sunt cerute de noul ordin. Exsudatele de personal se inregistreaza
   // AGREGAT (sectie + campanie in „Detalii proba"), fara nume — evidenta nominala si serologia
   // raman la medicina muncii, vezi „Scop si limite" din CLAUDE.md.
@@ -3197,13 +3207,13 @@ ro:{
   sb_g_supraveghere:'SUPRAVEGHERE',sb_g_igiena:'IGIENA SI MEDIU',sb_g_atb:'ANTIBIOTICE',
   sb_g_calitate:'CALITATE',sb_g_doc:'DOCUMENTE SI RAPORTARI',
   sb_ajutor_short:'Ajutor',sb_manual_short:'Manual',sb_despre_short:'Despre',sb_versiuni_short:'Versiuni',
-  sb_dashboard:'Dashboard',sb_iaam:'IAAM / Anchete',sb_focare:'Focare',sb_autocontrol:'Autocontrol',sb_deseuri:'Deseuri',
+  sb_aes:'Expuneri accidentale',sb_dashboard:'Dashboard',sb_iaam:'IAAM / Anchete',sb_focare:'Focare',sb_autocontrol:'Autocontrol',sb_deseuri:'Deseuri',
   sb_biocide:'Biocide',sb_pps:'PPS / Antibiotice',sb_documente:'Documente',sb_termene:'Raportari/Termene',
   sb_calendar:'Calendar',
   sb_gen_rapoarte:'Generare Rapoarte',sb_config:'Configurare',sb_despre:'Despre',sb_ajutor:'Ajutor / FAQ',
   sb_manual:'Manual de Utilizare',sb_backup:'Salveaza Backup',sb_termeni:'Termeni si Conditii',
   // Page titles
-  pt_dashboard:'Dashboard',pt_icd:'Registrul ICD — Clostridioides difficile',pt_focare:'Focare Epidemice',pt_statistici:'Statistici Spital',pt_iaam:'IAAM / Anchete Epidemiologice',pt_autocontrol:'Autocontrol Microbiologic',
+  pt_dashboard:'Dashboard',pt_icd:'Registrul ICD — Clostridioides difficile',pt_aes:'Expuneri accidentale la produse biologice',pt_focare:'Focare Epidemice',pt_statistici:'Statistici Spital',pt_iaam:'IAAM / Anchete Epidemiologice',pt_autocontrol:'Autocontrol Microbiologic',
   pt_deseuri:'Deseuri Medicale',pt_biocide:'Gestiune Biocide',pt_pps:'PPS — Studiu de Prevalenta de Moment',
   pt_documente:'Documente / Autorizatii',pt_termene:'Raportari / Termene',pt_calendar:'Calendar',
   pt_audituri:'Audituri IPC',pt_instruire:'Instruire Personal',pt_rapoarte:'Generare Rapoarte',pt_multian:'Analiza Comparativa Multi-An',
@@ -3379,12 +3389,12 @@ en:{
   sb_g_supraveghere:'SURVEILLANCE',sb_g_igiena:'HYGIENE & ENVIRONMENT',sb_g_atb:'ANTIBIOTICS',
   sb_g_calitate:'QUALITY',sb_g_doc:'DOCUMENTS & REPORTING',
   sb_ajutor_short:'Help',sb_manual_short:'Manual',sb_despre_short:'About',sb_versiuni_short:'Versions',
-  sb_dashboard:'Dashboard',sb_iaam:'HAI / Investigations',sb_focare:'Outbreaks',sb_autocontrol:'Quality Control',sb_deseuri:'Medical Waste',
+  sb_aes:'Blood exposures',sb_dashboard:'Dashboard',sb_iaam:'HAI / Investigations',sb_focare:'Outbreaks',sb_autocontrol:'Quality Control',sb_deseuri:'Medical Waste',
   sb_biocide:'Biocides',sb_pps:'PPS / Antibiotics',sb_documente:'Documents',sb_termene:'Deadlines',
   sb_calendar:'Calendar',
   sb_gen_rapoarte:'Generate Reports',sb_config:'Settings',sb_despre:'About',sb_ajutor:'Help / FAQ',
   sb_manual:'User Manual',sb_backup:'Save Backup',sb_termeni:'Terms and Conditions',
-  pt_dashboard:'Dashboard',pt_icd:'ICD Register — Clostridioides difficile',pt_focare:'Epidemic Outbreaks',pt_statistici:'Hospital Statistics',pt_iaam:'HAI / Epidemiological Investigations',pt_autocontrol:'Microbiological Quality Control',
+  pt_dashboard:'Dashboard',pt_icd:'ICD Register — Clostridioides difficile',pt_aes:'Accidental exposure to biological products',pt_focare:'Epidemic Outbreaks',pt_statistici:'Hospital Statistics',pt_iaam:'HAI / Epidemiological Investigations',pt_autocontrol:'Microbiological Quality Control',
   pt_deseuri:'Medical Waste Management',pt_biocide:'Biocide Management',pt_pps:'PPS — Point Prevalence Survey',
   pt_documente:'Documents / Authorizations',pt_termene:'Reports / Deadlines',pt_calendar:'Calendar',
   pt_audituri:'IPC Audits',pt_instruire:'Staff Training',pt_rapoarte:'Generate Reports',pt_multian:'Multi-Year Comparative Analysis',
@@ -3660,6 +3670,14 @@ const MSG_EN={
   'ocazie de igiena':'hand hygiene opportunity',
   'dotare la vreun punct de igiena':'hygiene point to be checked',
   'prescriptie':'prescription',
+  'Completeaza intai fisa de vaccinare a personalului.':'Fill in the staff vaccination sheet first.',
+  'Nu exista izolate de laborator inregistrate pe {per}.':'No laboratory isolates recorded for {per}.',
+  'Luna trebuie sa fie intre 1 si 12.':'The month must be between 1 and 12.',
+  'Nu exista expuneri inregistrate pe luna {luna}.':'No exposures recorded for {luna}.',
+  'Completeaza numarul de inregistrare al cazului.':'Fill in the case registration number.',
+  'Selecteaza categoria profesionala.':'Select the professional category.',
+  'Selecteaza mecanismul expunerii.':'Select the exposure mechanism.',
+  'Stergi aceasta inregistrare de expunere?':'Delete this exposure record?',
   'Sectia este deja adaugata.':'The ward has already been added.',
   'Selectati antibioticul.':'Select the antibiotic.',
   'Selectati data.':'Select the date.',
@@ -4495,7 +4513,7 @@ async function delRec(store,id){if(!confirm(T('confirma_stergere')))return;await
 // ROUTER
 // ═══════════════════════════════════════════════════════════════
 async function renderPage(p){const el=document.getElementById('pc');dch();switch(p){
-  case'dashboard':return rDash(el);case'iaam':return rIAAM(el);case'focare':return rFocare(el);case'icd':return rICD(el);case'autocontrol':return rAuto(el);
+  case'dashboard':return rDash(el);case'iaam':return rIAAM(el);case'focare':return rFocare(el);case'icd':return rICD(el);case'aes':return rAES(el);case'autocontrol':return rAuto(el);
   case'deseuri':return rDes(el);case'statistici':return rStatistici(el);case'biocide':return rBio(el);case'pps':return rPPS(el);case'consum_atb':return rConsumATB(el);
   case'antibiograma':return rAntibiograma(el);case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
   case'audituri':return rAudit(el);case'obiective':return rObiective(el);case'instruire':return rInstr(el);
@@ -4544,7 +4562,7 @@ function updateLangUI(){
   updateSidebar();updateSyncIndicator();
   document.getElementById('pt').textContent=getPageTitle(A.page);}
 function getPageTitle(p){
-  const map={icd:'pt_icd',focare:'pt_focare',statistici:'pt_statistici',dashboard:'pt_dashboard',iaam:'pt_iaam',autocontrol:'pt_autocontrol',deseuri:'pt_deseuri',
+  const map={aes:'pt_aes',icd:'pt_icd',focare:'pt_focare',statistici:'pt_statistici',dashboard:'pt_dashboard',iaam:'pt_iaam',autocontrol:'pt_autocontrol',deseuri:'pt_deseuri',
     biocide:'pt_biocide',pps:'pt_pps',consum_atb:'pt_consum_atb',antibiograma:'pt_antibiograma',documente:'pt_documente',termene:'pt_termene',calendar:'pt_calendar',
     audituri:'pt_audituri',obiective:'pt_obiective',instruire:'pt_instruire',rapoarte:'pt_rapoarte',multian:'pt_multian',
     config:'pt_config',ajutor:'pt_ajutor',manual:'pt_manual',changelog:'pt_changelog',about:'pt_despre',terms:'pt_terms'};
@@ -8186,6 +8204,939 @@ async function genICDCaseWord(id){
     console.error('ICD case Word error:',e);
     errAlert(e,'Nu am putut genera documentul Word.','Could not generate the Word document.');
   }
+}
+
+</script>
+<script>
+// ═════════════════════════════════════════════════════════════
+// CPIAAM — Accidente cu Expunere la produse biologice (AES)
+// ═════════════════════════════════════════════════════════════
+// Store: 'aes_events', doua feluri de inregistrari separate prin `kind`:
+//   kind:'event' — evenimentele de expunere (analiza circumstantelor, partea CPIAAM)
+//   kind:'fig2'  — tabelul anual primit de la medicina muncii (id: 'aesfig2_YYYY')
+//
+// ═══ DELIMITAREA, LUATA DIN TEXTUL ORDINULUI — nu presupusa ═══
+//
+// Proiectul de ordin (transparenta decizionala), sectiunea „7.A. Metodologia de supraveghere a
+// expunerii accidentale a personalului", imparte explicit sarcinile. Citate verbatim, ca sa nu
+// fie nevoie ca sesiunea urmatoare sa le reconstituie din memorie:
+//
+//   „Reprezentantul CPIAAM/SPIAAM — care participa la ANALIZA CIRCUMSTANTELOR incidentului,
+//    la EVALUAREA FACTORILOR DE RISC si la IMPLEMENTAREA MASURILOR DE PREVENIRE."
+//
+//   „Medicul de medicina muncii / medicul desemnat — care realizeaza evaluarea expunerii,
+//    recomanda si administreaza profilaxia post-expunere, completeaza fisa de incident,
+//    stabileste calendarul monitorizarii si inchide cazul."
+//
+//   Atributiile medicului de medicina muncii, lit. (a): „inregistreaza evenimentul in REGISTRUL
+//   PROPRIU al expunerilor accidentale la produse biologice"; lit. (g): „face analiza SEMESTRIALA
+//   a cazurilor"; lit. (h): „intocmeste si transmite ANUAL catre directia de sanatate publica
+//   situatia centralizata a accidentelor de expunere la produse biologice si a vaccinarilor
+//   impotriva VHB [...] IN COLABORARE CU seful/coordonatorul SPIAAM/CPIAAM, si anual completeaza
+//   evidenta vaccinarilor personalului medico-sanitar expus [...] SI O TRIMITE la serviciul/
+//   compartimentul/medicul responsabil pentru prevenirea IAAM."
+//
+// DECI: registrul propriu, evaluarea, profilaxia, monitorizarea, seroconversia, inchiderea cazului
+// si analiza semestriala sunt ale MEDICINEI MUNCII. Aplicatia nu le tine si nu le dubleaza.
+// Partea CPIAAM e analiza circumstantelor si a factorilor de risc, plus colaborarea la situatia
+// anuala. Tabelul din Figura 2 VINE la CPIAAM completat — deci se introduce ca total agregat,
+// exact ca om-zilele din Statistici Spital, nu se calculeaza aici.
+//
+// NU SE ADAUGA AICI, niciodata: nume, prenume, CNP, serologia persoanei expuse sau a pacientului
+// sursa, statusul vaccinal individual, decizia de profilaxie, calendarul de monitorizare.
+//
+// FISA OFICIALA CERE CNP (Figura 1, „DATE PERSOANA EXPUSA": Initiale, CNP, Data nasterii, Sex).
+// Userul a decis ca aplicatia nu stocheaza CNP — vezi constatarea 1 din PLAN_ALINIERE_OMS_NOU.md.
+// Consecinta, spusa pe fata si in interfata: aplicatia NU produce fisa oficiala completa, ci doar
+// partea CPIAAM. Anexa 5 cere „cod intern" in loc de CNP, si aia e varianta pe care o folosim aici
+// (constatarea 2 din plan — merita depusa ca observatie la consultarea publica).
+//
+// De ce exista totusi un identificator: regasirea fisei cand intreaba DSP, evitarea dublarii la
+// centralizare, si depistarea EXPUNERILOR REPETATE la acelasi cod, care e semnal IPC real.
+// Cheia care leaga codul de persoana ramane la medicina muncii, NU in aplicatie.
+//
+// ═══ DOUA REGIMURI DE RAPORTARE, SI AMANDOUA CONTEAZA ═══
+//
+// Ord. 1101/2016 — ORDINUL IN VIGOARE. Citat adus de user, verbatim:
+//   „colecteaza si trimite fisele de raportare a expunerii accidentale a personalului
+//    medico-sanitar, de ingrijire si auxiliar la produse biologice, completate, LUNAR, PANA IN
+//    DATA DE 5 A LUNII pentru luna anterioara, directiei de sanatate publica judetene si a
+//    municipiului Bucuresti"
+//
+// Proiectul de ordin (transparenta decizionala) muta asta: medicul de medicina muncii transmite
+// situatia centralizata ANUAL, „in colaborare cu seful/coordonatorul SPIAAM/CPIAAM", iar DSP
+// centralizeaza fisele trimestrial.
+//
+// GRESEALA MEA, notata ca sa nu se repete: citisem proiectul si am „corectat" planul de aliniere,
+// crezand ca „lunar pana in 5" e o scapare de memorie. Nu era — e textul in vigoare. Un proiect
+// in consultare nu inlocuieste ordinul aplicabil. De aceea modulul tine AMBELE: circuitul lunar
+// al fisei (primita / validata / transmisa) plus lista lunara pentru DSP, cerute de 1101, SI
+// analiza anuala plus tabelul agregat, cerute de proiect. Cand proiectul intra in vigoare, nu se
+// pierde nimic — se foloseste mai putin.
+
+// Categoriile din Figura 2 a ordinului, in ordinea din tabel. `fig2` marcheaza randurile care
+// apar in tabelul oficial — restul sunt adaugate de noi pentru analiza si se raporteaza la „alte".
+const AES_CATEG=[
+  {v:'medic',      ro:'Medic',                   en:'Physician',            fig2:true},
+  {v:'asistent',   ro:'Asistent medical',        en:'Nurse',                fig2:true},
+  {v:'ingrijire',  ro:'Personal de ingrijire',   en:'Nursing care staff',   fig2:true},
+  {v:'auxiliar',   ro:'Personal auxiliar',       en:'Auxiliary staff',      fig2:true},
+  {v:'laborator',  ro:'Personal de laborator',   en:'Laboratory staff'},
+  {v:'student',    ro:'Student / elev practica', en:'Student / trainee'},
+  {v:'altul',      ro:'Alta categorie',          en:'Other'}
+];
+// Mecanismul — cele cinci categorii din fisa oficiala (rubrica „MECANISMUL EXPUNERII ACCIDENTALE").
+// Spune CINE a produs accidentul.
+const AES_MECANISM=[
+  {v:'auto',       ro:'Autoaccidentare',                                  en:'Self-inflicted'},
+  {v:'pacient',    ro:'Accidentare de catre un pacient',                  en:'Caused by a patient'},
+  {v:'coleg',      ro:'Accidentare de catre un coleg',                    en:'Caused by a colleague'},
+  {v:'colectare',  ro:'Prin colectare-transport de deseuri intepatoare',  en:'During sharps waste collection/transport'},
+  {v:'altul',      ro:'Alt mecanism',                                     en:'Other mechanism'}
+];
+// Momentul — NU e in fisa oficiala. E analiza CPIAAM ceruta de sectiunea E („analiza
+// circumstantelor"), si e campul care spune UNDE se rupe procesul, deci unde se intervine.
+const AES_MOMENT=[
+  {v:'in_folosire',    ro:'In timpul folosirii la pacient',        en:'During use on the patient'},
+  {v:'dupa_folosire',  ro:'Dupa folosire, inainte de eliminare',   en:'After use, before disposal'},
+  {v:'la_eliminare',   ro:'La eliminarea in cutie',                en:'While disposing into the container'},
+  {v:'recapisonare',   ro:'La recapisonarea acului',               en:'While recapping the needle'},
+  {v:'transfer',       ro:'La transferul intre maini / pe tava',   en:'While passing or transferring'},
+  {v:'curatenie',      ro:'La curatenie / manipularea deseurilor', en:'During cleaning / waste handling'},
+  {v:'altul',          ro:'Alt moment',                            en:'Other'}
+];
+const AES_MANEVRA=[
+  {v:'rutina',  ro:'Manevra de rutina',   en:'Routine procedure'},
+  {v:'urgenta', ro:'Situatie de urgenta', en:'Emergency situation'}
+];
+const AES_LEZIUNE=[
+  {v:'superficiala', ro:'Superficiala', en:'Superficial'},
+  {v:'profunda',     ro:'Profunda',     en:'Deep'}
+];
+const AES_LOC_CONTACT=[
+  {v:'mucoase',   ro:'Mucoase',            en:'Mucous membranes'},
+  {v:'teg_intact',ro:'Tegumente intacte',  en:'Intact skin'},
+  {v:'teg_lezat', ro:'Tegumente lezate',   en:'Non-intact skin'}
+];
+// EPP — lista din rubrica „PREVENIREA" a fisei oficiale.
+const AES_EPP=[
+  {v:'manusi',    ro:'Manusi',          en:'Gloves'},
+  {v:'masca',     ro:'Masca',           en:'Mask'},
+  {v:'halat',     ro:'Halat',           en:'Gown'},
+  {v:'protector', ro:'Protector facial',en:'Face shield'}
+];
+// Dispozitivul — nu e in fisa oficiala ca lista inchisa, dar evaluarea incidentului cere „tipul
+// instrumentului/materialului implicat (ac, bisturiu, eprubeta, sistem de recoltare, echipament
+// laborator etc.)". Lista urmeaza exemplele din text.
+const AES_DISPOZITIV=[
+  {v:'ac',        ro:'Ac (seringa, recoltare, perfuzie)', en:'Needle (syringe, blood draw, IV)'},
+  {v:'ac_sutura', ro:'Ac de sutura',                      en:'Suture needle'},
+  {v:'bisturiu',  ro:'Bisturiu / lama',                   en:'Scalpel / blade'},
+  {v:'eprubeta',  ro:'Eprubeta / sistem de recoltare',    en:'Tube / blood collection system'},
+  {v:'echip_lab', ro:'Echipament de laborator',           en:'Laboratory equipment'},
+  {v:'sticla',    ro:'Sticla sparta (fiola, flacon)',     en:'Broken glass (ampoule, vial)'},
+  {v:'fara',      ro:'Fara dispozitiv (stropire, contact)',en:'No device (splash, contact)'},
+  {v:'altul',     ro:'Alt instrument / material',         en:'Other instrument / material'}
+];
+// Cele cinci optiuni din rubrica „Status vaccinal HVB" a fisei oficiale (Figura 1, Anexa 3).
+// SINGURA data de sanatate individuala pe care aplicatia o tine despre un angajat, si e aici pentru
+// ca ordinul o da explicit CPIAAM: „inregistreaza vaccinarea antihepatita B a persoanei expuse",
+// „urmareste vaccinarea persoanei expuse si finalizarea schemei de vaccinare", „transmite situatia
+// vaccinarilor persoanelor expuse [...] medicului de medicina muncii". Nu se poate urmari
+// finalizarea unei scheme fara sa stii de unde a pornit. Restul evidentei vaccinale a personalului
+// ramane la medicina muncii — vezi „Scop si limite" din CLAUDE.md.
+const AES_STATUS_VACC=[
+  {v:'completa',   ro:'Vaccinare completa (3 doze)', en:'Complete (3 doses)'},
+  {v:'incompleta', ro:'Vaccinare incompleta',        en:'Incomplete'},
+  {v:'in_curs',    ro:'In curs de vaccinare',        en:'Vaccination in progress'},
+  {v:'nevaccinat', ro:'Nevaccinat',                  en:'Not vaccinated'},
+  {v:'necunoscut', ro:'Necunoscut',                  en:'Unknown'}
+];
+const AES_DA_NU=[
+  {v:'da', ro:'Da', en:'Yes'},
+  {v:'nu', ro:'Nu', en:'No'}
+];
+const AES_DA_NU_NA=[
+  {v:'da',      ro:'Da',            en:'Yes'},
+  {v:'nu',      ro:'Nu',            en:'No'},
+  {v:'nu_stiu', ro:'Nu se stie',    en:'Unknown'}
+];
+function _aesL(o){return (CFG.lang==='en'&&o&&o.en)?o.en:(o?o.ro:'')}
+function _aesName(arr,v){var o=arr.find(function(x){return x.v===v});return o?_aesL(o):(v||'—')}
+
+// Tipul expunerii NU se alege dintr-un selector: se DEDUCE din natura consemnata in fisa, exact
+// cum e structurata acolo (intepare / taiere / contact cu fluid + locul contactului). Ordinul
+// clasifica expunerea in percutanata, mucosala, cutanata si prin aerosoli.
+function aesTipExpunere(r){
+  if(r.nat_intepare==='da'||r.nat_taiere==='da')return 'percutanata';
+  if(r.nat_aerosoli==='da')return 'aerosoli';
+  if(r.nat_contact==='da'){
+    if(r.loc_contact==='mucoase')return 'mucosala';
+    if(r.loc_contact==='teg_lezat'||r.loc_contact==='teg_intact')return 'cutanata';
+  }
+  return '';
+}
+function aesTipName(v){
+  var isEN=CFG.lang==='en';
+  return {percutanata:isEN?'Percutaneous':'Percutanata',mucosala:isEN?'Mucosal':'Mucosala',
+    cutanata:isEN?'Cutaneous':'Cutanata',aerosoli:isEN?'Aerosols':'Prin aerosoli'}[v]||'—';
+}
+
+// Granularitatea datei — configurabila. Fisa oficiala cere data SI ora, dar „sectie + categorie +
+// data" intr-un compartiment mic poate identifica persoana. Implicit data exacta; spitalele mici
+// pot trece pe luna din Configurare, si atunci ora nu se mai cere.
+function aesDateMode(){return (CFG&&CFG.aes_date_mode==='luna')?'luna':'zi'}
+function aesFmtDate(d){
+  if(!d)return '—';
+  if(aesDateMode()==='luna'){var p=String(d).split('-');if(p.length>=2)return (MO[+p[1]-1]||p[1])+' '+p[0]}
+  return fmtDate(d);
+}
+
+// ═══ AGREGARE + INDICATORI ═══
+// Ratele lipsa raman null, nu 0 (regula „Rate si numitori" din CLAUDE.md).
+// FILTRU POZITIV pe `kind==='event'`, nu negativ. Prima varianta excludea doar 'fig2'; cand a
+// aparut 'fig3', inregistrarea aceea a inceput sa fie numarata ca expunere, deci totalul si
+// procentele au iesit gresite fara nicio eroare. Un filtru negativ pe o lista care creste se
+// strica tacut la fiecare valoare noua.
+async function aesUnitSheet(year){
+  var toate=await ga('aes_events');
+  var ev=toate.filter(function(r){return r.kind==='event'&&r.year===year});
+  var fig2=toate.find(function(r){return r.kind==='fig2'&&r.year===year})||{};
+  var out={an:year,total:ev.length,percutanate:0,mucosale:0,cutanate:0,aerosoli:0,neincadrate:0,
+    laEliminare:0,recapisonare:0,sigNeactivat:0,sigExista:0,faraCutieLaPunct:0,cutieSupra:0,
+    faraPrecautiuni:0,faraEPP:0,leziuniProfunde:0,inUrgenta:0,vechimeSub1An:0,
+    colectareDeseuri:0,deLaColeg:0,netransmise:0,nevalidate:0,neprotejati:0,schemaNeterminata:0};
+
+  ev.forEach(function(r){
+    var t=aesTipExpunere(r);
+    if(t==='percutanata')out.percutanate++;
+    else if(t==='mucosala')out.mucosale++;
+    else if(t==='cutanata')out.cutanate++;
+    else if(t==='aerosoli')out.aerosoli++;
+    else out.neincadrate++;
+    if(r.moment==='la_eliminare')out.laEliminare++;
+    if(r.moment==='recapisonare')out.recapisonare++;
+    if(r.mecanism==='colectare')out.colectareDeseuri++;
+    if(r.mecanism==='coleg')out.deLaColeg++;
+    if(r.sig_exista==='da'){out.sigExista++;if(r.sig_activat==='nu')out.sigNeactivat++}
+    if(r.cutie_prezenta==='nu')out.faraCutieLaPunct++;
+    if(r.cutie_supra==='da')out.cutieSupra++;
+    if(r.precautiuni==='nu')out.faraPrecautiuni++;
+    if(!Array.isArray(r.epp)||!r.epp.length)out.faraEPP++;
+    if(r.leziune==='profunda')out.leziuniProfunde++;
+    if(r.manevra==='urgenta')out.inUrgenta++;
+    var v=parseFloat(r.vechime_serviciu);if(!isNaN(v)&&v<1)out.vechimeSub1An++;
+    // Circuitul fisei — sarcina lunara din Ord. 1101/2016, art. citat in capul fisierului.
+    if(!r.fisa_transmisa)out.netransmise++;
+    if(!r.fisa_validata)out.nevalidate++;
+    // Expunere la personal fara protectie anti-HVB — indicator de prevenire, nu doar evidenta.
+    if(r.status_vacc==='nevaccinat'||r.status_vacc==='incompleta')out.neprotejati++;
+    // Schema inceputa si neinchisa — chiar sarcina de urmarire pe care ordinul o da CPIAAM.
+    if(r.vacc_initiata&&!r.vacc_finalizata)out.schemaNeterminata++;
+  });
+
+  // Expuneri repetate la acelasi cod — semnal despre postul de lucru, nu despre om.
+  var peCod={};
+  ev.forEach(function(r){var c=(r.cod||'').trim();if(c)peCod[c]=(peCod[c]||0)+1});
+  out.coduriRepetate=Object.keys(peCod).filter(function(c){return peCod[c]>1});
+  out.expuneriRepetate=out.coduriRepetate.reduce(function(s,c){return s+peCod[c]},0);
+
+  // Distributii — cheie de grupare, deci orfanii din configurare se colapseaza intr-un rand
+  out.peSectie={};out.peCategorie={};out.peMoment={};out.peMecanism={};
+  ev.forEach(function(r){
+    var s=r.section?rSec(r.section):(CFG.lang==='en'?'(unspecified)':'(nespecificat)');
+    out.peSectie[s]=(out.peSectie[s]||0)+1;
+    out.peCategorie[_aesName(AES_CATEG,r.categorie)]=(out.peCategorie[_aesName(AES_CATEG,r.categorie)]||0)+1;
+    out.peMoment[_aesName(AES_MOMENT,r.moment)]=(out.peMoment[_aesName(AES_MOMENT,r.moment)]||0)+1;
+    out.peMecanism[_aesName(AES_MECANISM,r.mecanism)]=(out.peMecanism[_aesName(AES_MECANISM,r.mecanism)]||0)+1;
+  });
+  // Numarul de expuneri pe categoriile din Figura 2 — coloana 1 a tabelului, calculata din evenimente.
+  out.fig2Expuneri={};
+  AES_CATEG.filter(function(c){return c.fig2}).forEach(function(c){out.fig2Expuneri[c.v]=0});
+  ev.forEach(function(r){if(out.fig2Expuneri[r.categorie]!==undefined)out.fig2Expuneri[r.categorie]++});
+
+  // Numitorii vin din Statistici Spital — sursa unica, ca peste tot in aplicatie.
+  var ha=await getHospitalActivity(year);
+  var areActivitate=(ha.months||[]).some(function(m){return m&&(m.omzile||m.externati||m.paturi_medii)});
+  out.omZile=areActivitate?await getOmZileForPeriod(year,1,12):null;
+  var ps=0,pc=0;(ha.months||[]).forEach(function(m){if(m&&m.paturi_medii){ps+=+m.paturi_medii;pc++}});
+  out.paturi=pc?Math.round(ps/pc*10)/10:null;
+  out.rataMiiZile=(out.omZile>0)?Math.round(out.total/out.omZile*1000*100)/100:null;
+  out.rataSutaPaturi=(out.paturi>0)?Math.round(out.total/out.paturi*100*10)/10:null;
+
+  out.fig2=fig2;
+  return out;
+}
+function _aesPct(n,total){return (total>0)?Math.round(n/total*1000)/10:null}
+
+// ═══ CE SE FACE CU CIFRELE ═══
+// Ordinul da CPIAAM „evaluarea factorilor de risc si implementarea masurilor de prevenire", deci
+// fiecare constatare trimite la itemul de audit sau la modulul care o rezolva. Nu exista praguri
+// nationale, deci nu pretindem unele — semnalam tiparul si spunem unde se lucreaza.
+function _aesConstatari(f){
+  var isEN=CFG.lang==='en';var out=[];
+  if(!f.total)return out;
+  var p=function(n){return _aesPct(n,f.total)};
+  var add=function(cond,grav,t,fix){if(cond)out.push({grav:grav,t:t,f:fix})};
+
+  add(f.recapisonare>0,'r',
+    isEN?f.recapisonare+' exposure(s) while recapping the needle':f.recapisonare+' expunere(i) la recapisonarea acului',
+    isEN?'Recapping should not occur at all. Audit „Injection safety", item 12.'
+        :'Recapisonarea nu ar trebui sa se intample deloc. Auditul „Siguranta injectiilor", itemul 12.');
+  add(p(f.laEliminare)!==null&&p(f.laEliminare)>=25,'a',
+    isEN?p(f.laEliminare)+'% of exposures happen while disposing into the container'
+        :fp(f.laEliminare,f.total)+' din expuneri se produc la eliminarea in cutie',
+    isEN?'This points at container placement and filling, not at training. Audit „Injection safety", items 11 and 13.'
+        :'Asta arata spre amplasarea si umplerea cutiilor, nu spre instruire. Auditul „Siguranta injectiilor", itemii 11 si 13.');
+  add(f.colectareDeseuri>0,'r',
+    isEN?f.colectareDeseuri+' exposure(s) during sharps waste collection or transport'
+        :f.colectareDeseuri+' expunere(i) la colectarea sau transportul deseurilor intepatoare',
+    isEN?'The problem is upstream — containers closed and filled correctly. Module „Waste" and audit „Injection safety", item 13.'
+        :'Problema e mai sus pe circuit — cutii inchise si umplute corect. Modulul „Deseuri" si auditul „Siguranta injectiilor", itemul 13.');
+  add(f.faraCutieLaPunct>0,'r',
+    isEN?f.faraCutieLaPunct+' exposure(s) with no sharps container at the point of care'
+        :f.faraCutieLaPunct+' expunere(i) fara cutie pentru intepatoare la punctul de ingrijire',
+    isEN?'Audit „Injection safety", item 11 — a container at the point of care, max 3/4 full.'
+        :'Auditul „Siguranta injectiilor", itemul 11 — cutie la punctul de ingrijire, max 3/4 plina.');
+  add(f.cutieSupra>0,'a',
+    isEN?f.cutieSupra+' exposure(s) with an overfilled container':f.cutieSupra+' expunere(i) cu cutia supraincarcata',
+    isEN?'Audit „Injection safety", item 13 — full containers are closed and removed.'
+        :'Auditul „Siguranta injectiilor", itemul 13 — cutiile pline se inchid si se elimina.');
+  add(f.faraPrecautiuni>0,'r',
+    isEN?f.faraPrecautiuni+' exposure(s) recorded with standard precautions NOT applied'
+        :f.faraPrecautiuni+' expunere(i) inregistrate cu precautiunile standard NEAPLICATE',
+    isEN?'This is the field the official form asks for, and it is the shortest route to a corrective measure. Module „Training".'
+        :'E campul cerut de fisa oficiala, si e drumul cel mai scurt spre o masura corectiva. Modulul „Instruire".');
+  add(f.sigNeactivat>0,'a',
+    isEN?f.sigNeactivat+' of '+f.sigExista+' exposures with a safety device had the mechanism NOT activated'
+        :f.sigNeactivat+' din '+f.sigExista+' expuneri cu dispozitiv de siguranta au avut mecanismul NEACTIVAT',
+    isEN?'The device exists but is not used as designed — targeted training on that device, not general training.'
+        :'Dispozitivul exista dar nu e folosit cum trebuie — instruire tintita pe dispozitivul acela, nu instruire generala.');
+  add(f.mucosale>0&&f.faraEPP>0,'a',
+    isEN?f.faraEPP+' exposure(s) recorded with no PPE worn':f.faraEPP+' expunere(i) inregistrate fara niciun EPP purtat',
+    isEN?'Mucosal exposures are prevented by a face shield. Audit „PPE".'
+        :'Expunerile mucoase se previn cu protectorul facial. Auditul „EPP".');
+  add(p(f.inUrgenta)!==null&&p(f.inUrgenta)>=40,'a',
+    isEN?p(f.inUrgenta)+'% of exposures happen during emergency situations'
+        :fp(f.inUrgenta,f.total)+' din expuneri se produc in situatii de urgenta',
+    isEN?'Prevention has to be built into the emergency procedure itself, not taught separately.'
+        :'Prevenirea trebuie pusa in procedura de urgenta, nu predata separat.');
+  add(p(f.vechimeSub1An)!==null&&p(f.vechimeSub1An)>=30,'a',
+    isEN?p(f.vechimeSub1An)+'% of exposures involve staff with under one year in the current post'
+        :fp(f.vechimeSub1An,f.total)+' din expuneri sunt la personal cu sub un an in serviciul actual',
+    isEN?'The gap is in induction training, not in the annual session. Module „Training".'
+        :'Lipsa e in instruirea la angajare, nu in sesiunea anuala. Modulul „Instruire".');
+  add(f.neprotejati>0,'r',
+    isEN?f.neprotejati+' of '+f.total+' exposures occurred in staff not vaccinated or with an incomplete HBV scheme'
+        :f.neprotejati+' din '+f.total+' expuneri s-au produs la personal nevaccinat sau cu schema HVB incompleta',
+    isEN?'This is where the vaccination coverage gap turns into actual risk. It belongs in the unit vaccination sheet (figure 3) and in the discussion with occupational medicine.'
+        :'Aici se transforma golul de acoperire vaccinala in risc real. Locul lui e in fisa unitatii (figura 3) si in discutia cu medicina muncii.');
+  add(f.schemaNeterminata>0,'a',
+    isEN?f.schemaNeterminata+' exposed person(s) started the vaccination scheme and have not completed it'
+        :f.schemaNeterminata+' persoana(e) expusa(e) au inceput schema de vaccinare si nu au finalizat-o',
+    isEN?'Order 1101/2016: the infection prevention team follows the vaccination of the exposed person and the completion of the scheme.'
+        :'Ord. 1101/2016: CPIAAM urmareste vaccinarea persoanei expuse si finalizarea schemei de vaccinare.');
+  add(f.nevalidate>0||f.netransmise>0,'a',
+    isEN?f.nevalidate+' file(s) not yet validated, '+f.netransmise+' not yet transmitted'
+        :f.nevalidate+' fisa(e) nevalidate, '+f.netransmise+' netransmise',
+    isEN?'Order 1101/2016: the completed forms are collected and sent monthly, by the 5th, for the previous month.'
+        :'Ord. 1101/2016: fisele completate se colecteaza si se trimit lunar, pana in data de 5, pentru luna anterioara.');
+  add(f.coduriRepetate.length>0,'a',
+    isEN?f.coduriRepetate.length+' code(s) with more than one exposure this year ('+f.expuneriRepetate+' events)'
+        :f.coduriRepetate.length+' cod(uri) cu mai mult de o expunere in acest an ('+f.expuneriRepetate+' evenimente)',
+    isEN?'A repeat exposure is a signal about the workstation or the procedure, not about the person.'
+        :'O expunere repetata e un semnal despre postul de lucru sau despre procedura, nu despre om.');
+  return out;
+}
+
+// ═══ PAGINA ═══
+var _aesFilters={q:'',mecanism:'',moment:'',stare:''};
+function _aesSetFilter(k,v){_aesFilters[k]=v;_aesRedrawTable()}
+
+function _aesFiltered(all){
+  var q=(_aesFilters.q||'').toLowerCase();
+  return all.filter(function(r){
+    if(_aesFilters.mecanism&&r.mecanism!==_aesFilters.mecanism)return false;
+    if(_aesFilters.moment&&r.moment!==_aesFilters.moment)return false;
+    if(_aesFilters.stare==='netransmise'&&r.fisa_transmisa)return false;
+    if(_aesFilters.stare==='nevalidate'&&r.fisa_validata)return false;
+    if(q){
+      var hay=((r.cod||'')+' '+(r.notes||'')+' '+(r.masuri||'')+' '+(r.section?rSec(r.section):'')).toLowerCase();
+      if(hay.indexOf(q)<0)return false;
+    }
+    return true;
+  });
+}
+// Tabelul se redeseneaza SINGUR la cautare — nu render() global, ca sa nu se piarda focusul.
+async function _aesRedrawTable(){
+  var box=document.getElementById('aes-tbl');if(!box)return;
+  var all=(await ga('aes_events')).filter(function(r){return r.kind==='event'&&r.year===A.year});
+  box.innerHTML=_aesTableHTML(all);
+}
+function _aesTableHTML(all){
+  var isEN=CFG.lang==='en';
+  var list=_aesFiltered(all).sort(function(a,b){return (b.date||'').localeCompare(a.date||'')});
+  if(!list.length)return '<div class="ib inf"><span>'+(isEN?'No exposure recorded with the selected filters.':'Nicio expunere inregistrata cu filtrele selectate.')+'</span></div>';
+  var h='<table class="dt"><thead><tr>'+
+    '<th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Code':'Cod')+'</th><th>'+(isEN?'Category':'Categorie')+'</th>'+
+    '<th>'+(isEN?'Ward':'Sectie')+'</th><th>'+(isEN?'Exposure type':'Tipul expunerii')+'</th>'+
+    '<th>'+(isEN?'Mechanism':'Mecanismul')+'</th><th>'+(isEN?'File':'Fisa')+'</th><th></th></tr></thead><tbody>';
+  list.forEach(function(r){
+    var t=aesTipExpunere(r);
+    h+='<tr><td>'+aesFmtDate(r.date)+'</td>'+
+      '<td><strong>'+esc(r.cod||'—')+'</strong></td>'+
+      '<td>'+esc(_aesName(AES_CATEG,r.categorie))+'</td>'+
+      '<td>'+esc(r.section?rSec(r.section):'—')+'</td>'+
+      '<td>'+(t?esc(aesTipName(t)):'<span class="bdg bdg-a">'+(isEN?'not classifiable':'neincadrabil')+'</span>')+'</td>'+
+      '<td>'+esc(_aesName(AES_MECANISM,r.mecanism))+'</td>'+
+      '<td>'+(r.fisa_transmisa?'<span class="bdg bdg-g">'+(isEN?'transmitted':'transmisa')+'</span>'
+        :(r.fisa_validata?'<span class="bdg bdg-a">'+(isEN?'validated':'validata')+'</span>'
+        :'<span class="bdg bdg-r">'+(isEN?'pending':'de validat')+'</span>'))+'</td>'+
+      '<td class="act"><button onclick="editAES('+_jsArg(r.id)+')" title="'+T('btn_edit')+'">&#9998;</button>'+
+        '<button onclick="delAES('+_jsArg(r.id)+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
+  });
+  return h+'</tbody></table>';
+}
+
+async function rAES(el){
+  const isEN=CFG.lang==='en';
+  const all=(await ga('aes_events')).filter(function(r){return r.kind==='event'&&r.year===A.year});
+  const f=await aesUnitSheet(A.year);
+  const constatari=_aesConstatari(f);
+
+  let h='<div class="kg">'+
+    '<div class="kc bl"><div class="kl">'+(isEN?'TOTAL EXPOSURES':'TOTAL EXPUNERI')+'</div><div class="kv">'+f.total+'</div><div class="ks">'+A.year+'</div></div>'+
+    '<div class="kc rd"><div class="kl">'+(isEN?'PERCUTANEOUS':'PERCUTANATE')+'</div><div class="kv">'+f.percutanate+'</div><div class="ks">'+
+      fp(f.percutanate,f.total)+'</div></div>'+
+    '<div class="kc am"><div class="kl">'+(isEN?'MUCOSAL / CUTANEOUS':'MUCOSALE / CUTANATE')+'</div><div class="kv">'+(f.mucosale+f.cutanate)+'</div></div>'+
+    '<div class="kc tl"><div class="kl">'+(isEN?'RATE / 1000 PATIENT-DAYS':'RATA / 1000 ZILE-PACIENT')+'</div><div class="kv">'+
+      (f.rataMiiZile!==null?indFmt(f.rataMiiZile):'—')+'</div><div class="ks">'+
+      (f.rataMiiZile!==null?'':(isEN?'no patient-days recorded':'fara om-zile inregistrate'))+'</div></div>'+
+    '<div class="kc gn"><div class="kl">'+(isEN?'FILES TO TRANSMIT':'FISE DE TRANSMIS')+'</div><div class="kv">'+f.netransmise+'</div><div class="ks">'+(isEN?'monthly, by the 5th (Order 1101/2016)':'lunar, pana in 5 (Ord. 1101/2016)')+'</div></div>'+
+  '</div>';
+
+  // Delimitarea, scrisa pe ecran — ca sa nu fie nevoie sa o caute nimeni in documentatie.
+  h+='<div class="ib inf" style="margin-bottom:12px"><span>'+
+    (isEN?'The order gives the infection prevention team the <strong>analysis of the circumstances</strong>, the <strong>risk factors</strong> and the <strong>preventive measures</strong>. The register itself, the exposure assessment, prophylaxis, monitoring, seroconversion and case closure belong to <strong>occupational medicine</strong> and are not stored here. The code is an internal one — the key linking it to a person stays with them. Because the official form requires the national ID number, which this app never stores, what is recorded here is the CPIAAM part, not the complete official form.'
+         :'Ordinul da CPIAAM <strong>analiza circumstantelor</strong>, <strong>evaluarea factorilor de risc</strong> si <strong>masurile de prevenire</strong>. Registrul propriu, evaluarea expunerii, profilaxia, monitorizarea, seroconversia si inchiderea cazului sunt ale <strong>medicinei muncii</strong> si nu se stocheaza aici. Codul e unul intern — cheia care il leaga de o persoana ramane la ei. Pentru ca fisa oficiala cere CNP, pe care aplicatia nu il stocheaza niciodata, aici se tine partea CPIAAM, nu fisa oficiala completa.')+
+    '</span></div>';
+
+  if(f.neincadrate>0){
+    h+='<div class="ib wrn" style="margin-bottom:12px"><span><strong>'+f.neincadrate+'</strong> '+
+      (isEN?'exposure(s) cannot be typed — the nature of the exposure (needlestick, cut, fluid contact) is not filled in. They count in the total but in none of the type figures.'
+           :'expunere(i) nu se pot incadra ca tip — natura expunerii (intepare, taiere, contact cu fluid) nu e completata. Intra in total, dar in niciuna dintre cifrele pe tipuri.')+'</span></div>';
+  }
+
+  if(constatari.length){
+    h+='<div class="pn" style="margin-bottom:14px"><div class="ph"><h3>'+(isEN?'What the numbers say — and where it gets fixed':'Ce spun cifrele — si unde se rezolva')+'</h3></div><div class="pb">';
+    constatari.forEach(function(c){
+      h+='<div class="ib '+(c.grav==='r'?'wrn':'inf')+'" style="margin-bottom:8px"><span><strong>'+esc(c.t)+'</strong><br>'+esc(c.f)+'</span></div>';
+    });
+    h+='</div></div>';
+  }
+
+  h+='<div class="ac-filters">'+
+    '<div class="fg"><label>'+(isEN?'Search':'Cauta')+'</label><input value="'+esc(_aesFilters.q)+'" placeholder="'+(isEN?'code, ward or notes':'cod, sectie sau observatii')+'" oninput="_aesFilters.q=this.value;_aesRedrawTable()"></div>'+
+    '<div class="fg"><label>'+(isEN?'Mechanism':'Mecanismul')+'</label><select onchange="_aesSetFilter('+_jsArg('mecanism')+',this.value)"><option value="">'+(isEN?'All':'Toate')+'</option>'+
+      AES_MECANISM.map(function(o){return '<option value="'+o.v+'"'+(_aesFilters.mecanism===o.v?' selected':'')+'>'+esc(_aesL(o))+'</option>'}).join('')+'</select></div>'+
+    '<div class="fg"><label>'+(isEN?'Moment':'Momentul')+'</label><select onchange="_aesSetFilter('+_jsArg('moment')+',this.value)"><option value="">'+(isEN?'All':'Toate')+'</option>'+
+      AES_MOMENT.map(function(o){return '<option value="'+o.v+'"'+(_aesFilters.moment===o.v?' selected':'')+'>'+esc(_aesL(o))+'</option>'}).join('')+'</select></div>'+
+    '<div class="fg"><label>'+(isEN?'File status':'Starea fisei')+'</label><select onchange="_aesSetFilter('+_jsArg('stare')+',this.value)"><option value="">'+(isEN?'All':'Toate')+'</option>'+
+      '<option value="nevalidate"'+(_aesFilters.stare==='nevalidate'?' selected':'')+'>'+(isEN?'Not validated':'Nevalidate')+'</option>'+
+      '<option value="netransmise"'+(_aesFilters.stare==='netransmise'?' selected':'')+'>'+(isEN?'Not transmitted':'Netransmise')+'</option></select></div>'+
+  '</div>';
+
+  h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button class="btn bo bsm" onclick="aesEditFig2()">'+(isEN?'Annual table from occupational medicine':'Tabelul anual de la medicina muncii')+'</button>'+
+      '<button class="btn bo bsm" onclick="aesEditFig3()">'+(isEN?'Staff vaccination sheet':'Fisa de vaccinare a personalului')+'</button>'+
+      '<button class="btn bo bsm" onclick="genAESFig3Word()">'+(isEN?'Vaccination sheet (Word)':'Fisa vaccinare (Word)')+'</button>'+
+      '<button class="btn bo bsm" onclick="genAESUnitSheetWord()">'+(isEN?'Annual analysis (Word)':'Analiza anuala (Word)')+'</button>'+
+      '<button class="btn bo bsm" onclick="genAESLunarWord()">'+(isEN?'Monthly list for the authority':'Lista lunara pentru DSP')+'</button>'+
+    '</div>'+
+    '<button class="btn bp" onclick="editAES()">+ '+(isEN?'New exposure':'Expunere noua')+'</button></div>';
+
+  h+='<div id="aes-tbl">'+_aesTableHTML(all)+'</div>';
+
+  if(f.total){
+    var tabel=function(titlu,obj){
+      var chei=Object.keys(obj).sort(function(a,b){return obj[b]-obj[a]});
+      var t='<div class="pn"><div class="ph"><h3>'+titlu+'</h3></div><div class="pb"><table class="dt"><tbody>';
+      chei.forEach(function(k){
+        t+='<tr><td>'+esc(k)+'</td><td style="text-align:right;font-weight:700;width:60px">'+obj[k]+'</td>'+
+          '<td style="text-align:right;width:64px">'+fp(obj[k],f.total)+'</td></tr>';
+      });
+      return t+'</tbody></table></div></div>';
+    };
+    h+='<div class="rg" style="margin-top:16px">'+
+      tabel(isEN?'By ward':'Pe sectii',f.peSectie)+
+      tabel(isEN?'By professional category':'Pe categorii profesionale',f.peCategorie)+
+      tabel(isEN?'By mechanism (official form)':'Pe mecanism (fisa oficiala)',f.peMecanism)+
+      tabel(isEN?'By moment (prevention analysis)':'Pe moment (analiza de prevenire)',f.peMoment)+
+    '</div>';
+  }
+  el.innerHTML=h;
+}
+
+// ═══ DIALOGUL — urmeaza rubricile fisei oficiale, in ordinea din ea ═══
+async function editAES(id){
+  const isEN=CFG.lang==='en';
+  let r=id?(await ga('aes_events')).find(function(x){return x.id===id}):null;
+  if(!r)r={epp:[]};
+  const epp=Array.isArray(r.epp)?r.epp:[];
+  const opt=function(arr,sel){return arr.map(function(o){return '<option value="'+o.v+'"'+(sel===o.v?' selected':'')+'>'+esc(_aesL(o))+'</option>'}).join('')};
+  const luna=aesDateMode()==='luna';
+
+  openM(id?(isEN?'Edit exposure':'Editare expunere'):(isEN?'New exposure':'Expunere noua'),
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Case registration no. / internal code':'Nr. inregistrare caz / cod intern')+' *</label>'+
+      '<input id="f-aes-cod" value="'+esc(r.cod||'')+'" placeholder="'+(isEN?'e.g. AES-2026-014':'ex. AES-2026-014')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Exposure date':'Data expunerii')+' *</label>'+
+      '<input type="'+(luna?'month':'date')+'" id="f-aes-date" value="'+esc(luna?String(r.date||'').slice(0,7):(r.date||''))+'"></div>'+
+      (luna?'':'<div class="fg"><label>'+(isEN?'Hour':'Ora')+'</label><input type="time" id="f-aes-ora" value="'+esc(r.ora||'')+'"></div>')+
+    '</div>'+
+
+    '<div class="ib inf" style="font-size:11px;margin-bottom:10px"><span>'+
+      (isEN?'The official form asks for the national ID number. This app never stores it, so what you fill in here is the <strong>internal code</strong> from Annex 5 — chosen by the hospital. The key linking it to a person stays with occupational medicine.'
+           :'Fisa oficiala cere CNP. Aplicatia nu il stocheaza niciodata, deci aici se completeaza <strong>codul intern</strong> din Anexa 5, ales de spital. Cheia care il leaga de o persoana ramane la medicina muncii.')+
+      '</span></div>'+
+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Professional category':'Categoria profesionala')+' *</label>'+
+      '<select id="f-aes-categ"><option value="">—</option>'+opt(AES_CATEG,r.categorie)+'</select></div>'+
+      '<div class="fg"><label>'+(isEN?'Ward / department where it happened':'Sectia / compartimentul unde s-a produs')+'</label>'+
+      '<select id="f-aes-sec"><option value="">—</option>'+secOptsGrouped(r.section)+'</select></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'HBV vaccination status':'Status vaccinal HVB')+'</label>'+
+      '<select id="f-aes-statvacc"><option value="">—</option>'+opt(AES_STATUS_VACC,r.status_vacc)+'</select></div>'+
+      '<div class="fg"><label>'+(isEN?'Post-exposure vaccination started on':'Vaccinare postexpunere initiata la')+'</label>'+
+      '<input type="date" id="f-aes-vaccini" value="'+esc(r.vacc_initiata||'')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Vaccination scheme completed on':'Schema de vaccinare finalizata la')+'</label>'+
+      '<input type="date" id="f-aes-vaccfin" value="'+esc(r.vacc_finalizata||'')+'"></div></div>'+
+    '<div class="ib inf" style="font-size:11px;margin-bottom:10px"><span>'+
+      (isEN?'The order gives the infection prevention team the duty to <strong>record the anti-HBV vaccination of the exposed person and follow the scheme to completion</strong>. This is the only individual health item stored here — it is attached to the internal code, never to a name, and the rest of the staff immunisation record stays with occupational medicine.'
+           :'Ordinul da CPIAAM sarcina de a <strong>inregistra vaccinarea anti-HVB a persoanei expuse si de a urmari finalizarea schemei</strong>. E singura data de sanatate individuala tinuta aici — sta legata de codul intern, niciodata de un nume, iar restul evidentei vaccinale a personalului ramane la medicina muncii.')+
+      '</span></div>'+
+    '<div class="fg"><label>'+(isEN?'Place where the exposure occurred':'Locul producerii expunerii')+'</label>'+
+      '<input id="f-aes-loc" value="'+esc(r.loc||'')+'" placeholder="'+(isEN?'e.g. patient room 4, treatment room, laboratory':'ex. salon 4, sala de tratamente, laborator')+'"></div>'+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Years in the profession':'Vechime in activitatea profesionala (ani)')+'</label>'+
+      '<input type="number" min="0" step="0.5" id="f-aes-vprof" value="'+esc(r.vechime_prof!=null?r.vechime_prof:'')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Years in the current post':'Vechime in serviciul actual (ani)')+'</label>'+
+      '<input type="number" min="0" step="0.5" id="f-aes-vserv" value="'+esc(r.vechime_serviciu!=null?r.vechime_serviciu:'')+'"></div></div>'+
+
+    '<div class="pn"><div class="ph"><h3>'+(isEN?'Nature of the exposure (official form)':'Natura expunerii (fisa oficiala)')+'</h3></div><div class="pb">'+
+      '<div class="fr"><div class="fg"><label>'+(isEN?'Needlestick':'Intepare cu ac')+'</label>'+
+        '<select id="f-aes-intepare"><option value="">—</option>'+opt(AES_DA_NU,r.nat_intepare)+'</select></div>'+
+        '<div class="fg"><label>'+(isEN?'Cut':'Taiere')+'</label>'+
+        '<select id="f-aes-taiere"><option value="">—</option>'+opt(AES_DA_NU,r.nat_taiere)+'</select></div>'+
+        '<div class="fg"><label>'+(isEN?'If cut — injury':'Daca taiere — leziunea')+'</label>'+
+        '<select id="f-aes-leziune"><option value="">—</option>'+opt(AES_LEZIUNE,r.leziune)+'</select></div></div>'+
+      '<div class="fr"><div class="fg"><label>'+(isEN?'Contact with biological fluid':'Contact cu fluid biologic')+'</label>'+
+        '<select id="f-aes-contact"><option value="">—</option>'+opt(AES_DA_NU,r.nat_contact)+'</select></div>'+
+        '<div class="fg"><label>'+(isEN?'If yes — fluid type':'Daca da — tipul fluidului')+'</label>'+
+        '<input id="f-aes-fluid" value="'+esc(r.fluid||'')+'"></div>'+
+        '<div class="fg"><label>'+(isEN?'Contact site':'Locul contactului')+'</label>'+
+        '<select id="f-aes-loccontact"><option value="">—</option>'+opt(AES_LOC_CONTACT,r.loc_contact)+'</select></div></div>'+
+      '<div class="fr"><div class="fg"><label>'+(isEN?'Aerosol exposure':'Expunere prin aerosoli')+'</label>'+
+        '<select id="f-aes-aerosoli"><option value="">—</option>'+opt(AES_DA_NU,r.nat_aerosoli)+'</select></div>'+
+        '<div class="fg"><label>'+(isEN?'Procedure':'Manevra')+'</label>'+
+        '<select id="f-aes-manevra"><option value="">—</option>'+opt(AES_MANEVRA,r.manevra)+'</select></div></div>'+
+      '<div class="ib inf" style="font-size:11px"><span>'+
+        (isEN?'The exposure type (percutaneous / mucosal / cutaneous / aerosols) is derived from these answers, as the order classifies it — it is not chosen separately.'
+             :'Tipul expunerii (percutanata / mucosala / cutanata / prin aerosoli) se deduce din raspunsurile astea, asa cum il clasifica ordinul — nu se alege separat.')+
+        '</span></div>'+
+    '</div></div>'+
+
+    '<div class="pn"><div class="ph"><h3>'+(isEN?'Mechanism and prevention (official form)':'Mecanismul si prevenirea (fisa oficiala)')+'</h3></div><div class="pb">'+
+      '<div class="fr"><div class="fg"><label>'+(isEN?'Mechanism':'Mecanismul expunerii')+' *</label>'+
+        '<select id="f-aes-mecanism"><option value="">—</option>'+opt(AES_MECANISM,r.mecanism)+'</select></div>'+
+        '<div class="fg"><label>'+(isEN?'Standard precautions applied':'Aplicarea precautiunilor standard')+'</label>'+
+        '<select id="f-aes-precautiuni"><option value="">—</option>'+opt(AES_DA_NU,r.precautiuni)+'</select></div></div>'+
+      '<div class="fg"><label>'+(isEN?'PPE worn at the time':'Echipament de protectie purtat')+'</label>'+
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px">'+
+        AES_EPP.map(function(o){return '<label style="display:flex;align-items:center;gap:6px;font-weight:400">'+
+          '<input type="checkbox" id="f-aes-epp-'+o.v+'" '+(epp.indexOf(o.v)>=0?'checked':'')+'> '+esc(_aesL(o))+'</label>'}).join('')+
+        '</div></div>'+
+    '</div></div>'+
+
+    '<div class="pn"><div class="ph"><h3>'+(isEN?'Circumstance analysis — the CPIAAM part':'Analiza circumstantelor — partea CPIAAM')+'</h3></div><div class="pb">'+
+      '<div class="ib inf" style="font-size:11px"><span>'+
+        (isEN?'These fields are not in the official form. They are what the order assigns to the CPIAAM representative — the analysis of the circumstances and of the risk factors — and they are what turns a count into a targeted measure.'
+             :'Campurile astea nu sunt in fisa oficiala. Sunt exact ce da ordinul reprezentantului CPIAAM — analiza circumstantelor si a factorilor de risc — si sunt cele care transforma o numaratoare intr-o masura tintita.')+
+        '</span></div>'+
+      '<div class="fr"><div class="fg"><label>'+(isEN?'Instrument / material involved':'Instrumentul / materialul implicat')+'</label>'+
+        '<select id="f-aes-disp"><option value="">—</option>'+opt(AES_DISPOZITIV,r.dispozitiv)+'</select></div>'+
+        '<div class="fg"><label>'+(isEN?'Moment in the process':'Momentul in proces')+'</label>'+
+        '<select id="f-aes-moment"><option value="">—</option>'+opt(AES_MOMENT,r.moment)+'</select></div></div>'+
+      '<div class="fr"><div class="fg"><label>'+(isEN?'Device had a safety mechanism':'Dispozitivul avea mecanism de siguranta')+'</label>'+
+        '<select id="f-aes-sig"><option value="">—</option>'+opt(AES_DA_NU_NA,r.sig_exista)+'</select></div>'+
+        '<div class="fg"><label>'+(isEN?'Mechanism was activated':'Mecanismul a fost activat')+'</label>'+
+        '<select id="f-aes-sigact"><option value="">—</option>'+opt(AES_DA_NU_NA,r.sig_activat)+'</select></div></div>'+
+      '<div class="fr"><div class="fg"><label>'+(isEN?'Sharps container at the point of care':'Cutie pentru intepatoare la punctul de ingrijire')+'</label>'+
+        '<select id="f-aes-cutie"><option value="">—</option>'+opt(AES_DA_NU_NA,r.cutie_prezenta)+'</select></div>'+
+        '<div class="fg"><label>'+(isEN?'Container was overfilled':'Cutia era supraincarcata')+'</label>'+
+        '<select id="f-aes-cutiesupra"><option value="">—</option>'+opt(AES_DA_NU_NA,r.cutie_supra)+'</select></div></div>'+
+      '<div class="fg"><label>'+(isEN?'Preventive measure implemented':'Masura de prevenire implementata')+'</label>'+
+        '<textarea id="f-aes-masuri" rows="2" placeholder="'+(isEN?'What was changed so it does not happen again — not the treatment of the person.':'Ce s-a schimbat ca sa nu se repete — nu tratamentul persoanei.')+'">'+esc(r.masuri||'')+'</textarea></div>'+
+      '<div class="fg"><label>'+(isEN?'Notes':'Observatii')+'</label>'+
+        '<textarea id="f-aes-notes" rows="2">'+esc(r.notes||'')+'</textarea></div>'+
+    '</div></div>'+
+
+    '<div class="pn"><div class="ph"><h3>'+(isEN?'File circuit — monthly duty':'Circuitul fisei — sarcina lunara')+'</h3></div><div class="pb">'+
+      '<div class="fr">'+
+        '<div class="fg"><label>'+(isEN?'File received on':'Fisa primita la')+'</label><input type="date" id="f-aes-primita" value="'+esc(r.fisa_primita||'')+'"></div>'+
+        '<div class="fg"><label>'+(isEN?'Validated on':'Validata la')+'</label><input type="date" id="f-aes-validata" value="'+esc(r.fisa_validata||'')+'"></div>'+
+        '<div class="fg"><label>'+(isEN?'Transmitted to the authority on':'Transmisa la DSP la')+'</label><input type="date" id="f-aes-transmisa" value="'+esc(r.fisa_transmisa||'')+'"></div>'+
+      '</div>'+
+      '<div class="ib inf" style="font-size:11px"><span>'+
+        (isEN?'Order 1101/2016 — in force: the completed forms are collected and sent <strong>monthly, by the 5th</strong>, for the previous month. The draft order moves this to an annual centralised situation; both are supported, so nothing is lost when it changes.'
+             :'Ord. 1101/2016, in vigoare: fisele completate se colecteaza si se trimit <strong>lunar, pana in data de 5</strong>, pentru luna anterioara. Proiectul de ordin muta asta la o situatie centralizata anuala; aplicatia le acopera pe amandoua, deci nu se pierde nimic cand se schimba.')+
+        '</span></div>'+
+    '</div></div>'+
+    '<div class="ib wrn" style="font-size:11px"><span>'+
+      (isEN?'Serology of the exposed person and of the source patient, post-exposure prophylaxis, the monitoring calendar and case closure are recorded by occupational medicine, in their own register. They are deliberately absent here.'
+           :'Serologia persoanei expuse si a pacientului sursa, profilaxia post-expunere, calendarul de monitorizare si inchiderea cazului se inregistreaza la medicina muncii, in registrul lor propriu. Lipsesc de aici in mod deliberat.')+
+      '</span></div>',
+
+    '<button class="btn bo" onclick="closeM()">'+T('btn_cancel')+'</button>'+
+    '<button class="btn bp" onclick="saveAES('+(id?_jsArg(id):'')+')">'+T('btn_save')+'</button>'
+  );
+}
+
+async function saveAES(id){
+  var v=function(s){var el=document.getElementById(s);return el?el.value:''};
+  var ck=function(s){var el=document.getElementById(s);return !!(el&&el.checked)};
+  var cod=v('f-aes-cod').trim();
+  if(!cod){alert(_M('Completeaza numarul de inregistrare al cazului.'));return}
+  var data=v('f-aes-date');
+  if(!data){alert(_M('Selectati data.'));return}
+  if(aesDateMode()==='luna')data=data+'-01';
+  if(!v('f-aes-categ')){alert(_M('Selecteaza categoria profesionala.'));return}
+  if(!v('f-aes-mecanism')){alert(_M('Selecteaza mecanismul expunerii.'));return}
+
+  var epp=[];AES_EPP.forEach(function(o){if(ck('f-aes-epp-'+o.v))epp.push(o.v)});
+  // Pastrez campurile interne ale inregistrarii existente — functia reconstruieste obiectul de la
+  // zero, iar fara asta s-ar pierde orice camp intern (regula din CLAUDE.md).
+  var vechi=id?(await ga('aes_events')).find(function(x){return x.id===id}):null;
+  var rec={kind:'event',year:yearOfDate(data),cod:cod,date:data,ora:v('f-aes-ora'),
+    categorie:v('f-aes-categ'),section:v('f-aes-sec'),loc:v('f-aes-loc').trim(),
+    status_vacc:v('f-aes-statvacc'),vacc_initiata:v('f-aes-vaccini'),vacc_finalizata:v('f-aes-vaccfin'),
+    vechime_prof:v('f-aes-vprof'),vechime_serviciu:v('f-aes-vserv'),
+    nat_intepare:v('f-aes-intepare'),nat_taiere:v('f-aes-taiere'),leziune:v('f-aes-leziune'),
+    nat_contact:v('f-aes-contact'),fluid:v('f-aes-fluid').trim(),loc_contact:v('f-aes-loccontact'),
+    nat_aerosoli:v('f-aes-aerosoli'),manevra:v('f-aes-manevra'),
+    mecanism:v('f-aes-mecanism'),precautiuni:v('f-aes-precautiuni'),epp:epp,
+    dispozitiv:v('f-aes-disp'),moment:v('f-aes-moment'),
+    sig_exista:v('f-aes-sig'),sig_activat:v('f-aes-sigact'),
+    cutie_prezenta:v('f-aes-cutie'),cutie_supra:v('f-aes-cutiesupra'),
+    fisa_primita:v('f-aes-primita'),fisa_validata:v('f-aes-validata'),fisa_transmisa:v('f-aes-transmisa'),
+    masuri:v('f-aes-masuri').trim(),notes:v('f-aes-notes').trim()};
+  if(vechi)Object.keys(vechi).forEach(function(k){if(k.charAt(0)==='_'&&rec[k]===undefined)rec[k]=vechi[k]});
+  if(id)rec.id=id;
+  await pt('aes_events',rec);
+  logActivity((id?'Editata':'Adaugata')+' expunere accidentala '+cod);
+  closeM();toastSaved();render();
+}
+
+async function delAES(id){
+  if(!confirm(_M('Stergi aceasta inregistrare de expunere?')))return;
+  await dl('aes_events',id);logActivity('Stearsa expunere accidentala');render();
+}
+
+// ═══ FIGURA 2 — tabelul primit de la medicina muncii ═══
+// Ordinul, atributiile medicului de medicina muncii lit. (h): completeaza anual evidenta
+// vaccinarilor personalului expus „si o trimite la serviciul/compartimentul/medicul responsabil
+// pentru prevenirea IAAM". Deci CPIAAM PRIMESTE tabelul; nu il calculeaza. Coloana de expuneri
+// inregistrate se afiseaza totusi din evenimentele proprii, ca sa se vada daca cele doua evidente
+// se potrivesc — o nepotrivire inseamna fise care nu au ajuns la CPIAAM.
+const AES_FIG2_COL=[
+  {k:'vaccinati',   ro:'Vaccinati postexpunere',        en:'Vaccinated post-exposure'},
+  {k:'testati_imed',ro:'Testati imediat dupa expunere', en:'Tested immediately after exposure'},
+  {k:'testati_6l',  ro:'Testati la 6 luni',             en:'Tested at 6 months'},
+  {k:'sc_hiv',      ro:'Seroconversie HIV',             en:'HIV seroconversion'},
+  {k:'sc_aghbs',    ro:'Seroconversie AgHBs pozitiv',   en:'HBsAg positive'},
+  {k:'sc_achbs',    ro:'Seroconversie Ac antiHBs pozitiv',en:'Anti-HBs positive'},
+  {k:'sc_vhc',      ro:'Seroconversie VHC',             en:'HCV seroconversion'}
+];
+async function aesEditFig2(){
+  const isEN=CFG.lang==='en';const y=A.year;
+  const r=(await ga('aes_events')).find(function(x){return x.kind==='fig2'&&x.year===y})||{};
+  const d=r.date||{};
+  const cat=AES_CATEG.filter(function(c){return c.fig2});
+  const f=await aesUnitSheet(y);
+  let h='<div class="ib inf" style="margin-bottom:10px"><span>'+
+    (isEN?'This is the table <strong>occupational medicine fills in and sends to the infection prevention team</strong> every year (order, duties of the occupational physician, letter h). It is entered here as an aggregate, exactly like patient-days come from Hospital Statistics — the app holds no one\'s individual vaccination or serology.'
+         :'E tabelul pe care <strong>medicina muncii il completeaza si il trimite anual la CPIAAM</strong> (ordinul, atributiile medicului de medicina muncii, litera h). Se introduce aici ca agregat, exact cum vin om-zilele din Statistici Spital — aplicatia nu tine vaccinarea sau serologia nimanui, individual.')+
+    '</span></div>';
+  h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th>'+(isEN?'Category':'Categoria')+'</th>'+
+    '<th>'+(isEN?'Exposures (from this app)':'Expuneri (din aplicatie)')+'</th>'+
+    AES_FIG2_COL.map(function(c){return '<th>'+esc(_aesL(c))+'</th>'}).join('')+'</tr></thead><tbody>';
+  cat.forEach(function(c){
+    h+='<tr><td><strong>'+esc(_aesL(c))+'</strong></td>'+
+      '<td style="text-align:right">'+(f.fig2Expuneri[c.v]||0)+'</td>'+
+      AES_FIG2_COL.map(function(col){
+        var val=(d[c.v]&&d[c.v][col.k]!=null)?d[c.v][col.k]:'';
+        return '<td><input type="number" min="0" id="f-aesf2-'+c.v+'-'+col.k+'" value="'+esc(val)+'" style="width:70px;padding:4px"></td>';
+      }).join('')+'</tr>';
+  });
+  h+='</tbody></table></div>';
+  openM((isEN?'Annual table from occupational medicine — ':'Tabelul anual de la medicina muncii — ')+y,h,
+    '<button class="btn bo" onclick="closeM()">'+T('btn_cancel')+'</button>'+
+    '<button class="btn bp" onclick="saveAESFig2()">'+T('btn_save')+'</button>');
+}
+async function saveAESFig2(){
+  var y=A.year;var d={};
+  AES_CATEG.filter(function(c){return c.fig2}).forEach(function(c){
+    d[c.v]={};
+    AES_FIG2_COL.forEach(function(col){
+      var el=document.getElementById('f-aesf2-'+c.v+'-'+col.k);
+      d[c.v][col.k]=el?el.value.trim():'';
+    });
+  });
+  var vechi=(await gaAll('aes_events')).find(function(x){return x.kind==='fig2'&&x.year===y});
+  var rec={kind:'fig2',year:y,id:'aesfig2_'+y,date:d};
+  if(vechi)Object.keys(vechi).forEach(function(k){if(k.charAt(0)==='_'&&rec[k]===undefined)rec[k]=vechi[k]});
+  await pt('aes_events',rec);
+  closeM();toastSaved();render();
+}
+
+// ═══ WORD — analiza anuala, partea CPIAAM ═══
+async function genAESUnitSheetWord(){
+  const isEN=CFG.lang==='en';const y=A.year;
+  showGen();
+  try{
+    const f=await aesUnitSheet(y);
+    const {Document,Packer,Table,WidthType}=docx;
+    const children=[];
+    children.push(wH1((isEN?'Accidental exposure to biological products — annual analysis ':'Expunerea accidentala la produse biologice — analiza anuala ')+y));
+    children.push(wP(CFG.hospital_name||'',{size:22,bold:true}));
+    children.push(wP(isEN?'Circumstance and risk-factor analysis carried out by the infection prevention team.'
+                         :'Analiza circumstantelor si a factorilor de risc, realizata de CPIAAM.',{size:18,italics:true}));
+    children.push(wSp(120));
+
+    const W=[6200,2800];
+    const rnd=function(e,v){return [e,(v===null||v===undefined||v==='')?'—':fn(v)]};
+    children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:W,rows:[
+      wTblHead([isEN?'Indicator':'Indicator',isEN?'Value':'Valoare'],W),
+      wTblRow(rnd(isEN?'Average beds':'Numar paturi (medie)',f.paturi),W),
+      wTblRow(rnd(isEN?'Patient-days':'Numar zile-pacient',f.omZile),W,true),
+      wTblRow(rnd(isEN?'Total exposures recorded':'Total expuneri inregistrate',f.total),W),
+      wTblRow(rnd(isEN?'Percutaneous':'Percutanate',f.percutanate),W,true),
+      wTblRow(rnd(isEN?'Mucosal':'Mucosale',f.mucosale),W),
+      wTblRow(rnd(isEN?'Cutaneous':'Cutanate',f.cutanate),W,true),
+      wTblRow(rnd(isEN?'Aerosols':'Prin aerosoli',f.aerosoli),W),
+      wTblRow(rnd(isEN?'Deep injuries':'Leziuni profunde',f.leziuniProfunde),W,true),
+      wTblRow(rnd(isEN?'During emergency situations':'Produse in situatii de urgenta',f.inUrgenta),W)
+    ]}));
+    children.push(wSp(140));
+
+    children.push(wH1(isEN?'Derived indicators':'Indicatori derivati'));
+    children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:W,rows:[
+      wTblHead([isEN?'Indicator':'Indicator',isEN?'Value':'Valoare'],W),
+      wTblRow([isEN?'Exposures / 1000 patient-days':'Expuneri / 1000 zile-pacient',
+        f.rataMiiZile===null?(isEN?'— (no patient-days recorded)':'— (fara om-zile inregistrate)'):indFmt(f.rataMiiZile)],W),
+      wTblRow([isEN?'Exposures / 100 beds':'Expuneri / 100 paturi',
+        f.rataSutaPaturi===null?(isEN?'— (no bed data recorded)':'— (fara date despre paturi)'):indFmt(f.rataSutaPaturi)],W,true)
+    ]}));
+    children.push(wSp(140));
+
+    if(f.total){
+      const W3=[5000,2000,2000];
+      const tab=function(titlu,obj){
+        children.push(wH1(titlu));
+        const chei=Object.keys(obj).sort(function(a,b){return obj[b]-obj[a]});
+        children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:W3,rows:[
+          wTblHead([titlu,isEN?'Cases':'Cazuri','%'],W3)
+        ].concat(chei.map(function(k,i){
+          return wTblRow([k,String(obj[k]),fp(obj[k],f.total)],W3,i%2===1);
+        }))}));
+        children.push(wSp(120));
+      };
+      tab(isEN?'By mechanism (official form)':'Pe mecanismul din fisa oficiala',f.peMecanism);
+      tab(isEN?'Where the process breaks':'Unde se rupe procesul',f.peMoment);
+      tab(isEN?'By professional category':'Pe categorii profesionale',f.peCategorie);
+
+      const constatari=_aesConstatari(f);
+      if(constatari.length){
+        children.push(wH1(isEN?'Findings and preventive measures':'Constatari si masuri de prevenire'));
+        constatari.forEach(function(c){
+          children.push(wP('• '+c.t,{bold:true}));
+          children.push(wP('   '+c.f,{size:18,italics:true}));
+        });
+        children.push(wSp(120));
+      }
+    }
+
+    children.push(wP(isEN
+      ?'The register of accidental exposures, the exposure assessment, post-exposure prophylaxis, the monitoring calendar, seroconversion and case closure are kept by occupational medicine. This document contains the part the order assigns to the infection prevention team: the analysis of the circumstances, of the risk factors and the preventive measures.'
+      :'Registrul expunerilor accidentale, evaluarea expunerii, profilaxia post-expunere, calendarul de monitorizare, seroconversia si inchiderea cazului sunt tinute de medicina muncii. Documentul de fata contine partea pe care ordinul o da CPIAAM: analiza circumstantelor, a factorilor de risc si masurile de prevenire.',
+      {size:16,italics:true}));
+
+    const doc=new Document({sections:[{children:children}]});
+    const blob=await Packer.toBlob(doc);
+    saveAs(blob,'Analiza_AES_'+y+'.docx');
+  }catch(e){errAlert(e,'Nu am putut genera analiza anuala.','Could not generate the annual analysis.')}
+  finally{hideGen()}
+}
+
+// Lista lunara care se transmite la DSP pana in data de 5 pentru luna anterioara — sarcina din
+// Ord. 1101/2016, citata verbatim in capul fisierului. Contine codurile, nu persoanele: cheia
+// cod-persoana ramane la medicina muncii, iar fisele nominale se trimit separat de ei.
+async function genAESLunarWord(){
+  const isEN=CFG.lang==='en';const y=A.year;
+  // Implicit luna anterioara — chiar aia se raporteaza pana in 5.
+  const acum=new Date();var lPrec=acum.getMonth();if(lPrec===0)lPrec=12;
+  const raspuns=prompt(isEN?'Month to transmit (1-12):':'Luna de transmis (1-12):',String(lPrec));
+  if(raspuns===null)return;
+  const m=parseInt(raspuns,10);
+  if(!(m>=1&&m<=12)){alert(_M('Luna trebuie sa fie intre 1 si 12.'));return}
+  showGen();
+  try{
+    const pref=y+'-'+String(m).padStart(2,'0');
+    const list=(await ga('aes_events')).filter(function(r){
+      return r.kind==='event'&&String(r.date||'').indexOf(pref)===0;
+    }).sort(function(a,b){return (a.date||'').localeCompare(b.date||'')});
+    if(!list.length){alert(_Mf('Nu exista expuneri inregistrate pe luna {luna}.',{luna:(MO[m-1]||m)+' '+y}));return}
+    const {Document,Packer,Table,WidthType}=docx;
+    const children=[];
+    children.push(wH1((isEN?'Accidental exposures — ':'Expuneri accidentale la produse biologice — ')+(MO[m-1]||m)+' '+y));
+    children.push(wP(CFG.hospital_name||'',{size:22,bold:true}));
+    children.push(wSp(120));
+    const W=[1200,1500,1700,1800,1500,1300];
+    children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:W,rows:[
+      wTblHead([isEN?'Date':'Data',isEN?'Code':'Cod',isEN?'Category':'Categorie',
+        isEN?'Ward':'Sectie',isEN?'Type':'Tipul',isEN?'Transmitted':'Transmisa'],W)
+    ].concat(list.map(function(r,i){
+      var t=aesTipExpunere(r);
+      return wTblRow([aesFmtDate(r.date),r.cod||'—',_aesName(AES_CATEG,r.categorie),
+        r.section?rSec(r.section):'—',t?aesTipName(t):'—',
+        r.fisa_transmisa?fmtDate(r.fisa_transmisa):'—'],W,i%2===1);
+    }))}));
+    children.push(wSp(160));
+    const netr=list.filter(function(r){return !r.fisa_transmisa}).length;
+    children.push(wP((isEN?'Total: ':'Total: ')+list.length+(isEN?' exposure(s).':' expunere(i).')+
+      (netr?(isEN?' Not yet transmitted: '+netr+'.':' Netransmise inca: '+netr+'.'):''),{bold:true}));
+    children.push(wSp(120));
+    children.push(wP(isEN
+      ?'Sent monthly, by the 5th of the month, for the previous month (Order 1101/2016). Persons are identified by internal code; the key linking the code to a person is kept by occupational medicine, together with serology and post-exposure follow-up.'
+      :'Se trimite lunar, pana in data de 5 a lunii, pentru luna anterioara (Ord. 1101/2016). Persoanele sunt identificate prin cod intern; cheia care leaga codul de persoana e tinuta de medicina muncii, impreuna cu serologia si urmarirea post-expunere.',
+      {size:16,italics:true}));
+    const doc=new Document({sections:[{children:children}]});
+    const blob=await Packer.toBlob(doc);
+    saveAs(blob,'AES_'+y+'_'+String(m).padStart(2,'0')+'.docx');
+  }catch(e){errAlert(e,'Nu am putut genera lista lunara.','Could not generate the monthly list.')}
+  finally{hideGen()}
+}
+
+// ═══ FIGURA 3 — fisa unitatii privind vaccinarea antihepatita B a personalului ═══
+// Ord. 1101/2016, Anexa 3, atributiile serviciului/compartimentului de prevenire a IAAM, verbatim:
+//   „intocmeste si transmite ANUAL catre directia de sanatate publica judeteana si a municipiului
+//    Bucuresti fisa unitatii sanitare privind situatia vaccinarii antihepatita B a personalului
+//    medico-sanitar, de ingrijire si auxiliar, conform machetei prezentate in figura 3."
+// DIFERENTA fata de Figura 2, si de aceea sunt doua ecrane separate: Figura 2 o completeaza medicul
+// de medicina muncii si o trimite la CPIAAM (deci noi o PRIMIM), iar la ea semneaza managerul si
+// medicul de medicina muncii; Figura 3 o INTOCMESTE CPIAAM, si o semneaza managerul impreuna cu
+// seful serviciului de prevenire a IAAM. Trece testul de scop din CLAUDE.md — produce un document
+// semnat de CPIAAM. Cifrele vin tot agregat de la evidenta de personal si de la medicina muncii;
+// aplicatia nu tine statusul vaccinal individual al nimanui.
+// Acopera TOT personalul angajat, nu doar pe cei expusi accidental — alt numitor decat Figura 2.
+const AES_FIG3_COL=[
+  {k:'angajat',    ro:'Personal angajat',                       en:'Staff employed'},
+  {k:'vacc_inain', ro:'Vaccinat HB inainte de anul raportarii', en:'HB-vaccinated before the reporting year'},
+  {k:'vacc_anul',  ro:'Vaccinat HB in anul raportarii',         en:'HB-vaccinated during the reporting year'},
+  {k:'ac_prezenti',ro:'Cu Ac antiHBs prezenti (vaccinare incerta/neefectuata)',en:'Anti-HBs present (uncertain/no vaccination)'}
+];
+async function aesEditFig3(){
+  const isEN=CFG.lang==='en';const y=A.year;
+  const r=(await ga('aes_events')).find(function(x){return x.kind==='fig3'&&x.year===y})||{};
+  const d=r.date||{};
+  const cat=AES_CATEG.filter(function(c){return c.fig2});
+  let h='<div class="ib inf" style="margin-bottom:10px"><span>'+
+    (isEN?'Order 1101/2016, Annex 3: the infection prevention team <strong>draws up and transmits</strong> this sheet to the public health authority every year, and its head signs it alongside the manager. It covers <strong>all employed staff</strong>, not only those accidentally exposed — a different denominator from the occupational-medicine table. The figures are entered in aggregate; the app holds no individual vaccination status.'
+         :'Ord. 1101/2016, Anexa 3: CPIAAM <strong>intocmeste si transmite</strong> anual fisa asta la DSP, iar seful serviciului o semneaza alaturi de manager. Acopera <strong>tot personalul angajat</strong>, nu doar pe cei expusi accidental — alt numitor decat tabelul de la medicina muncii. Cifrele se introduc agregat; aplicatia nu tine statusul vaccinal individual al nimanui.')+
+    '</span></div>';
+  h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th>'+(isEN?'Category':'Categoria')+'</th>'+
+    AES_FIG3_COL.map(function(c){return '<th>'+esc(_aesL(c))+'</th>'}).join('')+'</tr></thead><tbody>';
+  cat.forEach(function(c){
+    h+='<tr><td><strong>'+esc(_aesL(c))+'</strong></td>'+
+      AES_FIG3_COL.map(function(col){
+        var val=(d[c.v]&&d[c.v][col.k]!=null)?d[c.v][col.k]:'';
+        return '<td><input type="number" min="0" id="f-aesf3-'+c.v+'-'+col.k+'" value="'+esc(val)+'" style="width:80px;padding:4px"></td>';
+      }).join('')+'</tr>';
+  });
+  h+='</tbody></table></div>'+
+    '<div class="ib inf" style="font-size:11px;margin-top:8px"><span>'+
+    (isEN?'The total row is computed from the categories when the sheet is generated.'
+         :'Randul „total" se calculeaza din categorii la generarea fisei.')+'</span></div>';
+  openM((isEN?'Unit sheet — anti-HBV vaccination of staff — ':'Fisa unitatii — vaccinarea anti-HVB a personalului — ')+y,h,
+    '<button class="btn bo" onclick="closeM()">'+T('btn_cancel')+'</button>'+
+    '<button class="btn bp" onclick="saveAESFig3()">'+T('btn_save')+'</button>');
+}
+async function saveAESFig3(){
+  var y=A.year;var d={};
+  AES_CATEG.filter(function(c){return c.fig2}).forEach(function(c){
+    d[c.v]={};
+    AES_FIG3_COL.forEach(function(col){
+      var el=document.getElementById('f-aesf3-'+c.v+'-'+col.k);
+      d[c.v][col.k]=el?el.value.trim():'';
+    });
+  });
+  var vechi=(await gaAll('aes_events')).find(function(x){return x.kind==='fig3'&&x.year===y});
+  var rec={kind:'fig3',year:y,id:'aesfig3_'+y,date:d};
+  if(vechi)Object.keys(vechi).forEach(function(k){if(k.charAt(0)==='_'&&rec[k]===undefined)rec[k]=vechi[k]});
+  await pt('aes_events',rec);
+  closeM();toastSaved();render();
+}
+// Totalul pe coloana — suma categoriilor. Intoarce null cand nicio categorie nu e completata, ca sa
+// nu iasa un 0 fals intr-un document trimis la DSP (regula „Rate si numitori" din CLAUDE.md).
+function _aesFig3Total(d,k){
+  var s=0,n=0;
+  AES_CATEG.filter(function(c){return c.fig2}).forEach(function(c){
+    var v=d[c.v]&&d[c.v][k];
+    if(v!==''&&v!=null&&!isNaN(+v)){s+=+v;n++}
+  });
+  return n?s:null;
+}
+async function genAESFig3Word(){
+  const isEN=CFG.lang==='en';const y=A.year;
+  showGen();
+  try{
+    const rec=(await ga('aes_events')).find(function(x){return x.kind==='fig3'&&x.year===y});
+    if(!rec||!rec.date){alert(_M('Completeaza intai fisa de vaccinare a personalului.'));return}
+    const d=rec.date;
+    const {Document,Packer,Table,WidthType}=docx;
+    const children=[];
+    children.push(wH1(isEN?'Unit sheet — anti-hepatitis B vaccination of medical, care and auxiliary staff'
+                          :'Fisa unitatii sanitare privind vaccinarea antihepatita B a personalului medico-sanitar, de ingrijire si auxiliar'));
+    children.push(wP((isEN?'Reporting year: ':'Anul raportarii: ')+y,{bold:true}));
+    children.push(wP((CFG.hospital_name||''),{size:22,bold:true}));
+    children.push(wSp(140));
+    const W=[2600,1600,1600,1600,1600];
+    const cap=[isEN?'Category':'Categoria'].concat(AES_FIG3_COL.map(function(c){return _aesL(c)}));
+    const randuri=[wTblHead(cap,W)];
+    const fmt=function(v){return (v===''||v==null)?'—':String(v)};
+    randuri.push(wTblRow(['total'].concat(AES_FIG3_COL.map(function(c){
+      var t=_aesFig3Total(d,c.k);return t===null?'—':String(t);
+    })),W));
+    AES_CATEG.filter(function(c){return c.fig2}).forEach(function(c,i){
+      randuri.push(wTblRow([_aesL(c)].concat(AES_FIG3_COL.map(function(col){
+        return fmt(d[c.v]?d[c.v][col.k]:'');
+      })),W,i%2===0));
+    });
+    children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:W,rows:randuri}));
+    children.push(wSp(240));
+    children.push(wP('Manager,',{bold:true}));
+    children.push(wP('..........................................'));
+    children.push(wSp(120));
+    children.push(wP(isEN?'Head of the infection prevention service/department,'
+                         :'Seful serviciului/compartimentului de prevenire a infectiilor asociate asistentei medicale,',{bold:true}));
+    children.push(wP('..........................................'));
+    children.push(wSp(160));
+    children.push(wP(isEN?'Transmitted annually to the county public health authority (Order 1101/2016, Annex 3, figure 3).'
+                         :'Se transmite anual directiei de sanatate publica judetene si a municipiului Bucuresti (Ord. 1101/2016, Anexa 3, figura 3).',
+      {size:16,italics:true}));
+    const doc=new Document({sections:[{children:children}]});
+    const blob=await Packer.toBlob(doc);
+    saveAs(blob,'Fisa_Unitatii_Vaccinare_HVB_'+y+'.docx');
+  }catch(e){errAlert(e,'Nu am putut genera fisa unitatii.','Could not generate the unit sheet.')}
+  finally{hideGen()}
 }
 
 </script>
@@ -20112,6 +21063,8 @@ async function rRap(el){
       '<button class="btn bp" onclick="genWord(genPVCPIAAM,\'PV Anual CPIAAM\')">PV Anual</button></div>'+
     '<div class="rc"><h3>Analiza IAAM</h3><p>Analiza detaliata: sectii, germeni, origine, MDR.</p>'+
       '<div class="bg"><button class="btn bp" onclick="genWord(genAnalizaIAAMWord,\'Analiza IAAM\')">Word</button>'+aiBtn('genWord(genAnalizaIAAMWordAI,\'Analiza IAAM (AI)\')')+'<button class="btn bs" onclick="genRegistruIAAMExcel()" style="margin-left:6px">'+T('rap_registru_iaam_excel')+'</button></div></div>'+
+    '<div class="rc"><h3>Raport Microbiologic</h3><p>Germenii izolati in laborator pe trimestru sau pe an, cu defalcare pe produs si sectie, si tabelul de rezistenta pe categorii de antibiotice. Reproduce raportul intocmit manual de laborator. Citeste din datele de antibiograma importate.</p>'+
+      '<div class="bg"><button class="btn bp" onclick="genRaportMicroWord(1)">T1</button><button class="btn bp" onclick="genRaportMicroWord(2)">T2</button><button class="btn bp" onclick="genRaportMicroWord(3)">T3</button><button class="btn bp" onclick="genRaportMicroWord(4)">T4</button><button class="btn bw" onclick="genRaportMicroWord(0)" style="margin-left:6px">Anual</button></div></div>'+
     '<div class="rc"><h3>Analiza Autocontrol</h3><p>Probe pe tipuri, sectii, neconformitati detaliate.</p>'+
       '<div class="bg"><button class="btn bp" onclick="genWord(genAnalizaAutoWord,\'Analiza Autocontrol\')">Word</button>'+aiBtn('genWord(genAnalizaAutoWordAI,\'Analiza Autocontrol (AI)\')')+'<button class="btn bs" onclick="genAutoExcel()" style="margin-left:6px">Excel</button></div></div>'+
     '<div class="rc"><h3>Analiza Deseuri</h3><p>Evolutie lunara, coduri, indicator kg/om-zi.</p>'+
@@ -22163,6 +23116,337 @@ var CHART_PALETTE=['#1B3A6B','#0F7B6C','#D4A017','#C0392B','#2563B0','#27AE60','
 var CHART_PALETTE_SOFT=['rgba(27,58,107,0.6)','rgba(15,123,108,0.6)','rgba(212,160,23,0.6)','rgba(192,57,43,0.6)','rgba(37,99,176,0.6)','rgba(39,174,96,0.6)'];
 
 
+
+</script>
+<script>
+// ═════════════════════════════════════════════════════════════
+// CPIAAM — Raport microbiologic trimestrial / anual
+// ═════════════════════════════════════════════════════════════
+// Reproduce raportul pe care laboratorul si CPIAAM il fac manual: enumerarea tulpinilor izolate
+// pe germen, produs si sectie, plus tabelul de rezistenta pe categorii de antibiotice.
+// Citeste din `lab_isolates` — acelasi store in care importa deja antibiograma.js, deci nu se
+// introduc date de doua ori.
+//
+// VERIFICAT pe raportul real al colegei (trim. I 2025, 78 de izolate): toate cele 8 numaratori de
+// tulpini si toate cele 9 procente ies identic — S. aureus / Oxacilina 12/20 = 60%,
+// Klebsiella / Augmentin 11/16 = 68,75%, E. coli / Biseptol 15/29 = 51,72%.
+//
+// ═══ CELE DOUA MODURI DE NUMITOR, SI DE CE CONTEAZA ═══
+// Tabelul de lucru al laboratorului marcheaza DOAR rezistentele; o casuta goala inseamna ori
+// „testat si sensibil", ori „netestat", si nu se poate spune care. Raportul manual trateaza goalele
+// ca nerezistent si imparte la TOTALUL tulpinilor din acel germen — de aceea iese 89,65% la
+// E. coli / Ampicilina (26 din 29). Cand datele au S/I/R complet, numitorul corect e cate au fost
+// TESTATE, nu cate au fost izolate.
+// Modul se detecteaza singur si se SCRIE IN RAPORT, ca nimeni sa nu compare doua trimestre
+// calculate altfel. Nu ghicim si nu convertim tacit.
+//
+// ATENTIE la clasificarea MDR/XDR: pe date „doar R" ea NU se poate face — Magiorakos cere
+// nesensibil din cate au fost testate. Vezi nota din raport.
+
+// Categoriile in care se raporteaza rezistenta. Ordinea conteaza: se ia PRIMA potrivire, deci
+// cele specifice stau inaintea celor generale (Gentamicina inaintea Aminoglicozidelor).
+// Denumirile din laborator vin cu greseli de tastare, rupturi de rand, denumiri comerciale si
+// prescurtari — de aceea potrivirea e pe expresie, nu pe lista de nume exacte. Exemple reale
+// intalnite: „Eriritromicina", „Norfolxacin", „Ceftriaxon e", „Biseptol", „Augmentin",
+// „Ac.nalidixic", „Piperacilin /Taz" si „Piperacilina/tazz" in acelasi set de tabele.
+const MIC_CAT=[
+  {k:'oxacilina',   ro:'Oxacilina (meticilino-rezistenta)', en:'Oxacillin (methicillin resistance)', re:/oxacilin|meticilin|methicillin|cefoxitin/},
+  {k:'ampicilina',  ro:'Ampicilina',                        en:'Ampicillin',                         re:/^ampicilin|^ampicilina/},
+  {k:'amoxiclav',   ro:'Amoxicilina + acid clavulanic',     en:'Amoxicillin-clavulanate',            re:/augmentin|amoxi.*clav|amoxiclav|amoksiclav/},
+  {k:'penicilina',  ro:'Penicilina',                        en:'Penicillin',                         re:/^penicilin/},
+  {k:'ceftarolina', ro:'Cefalosporine anti-MRSA (ceftarolina)', en:'Anti-MRSA cephalosporins',    re:/ceftarolin|ceftobiprol/},
+  {k:'ceph23',      ro:'Cefalosporine G2/G3',               en:'2nd/3rd gen. cephalosporins',        re:/cefuroxim|cefotaxim|ceftriaxon|ceftazidim|cefoperazon|cefixim|ceftibuten|cefpodoxim|cefalexin|cefazolin/},
+  {k:'carbapeneme', ro:'Carbapeneme',                       en:'Carbapenems',                        re:/imipenem|meropenem|ertapenem|doripenem/},
+  {k:'fluoroq',     ro:'Fluorochinolone',                   en:'Fluoroquinolones',                   re:/ciprofloxacin|levofloxacin|ofloxacin|norfl|norfol|moxifloxacin|acid nalidixic|ac\.?\s*nalidixic/},
+  {k:'macrolide',   ro:'Macrolide',                         en:'Macrolides',                         re:/eritromicin|eriritromicin|erythromycin|claritromicin|azitromicin/},
+  {k:'clindamicina',ro:'Clindamicina',                      en:'Clindamycin',                        re:/clindamicin|lincomicin/},
+  {k:'gentamicina', ro:'Gentamicina',                       en:'Gentamicin',                         re:/^gentamicin/},
+  {k:'aminogliz',   ro:'Alte aminoglicozide',               en:'Other aminoglycosides',              re:/amikacin|tobramicin|netilmicin|kanamicin|streptomicin/},
+  {k:'sxt',         ro:'Trimetoprim-Sulfametoxazol',        en:'Trimethoprim-sulfamethoxazole',      re:/biseptol|trimetoprim|trimethoprim|sulfametoxazol|sulfamethoxaz|cotrimoxazol|sumetrolim|septrin|sxt/},
+  {k:'tetracicline',ro:'Tetracicline',                      en:'Tetracyclines',                      re:/tetraciclin|doxiciclin|minociclin|tigecyclin|tigeciclin/},
+  {k:'glicopept',   ro:'Glicopeptide (vancomicina)',        en:'Glycopeptides (vancomycin)',         re:/vancomicin|teicoplanin/},
+  {k:'linezolid',   ro:'Linezolid',                         en:'Linezolid',                          re:/linezolid|tedizolid/},
+  {k:'nitrofur',    ro:'Nitrofurantoin',                    en:'Nitrofurantoin',                     re:/nitrofurantoin/},
+  {k:'fosfomicina', ro:'Fosfomicina',                       en:'Fosfomycin',                         re:/fosfomicin/},
+  {k:'colistin',    ro:'Colistin / polimixine',             en:'Colistin / polymyxins',              re:/colistin|polimixin|polymyxin/},
+  {k:'rifampicina', ro:'Rifampicina',                       en:'Rifampicin',                         re:/rifampicin|rifampin/},
+  {k:'cloramfenicol',ro:'Cloramfenicol',                    en:'Chloramphenicol',                    re:/cloramfenicol|chloramphenicol/},
+  {k:'piptazo',     ro:'Piperacilina/tazobactam',           en:'Piperacillin-tazobactam',            re:/piperacilin|piperacillin/}
+];
+function _micL(o){return (CFG.lang==='en'&&o&&o.en)?o.en:(o?o.ro:'')}
+// Normalizare identica cu cea din motorul de clasificare: fara diacritice, fara punctuatie.
+function _micNorm(s){
+  return String(s||'').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[ţț]/g,'t').replace(/[şș]/g,'s')
+    .replace(/\s+/g,' ').trim();
+}
+function micCategorie(numeAtb){
+  var n=_micNorm(numeAtb);
+  if(!n)return null;
+  for(var i=0;i<MIC_CAT.length;i++){if(MIC_CAT[i].re.test(n))return MIC_CAT[i]}
+  return null;
+}
+
+// Gruparea germenilor pentru raport. Eticheta din laborator vine adesea cu marcaje lipite
+// („Klebsiella ESBL +", „Stafilococ auriu (ex.faringian)PED"), deci se potriveste pe radacina.
+const MIC_GERM=[
+  {k:'saureus',    ro:'Staphylococcus aureus',       en:'Staphylococcus aureus',       re:/staph.*aureus|stafilococ auriu|s\.? ?aureus|mrsa|mssa/},
+  {k:'scn',        ro:'Stafilococ coagulazo-negativ',en:'Coagulase-negative staphylococci',re:/coagulazo|coagulase|epidermidis|haemolyticus|saprophyticus|hominis/},
+  {k:'ecoli',      ro:'Escherichia coli',            en:'Escherichia coli',            re:/e\.? ?coli|escherichia/},
+  {k:'klebsiella', ro:'Klebsiella spp.',             en:'Klebsiella spp.',             re:/klebsiella/},
+  {k:'proteus',    ro:'Proteus spp.',                en:'Proteus spp.',                re:/proteus/},
+  {k:'enterococ',  ro:'Enterococcus spp.',           en:'Enterococcus spp.',           re:/enterococ/},
+  {k:'enterobact', ro:'Enterobacter spp.',           en:'Enterobacter spp.',           re:/enterobacter/},
+  {k:'citrobacter',ro:'Citrobacter spp.',            en:'Citrobacter spp.',            re:/citrobacter/},
+  {k:'pseudomonas',ro:'Pseudomonas aeruginosa',      en:'Pseudomonas aeruginosa',      re:/pseudomonas/},
+  {k:'acinetobact',ro:'Acinetobacter spp.',          en:'Acinetobacter spp.',          re:/acinetobacter/},
+  {k:'serratia',   ro:'Serratia spp.',               en:'Serratia spp.',               re:/serratia/},
+  {k:'morganella', ro:'Morganella spp.',             en:'Morganella spp.',             re:/morganella/},
+  {k:'strepto',    ro:'Streptococcus spp.',          en:'Streptococcus spp.',          re:/streptococ/},
+  {k:'candida',    ro:'Candida spp.',                en:'Candida spp.',                re:/candida|candidozyma/},
+  {k:'cdifficile', ro:'Clostridioides difficile',    en:'Clostridioides difficile',    re:/difficile/}
+];
+function micGrupGermen(nume){
+  var n=_micNorm(nume);
+  for(var i=0;i<MIC_GERM.length;i++){if(MIC_GERM[i].re.test(n))return MIC_GERM[i]}
+  return null;
+}
+// Marcajele de rezistenta scrise in eticheta germenului de catre laborator.
+// Numele sectiei. Importul de laborator stocheaza `section` fie ca id din configurare (cand a
+// gasit potrivirea), fie ca TEXT BRUT din fisier (cand nu a gasit-o) — vezi processLabCSV.
+// rSec() pe un text brut intoarce „(sters din configurare)", ceea ce e derutant: sectia nu a fost
+// stearsa, doar nu a fost niciodata mapata. Deci: daca e id cunoscut, il rezolvam; altfel afisam
+// textul asa cum a venit.
+function micNumeSectie(v){
+  if(!v)return CFG.lang==='en'?'(unspecified)':'(nespecificat)';
+  var gasit=(CFG.sections||[]).find(function(x){return x.id===v});
+  if(gasit)return rSec(v);
+  return String(v).trim()||(CFG.lang==='en'?'(unspecified)':'(nespecificat)');
+}
+function micMarkeri(r){
+  var n=_micNorm(r.organism)+' '+_micNorm(r.notes||'');
+  return {esbl:/esbl/.test(n), mrsa:/mrsa/.test(n), vre:/\bvre\b/.test(n), cre:/\bcre\b|carbapenemaz/.test(n)};
+}
+
+// ═══ AGREGAREA ═══
+// `q` = 1..4 pentru trimestru, 0 sau null pentru an intreg.
+async function micAggregate(year,q){
+  var toate=await ga('lab_isolates');
+  var alAnului=toate.filter(function(r){return r.year===year});
+  var faraData=0;
+  var izolate=alAnului.filter(function(r){
+    if(!q)return true;
+    var d=(typeof parseDate==='function')?parseDate(r.date):null;
+    if(!d){faraData++;return false}
+    return (Math.floor(d.getMonth()/3)+1)===q;
+  });
+
+  // Modul de numitor — se detecteaza, nu se presupune. Daca exista macar un rezultat S sau I,
+  // datele contin antibiograma completa si numitorul corect e „cate au fost testate".
+  var areSIR=izolate.some(function(r){
+    return (r.susceptibility||[]).some(function(s){return s.result==='S'||s.result==='I'});
+  });
+  var mod=areSIR?'complet':'doar_R';
+
+  var germeni={},nepotrivite={};
+  izolate.forEach(function(r){
+    var g=micGrupGermen(r.organism);
+    var cheie=g?g.k:('alt_'+_micNorm(r.organism).slice(0,24));
+    if(!germeni[cheie]){
+      germeni[cheie]={cheie:cheie,nume:g?_micL(g):(r.organism||'(nespecificat)'),recunoscut:!!g,
+        n:0,esbl:0,mrsa:0,vre:0,cre:0,peProdus:{},peSectie:{},cat:{}};
+    }
+    var G=germeni[cheie];G.n++;
+    var m=micMarkeri(r);
+    if(m.esbl)G.esbl++;if(m.mrsa)G.mrsa++;if(m.vre)G.vre++;if(m.cre)G.cre++;
+    var prod=(r.sample_type||'').trim()||(CFG.lang==='en'?'(unspecified)':'(nespecificat)');
+    if(!G.peProdus[prod])G.peProdus[prod]={n:0,sectii:{}};
+    G.peProdus[prod].n++;
+    var sec=micNumeSectie(r.section);
+    G.peProdus[prod].sectii[sec]=(G.peProdus[prod].sectii[sec]||0)+1;
+    G.peSectie[sec]=(G.peSectie[sec]||0)+1;
+
+    // Rezistenta pe categorii. Un izolat conteaza O SINGURA DATA per categorie, chiar daca are
+    // mai multe antibiotice din ea — altfel un germen testat la trei fluorochinolone ar aparea
+    // de trei ori in numarator si procentul ar depasi 100.
+    var testatIn={},rIn={};
+    (r.susceptibility||[]).forEach(function(s){
+      var c=micCategorie(s.atb_name||s.atb_code);
+      if(!c){var nn=(s.atb_name||'').trim();if(nn)nepotrivite[nn]=(nepotrivite[nn]||0)+1;return}
+      testatIn[c.k]=1;
+      if(s.result==='R'||s.result==='I')rIn[c.k]=1;   // nesensibil = R sau I
+    });
+    Object.keys(testatIn).forEach(function(k){
+      if(!G.cat[k])G.cat[k]={k:k,testat:0,r:0};
+      G.cat[k].testat++;
+      if(rIn[k])G.cat[k].r++;
+    });
+    // MRSA se DEDUCE din antibiograma (oxacilina sau cefoxitin nesensibil), nu doar din eticheta.
+    // Verificat pe raportul real: 12 din 20 de tulpini de S. aureus au oxacilina sau cefoxitin
+    // marcat R, exact cele 12 MRSA numarate manual. Eticheta ramane ca alternativa, pentru cazul
+    // in care laboratorul o scrie dar nu raporteaza oxacilina.
+    if((g&&(g.k==='saureus'||g.k==='scn'))&&rIn['oxacilina']&&!m.mrsa)G.mrsa++;
+  });
+
+  // Procentele. Numitorul difera dupa mod — vezi nota din capul fisierului.
+  Object.keys(germeni).forEach(function(gk){
+    var G=germeni[gk];
+    G.rezistente=Object.keys(G.cat).map(function(k){
+      var c=G.cat[k],def=MIC_CAT.find(function(x){return x.k===k});
+      var numitor=(mod==='complet')?c.testat:G.n;
+      return {k:k,nume:def?_micL(def):k,nR:c.r,nTestat:c.testat,numitor:numitor,
+        pct:numitor>0?Math.round(c.r/numitor*10000)/100:null};
+    }).filter(function(x){return x.nR>0}).sort(function(a,b){return b.pct-a.pct});
+  });
+
+  var lista=Object.keys(germeni).map(function(k){return germeni[k]})
+    .sort(function(a,b){return b.n-a.n});
+  return {an:year,trimestru:q||0,total:izolate.length,faraData:faraData,mod:mod,
+    germeni:lista,nepotrivite:nepotrivite,
+    nerecunoscuti:lista.filter(function(g){return !g.recunoscut}).length};
+}
+
+// ═══ NARATIVUL ═══
+// „29 tulpini Escherichia coli, dintre care 8 ESBL pozitive: 22 din uroculturi (12 din Medicala,
+//  2 din O-G...), 5 din secretii purulente (toate din Chirurgie)..."
+function micFrazaGermen(G){
+  var isEN=CFG.lang==='en';
+  var s=G.n+(isEN?' isolate(s) ':(G.n===1?' tulpina ':' tulpini '))+G.nume;
+  var mk=[];
+  if(G.esbl)mk.push(G.esbl+' ESBL+');
+  if(G.mrsa)mk.push(G.mrsa+' MRSA');
+  if(G.vre)mk.push(G.vre+' VRE');
+  if(G.cre)mk.push(G.cre+(isEN?' carbapenemase-producing':' producatoare de carbapenemaza'));
+  if(mk.length)s+=(isEN?', of which ':', dintre care ')+mk.join(', ');
+  var prod=Object.keys(G.peProdus).sort(function(a,b){return G.peProdus[b].n-G.peProdus[a].n});
+  if(prod.length){
+    s+=': '+prod.map(function(p){
+      var P=G.peProdus[p];
+      var sec=Object.keys(P.sectii).sort(function(a,b){return P.sectii[b]-P.sectii[a]});
+      var det=sec.map(function(x){return P.sectii[x]+' '+(isEN?'from ':'din ')+x}).join(', ');
+      return P.n+' '+(isEN?'from ':'din ')+p+(det?' ('+det+')':'');
+    }).join(', ');
+  }
+  return s+'.';
+}
+
+// ═══ SCHITA DE CONCLUZII ═══
+// Aceeasi regula ca la ancheta IAAM: compune din date ce se poate deduce, si marcheaza explicit
+// ce trebuie completat de om, in loc sa inventeze.
+function micSchitaConcluzii(d){
+  var isEN=CFG.lang==='en';var f=[];
+  if(!d.total)return isEN?'[No isolates recorded for the period.]':'[Nicio tulpina inregistrata pe perioada.]';
+  var peSectie={};
+  d.germeni.forEach(function(G){Object.keys(G.peSectie).forEach(function(s){peSectie[s]=(peSectie[s]||0)+G.peSectie[s]})});
+  var top=Object.keys(peSectie).sort(function(a,b){return peSectie[b]-peSectie[a]}).slice(0,3);
+  if(top.length)f.push((isEN?'The wards sending the most samples for bacteriological testing were ':
+    'Sectiile care au trimis cele mai multe probe pentru analize bacteriologice au fost ')+top.join(', ')+'.');
+
+  // Rezistentele mari, spuse cu cifra. Pragul de 50% e ales ca sa nu umple textul, nu e o norma.
+  var mari=[];
+  d.germeni.forEach(function(G){
+    (G.rezistente||[]).forEach(function(r){
+      if(r.pct!==null&&r.pct>=50&&r.nR>=3)mari.push({g:G.nume,c:r.nume,p:r.pct,n:r.nR,d:r.numitor});
+    });
+  });
+  mari.sort(function(a,b){return b.p-a.p});
+  mari.slice(0,6).forEach(function(x){
+    f.push((isEN?'Resistance of ':'Rezistenta ')+x.g+(isEN?' to ':' la ')+x.c+': '+
+      fp(x.n,x.d)+' ('+x.n+'/'+x.d+').');
+  });
+
+  if(d.mod==='doar_R'){
+    f.push(isEN?'[The data recorded only resistances, so susceptibility was not distinguished from untested. Percentages are calculated against all isolates of each organism.]'
+               :'[Datele contin doar rezistentele, deci sensibilul nu se distinge de netestat. Procentele sunt calculate din totalul tulpinilor fiecarui germen.]');
+  }
+  f.push(isEN?'[Trend against the previous period: fill in — the app compares only what has been imported.]'
+             :'[Evolutia fata de perioada anterioara: de completat — aplicatia compara doar ce a fost importat.]');
+  f.push(isEN?'[Therapeutic recommendation arising from these figures: fill in.]'
+             :'[Recomandarea terapeutica ce decurge din aceste cifre: de completat.]');
+  return f.join(' ');
+}
+
+// ═══ WORD ═══
+async function genRaportMicroWord(q){
+  const isEN=CFG.lang==='en';const y=A.year;
+  showGen();
+  try{
+    const d=await micAggregate(y,q);
+    if(!d.total){
+      alert(_Mf('Nu exista izolate de laborator inregistrate pe {per}.',
+        {per:(q?('T'+q+' '):'')+y}));
+      return;
+    }
+    const per=q?('T'+q+' '+y):(''+y);
+    const children=[];
+    children.push(wH1((isEN?'Analysis of organisms isolated in the laboratory and their antimicrobial resistance — ':
+      'Raport de analiza privind situatia germenilor izolati in laborator si rezistenta la antibiotice — ')+per));
+    children.push(wP(CFG.hospital_name||'',{size:22,bold:true}));
+    children.push(wSp(120));
+
+    children.push(wP((isEN?'In ':'In ')+per+
+      (isEN?' the microbiology laboratory isolated the following organisms from admitted patients:'
+           :' s-au izolat in laboratorul de microbiologie al spitalului urmatoarele categorii de germeni de la pacientii internati:'),
+      {bold:true}));
+    d.germeni.forEach(function(G){children.push(wP('— '+micFrazaGermen(G)))});
+    children.push(wSp(140));
+
+    // Tabelul de rezistenta
+    children.push(wH1(isEN?'Antimicrobial resistance':'Rezistenta la antibiotice'));
+    const W=[3000,3200,1400,1400];
+    const randuri=[wTblHead([isEN?'Organism':'Germeni izolati',isEN?'Antimicrobial':'Antibiotice',
+      isEN?'Resistance':'Rezistenta',isEN?'n':'n'],W)];
+    var i=0;
+    d.germeni.forEach(function(G){
+      if(!G.rezistente||!G.rezistente.length)return;
+      G.rezistente.forEach(function(r,k){
+        randuri.push(wTblRow([k===0?G.nume:'',r.nume,fp(r.nR,r.numitor),r.nR+'/'+r.numitor],W,i%2===1));
+        i++;
+      });
+    });
+    children.push(new docx.Table({width:{size:9000,type:docx.WidthType.DXA},columnWidths:W,rows:randuri}));
+    children.push(wSp(120));
+
+    // Nota de metoda — ce numitor s-a folosit. Fara ea, doua trimestre calculate diferit
+    // ar fi comparate ca si cum ar fi la fel.
+    children.push(wP(d.mod==='complet'
+      ?(isEN?'Method: percentages are calculated against the number of isolates TESTED for each antimicrobial (full S/I/R results available). Non-susceptible = R or I.'
+            :'Metoda: procentele sunt calculate din numarul de tulpini TESTATE pentru fiecare antibiotic (rezultatele S/I/R sunt complete). Nesensibil = R sau I.')
+      :(isEN?'Method: the imported data records only resistances, so a susceptible result cannot be distinguished from an untested one. Percentages are therefore calculated against ALL isolates of each organism, as in the manual report. For MDR/XDR classification, full S/I/R results are required.'
+            :'Metoda: datele importate contin doar rezistentele, deci un rezultat sensibil nu se poate deosebi de unul netestat. Procentele sunt calculate din TOTALUL tulpinilor fiecarui germen, ca in raportul intocmit manual. Pentru clasificarea MDR/XDR sunt necesare rezultatele S/I/R complete.'),
+      {size:16,italics:true}));
+
+    if(d.faraData){
+      children.push(wP((isEN?'Note: ':'Nota: ')+d.faraData+
+        (isEN?' isolate(s) of this year have no date and could not be assigned to a quarter. They are not included above.'
+             :' tulpini din acest an nu au data si nu s-au putut incadra in trimestru. Nu sunt incluse mai sus.'),
+        {size:16,italics:true,color:WC.amber}));
+    }
+    var nep=Object.keys(d.nepotrivite||{});
+    if(nep.length){
+      children.push(wP((isEN?'Antimicrobials not recognised (excluded from the table): ':
+        'Antibiotice nerecunoscute (excluse din tabel): ')+
+        nep.sort().map(function(n){return n+' ('+d.nepotrivite[n]+')'}).join(', '),
+        {size:16,italics:true,color:WC.amber}));
+    }
+    children.push(wSp(140));
+
+    children.push(wH1(isEN?'Conclusions':'Concluzii'));
+    children.push(wP(micSchitaConcluzii(d)));
+    children.push(wSp(120));
+    children.push(wH1(isEN?'Recommendations':'Recomandari'));
+    children.push(wP(isEN?'[To be completed.]':'[De completat.]'));
+    children.push(wSp(200));
+    children.push(wP((isEN?'Epidemiologist,':'Medic epidemiolog,'),{bold:true}));
+    children.push(wP('..........................................'));
+
+    const doc=new docx.Document({sections:[{children:children}]});
+    const blob=await docx.Packer.toBlob(doc);
+    saveAs(blob,'Raport_Microbiologic_'+(q?('T'+q+'_'):'')+y+'.docx');
+  }catch(e){errAlert(e,'Nu am putut genera raportul microbiologic.','Could not generate the microbiology report.')}
+  finally{hideGen()}
+}
 
 </script>
 <script>
@@ -24724,6 +26008,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.82',date:'2026-08-04',summary:"Raportul microbiologic trimestrial si anual, cerut de colege, care faceau manual enumerarea tulpinilor si tabelul de rezistenta. Verificat pe raportul lor real din trim. I 2025 — se potriveste, si a scos doua erori de numarare manuala."},
+  {version:'13.81',date:'2026-08-04',summary:'Modul nou, pornit de la o intrebare a colegelor despre inregistrarea AES: ce putem tine noi fara sa ne suprapunem peste medicina muncii. Raspunsul e in proiectul de ordin, si e mai clar decat ne asteptam — CPIAAM primeste explicit analiza circumstantelor, evaluarea factorilor de risc si masurile de prevenire.'},
   {version:'13.80',date:'2026-08-04',summary:'Userul a trimis o captura din fisa ICD cu „nu sunt aliniate bine". Erau doua lucruri in acelasi ecran: caseta de explicatii pe care o lungisem eu in v13.79 si care iesea in cinci coloane, si un defect vechi de care ea doar a apropiat privirea — casuta de bifat era stilata ca un camp de text, deci se intindea si sarea de la un rand la altul.'},
   {version:'13.79',date:'2026-08-03',summary:'Pasul 2 al auditului: registrul ICD verificat pe Metodologia nationala de supraveghere a ICD, adusa de user. Incadrarea automata e corecta pe toate clauzele — dar textul de ajutor din formular descria alta regula decat aplica de fapt codul, si tocmai el m-a facut sa banuiesc un defect care nu exista.'},
   {version:'13.78',date:'2026-08-03',summary:'Auditul de regresie dupa editarile in masa. A scos trei lucruri: 51 de butoane care nu raspundeau la click (regresie proprie), pierderea a tot ce scria auditorul la fiecare raspuns bifat, si auditurile goale salvate cu 0% conformitate — un zero fals care ajungea in Raportul Anual.'},

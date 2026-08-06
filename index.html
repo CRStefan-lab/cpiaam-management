@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.82</title>
+<title>CPIAAM Management v13.83</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2407,7 +2407,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.82';
+const APP_VERSION='13.83';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -23188,6 +23188,36 @@ function micCategorie(numeAtb){
   return null;
 }
 
+
+// ═══ INTERPRETAREA REZULTATULUI S / I / R ═══
+// La 50 de spitale sunt 50 de programe de laborator si introducere libera, deci acelasi rezultat
+// vine scris in zeci de feluri: „S", „s", „Sens", „SENSIBIL", „sensibila", „susceptible",
+// „R", „Rez", „rezistent", „rezistenta", „I", „Int", „intermediar", si — la EUCAST din 2019 —
+// „sensibil expunere crescuta", care inseamna I, nu S.
+//
+// ORDINEA CONDITIILOR E CRITICA: „sensibil expunere crescuta" contine cuvantul „sensibil", deci
+// daca se verifica S inaintea lui, un rezultat I ar fi citit ca S — iar un izolat nesensibil ar
+// disparea din numarator si ar cobori procentul de rezistenta fara nicio eroare.
+//
+// Ce NU se poate interpreta intoarce null si SE NUMARA, nu se presupune sensibil. Un rezultat
+// necunoscut tratat tacit ca sensibil e exact tiparul care ascunde o rezistenta.
+function micSIR(val){
+  var v=_micNorm(val);
+  if(!v)return null;
+  // I inainte de S — vezi nota de mai sus.
+  if(/expunere crescuta|expunere marita|increased exposure/.test(v))return 'I';
+  if(/^(i|int|interm)\b|^intermediar|^intermediat|^intermediate/.test(v))return 'I';
+  if(/^(r|rez|rezist|resist)\b|^rezistent|^rezistenta|^resistant|^rezistente/.test(v))return 'R';
+  if(/^(s|sen|sens|sensib|suscept|sensible)\b|^sensibil|^sensibila|^susceptible/.test(v))return 'S';
+  // Fara ancorare la inceput, ca ultima incercare — pentru forme de tip „rezultat: rezistent".
+  if(/rezistent|resistant/.test(v))return 'R';
+  if(/intermediar|intermediate/.test(v))return 'I';
+  if(/sensibil|susceptible/.test(v))return 'S';
+  return null;
+}
+// Nesensibil = R sau I (Magiorakos: „non-susceptible" acopera ambele, si in EUCAST, si in CLSI).
+function micNesensibil(sir){return sir==='R'||sir==='I'}
+
 // Gruparea germenilor pentru raport. Eticheta din laborator vine adesea cu marcaje lipite
 // („Klebsiella ESBL +", „Stafilococ auriu (ex.faringian)PED"), deci se potriveste pe radacina.
 const MIC_GERM=[
@@ -23245,11 +23275,11 @@ async function micAggregate(year,q){
   // Modul de numitor — se detecteaza, nu se presupune. Daca exista macar un rezultat S sau I,
   // datele contin antibiograma completa si numitorul corect e „cate au fost testate".
   var areSIR=izolate.some(function(r){
-    return (r.susceptibility||[]).some(function(s){return s.result==='S'||s.result==='I'});
+    return (r.susceptibility||[]).some(function(s){var x=micSIR(s.result);return x==='S'||x==='I'});
   });
   var mod=areSIR?'complet':'doar_R';
 
-  var germeni={},nepotrivite={};
+  var germeni={},nepotrivite={},rezNeinterpretate={};
   izolate.forEach(function(r){
     var g=micGrupGermen(r.organism);
     var cheie=g?g.k:('alt_'+_micNorm(r.organism).slice(0,24));
@@ -23274,8 +23304,12 @@ async function micAggregate(year,q){
     (r.susceptibility||[]).forEach(function(s){
       var c=micCategorie(s.atb_name||s.atb_code);
       if(!c){var nn=(s.atb_name||'').trim();if(nn)nepotrivite[nn]=(nepotrivite[nn]||0)+1;return}
+      // Interpretarea e TOLERANTA si se face la citire, nu ne bazam pe ce a scris importul:
+      // acelasi camp poate contine „R", „Rez", „rezistenta" sau „Sensibil expunere crescuta".
+      var sir=micSIR(s.result);
+      if(!sir){var vv=String(s.result||'').trim();if(vv)rezNeinterpretate[vv]=(rezNeinterpretate[vv]||0)+1;return}
       testatIn[c.k]=1;
-      if(s.result==='R'||s.result==='I')rIn[c.k]=1;   // nesensibil = R sau I
+      if(micNesensibil(sir))rIn[c.k]=1;
     });
     Object.keys(testatIn).forEach(function(k){
       if(!G.cat[k])G.cat[k]={k:k,testat:0,r:0};
@@ -23303,8 +23337,100 @@ async function micAggregate(year,q){
   var lista=Object.keys(germeni).map(function(k){return germeni[k]})
     .sort(function(a,b){return b.n-a.n});
   return {an:year,trimestru:q||0,total:izolate.length,faraData:faraData,mod:mod,
-    germeni:lista,nepotrivite:nepotrivite,
+    germeni:lista,nepotrivite:nepotrivite,rezNeinterpretate:rezNeinterpretate,
     nerecunoscuti:lista.filter(function(g){return !g.recunoscut}).length};
+}
+
+
+// ═══ CE MAI SCOATE ANALIZA, PESTE TABELUL DE REZISTENTA ═══
+// Lucrurile pe care raportul manual le contine dar le calculeaza de mana, si cele pe care nu le
+// contine pentru ca ar dura prea mult.
+
+// Pragul sub care un procent nu se interpreteaza. ECDC/EARS-Net nu raporteaza sub 10 izolate;
+// aplicatia foloseste deja acelasi prag in matricea de antibiograma (abg_low_n).
+const MIC_N_MIN=10;
+
+// Perioada anterioara: trimestrul precedent, iar pentru T1 ultimul trimestru al anului trecut.
+// Pentru raportul anual, anul precedent.
+function micPerioadaAnterioara(an,q){
+  if(!q)return {an:an-1,q:0};
+  return q>1?{an:an,q:q-1}:{an:an-1,q:4};
+}
+// Evolutia fata de perioada anterioara, in puncte procentuale. Intoarce null cand nu exista
+// termen de comparatie — NU zero, ca sa nu para stabilitate acolo unde nu s-a masurat nimic.
+function micEvolutie(dAcum,dInainte){
+  if(!dInainte||!dInainte.total)return null;
+  var out={};
+  dAcum.germeni.forEach(function(G){
+    var Gi=dInainte.germeni.find(function(x){return x.cheie===G.cheie});
+    if(!Gi)return;
+    // Se compara TOATE categoriile testate in ambele perioade, nu doar cele care au acum
+    // rezistenta. Prima varianta pornea de la lista rezistentelor curente, care exclude ce a
+    // ajuns la zero — deci o rezistenta scazuta de la 100% la 0% disparea din tabel. Adica exact
+    // vestea buna, singura care arata ca o masura a functionat.
+    if(G.n<MIC_N_MIN||Gi.n<MIC_N_MIN)return;
+    var pctDin=function(GG,k){
+      var c=GG.cat[k];if(!c||!c.testat)return null;
+      var numitor=(dAcum.mod==='complet')?c.testat:GG.n;
+      return numitor>0?Math.round(c.r/numitor*10000)/100:null;
+    };
+    var chei={};Object.keys(G.cat).forEach(function(k){chei[k]=1});
+    Object.keys(Gi.cat).forEach(function(k){chei[k]=1});
+    Object.keys(chei).forEach(function(k){
+      var acum=pctDin(G,k),inainte=pctDin(Gi,k);
+      if(acum===null||inainte===null)return;
+      if(acum===inainte)return;   // fara schimbare, nu ocupa un rand
+      var def=MIC_CAT.find(function(x){return x.k===k});
+      out[G.cheie+'|'+k]={germen:G.nume,cat:def?_micL(def):k,acum:acum,inainte:inainte,
+        delta:Math.round((acum-inainte)*10)/10,nAcum:G.n,nInainte:Gi.n};
+    });
+  });
+  return out;
+}
+
+// Antibioticele ramase eficiente — reversul tabelului de rezistenta, si singurul lucru din raport
+// care ajuta direct la alegerea tratamentului empiric. Se calculeaza doar cand exista S/I/R
+// complet: pe date „doar R" nu se poate spune ca ceva e sensibil, doar ca nu a fost marcat.
+function micEficiente(d){
+  if(d.mod!=='complet')return null;
+  var out=[];
+  d.germeni.forEach(function(G){
+    if(G.n<MIC_N_MIN)return;
+    var ef=[];
+    Object.keys(G.cat).forEach(function(k){
+      var c=G.cat[k];if(!c.testat)return;
+      var pctR=Math.round(c.r/c.testat*1000)/10;
+      if(pctR<=20)ef.push({cat:k,nume:(MIC_CAT.find(function(x){return x.k===k})||{}).ro||k,
+        pctR:pctR,testat:c.testat});
+    });
+    if(ef.length)out.push({germen:G.nume,n:G.n,eficiente:ef.sort(function(a,b){return a.pctR-b.pctR})});
+  });
+  return out;
+}
+
+// Rezistenta pe sectii — arata UNDE e problema, nu doar ca exista. Raportul manual nu o contine
+// pentru ca ar insemna refacerea numaratorii pentru fiecare sectie.
+function micPeSectie(d,cheieGermen,cheieCat){
+  var G=d.germeni.find(function(x){return x.cheie===cheieGermen});
+  if(!G)return null;
+  return G.peSectie;
+}
+
+// Fenotipurile de rezistenta cu semnificatie epidemiologica, deduse din antibiograma acolo unde
+// se poate. MRSA se deduce (oxacilina/cefoxitin nesensibil) — verificat pe date reale.
+// ESBL NU se poate deduce din „doar R": fenotipul cere cefalosporina de generatia III rezistenta
+// SI carbapenem sensibil, iar sensibilul lipseste. Ramane citit din eticheta laboratorului.
+function micFenotipuri(d){
+  var out=[];
+  d.germeni.forEach(function(G){
+    var f=[];
+    if(G.mrsa)f.push({cod:'MRSA',n:G.mrsa,din:G.n});
+    if(G.esbl)f.push({cod:'ESBL',n:G.esbl,din:G.n});
+    if(G.vre)f.push({cod:'VRE',n:G.vre,din:G.n});
+    if(G.cre)f.push({cod:'CRE',n:G.cre,din:G.n});
+    if(f.length)out.push({germen:G.nume,fenotipuri:f});
+  });
+  return out;
 }
 
 // ═══ NARATIVUL ═══
@@ -23360,8 +23486,20 @@ function micSchitaConcluzii(d){
     f.push(isEN?'[The data recorded only resistances, so susceptibility was not distinguished from untested. Percentages are calculated against all isolates of each organism.]'
                :'[Datele contin doar rezistentele, deci sensibilul nu se distinge de netestat. Procentele sunt calculate din totalul tulpinilor fiecarui germen.]');
   }
-  f.push(isEN?'[Trend against the previous period: fill in — the app compares only what has been imported.]'
-             :'[Evolutia fata de perioada anterioara: de completat — aplicatia compara doar ce a fost importat.]');
+  if(d._evo&&Object.keys(d._evo).length){
+    var lista=Object.keys(d._evo).map(function(k){return d._evo[k]})
+      .filter(function(e){return Math.abs(e.delta)>=5})
+      .sort(function(a,b){return Math.abs(b.delta)-Math.abs(a.delta)}).slice(0,4);
+    lista.forEach(function(e){
+      f.push((isEN?'Resistance of ':'Rezistenta ')+e.germen+(isEN?' to ':' la ')+e.cat+
+        (e.delta>0?(isEN?' rose ':' a crescut ') : (isEN?' fell ':' a scazut '))+
+        indFmt(Math.abs(e.delta))+(isEN?' percentage points, from ':' puncte procentuale, de la ')+
+        indFmt(e.inainte,' %')+(isEN?' to ':' la ')+indFmt(e.acum,' %')+'.');
+    });
+  } else {
+    f.push(isEN?'[Trend against the previous period: fill in — no comparable data was imported for it.]'
+               :'[Evolutia fata de perioada anterioara: de completat — nu exista date comparabile importate pentru ea.]');
+  }
   f.push(isEN?'[Therapeutic recommendation arising from these figures: fill in.]'
              :'[Recomandarea terapeutica ce decurge din aceste cifre: de completat.]');
   return f.join(' ');
@@ -23373,6 +23511,12 @@ async function genRaportMicroWord(q){
   showGen();
   try{
     const d=await micAggregate(y,q);
+    // Perioada anterioara, pentru evolutie. Daca nu exista date, evolutia ramane null si nu se
+    // scrie nimic — nu se afiseaza „0 puncte" acolo unde nu s-a masurat nimic.
+    const pa=micPerioadaAnterioara(y,q);
+    const dPrec=await micAggregate(pa.an,pa.q);
+    const evo=micEvolutie(d,dPrec);
+    d._evo=evo;
     if(!d.total){
       alert(_Mf('Nu exista izolate de laborator inregistrate pe {per}.',
         {per:(q?('T'+q+' '):'')+y}));
@@ -23423,6 +23567,13 @@ async function genRaportMicroWord(q){
              :' tulpini din acest an nu au data si nu s-au putut incadra in trimestru. Nu sunt incluse mai sus.'),
         {size:16,italics:true,color:WC.amber}));
     }
+    var neint=Object.keys(d.rezNeinterpretate||{});
+    if(neint.length){
+      children.push(wP((isEN?'Result values that could not be read as S/I/R (excluded, NOT counted as susceptible): ':
+        'Valori de rezultat care nu s-au putut citi ca S/I/R (excluse, NU numarate ca sensibil): ')+
+        neint.sort().map(function(n){return '„'+n+'" ('+d.rezNeinterpretate[n]+')'}).join(', '),
+        {size:16,italics:true,color:WC.amber}));
+    }
     var nep=Object.keys(d.nepotrivite||{});
     if(nep.length){
       children.push(wP((isEN?'Antimicrobials not recognised (excluded from the table): ':
@@ -23431,6 +23582,72 @@ async function genRaportMicroWord(q){
         {size:16,italics:true,color:WC.amber}));
     }
     children.push(wSp(140));
+
+    // ── Evolutia fata de perioada anterioara ──
+    var cheiEvo=evo?Object.keys(evo):[];
+    if(cheiEvo.length){
+      children.push(wH1((isEN?'Change against ':'Evolutia fata de ')+
+        (pa.q?('T'+pa.q+' '+pa.an):(''+pa.an))));
+      const WE=[2600,2600,1250,1250,1300];
+      const rEvo=[wTblHead([isEN?'Organism':'Germen',isEN?'Antimicrobial':'Antibiotic',
+        (pa.q?('T'+pa.q):(''+pa.an)),(q?('T'+q):(''+y)),isEN?'Change':'Evolutie'],WE)];
+      cheiEvo.map(function(k){return evo[k]}).sort(function(a,b){return Math.abs(b.delta)-Math.abs(a.delta)})
+        .forEach(function(e,i){
+          var sageata=e.delta>0?'▲ +':(e.delta<0?'▼ ':'= ');
+          rEvo.push(wTblRow([e.germen,e.cat,indFmt(e.inainte,' %'),indFmt(e.acum,' %'),
+            sageata+indFmt(Math.abs(e.delta),' p.p.')],WE,i%2===1));
+        });
+      children.push(new docx.Table({width:{size:9000,type:docx.WidthType.DXA},columnWidths:WE,rows:rEvo}));
+      children.push(wP(isEN?'Only organisms with at least '+MIC_N_MIN+' isolates in BOTH periods are compared; below that a percentage moves too much on one isolate to mean anything.'
+                           :'Se compara doar germenii cu cel putin '+MIC_N_MIN+' izolate in AMBELE perioade; sub pragul asta un procent se misca prea mult de la un singur izolat ca sa insemne ceva.',
+        {size:16,italics:true}));
+      children.push(wSp(140));
+    }
+
+    // ── Fenotipuri de rezistenta ──
+    var fen=micFenotipuri(d);
+    if(fen.length){
+      children.push(wH1(isEN?'Resistance phenotypes':'Fenotipuri de rezistenta'));
+      fen.forEach(function(F){
+        children.push(wP('— '+F.germen+': '+F.fenotipuri.map(function(x){
+          return x.cod+' '+x.n+'/'+x.din+' ('+fp(x.n,x.din)+')'}).join(', ')));
+      });
+      children.push(wP(isEN?'MRSA is derived from the antibiogram (oxacillin or cefoxitin non-susceptible). ESBL cannot be derived when only resistances are recorded — it is read from the laboratory label.'
+                           :'MRSA se deduce din antibiograma (oxacilina sau cefoxitin nesensibil). ESBL nu se poate deduce cand se inregistreaza doar rezistentele — se citeste din eticheta laboratorului.',
+        {size:16,italics:true}));
+      children.push(wSp(140));
+    }
+
+    // ── Antibiotice ramase eficiente ──
+    var ef=micEficiente(d);
+    if(ef&&ef.length){
+      children.push(wH1(isEN?'Antimicrobials still effective (resistance ≤ 20%)':'Antibiotice ramase eficiente (rezistenta ≤ 20%)'));
+      ef.forEach(function(E){
+        children.push(wP('— '+E.germen+' ('+E.n+(isEN?' isolates': ' tulpini')+'): '+
+          E.eficiente.map(function(x){return x.nume+' '+indFmt(x.pctR,' %')}).join(', ')));
+      });
+      children.push(wP(isEN?'This is the side of the table that guides empirical therapy. Shown only for organisms with at least '+MIC_N_MIN+' isolates.'
+                           :'E fata tabelului care ghideaza terapia empirica. Se arata doar pentru germenii cu cel putin '+MIC_N_MIN+' izolate.',
+        {size:16,italics:true}));
+      children.push(wSp(140));
+    }
+
+    // ── Unde e problema: rezistenta pe sectii, pentru germenii cu volum ──
+    var cuVolum=d.germeni.filter(function(G){return G.n>=MIC_N_MIN});
+    if(cuVolum.length){
+      children.push(wH1(isEN?'Distribution by ward':'Distributia pe sectii'));
+      const WS=[3400,4000,1600];
+      const rS=[wTblHead([isEN?'Organism':'Germen',isEN?'Ward':'Sectia',isEN?'Isolates':'Tulpini'],WS)];
+      var j=0;
+      cuVolum.forEach(function(G){
+        Object.keys(G.peSectie).sort(function(a,b){return G.peSectie[b]-G.peSectie[a]})
+          .forEach(function(sec,k){
+            rS.push(wTblRow([k===0?G.nume:'',sec,String(G.peSectie[sec])],WS,j%2===1));j++;
+          });
+      });
+      children.push(new docx.Table({width:{size:9000,type:docx.WidthType.DXA},columnWidths:WS,rows:rS}));
+      children.push(wSp(140));
+    }
 
     children.push(wH1(isEN?'Conclusions':'Concluzii'));
     children.push(wP(micSchitaConcluzii(d)));
@@ -26008,6 +26225,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.83',date:'2026-08-04',summary:"Raportul microbiologic citeste acum orice forma in care laboratorul scrie S/I/R si scoate trei lucruri care lipseau: evolutia fata de perioada anterioara, antibioticele ramase eficiente, si fenotipurile pe germen. Pornit de la observatia userului ca la 50 de spitale sunt 50 de programe si introducere libera."},
   {version:'13.82',date:'2026-08-04',summary:"Raportul microbiologic trimestrial si anual, cerut de colege, care faceau manual enumerarea tulpinilor si tabelul de rezistenta. Verificat pe raportul lor real din trim. I 2025 — se potriveste, si a scos doua erori de numarare manuala."},
   {version:'13.81',date:'2026-08-04',summary:'Modul nou, pornit de la o intrebare a colegelor despre inregistrarea AES: ce putem tine noi fara sa ne suprapunem peste medicina muncii. Raspunsul e in proiectul de ordin, si e mai clar decat ne asteptam — CPIAAM primeste explicit analiza circumstantelor, evaluarea factorilor de risc si masurile de prevenire.'},
   {version:'13.80',date:'2026-08-04',summary:'Userul a trimis o captura din fisa ICD cu „nu sunt aliniate bine". Erau doua lucruri in acelasi ecran: caseta de explicatii pe care o lungisem eu in v13.79 si care iesea in cinci coloane, si un defect vechi de care ea doar a apropiat privirea — casuta de bifat era stilata ca un camp de text, deci se intindea si sarea de la un rand la altul.'},

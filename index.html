@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.87</title>
+<title>CPIAAM Management v13.88</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2411,7 +2411,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.87';
+const APP_VERSION='13.88';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -14885,6 +14885,323 @@ async function ppsDeleteIR(){
 </script>
 <script>
 // ═════════════════════════════════════════════════════════════
+// CPIAAM — Formate de import laborator: .docx si rezultat narativ
+// ═════════════════════════════════════════════════════════════
+// Portat din motorul propriu al userului (Motor_XDR_PDR_Cauris_LOCAL, v6.0), care citea si Word,
+// si fisiere tabelare in care rezultatul e text liber intr-o coloana. Aplicatia stia doar tabelar
+// (o linie per antibiotic) si registrul LIS in HTML.
+//
+// DE CE SE FAC AMANDOUA, desi nu stim daca vreun laborator trimite exact asa: userul a spus-o
+// direct — „nu am de unde sa stiu toate laboratoarele care lucreaza cu aplicatia mea, mai ales
+// daca o fac la nivel mondial in timp". Aplicatia se distribuie unor spitale necunoscute, deci
+// aici „ca sa fie" e justificat: un format lipsa nu se manifesta ca eroare, ci ca un utilizator
+// care renunta in tacere.
+//
+// Nimic din fisierul asta nu are nevoie de vreo biblioteca: .docx se dezarhiveaza cu
+// DecompressionStream, nativ in Chrome si Edge.
+
+// ═══ 1. CITIREA UNUI .DOCX ═══
+// Un .docx e o arhiva ZIP; ne trebuie doar `word/document.xml`. Se citeste directorul central
+// (End Of Central Directory), apoi fiecare intrare.
+async function _lfDezarhiveaza(buf){
+  const dv=new DataView(buf),u8=new Uint8Array(buf),n=buf.byteLength;
+  let eocd=-1;
+  for(let i=n-22;i>=Math.max(0,n-66000);i--){if(dv.getUint32(i,true)===0x06054b50){eocd=i;break}}
+  if(eocd===-1)throw new Error('Arhiva ZIP invalida (lipseste EOCD)');
+  const nrIntrari=dv.getUint16(eocd+10,true);
+  let off=dv.getUint32(eocd+16,true);
+  const fisiere=new Map();
+  for(let i=0;i<nrIntrari;i++){
+    if(dv.getUint32(off,true)!==0x02014b50)break;
+    const metoda=dv.getUint16(off+10,true);
+    const dimComp=dv.getUint32(off+20,true);
+    const lenNume=dv.getUint16(off+28,true);
+    const lenExtra=dv.getUint16(off+30,true);
+    const lenCom=dv.getUint16(off+32,true);
+    const offLocal=dv.getUint32(off+42,true);
+    const nume=new TextDecoder().decode(u8.subarray(off+46,off+46+lenNume));
+    // Antetul LOCAL are propriile lungimi pentru nume si extra — nu se pot refolosi cele de sus.
+    const lnNume=dv.getUint16(offLocal+26,true);
+    const lnExtra=dv.getUint16(offLocal+28,true);
+    const start=offLocal+30+lnNume+lnExtra;
+    fisiere.set(nume,{metoda:metoda,date:u8.subarray(start,start+dimComp)});
+    off+=46+lenNume+lenExtra+lenCom;
+  }
+  return fisiere;
+}
+async function _lfInflate(intrare){
+  if(!intrare)return null;
+  if(intrare.metoda===0)return intrare.date;// stocat necomprimat
+  if(typeof DecompressionStream==='undefined')throw new Error('NO_DECOMPRESSION');
+  const ds=new DecompressionStream('deflate-raw');
+  const stream=new Blob([intrare.date]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+// Intoarce o MATRICE (randuri x coloane), la fel ca o foaie de calcul, ca sa poata fi procesata
+// pe acelasi drum ca restul formatelor. Tabelele devin randuri de celule; paragrafele devin
+// randuri cu o singura celula.
+async function labReadDocx(buf){
+  const fisiere=await _lfDezarhiveaza(buf);
+  let intrare=fisiere.get('word/document.xml');
+  if(!intrare){
+    for(const kv of fisiere){if(/^word\/document\d*\.xml$/.test(kv[0])){intrare=kv[1];break}}
+  }
+  if(!intrare)throw new Error('Fisierul .docx nu contine word/document.xml');
+  const xml=new TextDecoder('utf-8').decode(await _lfInflate(intrare));
+  const doc=new DOMParser().parseFromString(xml,'application/xml');
+  if(doc.querySelector('parsererror'))throw new Error('XML invalid in .docx');
+  const NS='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const body=doc.getElementsByTagNameNS(NS,'body')[0];
+  if(!body)throw new Error('Documentul .docx nu are corp (body)');
+  const textDin=function(el){
+    let s='';
+    const t=el.getElementsByTagNameNS(NS,'t');
+    for(let i=0;i<t.length;i++)s+=t[i].textContent;
+    if(el.getElementsByTagNameNS(NS,'tab').length)s=s.replace(/\s+/g,' ');
+    return s.trim();
+  };
+  const matrice=[];
+  const copii=Array.prototype.slice.call(body.childNodes);
+  for(let i=0;i<copii.length;i++){
+    const nod=copii[i];
+    if(nod.nodeType!==1)continue;
+    if(nod.localName==='tbl'){
+      const randuri=nod.getElementsByTagNameNS(NS,'tr');
+      for(let j=0;j<randuri.length;j++){
+        // Doar celulele de nivel 1 — altfel un tabel imbricat s-ar numara de doua ori.
+        const celule=Array.prototype.slice.call(randuri[j].childNodes)
+          .filter(function(c){return c.nodeType===1&&c.localName==='tc'});
+        matrice.push(celule.map(textDin));
+      }
+    }else if(nod.localName==='p'){
+      matrice.push([textDin(nod)]);
+    }
+  }
+  return matrice;
+}
+// Matrice -> text cu TAB, ca sa intre pe acelasi drum ca fisierele tabelare.
+// TAB, nu „;": previzualizarea imparte randul cu split() simplu, deci un „;" dintr-o celula ar
+// deplasa toate coloanele de dupa el. Tabul nu apare in continutul celulelor.
+function labMatrixToTSV(matrice){
+  return (matrice||[]).filter(function(r){return r&&r.some(function(c){return String(c||'').trim()})})
+    .map(function(r){return r.map(function(c){return String(c==null?'':c).replace(/[\t\r\n]+/g,' ')}).join('\t')})
+    .join('\n');
+}
+
+// ═══ 2. REZULTAT NARATIV — text liber intr-o coloana ═══
+// Multe programe de laborator nu dau un tabel cu o linie per antibiotic, ci o singura celula de
+// text: „Urocultura/Identificare bacteriana = Escherichia coli; Urocultura/Antibiograma sensibil =
+// Meropenem, Colistin; Urocultura/Antibiograma rezistent = Ampicilina, Ciprofloxacina".
+// Sau, la alte laboratoare: „Sensibil = ... , ,Rezistent = ...".
+// Parserul de mai jos le acopera pe amandoua, exact ca in motorul userului.
+function _lfNorm(s){
+  if(s===null||s===undefined)return '';
+  return String(s).toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[ţț]/g,'t').replace(/[şș]/g,'s')
+    .replace(/[^a-z0-9]+/g,' ').trim();
+}
+function _lfSIR(v){
+  if(typeof micSIR==='function')return micSIR(v);
+  const s=_lfNorm(v);if(!s)return null;
+  if(/expunere crescuta|increased exposure/.test(s))return 'I';
+  if(/^(i|int|intermediar)/.test(s))return 'I';
+  if(/^(r|rez|resist)/.test(s))return 'R';
+  if(/^(s|sen|suscept)/.test(s))return 'S';
+  return null;
+}
+// Denumirile de organisme cautate in textul liber. Cea mai LUNGA potrivire castiga, ca
+// „klebsiella pneumoniae" sa nu fie redusa la „klebsiella".
+const LF_ORGANISME=['escherichia coli','e coli','klebsiella pneumoniae','klebsiella oxytoca','klebsiella',
+ 'enterobacter cloacae','enterobacter aerogenes','enterobacter','proteus mirabilis','proteus vulgaris','proteus',
+ 'serratia marcescens','serratia','citrobacter freundii','citrobacter','morganella morganii','morganella',
+ 'providencia','salmonella','shigella','hafnia','raoultella','pantoea',
+ 'staphylococcus aureus','stafilococ auriu','s aureus',
+ 'staphylococcus epidermidis','staphylococcus haemolyticus','staphylococcus saprophyticus',
+ 'staphylococcus hominis','staphylococcus','stafilococ',
+ 'enterococcus faecalis','enterococcus faecium','enterococcus','enterococ',
+ 'pseudomonas aeruginosa','pseudomonas','acinetobacter baumannii','acinetobacter',
+ 'streptococcus agalactiae','streptococcus pyogenes','streptococcus pneumoniae','streptococcus','streptococ',
+ 'candidozyma auris','candida auris','candida albicans','candida glabrata','candida parapsilosis',
+ 'candida tropicalis','candida krusei','candida',
+ 'haemophilus influenzae','haemophilus','moraxella catarrhalis','moraxella',
+ 'stenotrophomonas maltophilia','stenotrophomonas','burkholderia cepacia','burkholderia',
+ 'clostridioides difficile','clostridium difficile'];
+// Rezultate care NU sunt izolate. Fara ele, „fara crestere" ar fi luat drept text de analizat.
+const LF_RE_FARA_CRESTERE=/(lipsa proba|proba nu|steril|absent|negativ|fara crestere|flora normal|1000\s*ufc|<\s*1000|nu s a izolat|nu se izoleaza|cultura negativ)/i;
+function _lfGasesteOrganism(text){
+  const t=_lfNorm(text);
+  let gasit=null,lung=-1;
+  for(let i=0;i<LF_ORGANISME.length;i++){
+    const o=LF_ORGANISME[i];
+    if(t.indexOf(o)!==-1&&o.length>lung){gasit=o;lung=o.length}
+  }
+  if(!gasit)return null;
+  return gasit.replace(/\b\w/g,function(c){return c.toUpperCase()});
+}
+// Unele laboratoare listeaza TOTI germenii cautati, marcati Prezent/Absent:
+//   „Absent Pseudomonas aeruginosa, Prezent Staphylococcus aureus"
+// Fara verificarea asta s-ar raporta un germen ABSENT ca izolat.
+function _lfOrganismPrezent(s){
+  if(!s)return null;
+  if(/\b(prezent|absent|pozitiv|negativ)\b/i.test(s)){
+    const seg=String(s).split(/[,;]/).filter(function(x){return /^\s*(prezent|pozitiv)\b/i.test(x)});
+    for(let i=0;i<seg.length;i++){
+      const o=_lfGasesteOrganism(seg[i].replace(/^\s*(prezent|pozitiv)\s*/i,''));
+      if(o)return o;
+    }
+    return null;// toti germenii cautati sunt absenti
+  }
+  return _lfGasesteOrganism(s);
+}
+// Marcheaza inceputul unei analize noi lipite de lista de antibiotice (apare cand lipseste „;").
+const LF_RE_STOP_AB=/(urocultur|hemocultur|coprocultur|exsudat|secretie|sputa|aspirat|lichid|examen microscopic|identificare bacteriana|identificare fungica|antibiograma|cultura|ufc\/ml)/i;
+function _lfSpargeAB(s){
+  if(!s)return [];
+  const out=[];
+  const bucati=String(s).replace(/\([^)]*\)/g,' ').split(/[,;\n\r]+/)
+    .map(function(x){return x.replace(/\s+/g,' ').trim()});
+  for(let i=0;i<bucati.length;i++){
+    const b=bucati[i];
+    if(!b)continue;
+    const m=b.match(LF_RE_STOP_AB);
+    if(m){
+      const cap=b.slice(0,m.index).replace(/[\s\/:=-]+$/,'').trim();
+      if(cap.length>=3&&/[a-zA-Z]/.test(cap))out.push(cap);
+      break;// restul apartine analizei urmatoare
+    }
+    if(b.length>=3&&/[a-zA-Zăâîșț]/.test(b))out.push(b);
+  }
+  return out;
+}
+// Gramatica B: „Sensibil = ... , ,Rezistent = ...". Fiecare antibiotic poate fi urmat de un bloc
+// „Obs. rezultat: <text liber>" care contine ALTE denumiri („a se evita cefotaxim") — acelea nu
+// sunt rezultate testate si nu trebuie numarate.
+function _lfExtrageAB_B(s){
+  if(!s)return [];
+  const out=[];
+  String(s).split(/,(?=\s*[^,:]{2,40}\s*:\s*Obs)/i).forEach(function(part){
+    const m=part.match(/^\s*([^:]{2,40}?)\s*:\s*Obs/i);
+    if(m){out.push(m[1].trim());return}
+    part.split(/,/).forEach(function(tok){
+      const t=tok.replace(/\([^)]*\)/g,' ').replace(/\s+/g,' ').trim();
+      if(!t||t.length<3||t.length>45)return;
+      if(t.indexOf(':')!==-1)return;
+      if(/obs|observatii|rezultat|mentionam|comentarii|metoda|standard|prezent|absent/i.test(t))return;
+      out.push(t);
+    });
+  });
+  return out;
+}
+function _lfCurataProba(s){
+  return String(s||'').replace(/\([^)]*\)/g,' ')
+    .replace(/\b(identificare|antibiograma|examen microscopic|cultura|antibiogr)\b/gi,' ')
+    .replace(/[^\wăâîșț ]/g,' ').replace(/\s+/g,' ').trim()||'';
+}
+function _lfEsteGramaticaB(text){
+  if(/antibiograma\s+[a-z ]*(sensibil|rezistent)/i.test(text))return false;
+  if(/(^|[,;])\s*(sensibil|rezistent|intermediar)[^=,;]{0,32}=/i.test(text))return true;
+  return /\b(prezent|absent)\b/i.test(text)&&text.indexOf('=')!==-1;
+}
+function _lfParseB(text){
+  const blocuri=String(text).split(/,\s*,|;\s*;/);
+  let organism=null,proba='';
+  const rez=[];
+  blocuri.forEach(function(bl,idx){
+    const iEg=bl.indexOf('=');
+    const etich=_lfNorm(iEg===-1?bl:bl.slice(0,iEg));
+    const cont=iEg===-1?'':bl.slice(iEg+1);
+    if(idx===0&&iEg!==-1){
+      const m=bl.slice(0,iEg).match(/^\s*([^:]{3,80})\s*:/);
+      proba=_lfCurataProba(m?m[1]:bl.slice(0,iEg));
+    }
+    const adauga=function(sir){_lfExtrageAB_B(cont).forEach(function(ab){rez.push({antibiotic:ab,sir:sir})})};
+    if(/sensibil/.test(etich)&&/expunere crescuta/.test(etich))adauga('I');
+    else if(/rezistent/.test(etich))adauga('R');
+    else if(/intermediar/.test(etich))adauga('I');
+    else if(/sensibil/.test(etich))adauga('S');
+    else if(/comentarii|observatii|metoda|standard/.test(etich))return;
+    else if(!organism)organism=_lfOrganismPrezent(cont||bl);
+  });
+  if(!organism&&rez.length)organism=_lfOrganismPrezent(text);
+  return (organism||rez.length)?[{proba:proba,organism:organism,rez:rez}]:[];
+}
+// Parseaza textul complet al rezultatelor unei cereri.
+// Intoarce [{proba, organism, rez:[{antibiotic,sir}]}].
+function labNarrativeParse(txt){
+  if(!txt)return [];
+  const text=String(txt).replace(/ /g,' ');
+  if(_lfEsteGramaticaB(text))return _lfParseB(text);
+
+  const segmente=text.split(/;/);
+  const probe=new Map();
+  const iaProba=function(seg){
+    let m=seg.match(/^\s*([^=]*?)\s*Antibiograma/i);
+    if(m)return m[1].trim();
+    m=seg.match(/^\s*([^/=:]+?)\s*[/:]/);
+    if(m)return m[1].trim();
+    m=seg.match(/^\s*([^=]{2,60}?)\s*=/);
+    return m?m[1].trim():'';
+  };
+  const getProba=function(nume){
+    const k=_lfNorm(nume).replace(/examen microscopic.*/,'').trim()||'_';
+    if(!probe.has(k))probe.set(k,{proba:nume,organism:null,rez:[]});
+    return probe.get(k);
+  };
+  for(let i=0;i<segmente.length;i++){
+    const seg=segmente[i];
+    if(!seg.trim())continue;
+    const dupaEgal=seg.indexOf('=')>=0?seg.slice(seg.indexOf('=')+1):'';
+    const p=getProba(iaProba(seg));
+    if(/antibiograma\s*[a-z ]*sensibil/i.test(seg)){
+      _lfSpargeAB(dupaEgal).forEach(function(ab){p.rez.push({antibiotic:ab,sir:'S'})});
+    }else if(/antibiograma\s*[a-z ]*rezistent/i.test(seg)){
+      _lfSpargeAB(dupaEgal).forEach(function(ab){p.rez.push({antibiotic:ab,sir:'R'})});
+    }else if(/antibiograma\s*[a-z ]*intermediar/i.test(seg)){
+      _lfSpargeAB(dupaEgal).forEach(function(ab){p.rez.push({antibiotic:ab,sir:'I'})});
+    }else if(!LF_RE_FARA_CRESTERE.test(dupaEgal||seg)){
+      const org=_lfOrganismPrezent(dupaEgal||seg);
+      if(org&&!p.organism)p.organism=org;
+    }
+  }
+  const out=[];
+  probe.forEach(function(p){
+    // O proba cu antibiograma dar fara germen identificat: se cauta germenul in tot textul.
+    if(!p.organism&&p.rez.length)p.organism=_lfOrganismPrezent(text);
+    if(p.organism||p.rez.length)out.push(p);
+  });
+  return out;
+}
+
+// ═══ 3. DETECTIA COLOANEI NARATIVE ═══
+// O coloana narativa are doua semne: text LUNG in medie, si markeri de antibiograma in destule
+// randuri. Pragurile sunt cele din motorul userului (medie > 100 caractere, peste 20% din randuri
+// cu markeri) — verificate de el pe exporturi reale.
+// Intoarce indexul coloanei sau -1.
+function labGuessNarrativeCol(header,rows){
+  if(!header||!rows||!rows.length)return -1;
+  let best=-1,scor=0;
+  for(let c=0;c<header.length;c++){
+    let lung=0,cuMarkeri=0,n=0;
+    for(let i=0;i<rows.length;i++){
+      const v=rows[i]&&rows[i][c]?String(rows[i][c]):'';
+      if(!v)continue;
+      n++;lung+=v.length;
+      if(/sensibil|rezistent|antibiograma|intermediar/i.test(v))cuMarkeri++;
+    }
+    if(!n)continue;
+    const medie=lung/n,procent=cuMarkeri/n;
+    if(medie>100&&procent>0.2){
+      const sc=medie*procent;
+      if(sc>scor){scor=sc;best=c}
+    }
+  }
+  return best;
+}
+
+</script>
+<script>
+// ═════════════════════════════════════════════════════════════
 // CPIAAM — Antibiograma Locala
 // ═════════════════════════════════════════════════════════════
 
@@ -15080,9 +15397,11 @@ async function rAntibiograma(el){
     var batchList=Object.entries(batches);
     if(batchList.length>0){
       h+='<div class="pn" style="margin-top:16px"><div class="ph"><h3>Istoric Importuri Laborator</h3></div><div class="pb" style="overflow-x:auto">'+
-        '<table class="dt"><thead><tr><th>Batch / Label</th><th>Nr. izolate</th><th>Data import</th></tr></thead><tbody>';
+        '<table class="dt"><thead><tr><th>Batch / Label</th><th>Nr. izolate</th><th>Data import</th><th>Actiuni</th></tr></thead><tbody>';
       batchList.forEach(([b,info])=>{
-        h+='<tr><td>'+esc(b)+'</td><td>'+info.count+'</td><td>'+(info.date?info.date.substring(0,10):'—')+'</td></tr>';
+        h+='<tr><td>'+esc(b)+'</td><td>'+info.count+'</td><td>'+(info.date?info.date.substring(0,10):'—')+'</td>'+
+          '<td class="act"><button onclick="labDeleteBatch('+_jsArg(b)+')" title="'+
+          (CFG.lang==='en'?'Delete this whole import':'Sterge tot acest import')+'">&#128465;</button></td></tr>';
       });
       h+='</tbody></table></div></div>';
     }
@@ -15221,8 +15540,10 @@ function importLabCSV(){
     '<div class="ib inf"><span>Importa datele de antibiograma din laboratorul de microbiologie.<br><br>'+
     '<strong>Formate acceptate:</strong><br>'+
     '&#8226; <strong>XLSX / XLS / HTML din LIS</strong> (format registru laborator — Cod cerere, Nume, Varsta, Analiza, Valoare)<br>'+
-    '&#8226; <strong>CSV tabelar</strong> — o linie per antibiotic: nr_buletin; data; sectie; tip_proba; germen; antibiotic; rezultat (S/I/R)</span></div>'+
-    '<div class="fg"><label>Fisier din laborator</label><input type="file" id="f-lab" accept=".csv,.txt,.tsv,.xls,.xlsx,.xlsm,.ods,.html,.htm"></div>'+
+    '&#8226; <strong>CSV tabelar</strong> — o linie per antibiotic: nr_buletin; data; sectie; tip_proba; germen; antibiotic; rezultat (S/I/R)<br>'+
+    '&#8226; <strong>Rezultat narativ</strong> — rezultatul intreg ca text liber intr-o coloana; se recunoaste singur<br>'+
+    '&#8226; <strong>Word (.docx)</strong> — tabelele din document se citesc ca foaie de calcul</span></div>'+
+    '<div class="fg"><label>Fisier din laborator</label><input type="file" id="f-lab" accept=".csv,.txt,.tsv,.xls,.xlsx,.xlsm,.ods,.html,.htm,.docx"></div>'+
     '<div class="fg"><label>Label import (ex: T1-2026)</label><input id="f-lab-batch" value="'+A.year+'" style="width:160px"></div>'+
     '<div id="lab-profil-box">'+(typeof labProfileOptions==='function'?labProfileOptions():'')+'</div>'+
     '<div id="lab-preview"></div>',
@@ -15240,13 +15561,52 @@ function _labResetState(msg){
   window._labRows=null;window._labHeader=null;window._labParsed=null;window._labFormat=null;
   var btn=document.getElementById('lab-import-btn');if(btn)btn.disabled=true;
   var pv=document.getElementById('lab-preview');
-  if(pv&&msg!==undefined)pv.innerHTML=msg?'<div class="ib wrn">'+msg+'</div>':'';
+  // `.ib` e display:flex, deci marcajul inline din mesaj (<strong>, <br>) ar deveni coloane.
+  // Invelirea se face AICI, o singura data, pentru toate mesajele de eroare ale dialogului —
+  // nu la fiecare apelant, care ar uita-o. Vezi regula din CLAUDE.md.
+  if(pv&&msg!==undefined)pv.innerHTML=msg?'<div class="ib wrn"><span>'+msg+'</span></div>':'';
+}
+
+// ═══ FORMATE PE CARE NU LE PUTEM CITI — REFUZ EXPLICIT, CU CE ARE DE FACUT ═══
+// Preluat din motorul original al userului, care avea exact lista asta. Fara ea, un PDF ajunge pe
+// ramura de text si iese ori „Fisier gol sau prea putine date", ori un preview cu antete
+// neinteligibile — userul nu are de unde sa stie ca problema e formatul, nu fisierul.
+// A devenit necesar si dintr-un motiv nou: de la v13.86 recunoastem OLE2 ca .xls binar, dar .doc
+// (Word vechi) e TOT OLE2 — fara garda de mai jos, un .doc ar fi trimis la cititorul de Excel si
+// ar iesi „Nu am putut citi fisierul Excel. Salveaza-l ca CSV", ceea ce e derutant pentru un Word.
+// `accept` de pe input nu e o garda: cine alege „Toate fisierele" sau trage fisierul peste dialog
+// trece de el.
+const LAB_EXT_NESUPORTATE={
+  pdf:{ro:'PDF-ul nu poate fi citit automat — textul din tabele se pierde la extragere.',
+       en:'A PDF cannot be read automatically — table text is lost on extraction.'},
+  doc:{ro:'Formatul .doc (Word vechi) nu este suportat.',en:'The old .doc format is not supported.'},
+  rtf:{ro:'Formatul RTF nu este suportat.',en:'RTF is not supported.'},
+  mht:{ro:'Formatul MHT nu este suportat.',en:'MHT is not supported.'},
+  mhtml:{ro:'Formatul MHT nu este suportat.',en:'MHT is not supported.'},
+  jpg:{ro:'Imaginile nu pot fi citite.',en:'Images cannot be read.'},
+  jpeg:{ro:'Imaginile nu pot fi citite.',en:'Images cannot be read.'},
+  png:{ro:'Imaginile nu pot fi citite.',en:'Images cannot be read.'},
+  gif:{ro:'Imaginile nu pot fi citite.',en:'Images cannot be read.'},
+  zip:{ro:'Arhivele nu se pot importa. Dezarhiveaza intai si alege fisierul din interior.',
+       en:'Archives cannot be imported. Unzip first and pick the file inside.'}
+};
+function _labNesuportat(motiv){
+  const isEN=CFG.lang==='en';
+  return '<strong>'+(isEN?'Unsupported format.':'Format nesuportat.')+'</strong> '+motiv+'<br>'+
+    (isEN?'Ask the laboratory to export the report as, in order of preference: <strong>XLSX</strong>, XLS, HTML or CSV.'
+         :'Cere laboratorului exportul raportului, in ordinea preferintei: <strong>XLSX</strong>, XLS, HTML sau CSV.');
 }
 
 // ── Auto-detect format ──
 async function previewLabFile(){
   _labResetState('');
   const f=document.getElementById('f-lab').files[0];if(!f)return;
+  const isEN=CFG.lang==='en';
+  const ext=(f.name.split('.').pop()||'').toLowerCase();
+  if(LAB_EXT_NESUPORTATE[ext]){
+    _labResetState(_labNesuportat(LAB_EXT_NESUPORTATE[ext][isEN?'en':'ro']));
+    return;
+  }
   // Fisierele binare NU sunt text. Se recunosc dupa semnatura, nu dupa extensie — laboratoarele
   // pun „.xls" pe fisiere care sunt de fapt HTML, si „.xls" pe binare OLE2 adevarate.
   //   PK..        = arhiva ZIP  -> .xlsx / .ods
@@ -15256,8 +15616,40 @@ async function previewLabFile(){
   // multe laboratoare exporta exact .xlsx. Semnalat de user, care avea dreptate ca motorul
   // original citea mai multe formate.
   const head=new Uint8Array(await f.slice(0,8).arrayBuffer());
+  // „%PDF" — verificat si dupa continut, nu doar dupa extensie: un PDF redenumit .csv ar trece
+  // altfel de garda de mai sus si ar produce un preview fara sens.
+  if(head[0]===0x25&&head[1]===0x50&&head[2]===0x44&&head[3]===0x46){
+    _labResetState(_labNesuportat(LAB_EXT_NESUPORTATE.pdf[isEN?'en':'ro']));
+    return;
+  }
   const eZip=head[0]===0x50&&head[1]===0x4B;
   const eOle=head[0]===0xD0&&head[1]===0xCF&&head[2]===0x11&&head[3]===0xE0;
+  // .docx e tot o arhiva ZIP, deci se verifica INAINTEA ramurii Excel — altfel ar ajunge la
+  // SheetJS, care nu stie ce sa faca cu word/document.xml.
+  if(eZip&&ext==='docx'){
+    if(typeof labReadDocx!=='function'){
+      _labResetState(isEN?'The Word reader did not load. Reload the application.':'Cititorul de Word nu s-a incarcat. Reincarca aplicatia.');
+      return;
+    }
+    let txtD;
+    try{
+      txtD=labMatrixToTSV(await labReadDocx(await f.arrayBuffer()));
+    }catch(e){
+      console.log('DOCX:',e);
+      _labResetState(e&&e.message==='NO_DECOMPRESSION'
+        ?(isEN?'This browser cannot unzip .docx files. Use an up-to-date Chrome or Edge, or save the file as <strong>XLSX</strong> / <strong>CSV</strong>.'
+              :'Browserul acesta nu poate dezarhiva fisiere .docx. Foloseste Chrome sau Edge actualizat, ori salveaza fisierul ca <strong>XLSX</strong> / <strong>CSV</strong>.')
+        :(isEN?'Could not read the Word file. Save it as <strong>XLSX</strong> or <strong>CSV</strong> and try again.'
+              :'Nu am putut citi fisierul Word. Salveaza-l ca <strong>XLSX</strong> sau <strong>CSV</strong> si incearca din nou.'));
+      return;
+    }
+    if(!txtD||txtD.split('\n').length<2){
+      _labResetState(isEN?'The Word file contains no table or text that can be read as data.':'Fisierul Word nu contine niciun tabel sau text care sa poata fi citit ca date.');
+      return;
+    }
+    window._labSursa='Word (.docx)';
+    return previewLabCSV(txtD);
+  }
   if(eZip||eOle){
     if(typeof XLSX==='undefined'){
       _labResetState('Biblioteca de citire Excel nu s-a incarcat. Verifica legatura la internet si reincarca aplicatia, sau salveaza fisierul ca <strong>CSV</strong>.');
@@ -15282,8 +15674,10 @@ async function previewLabFile(){
       _labResetState('Nu am putut citi fisierul Excel. Salveaza-l din Excel ca <strong>CSV</strong> si incearca din nou.');
       return;
     }
+    window._labSursa=eOle?'Excel (.xls binar)':'Excel (.xlsx / .ods)';
     return previewLabCSV(txtX);
   }
+  window._labSursa='CSV / text';
   const txt=await f.text();
   // Detect HTML (XLS from LIS is actually HTML)
   if(txt.trim().startsWith('<')||txt.includes('<table')||txt.includes('<!DOCTYPE')){
@@ -15360,19 +15754,24 @@ function previewLabHTML(txt){
   var _bs=document.getElementById('lab-prof-save');if(_bs)_bs.style.display='';
 }
 
-function parseLabRegistru(rows){
-  // Group rows by cod cerere (col 0)
+// `cols` = {cod, analiza, valoare}. Implicit 0/3/4 — pozitiile din exportul HTML al LIS, singurul
+// format cunoscut cand a fost scrisa functia. Cand acelasi registru vine ca .xlsx, coloanele pot
+// sta altfel, deci indicii se pot da explicit; userul le alege din dialog si profilul le retine.
+function parseLabRegistru(rows,cols){
+  const C=cols||{};
+  const cCod=(C.cod>=0?C.cod:0),cAn=(C.analiza>=0?C.analiza:3),cVal=(C.valoare>=0?C.valoare:4);
+  // Group rows by cod cerere
   const groups={};const order=[];
   rows.forEach(r=>{
-    const cod=(r[0]||'').trim();if(!cod||!/^\d+$/.test(cod))return;
-    if(!groups[cod]){groups[cod]={cod,test:(r[3]||'').trim(),vals:[],labels:[]};order.push(cod)}
-    groups[cod].vals.push((r[4]||'').trim());
+    const cod=(r[cCod]||'').trim();if(!cod||!/^\d+$/.test(cod))return;
+    if(!groups[cod]){groups[cod]={cod,test:(r[cAn]||'').trim(),vals:[],labels:[]};order.push(cod)}
+    groups[cod].vals.push((r[cVal]||'').trim());
     // v13.62 - pastram eticheta analizei de pe FIECARE rand („Sensibil la:" / „Rezistent la:").
     // Inainte se retinea doar eticheta primului rand din grup, iar S/I/R se deducea exclusiv din
     // pozitia randului — deci un buletin cu o singura linie de valori era interpretat ca „toate
     // sensibile", inclusiv cand acea linie era lista de antibiotice REZISTENTE. O tulpina
     // pan-rezistenta aparea in antibiograma locala cu 100% sensibilitate.
-    groups[cod].labels.push((r[3]||'').trim());
+    groups[cod].labels.push((r[cAn]||'').trim());
   });
 
   return order.map(cod=>{
@@ -15435,6 +15834,16 @@ function parseOrganisms(line){
     const name=line.replace(/\s*-?\s*prezent.*$/i,'').replace(/\(.*?\)/g,'').trim();
     if(name)orgs.push({name,susceptibility:[]});
   }
+  // Cadere de siguranta: nu toate exporturile scriu cuvantul „prezent". Unele pun direct
+  // denumirea („Escherichia coli"). Fara pasul asta, o astfel de linie nu producea NICIUN
+  // organism, deci toata cererea iesea „negativa" si nu se importa nimic — o tacere care arata
+  // exact ca un fisier fara izolate pozitive. Se cauta o denumire cunoscuta in text, dar numai
+  // daca linia nu spune deja „absent" / „fara crestere" / „steril".
+  if(!orgs.length&&typeof _lfGasesteOrganism==='function'&&
+     !(typeof LF_RE_FARA_CRESTERE!=='undefined'&&LF_RE_FARA_CRESTERE.test(line))){
+    const g=_lfGasesteOrganism(line);
+    if(g)orgs.push({name:g,susceptibility:[]});
+  }
   return orgs;
 }
 
@@ -15445,6 +15854,67 @@ function parseOrganisms(line){
 // exista, deci `g.n.toLowerCase()` arunca „Cannot read properties of undefined". Defectul era
 // ASCUNS de un altul: importul murea mai devreme, la cautarea selectoarelor dupa id, deci nu se
 // ajungea niciodata aici. Dupa repararea id-urilor a iesit imediat la suprafata.
+// (Comentariul de mai sus apartine lui `_sirFromLabel` / `_germFind`, aflate mai jos.)
+
+// ═══ STERGEREA UNUI IMPORT INTREG ═══
+// Cerut de user dupa ce o colega a importat un fisier cu maparea gresita: 573 de izolate, fiecare
+// cu alt „germen", si nicio cale de a le scoate. Un import gresit nu era reversibil decat prin
+// restaurarea unui backup, adica pierzand tot ce s-a mai lucrat intre timp.
+// Sterge DOAR izolatele de laborator din lotul si anul respectiv (`_import_batch` + `year`) —
+// nu atinge cazurile IAAM si nici alte loturi. Stergerea trece prin `dl()`, deci e tombstone si
+// se propaga la sincronizare; altfel izolatele s-ar intoarce de pe celalalt calculator.
+async function labDeleteBatch(batch){
+  const isEN=CFG.lang==='en';
+  const toate=await ga('lab_isolates');
+  const ale=toate.filter(function(r){return (r._import_batch||'—')===batch&&r.year===A.year});
+  if(!ale.length){render();return}
+  const legate=ale.filter(function(r){return r.iaam_case_id}).length;
+  if(!confirm(_Mf('Stergi tot importul „{b}" din {an}?\n\n{n} izolate vor fi sterse definitiv.{i}\n\nCazurile IAAM NU se sterg — doar izolatele de laborator.',
+      {b:batch,an:A.year,n:ale.length,
+       i:legate?('\n'+legate+' dintre ele sunt legate de cazuri IAAM; legatura se pierde.'):''})))return;
+  for(const r of ale)await dl('lab_isolates',r.id);
+  toastSaved();
+  render();
+}
+
+// ═══ POTRIVIREA SPECIEI — NU se face cu `matchAtbName` ═══
+// `matchAtbName` compara prefixe de 6 caractere. Pentru denumiri de antibiotic, unde apar greseli
+// de tastare si prescurtari, e potrivit. Pentru SPECII e catastrofal: „Klebsiella pneumoniae" si
+// „Klebsiella aerogenes" au acelasi prefix de sase („klebsi"), deci castiga prima intrare din
+// lista. La fel Staphylococcus, Streptococcus, Enterococcus, Enterobacter.
+// PRINS LA TESTARE: un import in care laboratorul scrisese „Klebsiella pneumoniae" a produs un
+// izolat „Klebsiella aerogenes". Specie gresita in antibiograma locala, in raportul microbiologic
+// si in registrul trimis la DSP — fara nicio eroare.
+// Aceeasi greseala era si in importul registrului LIS, de la inceputul lui.
+// Regula: cod exact, apoi nume complet normalizat, apoi gen+specie. Daca nu se potriveste nimic,
+// se intoarce null si se PASTREAZA denumirea laboratorului — mai bine textul lui decat o specie
+// inventata; gruparile din rapoarte si din motorul XDR lucreaza oricum pe expresii, nu pe cod.
+function _labNormGerm(s){
+  return String(s||'').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/\b(spp|sp|species)\b\.?/g,' ')
+    .replace(/[^a-z0-9]+/g,' ').trim();
+}
+function _labMatchGerm(nume){
+  const brut=String(nume||'').trim();
+  const n=_labNormGerm(brut);
+  if(!n)return null;
+  let g=_germFind(function(x){return x.c&&String(x.c).toLowerCase()===brut.toLowerCase()});
+  if(g)return g;
+  g=_germFind(function(x){return _labNormGerm(x.n)===n});
+  if(g)return g;
+  const t=n.split(' ');
+  if(t.length>=2){
+    const gs=t[0]+' '+t[1];
+    g=_germFind(function(x){var y=_labNormGerm(x.n).split(' ');return y.length>=2&&(y[0]+' '+y[1])===gs});
+    if(g)return g;
+  }
+  if(t.length===1){
+    g=_germFind(function(x){return _labNormGerm(x.n)===t[0]});
+    if(g)return g;
+  }
+  return null;
+}
 function _germFind(pred){
   if(typeof GERMENI_LIST==='undefined')return null;
   for(var i=0;i<GERMENI_LIST.length;i++){
@@ -15503,9 +15973,16 @@ function previewLabCSV(txt){
   if(lines.length<2||!lines[0]){_labResetState('Fisier gol sau prea putine date.');return}
   const sep=lines[0].includes('\t')?'\t':(lines[0].includes(';')?';':',');
   const header=lines[0].split(sep).map(c=>c.replace(/^["']|["']$/g,'').trim());
-  const rows=lines.slice(1).map(l=>l.split(sep).map(c=>c.replace(/^["']|["']$/g,'').trim())).filter(r=>r.length>=5);
+  // Doua liste, intentionat. `rows` (>=5 coloane) e ce foloseste importul TABELAR — filtrul acela
+  // exista de mult si arunca randurile ciuntite. Dar un export NARATIV are adesea 3 coloane
+  // (cod, data, rezultat), deci pe filtrul de 5 ar ramane zero randuri si fisierul ar parea gol.
+  // De aceea calea narativa lucreaza pe `rowsAll`. Amandoua se pastreaza, ca sa nu depinda de ce
+  // era selectat in momentul previzualizarii daca userul schimba selectorul dupa aceea.
+  const rowsAll=lines.slice(1).map(l=>l.split(sep).map(c=>c.replace(/^["']|["']$/g,'').trim()))
+    .filter(r=>r.some(c=>c&&c.trim()));
+  const rows=rowsAll.filter(r=>r.length>=5);
 
-  window._labRows=rows;window._labHeader=header;window._labSep=sep;
+  window._labRows=rows;window._labRowsAll=rowsAll;window._labHeader=header;window._labSep=sep;
   window._labFormat='csv';
 
   function findCol(hints){return header.findIndex(h=>hints.some(x=>h.toLowerCase().includes(x)))}
@@ -15529,34 +16006,212 @@ function previewLabCSV(txt){
   // niciun fel de escapare.
   function selFor(id,def){return '<select id="lab-col-'+id+'"><option value="-1"'+(def<0?' selected':'')+'>— alege coloana —</option>'+header.map((h,i)=>'<option value="'+i+'"'+(i===def?' selected':'')+'>'+esc(h)+'</option>').join('')+'</select>'}
 
+  // Coloana narativa: rezultatul intreg ca text liber intr-o singura celula. Cand exista, germenul
+  // si antibiogramele se scot din text, iar coloanele Germen / Antibiotic / Rezultat nu mai au ce
+  // mapa. Se detecteaza singura, dar ramane un selector, ca userul sa poata corecta.
+  const nar=(typeof labGuessNarrativeCol==='function')?labGuessNarrativeCol(header,rowsAll):-1;
+  const eNarativ=nar>=0;
+  // Registrul de laborator (Cod cerere / Analiza / Valoare) venit ca FOAIE DE CALCUL, nu ca HTML.
+  // Pana la v13.88, un asemenea .xlsx intra pe drumul tabelar, unde nu are ce cauta: nu exista o
+  // linie per antibiotic, iar probele negative nu se recunosc. O colega a importat asa un fisier
+  // si a obtinut 573 de „izolate", cate unul pe rand, inclusiv pentru probele fara crestere.
+  const reg=_labGuessRegistru(header);
+  const fmtInit=eNarativ?'narativ':(reg?'registru':'tabelar');
+
   const bi=defaults.buletin,gi=defaults.germen;
   const uniqBul=bi>=0?new Set(rows.map(r=>r[bi])).size:null;
   const uniqGerm=gi>=0?new Set(rows.map(r=>r[gi])).size:null;
-  const nemapate=[['Nr. Buletin',defaults.buletin],['Data',defaults.date],['Sectie',defaults.section],
-    ['Germen',defaults.germen],['Antibiotic',defaults.atb],['Rezultat S/I/R',defaults.result]]
-    .filter(x=>x[1]<0).map(x=>x[0]);
+  // Ce e obligatoriu depinde de FORMA datelor. Altfel importul cere coloane care nu exista in
+  // fisier: un registru de laborator nu are coloana Antibiotic, iar unul narativ nu are Germen.
+  // Registrul nu are nici Data, nici Sectie — `processLabRegistru` nici nu le citeste.
+  const oblPerFmt={
+    tabelar:[['Nr. Buletin',defaults.buletin],['Data',defaults.date],['Sectie',defaults.section],
+             ['Germen',defaults.germen],['Antibiotic',defaults.atb],['Rezultat S/I/R',defaults.result]],
+    narativ:[['Nr. Buletin',defaults.buletin],['Data',defaults.date],['Sectie',defaults.section],
+             ['Rezultat ca text liber',nar]],
+    registru:[['Cod cerere',reg?reg.cod:-1],['Analiza',reg?reg.analiza:-1],['Valoare',reg?reg.valoare:-1]]
+  };
+  const nemapate=oblPerFmt[fmtInit].filter(x=>x[1]<0).map(x=>x[0]);
 
-  let h='<div class="ib '+(nemapate.length?'wrn':'suc')+'">Format detectat: <strong>CSV tabelar</strong><br>'+rows.length+' linii.'+
-    (uniqBul!==null?' ~'+uniqBul+' buletine unice.':'')+(uniqGerm!==null?' ~'+uniqGerm+' germeni.':'')+
-    (nemapate.length?'<br><br><strong>Nu am recunoscut automat coloanele:</strong> '+esc(nemapate.join(', '))+'.<br>Alege-le mai jos inainte de import.':'')+'</div>'+
+  // Ce FISIER s-a citit si ce FORMA are continutul sunt doua lucruri diferite. Inainte scria doar
+  // „Format detectat: CSV tabelar" — si userul, care tocmai incarcase un .xlsx, a intrebat pe buna
+  // dreptate de ce zice CSV. Acum se spune si fisierul citit, si forma datelor.
+  const sursa=window._labSursa||'CSV / text';
+  const numeFmt={tabelar:'tabelar — o linie per antibiotic',
+    registru:'registru de laborator — Cod cerere / Analiza / Valoare',
+    narativ:'rezultat narativ — text liber intr-o coloana'};
+  let h='<div class="ib '+(nemapate.length?'wrn':'suc')+'"><span>Fisier citit: <strong>'+esc(sursa)+'</strong>. '+
+    'Forma datelor: <strong>'+numeFmt[fmtInit]+'</strong>.<br>'+
+    (fmtInit==='tabelar'?rows.length:rowsAll.length)+' linii.'+
+    (fmtInit==='narativ'?' Rezultatul se citeste din coloana <strong>'+esc(header[nar])+'</strong>.':'')+
+    (fmtInit==='registru'?' Se grupeaza pe cod de cerere; probele negative se sar.':'')+
+    (fmtInit==='tabelar'?((uniqBul!==null?' ~'+uniqBul+' buletine unice.':'')+(uniqGerm!==null?' ~'+uniqGerm+' germeni.':'')):'')+
+    (nemapate.length?'<br><br><strong>Nu am recunoscut automat coloanele:</strong> '+esc(nemapate.join(', '))+'.<br>Alege-le mai jos inainte de import.':'')+'</span></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0">'+
-    '<div class="fg"><label>Nr. Buletin *</label>'+selFor('buletin',defaults.buletin)+'</div>'+
-    '<div class="fg"><label>Data *</label>'+selFor('date',defaults.date)+'</div>'+
-    '<div class="fg"><label>Sectie *</label>'+selFor('section',defaults.section)+'</div>'+
-    '<div class="fg"><label>Tip proba</label>'+selFor('sample',defaults.sample)+'</div>'+
-    '<div class="fg"><label>Germen *</label>'+selFor('germen',defaults.germen)+'</div>'+
-    '<div class="fg"><label>Antibiotic *</label>'+selFor('atb',defaults.atb)+'</div>'+
-    '<div class="fg"><label>Rezultat S/I/R *</label>'+selFor('result',defaults.result)+'</div>'+
+    '<div class="fg" style="grid-column:1/-1"><label>Forma datelor</label>'+
+      '<select id="lab-fmt" onchange="_labFmtToggle()">'+
+      ['tabelar','registru','narativ'].map(function(k){return '<option value="'+k+'"'+(fmtInit===k?' selected':'')+'>'+numeFmt[k]+'</option>'}).join('')+
+      '</select></div>'+
+    '<div class="fg" id="fgw-buletin"><label>Nr. Buletin *</label>'+selFor('buletin',defaults.buletin)+'</div>'+
+    '<div class="fg" id="fgw-date"><label>Data *</label>'+selFor('date',defaults.date)+'</div>'+
+    '<div class="fg" id="fgw-section"><label>Sectie *</label>'+selFor('section',defaults.section)+'</div>'+
+    '<div class="fg" id="fgw-sample"><label>Tip proba</label>'+selFor('sample',defaults.sample)+'</div>'+
+    '<div class="fg" id="fgw-narativ" style="grid-column:1/-1"><label>Rezultat ca text liber *</label>'+selFor('narativ',nar)+
+      '<span style="font-size:11px;color:var(--txtL)">Germenul si antibiograma se citesc din acest text.</span></div>'+
+    '<div class="fg" id="fgw-cod"><label>Cod cerere *</label>'+selFor('cod',reg?reg.cod:-1)+'</div>'+
+    '<div class="fg" id="fgw-analiza"><label>Analiza *</label>'+selFor('analiza',reg?reg.analiza:-1)+'</div>'+
+    '<div class="fg" id="fgw-valoare"><label>Valoare *</label>'+selFor('valoare',reg?reg.valoare:-1)+'</div>'+
+    '<div class="fg" id="fgw-germen"><label>Germen *</label>'+selFor('germen',defaults.germen)+'</div>'+
+    '<div class="fg" id="fgw-atb"><label>Antibiotic *</label>'+selFor('atb',defaults.atb)+'</div>'+
+    '<div class="fg" id="fgw-result"><label>Rezultat S/I/R *</label>'+selFor('result',defaults.result)+'</div>'+
     '</div>';
   document.getElementById('lab-preview').innerHTML=h;
+  _labFmtToggle();
   document.getElementById('lab-import-btn').disabled=false;
   var _bs=document.getElementById('lab-prof-save');if(_bs)_bs.style.display='';
 }
 
+// Arata doar coloanele care au sens pentru forma aleasa. Nu redeseneaza nimic — doar ascunde,
+// deci nu se pierde nicio alegere facuta de user daca se razgandeste inainte si inapoi.
+function _labFmtToggle(){
+  var f=document.getElementById('lab-fmt');if(!f)return;
+  var m={tabelar:['germen','atb','result'],registru:['cod','analiza','valoare'],narativ:['narativ']};
+  Object.keys(m).forEach(function(k){
+    m[k].forEach(function(id){
+      var e=document.getElementById('fgw-'+id);
+      if(e)e.style.display=(k===f.value)?'':'none';
+    });
+  });
+}
+// Semnatura registrului de laborator intr-o foaie de calcul. „Analiza" e discriminantul: un fisier
+// tabelar are coloana Antibiotic, un registru are Analiza + Valoare. Daca exista o coloana de
+// antibiotic, NU e registru — asa se evita o detectie falsa pe un export tabelar care are din
+// intamplare o coloana numita „Rezultat".
+function _labGuessRegistru(header){
+  if(!header||!header.length)return null;
+  var n=function(h){return String(h||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')};
+  var find=function(pats){return header.findIndex(function(h){return pats.some(function(p){return n(h).indexOf(p)>=0})})};
+  if(find(['antibiotic','substanta activa'])>=0)return null;
+  var cod=find(['cod cerere','cod_cerere','cod proba','cod']);
+  var analiza=find(['analiza','analiz','denumire test']);
+  var valoare=find(['valoare','rezultat']);
+  if(cod>=0&&analiza>=0&&valoare>=0&&analiza!==valoare&&cod!==analiza)return {cod:cod,analiza:analiza,valoare:valoare};
+  return null;
+}
+
 // ── Unified import dispatcher ──
 async function processLabImport(){
+  // Calea HTML din LIS isi are propria previzualizare si nu trece prin selectorul de forma.
   if(window._labFormat==='registru')return processLabRegistru();
+  // Dispecerul citeste selectorul IN MOMENTUL IMPORTULUI, nu ce s-a detectat la previzualizare —
+  // userul poate sa fi corectat intre timp, in oricare directie.
+  var f=document.getElementById('lab-fmt');
+  var fmt=f?f.value:'tabelar';
+  if(fmt==='narativ')return processLabNarrative();
+  if(fmt==='registru'){
+    var v=function(id){var e=document.getElementById(id);return e?+e.value:-1};
+    var cols={cod:v('lab-col-cod'),analiza:v('lab-col-analiza'),valoare:v('lab-col-valoare')};
+    var ob=[['Cod cerere',cols.cod],['Analiza',cols.analiza],['Valoare',cols.valoare]].filter(function(x){return !(x[1]>=0)});
+    if(ob.length){alert(_Mf('Alege coloana pentru: {c}.\n\nImportul nu poate continua fara ele.',{c:ob.map(function(x){return x[0]}).join(', ')}));return}
+    var parsed=parseLabRegistru(window._labRowsAll||window._labRows||[],cols);
+    var poz=parsed.filter(function(p){return !p.negative}).length;
+    if(!parsed.length){
+      alert(_M('Nu s-a putut grupa niciun buletin dupa coloana „Cod cerere".\n\nVerifica daca ai ales coloana potrivita — ea trebuie sa contina numarul cererii, repetat pe toate randurile aceleiasi analize.'));
+      return;
+    }
+    if(!poz){
+      alert(_Mf('Toate cele {n} cereri au iesit negative (fara crestere / germen absent), deci nu exista niciun izolat de importat.\n\nDaca nu asa arata fisierul, verifica coloanele Analiza si Valoare.',{n:parsed.length}));
+      return;
+    }
+    window._labParsed=parsed;
+    return processLabRegistru();
+  }
   return processLabCSV();
+}
+
+// ── FORMAT 3: rezultat narativ (text liber intr-o coloana) ──
+// Fiecare rand e o cerere de laborator; germenii si antibiogramele se scot din text.
+// O cerere poate contine MAI MULTE probe (urocultura + hemocultura in acelasi buletin), deci un
+// rand poate produce mai multe izolate.
+async function processLabNarrative(){
+  const rows=window._labRowsAll||window._labRows;
+  if(!rows||!rows.length){alert(_M('Niciun fisier incarcat.'));return}
+  if(typeof labNarrativeParse!=='function'){alert(_M('Cititorul de rezultate narative nu s-a incarcat. Reincarca aplicatia.'));return}
+  const v=function(id){var e=document.getElementById(id);return e?+e.value:-1};
+  const ci={buletin:v('lab-col-buletin'),date:v('lab-col-date'),section:v('lab-col-section'),
+    sample:v('lab-col-sample'),narativ:v('lab-col-narativ')};
+  // Aceeasi garda ca la importul tabelar: o coloana obligatorie nerecunoscuta OPRESTE importul,
+  // nu cade pe coloana 0.
+  const oblig=[['Nr. Buletin',ci.buletin],['Data',ci.date],['Sectie',ci.section],
+    ['Rezultat narativ',ci.narativ]].filter(x=>!(x[1]>=0));
+  if(oblig.length){alert(_Mf('Alege coloana pentru: {c}.\n\nImportul nu poate continua fara ele.',{c:oblig.map(x=>x[0]).join(', ')}));return}
+  const batch=document.getElementById('f-lab-batch')?.value||A.year;
+
+  const isolates=[];
+  let faraIzolat=0,faraGermen=0;
+  rows.forEach(function(r){
+    const bul=(r[ci.buletin]||'').trim();
+    if(!bul)return;
+    const probe=labNarrativeParse(r[ci.narativ]||'');
+    if(!probe.length){faraIzolat++;return}
+    const secName=(r[ci.section]||'').trim();
+    const secMatch=(CFG.sections||[]).find(s=>s.name.toLowerCase()===secName.toLowerCase())||
+      (CFG.sections||[]).find(s=>secName.toLowerCase().includes(s.name.toLowerCase().substring(0,4)));
+    probe.forEach(function(p){
+      // Fara germen identificat nu se poate face nimic cu antibiograma — se numara si se
+      // raporteaza, nu se importa un izolat fara nume.
+      if(!p.organism){faraGermen++;return}
+      const germMatch=_labMatchGerm(p.organism);
+      isolates.push({
+        year:A.year,
+        nr_buletin:bul,
+        date:parseLabDate(r[ci.date]||''),
+        section:secMatch?secMatch.id:secName,
+        sample_type:((ci.sample>=0?r[ci.sample]:'')||p.proba||'necunoscut').trim().toLowerCase(),
+        organism:germMatch?germMatch.n:p.organism,
+        organism_code:germMatch?germMatch.c:'',
+        susceptibility:(p.rez||[]).map(function(x){
+          var cod='';
+          if(typeof ATB_LIST!=='undefined'){
+            (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(function(grp){grp.items.forEach(function(a){
+              if(a.n.toLowerCase()===String(x.antibiotic).toLowerCase()||a.a===x.antibiotic)cod=a.a;
+            })});
+          }
+          return {atb_code:cod,atb_name:x.antibiotic,result:x.sir};
+        }),
+        source:'lab',iaam_case_id:null,_import_batch:batch
+      });
+    });
+  });
+  if(!isolates.length){
+    alert(_Mf('Nu s-a putut extrage niciun izolat din textul rezultatelor.\n• {a} cereri fara izolat (proba negativa / fara crestere)\n• {b} rezultate cu antibiograma dar fara germen recunoscut',{a:faraIzolat,b:faraGermen}));
+    return;
+  }
+
+  const existing=await ga('lab_isolates');
+  const existingSet=new Set(existing.map(r=>r.year+'|'+r.nr_buletin+'|'+r.organism));
+  const iaamCases=await ga('iaam');
+  const iaamBulMap={};
+  iaamCases.forEach(c=>{
+    (c.bulletins||[]).forEach(b=>{if(b.nr)iaamBulMap[b.nr.trim()]=c.id});
+    if(c.bulletin_nr)c.bulletin_nr.split(',').forEach(n=>{const t=n.trim();if(t)iaamBulMap[t]=c.id});
+  });
+  let imported=0,skipped=0,matchedIAAM=0;
+  for(const iso of isolates){
+    const k=iso.year+'|'+iso.nr_buletin+'|'+iso.organism;
+    if(existingSet.has(k)){skipped++;continue}
+    existingSet.add(k);
+    if(iaamBulMap[iso.nr_buletin]){iso.source='iaam';iso.iaam_case_id=iaamBulMap[iso.nr_buletin];matchedIAAM++}
+    await pt('lab_isolates',iso);
+    imported++;
+  }
+  closeM();render();
+  await _labImportDone(imported,matchedIAAM,skipped,A.year);
+  // Ce nu s-a putut citi se SPUNE, nu se pierde tacit — un germen nerecunoscut iese din
+  // numaratoare si poate schimba o incadrare fara nicio eroare.
+  if(faraGermen){
+    setTimeout(function(){alert(_Mf('Nota: {b} rezultate aveau antibiograma dar niciun germen recunoscut in text si nu au fost importate.',{b:faraGermen}))},400);
+  }
 }
 
 async function processLabCSV(){
@@ -15573,6 +16228,38 @@ async function processLabCSV(){
   const oblig=[['Nr. Buletin',ci.buletin],['Data',ci.date],['Sectie',ci.section],
     ['Germen',ci.germen],['Antibiotic',ci.atb],['Rezultat S/I/R',ci.result]].filter(x=>!(x[1]>=0));
   if(oblig.length){alert(_Mf('Alege coloana pentru: {c}.\n\nImportul nu poate continua fara ele.',{c:oblig.map(x=>x[0]).join(', ')}));return}
+
+  // ═══ VERIFICARE DE PLAUZIBILITATE, INAINTE DE A SCRIE CEVA ═══
+  // Garda de mai sus verifica doar ca s-a ALES o coloana, nu si ca e coloana potrivita. O colega
+  // a mapat „Germen" pe o coloana de numerotare si a importat 573 de izolate cu 573 de „germeni"
+  // diferiti, numiti 1, 2, 3... Nimic nu a semnalat nimic: importul a raportat succes, iar
+  // antibiograma a iesit goala, cu sensibilitate medie 0%.
+  // Verificarile de mai jos se uita la CONTINUTUL coloanelor alese. Doua opresc importul (o specie
+  // nu e niciodata un numar, iar o coloana de rezultat fara niciun S/I/R nu e o coloana de
+  // rezultat), a treia doar intreaba, pentru ca exista si cazuri legitime.
+  const val=function(c){return rows.map(function(r){return String(r[c]||'').trim()}).filter(Boolean)};
+  const gVals=val(ci.germen),rVals=val(ci.result);
+  const numeric=gVals.filter(function(x){return /^\d+([.,]\d+)?$/.test(x)}).length;
+  if(gVals.length&&numeric/gVals.length>0.5){
+    alert(_Mf('Coloana aleasa pentru GERMEN contine numere ({n} din {t} valori), nu denumiri de germeni.\n\nProbabil ai ales coloana gresita — verifica si alege coloana cu numele microorganismului.\n\nImportul a fost oprit; nu s-a scris nimic.',
+      {n:numeric,t:gVals.length}));
+    return;
+  }
+  const sirOk=rVals.filter(function(x){return (typeof micSIR==='function'?micSIR(x):null)}).length;
+  if(rVals.length&&sirOk===0){
+    alert(_Mf('Coloana aleasa pentru REZULTAT nu contine niciun rezultat care sa poata fi citit ca S, I sau R (am verificat {t} valori; prima este „{p}").\n\nImportul a fost oprit; nu s-a scris nimic.',
+      {t:rVals.length,p:rVals[0]}));
+    return;
+  }
+  // Intr-un spital real, cateva zeci de specii acopera aproape tot. Cate un germen distinct pe
+  // fiecare rand inseamna aproape sigur coloana gresita — dar poate fi si un fisier mic, deci se
+  // intreaba, nu se blocheaza.
+  const distincte=new Set(gVals.map(function(x){return x.toLowerCase()})).size;
+  if(gVals.length>=20&&distincte/gVals.length>0.6){
+    if(!confirm(_Mf('Atentie: coloana GERMEN are {d} valori diferite in {t} randuri — aproape una pe rand.\n\nIntr-un laborator real, cateva zeci de specii acopera aproape tot, deci s-ar putea sa fie coloana gresita.\n\nContinui importul?',
+      {d:distincte,t:gVals.length})))return;
+  }
+
   const batch=document.getElementById('f-lab-batch')?.value||A.year;
 
   // Group rows by nr_buletin + germen → one record per isolate
@@ -15729,8 +16416,7 @@ async function processLabRegistru(){
     if(p.negative)return;
     p.organisms.forEach(org=>{
       // Match germen to GERMENI_LIST
-      const germMatch=_germFind(function(g){
-        return matchAtbName(g.n||'',org.name)||(g.c&&matchAtbName(g.c,org.name))});
+      const germMatch=_labMatchGerm(org.name);
       isolates.push({
         year,nr_buletin:p.cod,date:'',
         section:'',sample_type:sampleType,
@@ -25223,7 +25909,7 @@ async function xdrExportPosibil(){
 
 // ═══ PROFILURI DE IMPORT ═══
 // Campurile mapate sunt exact cele din dialogul de import existent din antibiograma.js.
-const LAB_PROF_CAMPURI=['buletin','date','section','sample','germen','atb','result'];
+const LAB_PROF_CAMPURI=['buletin','date','section','sample','narativ','cod','analiza','valoare','germen','atb','result'];
 
 function labProfiles(){if(!CFG.lab_profiles)CFG.lab_profiles=[];return CFG.lab_profiles}
 
@@ -27947,6 +28633,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.88',date:'2026-08-06',summary:"Importul de laborator citeste acum Word si rezultate narative — ultimele doua formate din motorul original al userului. Pe drum a iesit ca specia putea fi inlocuita cu alta din aceeasi familie, defect care exista de la inceput in importul registrului LIS."},
   {version:'13.87',date:'2026-08-06',summary:"Uniformizarea denumirii claselor de beta-lactamice pe forma internationala, dupa intrebarea userului care e cea corecta. Plus o verificare noua care prinde exact greseala pe care redenumirea o putea produce."},
   {version:'13.86',date:'2026-08-06',summary:"Multirezistenta, ceruta de user imediat dupa motorul XDR: MDR se numara si se arata — pe germen, pe sectie, pe produs — si intra in raportul trimestrial de care are nevoie colega, dar NU in registrul de alerte pentru DSP."},
   {version:'13.85',date:'2026-08-06',summary:"Motorul XDR / PDR / C. auris, portat in aplicatie din motorul propriu al userului. Clasifica dupa Magiorakos izolatele deja importate, scoate cazurile de raportat la DSP si tine registrul de alerte al unitatii. Refuza sa confirme XDR cand datele nu permit — si spune de ce."},

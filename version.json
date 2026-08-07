@@ -1,13 +1,21 @@
 {
-  "version": "13.86",
-  "version_note": "Multirezistenta (MDR) in analiza si in raportul trimestrial, legata de antibiograma locala",
+  "version": "13.87",
+  "version_note": "Motorul XDR / PDR / C. auris, multirezistenta in raportul trimestrial, si legatura cu antibiograma locala",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
+    "Denumirea grupei de antibiotice s-a uniformizat pe forma internationala: „beta-lactamice\", nu „beta-lactamine\". Asa o numeste clasificarea ATC a OMS (J01C si J01D — „beta-lactam antibacterials\") si asa scrie si in lucrarea Magiorakos, sursa tabelelor de clasificare („anti-staphylococcal beta-lactams\"). Forma „beta-lactamine\" e cea franceza; e raspandita la noi, dar nu e cea internationala, si se confunda usor cu „beta-lactamaze\", care sunt enzimele, nu antibioticele.",
     "NOU — tab „Multirezistenta (MDR)\" pe pagina de alerte. Cati germeni multirezistenti ai, pe germen, pe sectie si pe produs patologic, cu procentul din tulpinile clasificabile. Pana acum raportul dadea rezistenta pe categorii de antibiotic (cate tulpini sunt rezistente la cefalosporine), nu cati germeni multirezistenti sunt si unde.",
     "MDR NU intra in registrul de alerte si nu se raporteaza la DSP la un singur caz — acolo raman doar XDR, suspiciunea de PDR si C. auris. Cifrele MDR sunt pentru analiza proprie si pentru raportul trimestrial.",
     "NOU — sectiune de multirezistenta in Raportul Microbiologic Word (trimestrial si anual): fraza de sinteza, tabelul pe germeni, distributia pe sectii si nota de metoda. Se calculeaza cu acelasi motor ca pagina de alerte, deci raportul si ecranul nu pot da cifre diferite.",
     "Doua numaratori distincte, ca sa nu se contrazica doua tabele alaturate: „cel putin MDR\" (nesensibil in 3 sau mai multe categorii — acopera si XDR, si PDR) si coloana „MDR\", care e clasa exclusiva si se aduna cu celelalte.",
     "Numitorul e numarul de tulpini din specii care AU tabel de categorii Magiorakos. Streptococii, candidele non-auris si C. difficile nu pot fi nici MDR, nici non-MDR — daca ar intra in numitor, procentul ar scadea fara sa se schimbe nimic. Cate au ramas neclasificabile se scrie langa procent.",
-    "Antibiograma Locala are acum un card „cel putin MDR\" si un buton catre clasificarea MDR / XDR — cine se uita la profilul de rezistenta vede imediat cati multirezistenti are, nu doar procentele pe antibiotic."
+    "Antibiograma Locala are acum un card „cel putin MDR\" si un buton catre clasificarea MDR / XDR — cine se uita la profilul de rezistenta vede imediat cati multirezistenti are, nu doar procentele pe antibiotic.",
+    "NOU — buton de import si pe pagina de Alerte XDR / PDR. Deschide acelasi dialog ca in Antibiograma Locala, deci nu sunt doua drumuri de import, ci doua usi catre acelasi drum. Colegii nu gaseau butonul, si pe buna dreptate: pagina la care te uiti dupa ce vin rezultatele e cea de alerte, deci acolo cauti si incarcarea.",
+    "NOU — dupa un import reusit, mesajul spune si daca au aparut alerte: „2 izolate importate • 1 caz de raportat la DSP — 1 XDR\", cu buton direct catre ele. Inainte se afisau doar cele trei cifre de import, iar un XDR intrat il aflai abia cand deschideai intamplator pagina de alerte. Acum se afla in secunda in care intra datele.",
+    "REPARAT: grupa de antibiotice se numea „Beta-lactamice: Penicilline (J01C)\" — cu doi de „l\", forma din engleza si franceza. In romana e „peniciline\". Denumirile din interiorul grupei erau deja corecte (Ampicilina, Amoxicilina, Oxacilina), deci eticheta se contrazicea cu propriul continut.",
+    "NOU — importul de laborator citeste acum si fisiere .xlsx (Excel modern), .xlsm si .ods. Pana acum erau refuzate, cu sfatul „salveaza-l ca CSV\" — desi biblioteca de citire Excel era deja in aplicatie. Formatul se recunoaste dupa continut, nu dupa extensie, si se alege singur foaia cu cele mai multe randuri (multe exporturi au si o foaie de coperta).",
+    "REPARAT: caseta albastra din dialogul de import se afisa pe coloane inguste, cu un bulin singur pe un rand, in loc de text curgator. Aceeasi cauza ca la alte casete reparate anterior.",
+    "Termenul „nesensibil\" e explicat acolo unde apare prima oara: inseamna rezistent SAU intermediar, asa cum cere definitia Magiorakos. Daca s-ar numara doar rezistentele, izolatele iesite intermediar ar disparea din numaratoare si multirezistenta ar fi subestimata.",
+    "NOU — legenda incadrarilor, sub tab-uri, vizibila pe orice tab si chiar si cand nu ai niciun izolat. Fiecare incadrare cu ce inseamna si UNDE se raporteaza. „Posibil XDR\" si „suspiciune PDR\" suna la fel dar cer actiuni opuse — primul se trimite la laborator si nu la DSP, al doilea se raporteaza la DSP in aceeasi zi. Acum scrie negru pe alb, ca sa nu depinda de cine a citit manualul."
   ]
 }

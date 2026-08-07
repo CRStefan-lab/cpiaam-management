@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.84</title>
+<title>CPIAAM Management v13.86</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1099,6 +1099,7 @@ body{display:block!important;background:#fff!important}
     <a class="ni" data-grp="sb_g_atb" data-p="pps" data-tooltip="PPS / Antibiotice" onclick="nav('pps')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span data-t="sb_pps">PPS / Antibiotice</span></a>
     <a class="ni" data-grp="sb_g_atb" data-p="consum_atb" data-tooltip="Consum Antibiotice" onclick="nav('consum_atb')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.5 1.5v5.7a2 2 0 01-.4 1.2L6 13.5V15h12v-1.5l-4.1-5.1a2 2 0 01-.4-1.2V1.5"/><path d="M8.5 1.5h7"/><path d="M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg><span data-t="sb_consum_atb">Consum Antibiotice</span></a>
     <a class="ni" data-grp="sb_g_atb" data-p="antibiograma" data-tooltip="Antibiograma Locala" onclick="nav('antibiograma')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="8" r="1" fill="currentColor"/><circle cx="16" cy="12" r="1" fill="currentColor"/><circle cx="8" cy="12" r="1" fill="currentColor"/></svg><span data-t="sb_antibiograma">Antibiograma Locala</span></a>
+    <a class="ni" data-grp="sb_g_atb" data-p="xdr" data-tooltip="Alerte XDR / PDR" onclick="nav('xdr')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.2 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.2a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span data-t="sb_xdr">Alerte XDR / PDR</span></a>
     <div class="ns nsg" data-grp="sb_g_calitate"><span data-t="sb_g_calitate">Calitate</span></div>
     <a class="ni" data-grp="sb_g_calitate" data-p="audituri" data-tooltip="Audituri IPC" onclick="nav('audituri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg><span data-t="sb_audituri">Audituri IPC</span></a>
     <a class="ni" data-grp="sb_g_calitate" data-p="obiective" data-tooltip="Obiective SMART" onclick="nav('obiective')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span data-t="sb_obiective">Obiective SMART</span></a>
@@ -2407,7 +2408,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.84';
+const APP_VERSION='13.86';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -3294,6 +3295,7 @@ ro:{
   det_pps:'Studiu de prevalenta (PPS)',det_screening:'Screening',
   // Antibiograma
   sb_antibiograma:'Antibiograma Locala',pt_antibiograma:'Antibiograma Locala',
+  sb_xdr:'Alerte XDR / PDR',pt_xdr:'Alerte XDR / PDR / C. auris — clasificare Magiorakos',
   abg_total:'IZOLATE CU ANTIBIOGRAMA',abg_mdr:'IZOLATE MDR',abg_top3:'TOP 3 GERMENI',abg_sens:'SENSIBILITATE MEDIE',
   abg_filtru_sec:'Toate sectiile',abg_export_word:'Export Word',abg_export_whonet:'Export WHONET (CSV)',
   abg_n_testat:'n testat',abg_n_sensibil:'n sensibil',abg_pct_s:'% S',
@@ -3463,6 +3465,7 @@ en:{
   det_pps:'Prevalence survey (PPS)',det_screening:'Screening',
   // Antibiogram
   sb_antibiograma:'Local Antibiogram',pt_antibiograma:'Local Antibiogram',
+  sb_xdr:'XDR / PDR alerts',pt_xdr:'XDR / PDR / C. auris alerts — Magiorakos classification',
   abg_total:'ISOLATES WITH ANTIBIOGRAM',abg_mdr:'MDR ISOLATES',abg_top3:'TOP 3 ORGANISMS',abg_sens:'MEAN SUSCEPTIBILITY',
   abg_filtru_sec:'All wards',abg_export_word:'Export Word',abg_export_whonet:'Export WHONET (CSV)',
   abg_n_testat:'n tested',abg_n_sensibil:'n susceptible',abg_pct_s:'% S',
@@ -4515,7 +4518,7 @@ async function delRec(store,id){if(!confirm(T('confirma_stergere')))return;await
 async function renderPage(p){const el=document.getElementById('pc');dch();switch(p){
   case'dashboard':return rDash(el);case'iaam':return rIAAM(el);case'focare':return rFocare(el);case'icd':return rICD(el);case'aes':return rAES(el);case'autocontrol':return rAuto(el);
   case'deseuri':return rDes(el);case'statistici':return rStatistici(el);case'biocide':return rBio(el);case'pps':return rPPS(el);case'consum_atb':return rConsumATB(el);
-  case'antibiograma':return rAntibiograma(el);case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
+  case'antibiograma':return rAntibiograma(el);case'xdr':return rXDR(el);case'documente':return rDoc(el);case'termene':A.page='calendar';return rCalendar(el);case'calendar':return rCalendar(el);
   case'audituri':return rAudit(el);case'obiective':return rObiective(el);case'instruire':return rInstr(el);
   case'rapoarte':return rRap(el);case'multian':return rMultiAn(el);case'config':return rCfg(el);case'ajutor':return rAjutor(el);
   case'manual':return rManual(el);case'changelog':return rChangelog(el);case'about':return rAbout(el);case'terms':return rTerms(el);
@@ -4563,7 +4566,7 @@ function updateLangUI(){
   document.getElementById('pt').textContent=getPageTitle(A.page);}
 function getPageTitle(p){
   const map={aes:'pt_aes',icd:'pt_icd',focare:'pt_focare',statistici:'pt_statistici',dashboard:'pt_dashboard',iaam:'pt_iaam',autocontrol:'pt_autocontrol',deseuri:'pt_deseuri',
-    biocide:'pt_biocide',pps:'pt_pps',consum_atb:'pt_consum_atb',antibiograma:'pt_antibiograma',documente:'pt_documente',termene:'pt_termene',calendar:'pt_calendar',
+    biocide:'pt_biocide',pps:'pt_pps',consum_atb:'pt_consum_atb',antibiograma:'pt_antibiograma',xdr:'pt_xdr',documente:'pt_documente',termene:'pt_termene',calendar:'pt_calendar',
     audituri:'pt_audituri',obiective:'pt_obiective',instruire:'pt_instruire',rapoarte:'pt_rapoarte',multian:'pt_multian',
     config:'pt_config',ajutor:'pt_ajutor',manual:'pt_manual',changelog:'pt_changelog',about:'pt_despre',terms:'pt_terms'};
   return T(map[p]||'pt_dashboard')}
@@ -14997,8 +15000,28 @@ async function rAntibiograma(el){
     h+='<div class="ib inf">Profil de rezistenta antimicrobiana — date importate din laborator. '+totalIsolates+' izolate, '+germeniDist+' germeni diferiti.</div>';
   }
 
+  // Multirezistenta, adusa din motorul Magiorakos (xdr.js). Se calculeaza aici, dar NU se
+  // recalculeaza altfel decat pe pagina de alerte — aceeasi functie, deci acelasi raspuns.
+  // Cardul e si legatura catre pagina de alerte: cine se uita la antibiograma locala vrea sa stie
+  // imediat cati multirezistenti are, nu doar procentele pe antibiotic.
+  let mdrCard='';
+  if(useLab&&typeof xdrRun==='function'&&typeof xdrMDRSummary==='function'){
+    try{
+      const dx=await xdrRun(A.year,0);
+      const tx=xdrMDRSummary(dx).total;
+      if(tx.clasificate>0){
+        mdrCard='<div class="kc am" onclick="nav(\'xdr\')" title="'+(CFG.lang==='en'?'Open the XDR / PDR alerts page':'Deschide pagina de alerte XDR / PDR')+'">'+
+          '<div class="kl">'+(CFG.lang==='en'?'AT LEAST MDR':'CEL PUTIN MDR')+'</div><div class="kv">'+tx.mdrPlus+'</div>'+
+          '<div class="ks">'+(tx.pct!==null?indFmt(tx.pct,' %'):'—')+
+          (CFG.lang==='en'?' of '+tx.clasificate+' classifiable':' din '+tx.clasificate+' clasificabile')+
+          (dx.kpi.raportabile?(CFG.lang==='en'?' · '+dx.kpi.raportabile+' to report':' · '+dx.kpi.raportabile+' de raportat'):'')+'</div></div>';
+      }
+    }catch(e){console.log('MDR KPI:',e)}
+  }
+
   // KPI-uri
   h+='<div class="kg">'+
+    mdrCard+
     '<div class="kc bl"><div class="kl">TOTAL IZOLATE</div><div class="kv">'+totalIsolates+'</div><div class="ks">'+A.year+'</div></div>'+
     '<div class="kc tl"><div class="kl">GERMENI DIFERITI</div><div class="kv">'+germeniDist+'</div></div>'+
     '<div class="kc '+(meanS>=70?'gn':'am')+'"><div class="kl">SENSIBILITATE MEDIE</div><div class="kv">'+meanS+'%</div></div>'+
@@ -15013,6 +15036,7 @@ async function rAntibiograma(el){
   h+='<div class="pn"><div class="ph" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h3>Antibiograma Locala</h3>'+
     '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
     '<button class="btn bs bsm" onclick="importLabCSV()">&#128194; Import Date Laborator</button>'+'<button class="btn bo bsm" onclick="labAliasDialog()" style="margin-left:6px">'+(CFG.lang==='en'?'Unrecognised names':'Denumiri nerecunoscute')+'</button>'+
+    '<button class="btn bo bsm" onclick="nav(\'xdr\')">'+(CFG.lang==='en'?'MDR / XDR classification':'Clasificare MDR / XDR')+'</button>'+
     '<button class="btn bp bsm" onclick="genAntibiogramaWord()">'+T('abg_export_word')+'</button>'+
     '<button class="btn bo bsm" onclick="genAntibiogramaWHONET()">'+T('abg_export_whonet')+'</button>'+
     '</div></div><div class="pb">';
@@ -23670,6 +23694,64 @@ async function genRaportMicroWord(q){
       children.push(wSp(140));
     }
 
+    // ── Multirezistenta (MDR / XDR / PDR) ──
+    // Cerut de user: cifra asta lipsea din raportul trimestrial. Tabelul de mai sus da rezistenta
+    // pe CATEGORII DE ANTIBIOTIC (cate tulpini sunt rezistente la cefalosporine), nu cati germeni
+    // MULTIREZISTENTI sunt si unde. Se calculeaza cu motorul din xdr.js, deci incadrarea din raport
+    // si cea de pe pagina de alerte sunt aceleasi — nu doua raspunsuri la aceeasi intrebare.
+    // MDR nu se raporteaza la DSP la un singur caz; aici e analiza proprie.
+    if(typeof xdrRun==='function'&&typeof xdrMDRSummary==='function'){
+      const dx=await xdrRun(y,q);
+      const sx=xdrMDRSummary(dx);
+      if(sx.total.clasificate>0){
+        children.push(wH1(isEN?'Multidrug resistance (MDR / XDR / PDR)':'Multirezistenta (MDR / XDR / PDR)'));
+        children.push(wP((isEN
+          ?'Of the '+sx.total.n+' isolates of the period, '+sx.total.clasificate+' belong to species covered by the Magiorakos definition. Of those, '
+          :'Din cele '+sx.total.n+' tulpini ale perioadei, '+sx.total.clasificate+' sunt din specii acoperite de definitia Magiorakos. Dintre acestea, ')+
+          sx.total.mdrPlus+(isEN?' are at least MDR (':' sunt cel putin MDR (')+indFmt(sx.total.pct,' %')+')'+
+          (sx.total.xdr||sx.total.pdr?(isEN?', of which ':', din care ')+
+            [sx.total.xdr?(sx.total.xdr+' XDR'):'',sx.total.pdr?(sx.total.pdr+(isEN?' suspected PDR':' suspiciune PDR')):''].filter(Boolean).join(isEN?' and ':' si '):'')+'.',{bold:true}));
+
+        const WM=[2600,900,1100,1100,800,700,900,700,700];
+        const rM=[wTblHead([isEN?'Organism':'Germen',isEN?'Isolates':'Tulpini',isEN?'Classifiable':'Clasificabile',
+          isEN?'At least MDR':'Cel putin MDR','%','MDR',isEN?'poss. XDR':'pos. XDR','XDR','PDR'],WM)];
+        sx.germeni.filter(function(b){return b.clasificate>0}).forEach(function(b,i){
+          rM.push(wTblRow([b.nume,String(b.n),String(b.clasificate),String(b.mdrPlus),
+            indFmt(b.pct,' %'),String(b.mdr||0),String(b.posibil||0),String(b.xdr||0),String(b.pdr||0)],WM,i%2===1));
+        });
+        children.push(new docx.Table({width:{size:9500,type:docx.WidthType.DXA},columnWidths:WM,rows:rM}));
+        children.push(wSp(120));
+
+        // Pe sectii — numai cele care au macar un multirezistent, altfel tabelul se umple de zerouri.
+        const secMDR=sx.sectii.filter(function(b){return b.mdrPlus>0});
+        if(secMDR.length){
+          const WSM=[3800,1700,1900,1600];
+          const rSM=[wTblHead([isEN?'Ward':'Sectia',isEN?'Isolates':'Tulpini',
+            isEN?'At least MDR':'Cel putin MDR','%'],WSM)];
+          secMDR.forEach(function(b,i){
+            rSM.push(wTblRow([b.nume,String(b.clasificate),String(b.mdrPlus),indFmt(b.pct,' %')],WSM,i%2===1));
+          });
+          children.push(wP(isEN?'Distribution of multidrug-resistant isolates by ward':'Distributia tulpinilor multirezistente pe sectii',{bold:true}));
+          children.push(new docx.Table({width:{size:9000,type:docx.WidthType.DXA},columnWidths:WSM,rows:rSM}));
+          children.push(wSp(120));
+        }
+
+        // Nota de metoda. Cele doua numaratori difera si trebuie spus, altfel „cel putin MDR" si
+        // coloana „MDR" par sa se contrazica.
+        children.push(wP(isEN
+          ?'Method: “at least MDR” means non-susceptible to at least one agent in three or more antimicrobial categories, and therefore also covers XDR and PDR; the “MDR” column is the exclusive class, so that the columns add up. The denominator is the number of isolates whose species has a Magiorakos category table — species without one (streptococci, non-auris candida, C. difficile) can be neither MDR nor non-MDR and are left out. A single MDR case is not reported to the public health authority; it is reported as an outbreak, with at least two healthcare-associated cases epidemiologically linked.'
+          :'Metoda: „cel putin MDR" inseamna nesensibil la cel putin un agent din trei sau mai multe categorii antimicrobiene, deci acopera si XDR, si PDR; coloana „MDR" e clasa exclusiva, ca sa se adune coloanele. Numitorul e numarul de tulpini din specii care au tabel de categorii Magiorakos — cele fara (streptococi, candide non-auris, C. difficile) nu pot fi nici MDR, nici non-MDR si raman in afara. Un caz MDR nu se raporteaza singur la DSP; se raporteaza ca focar, la cel putin doua cazuri IAAM cu legatura epidemiologica.',
+          {size:16,italics:true}));
+        if(dx.nrLoturiComplete<dx.nrLoturi){
+          children.push(wP(isEN
+            ?'Caution: '+(dx.nrLoturi-dx.nrLoturiComplete)+' of '+dx.nrLoturi+' import batches record only resistances. On those, XDR and PDR cannot be confirmed — such isolates appear under “possible XDR”. The MDR figure stays valid, because it rests only on the resistances actually recorded.'
+            :'Atentie: '+(dx.nrLoturi-dx.nrLoturiComplete)+' din '+dx.nrLoturi+' loturi de import contin doar rezistentele. Pe acelea XDR si PDR nu se pot confirma — tulpinile respective apar la „posibil XDR". Cifra MDR ramane valida, pentru ca se sprijina numai pe rezistentele chiar inregistrate.',
+            {size:16,italics:true,color:WC.amber}));
+        }
+        children.push(wSp(140));
+      }
+    }
+
     // ── Antibiotice ramase eficiente ──
     var ef=micEficiente(d);
     if(ef&&ef.length){
@@ -23715,6 +23797,1244 @@ async function genRaportMicroWord(q){
     saveAs(blob,'Raport_Microbiologic_'+(q?('T'+q+'_'):'')+y+'.docx');
   }catch(e){errAlert(e,'Nu am putut genera raportul microbiologic.','Could not generate the microbiology report.')}
   finally{hideGen()}
+}
+
+</script>
+<script>
+// ═════════════════════════════════════════════════════════════
+// CPIAAM — Motor de clasificare MDR / XDR / PDR + alerte C. auris
+// ═════════════════════════════════════════════════════════════
+// Portarea in aplicatie a motorului propriu al userului (HTML de sine statator, v6.0), pastrand
+// tabelele de categorii asa cum le-a scris el. Ce s-a schimbat fata de original:
+//
+//  1. NU isi mai citeste propriul fisier. Motorul din HTML avea parser pentru eSpital, pentru
+//     tabelar lat/lung si pentru .docx. Aplicatia are deja importul de laborator (antibiograma.js
+//     -> `lab_isolates`), cu profiluri de coloane si aliasuri invatate. Doua importuri paralele ar
+//     insemna aceleasi date introduse de doua ori si doua raspunsuri diferite la aceeasi intrebare.
+//  2. Alertele nu raman intr-un tabel de pe ecran. Cazurile XDR / suspiciune PDR / C. auris se pot
+//     inscrie in registrul unitatii (store `ipc_registry`, kind `amr_alert`), cu statusul si datele
+//     de raportare — pentru ca asta e documentul pe care CPIAAM il tine si il trimite la DSP.
+//  3. Poarta pe modul datelor — vezi mai jos. E singura modificare de LOGICA, si e restrictiva.
+//
+// ═══ DE CE NU SE POATE CONFIRMA XDR PE DATE „DOAR R" ═══
+// Definitia Magiorakos cere „non-sensibil la cel putin un agent din TOATE categoriile testate, cu
+// exceptia a cel mult doua". Deci are nevoie de dovada ca o categorie a fost TESTATA si a iesit
+// sensibila. Multe tabele de laborator marcheaza insa doar rezistentele: o casuta goala inseamna
+// ori „testat si sensibil", ori „netestat", si nu se poate spune care.
+// Pe astfel de date numarul de categorii sensibile iese artificial 0 la fiecare izolat, deci
+// PRACTIC ORICE germen rezistent la trei categorii ar fi raportat XDR. Ar fi o alerta falsa
+// trimisa la DSP, nu o eroare de afisaj.
+//
+// MDR insa RAMANE valid: „non-sensibil in cel putin 3 categorii" se sprijina numai pe rezistentele
+// inregistrate, care sunt adevarate. E o limita inferioara, deci nu poate fi supraevaluata.
+//
+// Modul se stabileste PE LOT DE IMPORT (`_import_batch`), nu global: un spital care trece la
+// exportul complet la jumatatea anului trebuie sa poata confirma XDR pe loturile noi fara sa
+// astepte anul urmator. Lotul care contine macar un rezultat S sau I inregistreaza si sensibilele.
+//
+// ═══ CE SE RAPORTEAZA ═══
+// Adresa DSP Gorj 7415/31.07.2026 (adusa de user): XDR confirmat si suspiciunea de PDR se
+// raporteaza imediat, la un singur caz, IAAM sau non-IAAM; toate cazurile de colonizare sau
+// infectie cu Candidozyma (Candida) auris se raporteaza indiferent de profilul de rezistenta.
+// MDR NU se raporteaza singur — doar ca focar (cel putin 2 cazuri IAAM cu legatura epidemiologica),
+// deci ramane in modulul Focare.
+
+// ── Normalizare ──
+// Difera intentionat de `_micNorm` din raport_micro.js: aici punctuatia devine SPATIU, nu dispare.
+// Potrivirea pe categorii se face pe cuvinte („piperacilina/tazobactam" -> „piperacilina
+// tazobactam"), iar daca punctuatia s-ar sterge ar iesi „piperacilinatazobactam" si nu s-ar mai
+// potrivi cu niciun agent din tabel.
+function _xdrNorm(s){
+  if(s===null||s===undefined)return '';
+  return String(s).toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[ţț]/g,'t').replace(/[şș]/g,'s')
+    .replace(/[^a-z0-9]+/g,' ')
+    .trim();
+}
+// Interpretarea S/I/R e a aplicatiei (micSIR din raport_micro.js) — un singur interpretor pentru
+// tot programul, ca acelasi „Sensibil expunere crescuta" sa insemne acelasi lucru peste tot.
+function xdrSIR(v){
+  if(typeof micSIR==='function')return micSIR(v);
+  var s=_xdrNorm(v);if(!s)return null;
+  if(/expunere crescuta|increased exposure/.test(s))return 'I';
+  if(/^(i|int|intermediar)/.test(s))return 'I';
+  if(/^(r|rez|resist)/.test(s))return 'R';
+  if(/^(s|sen|suscept)/.test(s))return 'S';
+  return null;
+}
+// Nesensibil = R sau I. Magiorakos: „non-susceptible" acopera ambele, si in EUCAST, si in CLSI.
+function xdrNesensibil(sir){return sir==='R'||sir==='I'}
+
+// ═══ TABELELE DE CATEGORII ANTIMICROBIENE (Magiorakos et al., ECDC/CDC 2012) ═══
+// Copiate din motorul userului. Fiecare categorie = [nume, [denumiri acceptate, normalizate]].
+const XDR_CAT={
+  SAUREUS:[
+    ['Aminoglicozide',['gentamicina','gentamicin','kanamicina','kanamycin','tobramicina','tobramycin']],
+    ['Ansamicine (rifampicina)',['rifampicina','rifampicin','rifampin','rifamp']],
+    ['Cefalosporine anti-MRSA',['ceftarolina','ceftaroline']],
+    ['Beta-lactamine antistafilococice',['oxacilina','oxacillin','cefoxitin','cefoxitina','meticilina','methicillin','flucloxacilina']],
+    ['Fluorochinolone',['ciprofloxacina','ciprofloxacin','moxifloxacina','moxifloxacin','levofloxacina','levofloxacin','ofloxacina','norfloxacina']],
+    ['Inhibitori ai caii folatilor',['trimetoprim sulfametoxazol','trimetoprim sulfamethoxazole','trimethoprim sulfametoxazol','trimethoprim sulfamethoxazole','trimetoprim sulfametoxazole','trimethoprim sulfametoxazole','sulfametoxazol trimetoprim','sulfamethoxazole trimethoprim','cotrimoxazol','co trimoxazol','cotrimoxazole','sxt','tmp smx','tmp smz','biseptol','sumetrolim','septrin']],
+    ['Acid fusidic',['acid fusidic','fusidic acid','fusidat','fusidin']],
+    ['Glicopeptide',['vancomicina','vancomycin','teicoplanina','teicoplanin','telavancina','telavancin']],
+    ['Glicilcicline',['tigeciclina','tigecycline']],
+    ['Lincosamide',['clindamicina','clindamycin','lincomicina','lincomycin']],
+    ['Lipopeptide',['daptomicina','daptomycin']],
+    ['Macrolide',['eritromicina','erythromycin','azitromicina','azithromycin','claritromicina','clarithromycin']],
+    ['Oxazolidinone',['linezolid','tedizolid']],
+    ['Fenicoli',['cloramfenicol','chloramphenicol']],
+    ['Acizi fosfonici',['fosfomicina','fosfomycin']],
+    ['Streptogramine',['quinupristina dalfopristina','quinupristin dalfopristin','synercid']],
+    ['Tetracicline',['tetraciclina','tetracycline','doxiciclina','doxycycline','minociclina','minocycline']]
+  ],
+  ENTEROCOCCUS:[
+    ['Aminoglicozide (nivel inalt)',['gentamicina','gentamicin','gentamicina hlr','streptomicina','streptomycin','gentamicina nivel inalt','high level gentamicin']],
+    ['Carbapeneme',['imipenem','meropenem','doripenem']],
+    ['Fluorochinolone',['ciprofloxacina','ciprofloxacin','levofloxacina','levofloxacin','moxifloxacina','moxifloxacin']],
+    ['Glicopeptide',['vancomicina','vancomycin','teicoplanina','teicoplanin']],
+    ['Glicilcicline',['tigeciclina','tigecycline']],
+    ['Lipopeptide',['daptomicina','daptomycin']],
+    ['Macrolide',['eritromicina','erythromycin','azitromicina','claritromicina']],
+    ['Oxazolidinone',['linezolid','tedizolid']],
+    ['Peniciline',['ampicilina','ampicillin','amoxicilina','amoxicillin','penicilina','penicillin']],
+    ['Streptogramine',['quinupristina dalfopristina','quinupristin dalfopristin','synercid']],
+    ['Tetracicline',['doxiciclina','doxycycline','minociclina','minocycline','tetraciclina','tetracycline']],
+    ['Acizi fosfonici',['fosfomicina','fosfomycin']]
+  ],
+  ENTEROBACTERALES:[
+    ['Aminoglicozide',['gentamicina','gentamicin','tobramicina','tobramycin','amikacina','amikacin','netilmicina','netilmicin']],
+    ['Peniciline antipseudomonale + IBL',['ticarcilina acid clavulanic','ticarcillin clavulanate','piperacilina tazobactam','piperacillin tazobactam','tazocin']],
+    ['Carbapeneme',['ertapenem','imipenem','meropenem','doripenem']],
+    ['Cefalosporine gen. I-II',['cefazolina','cefazolin','cefalotina','cephalothin','cefuroxim','cefuroxima','cefuroxime','cefalexina','cephalexin']],
+    ['Cefalosporine cu spectru extins (gen. III-IV)',['cefotaxim','cefotaxima','cefotaxime','ceftriaxona','ceftriaxone','ceftazidim','ceftazidima','ceftazidime','cefepima','cefepime','cefpodoxima','cefixima']],
+    ['Cefamicine',['cefoxitin','cefoxitina','cefotetan']],
+    ['Fluorochinolone',['ciprofloxacina','ciprofloxacin','levofloxacina','levofloxacin','moxifloxacina','moxifloxacin','norfloxacina','ofloxacina']],
+    ['Inhibitori ai caii folatilor',['trimetoprim sulfametoxazol','trimetoprim sulfamethoxazole','trimethoprim sulfametoxazol','trimethoprim sulfamethoxazole','trimetoprim sulfametoxazole','trimethoprim sulfametoxazole','sulfametoxazol trimetoprim','sulfamethoxazole trimethoprim','cotrimoxazol','co trimoxazol','cotrimoxazole','sxt','tmp smx','tmp smz','biseptol','sumetrolim','septrin']],
+    ['Glicilcicline',['tigeciclina','tigecycline']],
+    ['Monobactami',['aztreonam']],
+    ['Peniciline',['ampicilina','ampicillin','amoxicilina','amoxicillin']],
+    ['Peniciline + IBL',['amoxicilina acid clavulanic','amoxicillin clavulanate','augmentin','ampicilina sulbactam','ampicillin sulbactam','amoxiclav']],
+    ['Fenicoli',['cloramfenicol','chloramphenicol']],
+    ['Acizi fosfonici',['fosfomicina','fosfomycin']],
+    ['Polimixine',['colistin','colistina','colistin sulfat','colistimetat','colimicina','polimixina b','polymyxin b','polimixina']],
+    ['Tetracicline',['tetraciclina','tetracycline','doxiciclina','doxycycline','minociclina','minocycline']]
+  ],
+  PSEUDOMONAS:[
+    ['Aminoglicozide',['gentamicina','gentamicin','tobramicina','tobramycin','amikacina','amikacin','netilmicina','netilmicin']],
+    ['Carbapeneme antipseudomonale',['imipenem','meropenem','doripenem']],
+    ['Cefalosporine antipseudomonale',['ceftazidim','ceftazidima','ceftazidime','cefepima','cefepime']],
+    ['Fluorochinolone antipseudomonale',['ciprofloxacina','ciprofloxacin','levofloxacina','levofloxacin']],
+    ['Peniciline antipseudomonale + IBL',['ticarcilina acid clavulanic','ticarcillin clavulanate','piperacilina tazobactam','piperacillin tazobactam','tazocin','piperacilina']],
+    ['Monobactami',['aztreonam']],
+    ['Acizi fosfonici',['fosfomicina','fosfomycin']],
+    ['Polimixine',['colistin','colistina','colistin sulfat','colistimetat','colimicina','polimixina b','polymyxin b','polimixina']]
+  ],
+  ACINETOBACTER:[
+    ['Aminoglicozide',['gentamicina','gentamicin','tobramicina','tobramycin','amikacina','amikacin','netilmicina','netilmicin']],
+    ['Carbapeneme antipseudomonale',['imipenem','meropenem','doripenem']],
+    ['Fluorochinolone antipseudomonale',['ciprofloxacina','ciprofloxacin','levofloxacina','levofloxacin']],
+    ['Peniciline antipseudomonale + IBL',['piperacilina tazobactam','piperacillin tazobactam','ticarcilina acid clavulanic','ticarcillin clavulanate','tazocin']],
+    ['Cefalosporine cu spectru extins',['cefotaxim','cefotaxima','ceftriaxona','ceftriaxone','ceftazidim','ceftazidima','cefepima','cefepime']],
+    ['Inhibitori ai caii folatilor',['trimetoprim sulfametoxazol','trimetoprim sulfamethoxazole','trimethoprim sulfametoxazol','trimethoprim sulfamethoxazole','trimetoprim sulfametoxazole','trimethoprim sulfametoxazole','sulfametoxazol trimetoprim','sulfamethoxazole trimethoprim','cotrimoxazol','co trimoxazol','cotrimoxazole','sxt','tmp smx','tmp smz','biseptol','sumetrolim','septrin']],
+    ['Peniciline + IBL',['ampicilina sulbactam','ampicillin sulbactam','sulbactam']],
+    ['Polimixine',['colistin','colistina','colistin sulfat','colistimetat','colimicina','polimixina b','polymyxin b','polimixina']],
+    ['Tetracicline',['tetraciclina','tetracycline','doxiciclina','doxycycline','minociclina','minocycline']]
+  ]
+};
+
+// Abrevieri EUCAST / CLSI. Multe laboratoare exporta antibiogramele cu coduri (AMP, CRO, MEM,
+// CST...). Se adauga automat la fiecare categorie, pe baza denumirii ei. Codurile scurte
+// (<=4 caractere) se potrivesc DOAR exact, altfel „cef" ar prinde „cefepima" si ar muta agentul
+// in categoria gresita.
+const XDR_ABREV=[
+  [/aminoglicozid/,                    ['gen','gm','tob','amk','net','str','hlg','hls']],
+  [/ansamicin/,                        ['rif','rfp']],
+  [/anti-mrsa|anti mrsa/,              ['cpt']],
+  [/antistafiloco/,                    ['oxa','fox','met']],
+  [/fluorochinolon/,                   ['cip','lvx','lev','mfx','mxf','nor','ofx']],
+  [/folatilor/,                        ['sxt','tsu','tmp']],
+  [/acid fusidic/,                     ['fus']],
+  [/glicopeptid/,                      ['van','tec','tei','vla']],
+  [/glicilciclin/,                     ['tgc','tig']],
+  [/lincosamid/,                       ['cli','clin']],
+  [/lipopeptid/,                       ['dap']],
+  [/macrolid/,                         ['ery','azm','clr','ent']],
+  [/oxazolidinon/,                     ['lnz','lzd']],
+  [/fenicol/,                          ['chl','chlo']],
+  [/acizi fosfonici/,                  ['fof','fos']],
+  [/streptogramin/,                    ['qda','syn']],
+  [/tetraciclin/,                      ['tet','dox','min','tcy']],
+  [/carbapenem/,                       ['ipm','mem','etp','dor']],
+  [/cefalosporine gen/,                ['czo','cfz','cxm','lex','cef']],
+  [/spectru extins|antipseudomonale$/, ['ctx','cro','caz','fep','cpd','cfm']],
+  [/cefamicin/,                        ['fox','ctt']],
+  [/monobactam/,                       ['atm']],
+  [/peniciline antipseudomonale/,      ['tzp','tim','pip','tcc']],
+  [/^peniciline$/,                     ['amp','pen','amx']],
+  [/peniciline ibl/,                   ['amc','sam','ams','aug']],
+  [/polimixin/,                        ['cst','col','pmb','cln']]
+];
+Object.keys(XDR_CAT).forEach(function(g){
+  XDR_CAT[g].forEach(function(c){
+    var n=_xdrNorm(c[0]);
+    XDR_ABREV.forEach(function(pair){
+      if(pair[0].test(n))pair[1].forEach(function(cod){if(c[1].indexOf(cod)===-1)c[1].push(cod)});
+    });
+  });
+});
+
+// Categorii OBLIGATORIU testate ca sa se poata confirma XDR / PDR.
+// Magiorakos: incadrarea e valida doar daca izolatul a fost testat la „toate sau aproape toate"
+// categoriile. Fara cele de ultima linie (carbapeneme, polimixine, glicopeptide) nu se poate
+// afirma ca izolatul e nesensibil la tot in afara de cel mult doua. Un panel uzual de urocultura,
+// cu 6-8 antibiotice, NU permite confirmarea XDR.
+const XDR_KEY_CAT={
+  SAUREUS:['Beta-lactamine antistafilococice','Glicopeptide','Oxazolidinone','Lipopeptide'],
+  ENTEROCOCCUS:['Peniciline','Glicopeptide','Oxazolidinone','Lipopeptide'],
+  ENTEROBACTERALES:['Carbapeneme','Polimixine','Aminoglicozide','Fluorochinolone','Cefalosporine cu spectru extins (gen. III-IV)'],
+  PSEUDOMONAS:['Carbapeneme antipseudomonale','Polimixine','Aminoglicozide','Fluorochinolone antipseudomonale','Cefalosporine antipseudomonale'],
+  ACINETOBACTER:['Carbapeneme antipseudomonale','Polimixine','Aminoglicozide','Tetracicline']
+};
+
+// Categoriile de ULTIMA LINIE. Se folosesc numai pe loturile care inregistreaza doar rezistentele,
+// ca sa se separe cele doua situatii care acolo arata la fel: un ESBL banal (rezistent la
+// cefalosporine, aminoglicozide si chinolone) e MDR si atat, pe cand un izolat rezistent la
+// carbapeneme sau la colistin e candidat de XDR si trebuie trimis la laborator pentru antibiograma
+// extinsa. Fara distinctia asta, pe date „doar R" ORICE MDR ar aparea ca „posibil XDR", pentru ca
+// acolo numarul de categorii sensibile e artificial zero la fiecare izolat. Prins la testare.
+const XDR_LAST_RESORT={
+  SAUREUS:['Glicopeptide','Oxazolidinone','Lipopeptide','Glicilcicline'],
+  ENTEROCOCCUS:['Glicopeptide','Oxazolidinone','Lipopeptide','Glicilcicline'],
+  ENTEROBACTERALES:['Carbapeneme','Polimixine','Glicilcicline'],
+  PSEUDOMONAS:['Carbapeneme antipseudomonale','Polimixine'],
+  ACINETOBACTER:['Carbapeneme antipseudomonale','Polimixine']
+};
+
+const XDR_GROUP_NAME={
+  SAUREUS:'Staphylococcus aureus',
+  ENTEROCOCCUS:'Enterococcus spp.',
+  ENTEROBACTERALES:'Enterobacterales',
+  PSEUDOMONAS:'Pseudomonas aeruginosa',
+  ACINETOBACTER:'Acinetobacter spp.',
+  CAURIS:'Candidozyma (Candida) auris'
+};
+
+// Identificarea grupului. C. auris se verifica PRIMA: e alerta prin ea insasi, indiferent de
+// antibiograma, si nu are tabel de categorii Magiorakos.
+function xdrGroup(numeGermen){
+  var g=_xdrNorm(numeGermen);
+  if(!g)return null;
+  if(/auris|candidozyma/.test(g))return 'CAURIS';
+  if(/staphylococcus aureus|staph aureus|s aureus|stafilococ auriu|mrsa|mssa/.test(g))return 'SAUREUS';
+  if(/enterococcus|enterococ|e faecalis|e faecium/.test(g))return 'ENTEROCOCCUS';
+  if(/pseudomonas aeruginosa|p aeruginosa|pseudomonas/.test(g))return 'PSEUDOMONAS';
+  if(/acinetobacter|a baumannii/.test(g))return 'ACINETOBACTER';
+  if(/escherichia|e coli|klebsiella|enterobacter|proteus|serratia|citrobacter|morganella|providencia|salmonella|shigella|hafnia|raoultella|pantoea|enterobacterale|enterobacteriace/.test(g))return 'ENTEROBACTERALES';
+  return null;
+}
+
+// Potrivirea antibioticului cu o categorie.
+//
+// Se compara FARA SPATII. Denumirile din laborator vin rupte de randul tabelului sau lipite de
+// separatori — „Ceftriaxon e", „Trimetoprim/Sulfametoxazol", „Piperacilin /Taz" — iar spatiile
+// sunt tocmai partea care difera. Fara asta, prima rulare a testului a ratat trei denumiri reale
+// luate din tabelele laboratorului.
+var _xdrFlat={};
+Object.keys(XDR_CAT).forEach(function(g){
+  _xdrFlat[g]=XDR_CAT[g].map(function(c){
+    return c[1].map(function(a){return a.replace(/ /g,'')});
+  });
+});
+// Prefixul comun a doua siruri. Prinde trunchierile si greselile de tastare de la coada
+// („piperacilintaz" vs „piperacilinatazobactam"), acolo unde nici egalitatea, nici includerea
+// nu ajuta.
+function _xdrPrefixLen(a,b){
+  var n=Math.min(a.length,b.length),i=0;
+  while(i<n&&a.charCodeAt(i)===b.charCodeAt(i))i++;
+  return i;
+}
+function xdrFindCat(grup,numeAntibiotic){
+  var tabel=_xdrFlat[grup];
+  if(!tabel)return null;
+  var a=_xdrNorm(numeAntibiotic).replace(/ /g,'');
+  if(!a)return null;
+
+  // Pasul 1 — egalitate sau includere. Castiga potrivirea CEA MAI LUNGA, altfel
+  // „ampicilinasulbactam" ar fi luat drept „ampicilina" simpla si ar cadea in alta categorie.
+  // Codurile scurte (<=4 caractere) se potrivesc doar exact, ca „cef" sa nu prinda „cefepima".
+  var idx=null,lung=-1,i,j,agent;
+  for(i=0;i<tabel.length;i++){
+    for(j=0;j<tabel[i].length;j++){
+      agent=tabel[i][j];
+      var ok=agent.length<=4?(a===agent):(a===agent||a.indexOf(agent)>=0);
+      if(ok&&agent.length>lung){lung=agent.length;idx=i}
+    }
+  }
+  if(idx!==null)return idx;
+
+  // Pasul 2 — abia daca nimic nu s-a potrivit exact, prefix comun de cel putin 9 caractere.
+  // Ordinea conteaza: daca s-ar incerca prefixul de la inceput, „Ampicilina" ar prinde si
+  // „ampicilinasulbactam", cu acelasi scor, si ar cadea in categoria gresita.
+  var maxPref=8;
+  for(i=0;i<tabel.length;i++){
+    for(j=0;j<tabel[i].length;j++){
+      agent=tabel[i][j];
+      if(agent.length<9)continue;
+      var p=_xdrPrefixLen(a,agent);
+      if(p>maxPref){maxPref=p;idx=i}
+    }
+  }
+  return idx;
+}
+
+// ═══ CLASIFICAREA ═══
+// MDR = nesensibil la >=1 agent din >=3 categorii
+// XDR = nesensibil la >=1 agent din TOATE categoriile testate, cu exceptia a cel mult 2
+// PDR = nesensibil la TOTI agentii din TOATE categoriile testate
+//
+// `poateConfirma` = lotul de import inregistreaza si rezultatele sensibile. Cand e fals, XDR si
+// PDR se retrogradeaza la „Posibil XDR" — vezi nota din capul fisierului. MDR nu se atinge.
+function xdrClassify(grup,rezultate,poateConfirma){
+  var tabel=XDR_CAT[grup];
+  if(!tabel)return null;
+
+  var stare=tabel.map(function(){return {testate:0,nonSensibile:0,agenti:[]}});
+  var nepotrivite=[];
+
+  (rezultate||[]).forEach(function(r){
+    var sir=(r.sir==='R'||r.sir==='I'||r.sir==='S')?r.sir:xdrSIR(r.sir);
+    if(!sir)return;
+    var idx=xdrFindCat(grup,r.antibiotic);
+    if(idx===null){if(r.antibiotic)nepotrivite.push(r.antibiotic);return}
+    stare[idx].testate++;
+    stare[idx].agenti.push({ab:r.antibiotic,sir:sir});
+    if(xdrNesensibil(sir))stare[idx].nonSensibile++;
+  });
+
+  var testate=stare.filter(function(c){return c.testate>0});
+  var nrTestate=testate.length,nrTotal=tabel.length;
+  var catNonSensibile=testate.filter(function(c){return c.nonSensibile>0}).length;
+  var catSensibile=testate.filter(function(c){return c.nonSensibile===0}).length;
+  var catIntegral=testate.filter(function(c){return c.nonSensibile===c.testate}).length;
+  var acoperire=nrTotal?nrTestate/nrTotal:0;
+
+  var cheie=XDR_KEY_CAT[grup]||[];
+  var cheieLipsa=cheie.filter(function(nume){
+    var i=-1;
+    for(var k=0;k<tabel.length;k++)if(tabel[k][0]===nume){i=k;break}
+    return i===-1||stare[i].testate===0;
+  });
+  var acoperireOK=acoperire>=0.7&&cheieLipsa.length===0;
+  var toateNonSensibile=nrTestate>0&&catIntegral===nrTestate;
+  var profilXDR=catSensibile<=2&&catNonSensibile>=3;
+
+  // Rezistenta la o categorie de ultima linie — singurul criteriu care mai separa ceva pe un lot
+  // care inregistreaza doar rezistentele.
+  var ultimaLinie=(XDR_LAST_RESORT[grup]||[]).some(function(nume){
+    for(var k=0;k<tabel.length;k++)if(tabel[k][0]===nume)return stare[k].nonSensibile>0;
+    return false;
+  });
+
+  var clasa='Nespecificat',avertisment=null;
+
+  if(nrTestate===0){
+    clasa='fara_abg';
+  }else if(!poateConfirma){
+    // Lot care inregistreaza doar rezistentele. Numarul de categorii SENSIBILE nu inseamna nimic
+    // aici (e mereu zero), deci nu se poate folosi. Ce ramane valid e numarul de categorii
+    // REZISTENTE, care e o limita inferioara adevarata: MDR se poate afirma, XDR si PDR nu.
+    if(catNonSensibile>=3&&ultimaLinie){clasa='posibil_XDR';avertisment='mod_doar_R'}
+    else if(catNonSensibile>=3)clasa='MDR';
+    else clasa='non_MDR';
+  }else if(toateNonSensibile&&acoperire>=0.9&&cheieLipsa.length===0){
+    clasa='PDR';
+  }else if(profilXDR&&acoperireOK){
+    clasa='XDR';
+    if(acoperire<0.9){
+      avertisment='confirmat_partial';
+    }
+  }else if(profilXDR){
+    // Profil compatibil cu XDR, dar antibiograma nu permite confirmarea.
+    // NU se raporteaza la DSP — se cere antibiograma extinsa.
+    clasa='posibil_XDR';
+    avertisment='acoperire';
+  }else if(catNonSensibile>=3){
+    clasa='MDR';
+  }else{
+    clasa='non_MDR';
+  }
+
+  return {clasa:clasa,avertisment:avertisment,cheieLipsa:cheieLipsa,poateConfirma:!!poateConfirma,
+    esteMDR:catNonSensibile>=3,ultimaLinie:ultimaLinie,
+    nrTestate:nrTestate,nrTotal:nrTotal,catNonSensibile:catNonSensibile,catSensibile:catSensibile,
+    catIntegralNonSensibile:catIntegral,acoperire:acoperire,stare:stare,nepotrivite:nepotrivite};
+}
+
+// Eticheta afisata pentru fiecare clasa. Clasa e un COD intern (`posibil_XDR`), nu un text —
+// altfel n-ar putea fi tradusa si nici filtrata fara sa se compare siruri romanesti.
+function xdrClassLabel(c){
+  var isEN=CFG.lang==='en';
+  var m={PDR:isEN?'suspected PDR':'suspiciune PDR',XDR:'XDR',posibil_XDR:isEN?'possible XDR':'posibil XDR',
+    MDR:'MDR',non_MDR:isEN?'non-MDR':'non-MDR',fara_abg:isEN?'no usable AST':'fara antibiograma',
+    CAURIS:'C. auris',Nespecificat:'—'};
+  return m[c]||c;
+}
+function xdrClassCls(c){
+  return {PDR:'bdg-r',XDR:'bdg-r',CAURIS:'bdg-r',posibil_XDR:'bdg-a',MDR:'bdg-b'}[c]||'bdg-g';
+}
+function xdrWarnText(cod,cl){
+  var isEN=CFG.lang==='en';
+  if(cod==='confirmat_partial')return isEN
+    ?'Confirmed XDR on '+cl.nrTestate+'/'+cl.nrTotal+' categories tested (all key categories present). Check the full antibiogram with the laboratory.'
+    :'Confirmat XDR pe '+cl.nrTestate+'/'+cl.nrTotal+' categorii testate (toate categoriile-cheie sunt prezente). Verifica antibiograma completa la laborator.';
+  if(cod==='acoperire')return isEN
+    ?'The antibiogram does not allow XDR to be confirmed: '+cl.nrTestate+'/'+cl.nrTotal+' categories tested'+
+      (cl.cheieLipsa.length?', key categories missing: '+cl.cheieLipsa.join(', '):'')+'. Request an extended antibiogram before reporting.'
+    :'Antibiograma nu permite confirmarea XDR: '+cl.nrTestate+'/'+cl.nrTotal+' categorii testate'+
+      (cl.cheieLipsa.length?', lipsesc categoriile-cheie: '+cl.cheieLipsa.join(', '):'')+'. Solicita antibiograma extinsa la laborator inainte de raportare.';
+  if(cod==='mod_doar_R')return isEN
+    ?'Non-susceptible in '+cl.catNonSensibile+' categories, including one of last resort — so this isolate is at least MDR and is a candidate for XDR. It cannot be confirmed: the import batch records only resistances, so a susceptible result cannot be told apart from an untested one. Ask the laboratory for the export with full S/I/R results.'
+    :'Nesensibil in '+cl.catNonSensibile+' categorii, dintre care una de ultima linie — deci izolatul e cel putin MDR si e candidat de XDR. Confirmarea nu se poate face: lotul de import contine doar rezistentele, deci un rezultat sensibil nu se poate deosebi de unul netestat. Cere laboratorului exportul cu rezultate S/I/R complete.';
+  return '';
+}
+
+// Raportabil la DSP: XDR + suspiciune PDR + C. auris. Vezi adresa DSP din capul fisierului.
+function xdrReportable(grup,cl){
+  var isEN=CFG.lang==='en';
+  if(grup==='CAURIS')return {da:true,motiv:isEN?'Candidozyma auris — reportable whatever the resistance profile':'Candidozyma auris — raportabil indiferent de profilul de rezistenta'};
+  if(!cl)return {da:false,motiv:''};
+  if(cl.clasa==='PDR')return {da:true,motiv:isEN?'Suspected PDR — report immediately':'Suspiciune PDR — raportare imediata'};
+  if(cl.clasa==='XDR')return {da:true,motiv:isEN?'XDR confirmed — report immediately (1 case, HAI or non-HAI)':'XDR confirmat — raportare imediata (1 caz, IAAM sau non-IAAM)'};
+  if(cl.clasa==='posibil_XDR')return {da:false,motiv:isEN?'Profile compatible with XDR but NOT confirmed — incomplete antibiogram. Not reported until extended testing.':'Profil compatibil XDR, dar NECONFIRMAT — antibiograma incompleta. Nu se raporteaza pana la testarea extinsa.'};
+  if(cl.clasa==='MDR')return {da:false,motiv:isEN?'MDR — reported only as an outbreak (>=2 HAI cases with an epidemiological link)':'MDR — se raporteaza doar ca focar (>=2 cazuri IAAM cu legatura epidemiologica)'};
+  return {da:false,motiv:''};
+}
+
+// ═══ RULAREA PESTE IZOLATELE DIN LABORATOR ═══
+// Citeste `lab_isolates` — acelasi store in care importa antibiograma.js si din care citeste
+// raportul microbiologic. Nicio introducere de date in plus.
+async function xdrRun(year,q){
+  var toate=await ga('lab_isolates');
+  var alAnului=toate.filter(function(r){return r.year===year});
+  var faraData=0;
+  var izolate=alAnului.filter(function(r){
+    if(!q)return true;
+    var d=(typeof parseDate==='function')?parseDate(r.date):null;
+    if(!d){faraData++;return false}
+    return (Math.floor(d.getMonth()/3)+1)===q;
+  });
+
+  // Modul de inregistrare, PE LOT DE IMPORT. Un lot care contine macar un S sau un I inregistreaza
+  // si sensibilele, deci pe el se poate confirma XDR. Vezi nota din capul fisierului.
+  var loturi={};
+  izolate.forEach(function(r){
+    var b=r._import_batch||'_fara_lot';
+    if(!loturi[b])loturi[b]=false;
+    if((r.susceptibility||[]).some(function(s){var x=xdrSIR(s.result);return x==='S'||x==='I'}))loturi[b]=true;
+  });
+  var nrLoturiComplete=Object.keys(loturi).filter(function(b){return loturi[b]}).length;
+  var nrLoturi=Object.keys(loturi).length;
+
+  var rezultate=[];
+  izolate.forEach(function(r){
+    var grup=xdrGroup(r.organism);
+    var rez=(r.susceptibility||[]).map(function(s){
+      return {antibiotic:s.atb_name||s.atb_code||'',sir:xdrSIR(s.result)};
+    }).filter(function(x){return x.sir});
+    var poateConfirma=!!loturi[r._import_batch||'_fara_lot'];
+    var cl=(grup&&grup!=='CAURIS')?xdrClassify(grup,rez,poateConfirma):null;
+    var rap=xdrReportable(grup,cl);
+    rezultate.push({
+      iso_id:r.id,
+      iso_key:r.year+'|'+(r.nr_buletin||'')+'|'+(r.organism||''),
+      nr_buletin:r.nr_buletin||'',
+      date:r.date||'',
+      section:r.section||'',
+      sample_type:r.sample_type||'',
+      organism:r.organism||'—',
+      grup:grup,
+      numeGrup:grup?XDR_GROUP_NAME[grup]:(CFG.lang==='en'?'Species not covered by the definition':'Specie neacoperita de definitie'),
+      clasificare:cl,
+      clasa:grup==='CAURIS'?'CAURIS':(cl?cl.clasa:null),
+      raportabil:rap.da,
+      motiv:rap.motiv,
+      nrTeste:rez.length,
+      iaam_case_id:r.iaam_case_id||null,
+      poateConfirma:poateConfirma
+    });
+  });
+
+  var n=function(f){return rezultate.filter(f).length};
+  return {
+    an:year,trimestru:q||0,faraData:faraData,
+    total:izolate.length,
+    nrLoturi:nrLoturi,nrLoturiComplete:nrLoturiComplete,
+    rezultate:rezultate,
+    kpi:{
+      raportabile:n(function(r){return r.raportabil}),
+      pdr:n(function(r){return r.clasa==='PDR'}),
+      xdr:n(function(r){return r.clasa==='XDR'}),
+      cauris:n(function(r){return r.grup==='CAURIS'}),
+      posibil:n(function(r){return r.clasa==='posibil_XDR'}),
+      mdr:n(function(r){return r.clasa==='MDR'}),
+      clasificate:n(function(r){return !!r.clasificare})
+    }
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SITUATIA MULTIREZISTENTEI (MDR) — pentru analiza interna, NU pentru DSP
+// ═══════════════════════════════════════════════════════════════
+// Cerut de user pentru rapoartele trimestriale ale colegei. MDR **nu intra in registrul de alerte**
+// si nu se raporteaza la DSP la un singur caz — acolo raman doar XDR, suspiciunea de PDR si
+// C. auris. Dar se numara si se arata, pentru ca asta e cifra care intra in analiza trimestriala
+// si care lipsea: pana acum raportul microbiologic dadea rezistenta pe categorii de antibiotic,
+// nu cati germeni multirezistenti sunt si unde.
+//
+// DOUA NUMARATORI DIFERITE, si e important sa nu fie amestecate:
+//   `mdrPlus` = **cel putin MDR** (nesensibil in >=3 categorii). Include XDR si PDR, pentru ca
+//               ele sunt prin definitie si MDR. Asta e cifra care se raporteaza ca prevalenta.
+//   `mdr`     = clasa EXCLUSIVA MDR (fara XDR/PDR/posibil XDR). Asta e cifra din defalcarea pe
+//               clase, ca sa se adune la total.
+// Fara distinctia asta, „13 MDR" ar insemna doua lucruri diferite in doua tabele alaturate.
+//
+// NUMITORUL e numarul de izolate CLASIFICABILE, nu totalul. Un streptococ sau o candida non-auris
+// nu au tabel de categorii Magiorakos, deci nu pot fi nici MDR, nici non-MDR — inclusi in numitor,
+// ar cobori procentul fara sa insemne nimic. Cate au ramas neclasificabile se scrie langa procent.
+function _xdrBucket(cheie,nume){
+  return {cheie:cheie,nume:nume,n:0,clasificate:0,mdrPlus:0,mdr:0,posibil:0,xdr:0,pdr:0,cauris:0,pct:null};
+}
+function _xdrAddTo(b,r){
+  b.n++;
+  if(r.grup==='CAURIS')b.cauris++;
+  if(!r.clasificare)return;
+  b.clasificate++;
+  if(r.clasificare.esteMDR)b.mdrPlus++;
+  if(r.clasa==='MDR')b.mdr++;
+  else if(r.clasa==='posibil_XDR')b.posibil++;
+  else if(r.clasa==='XDR')b.xdr++;
+  else if(r.clasa==='PDR')b.pdr++;
+}
+function _xdrFinish(b){
+  // Rata fara numitor intoarce null si se afiseaza „—", niciodata 0 (regula din CLAUDE.md).
+  b.pct=b.clasificate>0?Math.round(b.mdrPlus/b.clasificate*10000)/100:null;
+  return b;
+}
+function xdrMDRSummary(d){
+  var germeni={},sectii={},produse={};
+  var total=_xdrBucket('_total','TOTAL');
+  d.rezultate.forEach(function(r){
+    // Gruparea germenilor e cea din raportul microbiologic, ca randurile sa se potriveasca cu
+    // tabelele pe care colega le are deja.
+    var g=(typeof micGrupGermen==='function')?micGrupGermen(r.organism):null;
+    var gk=g?g.k:('alt_'+String(r.organism||'').toLowerCase().slice(0,24));
+    var gn=g?((CFG.lang==='en'&&g.en)?g.en:g.ro):(r.organism||'(nespecificat)');
+    if(!germeni[gk])germeni[gk]=_xdrBucket(gk,gn);
+    _xdrAddTo(germeni[gk],r);
+
+    var sk=r.section||'_none',sn=_xdrSecName(r.section);
+    if(!sectii[sk])sectii[sk]=_xdrBucket(sk,sn);
+    _xdrAddTo(sectii[sk],r);
+
+    var pk=(r.sample_type||'').trim()||'_none';
+    var pn=(r.sample_type||'').trim()||(CFG.lang==='en'?'(unspecified)':'(nespecificat)');
+    if(!produse[pk])produse[pk]=_xdrBucket(pk,pn);
+    _xdrAddTo(produse[pk],r);
+
+    _xdrAddTo(total,r);
+  });
+  var lista=function(o){
+    return Object.keys(o).map(function(k){return _xdrFinish(o[k])})
+      .sort(function(a,b){return b.mdrPlus-a.mdrPlus||b.n-a.n});
+  };
+  return {germeni:lista(germeni),sectii:lista(sectii),produse:lista(produse),
+    total:_xdrFinish(total),neclasificate:total.n-total.clasificate};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REGISTRUL DE ALERTE — store `ipc_registry`, kind `amr_alert`
+// ═══════════════════════════════════════════════════════════════
+// Registrul unitatii sanitare pentru alerte XDR / PDR / C. auris, cerut de DSP. Il tine si il
+// semneaza CPIAAM, deci intra in scopul aplicatiei (vezi regula practica din CLAUDE.md).
+// Sta in `ipc_registry`, langa celelalte registre administrative, ca sa nu fie nevoie de inca un
+// bump de versiune a bazei pentru o inregistrare de aceeasi natura (data + sectie + subiect + stare).
+// FILTRU POZITIV pe kind — vezi regula din CLAUDE.md: pe un store cu mai multe feluri de
+// inregistrari se filtreaza pe ce vrei, nu pe ce excluzi.
+const XDR_STATUS=[
+  {v:'initial',      ro:'initial',         en:'initial'},
+  {v:'monitorizare', ro:'in monitorizare', en:'under monitoring'},
+  {v:'inchis',       ro:'inchis',          en:'closed'}
+];
+function xdrStatusLabel(v){var o=XDR_STATUS.find(function(x){return x.v===v});return o?(CFG.lang==='en'?o.en:o.ro):(v||'—')}
+function xdrStatusCls(v){return v==='inchis'?'bdg-g':(v==='monitorizare'?'bdg-a':'bdg-r')}
+
+async function xdrAlerts(year){
+  var all=(await ga('ipc_registry')).filter(function(r){return r.kind==='amr_alert'});
+  return year?all.filter(function(r){return r.year===year}):all;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PAGINA
+// ═══════════════════════════════════════════════════════════════
+var _xdrTab='alerte';
+var _xdrQ=0;
+var _xdrData=null;
+
+function setXdrTab(t){_xdrTab=t;render()}
+function setXdrQ(q){_xdrQ=q;render()}
+
+async function rXDR(el){
+  const isEN=CFG.lang==='en';
+  const d=await xdrRun(A.year,_xdrQ);
+  _xdrData=d;
+  const alerte=await xdrAlerts(A.year);
+  const inRegistru={};alerte.forEach(function(a){if(a.iso_key)inRegistru[a.iso_key]=a});
+
+  let h='<div class="ib inf"><span>'+
+    (isEN?'<strong>What this page does:</strong> it applies the Magiorakos (ECDC/CDC 2012) definition to the isolates already imported into the laboratory module, and singles out the cases that must be reported to the public health authority — <strong>confirmed XDR</strong>, <strong>suspected PDR</strong> and <strong>every Candidozyma (Candida) auris</strong>, one case being enough, HAI or not. MDR alone is not reported here; it is reported as an outbreak, from the Outbreaks module.'
+         :'<strong>Ce face pagina:</strong> aplica definitia Magiorakos (ECDC/CDC 2012) peste izolatele deja importate in modulul de laborator si scoate cazurile care trebuie raportate la DSP — <strong>XDR confirmat</strong>, <strong>suspiciune PDR</strong> si <strong>orice Candidozyma (Candida) auris</strong>, la un singur caz, IAAM sau non-IAAM. MDR nu se raporteaza singur de aici; el se raporteaza ca focar, din modulul Focare.')+
+    '</span></div>';
+
+  // Poarta pe modul datelor — se spune PE ECRAN, nu doar in raport.
+  if(d.total&&d.nrLoturiComplete===0){
+    h+='<div class="ib wrn"><span>'+
+      (isEN?'<strong>The imported data records only resistances.</strong> A blank cell means either “tested and susceptible” or “not tested”, and the two cannot be told apart. XDR and PDR need proof that a category was tested and came out susceptible, so on this data they <strong>cannot be confirmed</strong> — such isolates are listed under “possible XDR”. MDR is still valid, because it rests only on the resistances actually recorded. To classify XDR, ask the laboratory for the export with full S/I/R results.'
+           :'<strong>Datele importate contin doar rezistentele.</strong> O casuta goala inseamna ori „testat si sensibil", ori „netestat", si nu se poate spune care. XDR si PDR au nevoie de dovada ca o categorie a fost testata si a iesit sensibila, deci pe aceste date <strong>nu se pot confirma</strong> — izolatele respective apar la „posibil XDR". MDR ramane valid, pentru ca se sprijina numai pe rezistentele chiar inregistrate. Ca sa se poata clasifica XDR, cere laboratorului exportul cu rezultate S/I/R complete.')+
+      '</span></div>';
+  }else if(d.total&&d.nrLoturiComplete<d.nrLoturi){
+    h+='<div class="ib wrn"><span>'+
+      (isEN?'<strong>Mixed data.</strong> '+d.nrLoturiComplete+' of '+d.nrLoturi+' import batches record full S/I/R results; on the rest only resistances were recorded, so XDR cannot be confirmed there and those isolates stay under “possible XDR”.'
+           :'<strong>Date mixte.</strong> '+d.nrLoturiComplete+' din '+d.nrLoturi+' loturi de import au rezultate S/I/R complete; pe restul s-au inregistrat doar rezistentele, deci acolo XDR nu se poate confirma si izolatele raman la „posibil XDR".')+
+      '</span></div>';
+  }
+
+  // KPI
+  h+='<div class="kg">'+
+    '<div class="kc rd"><div class="kl">'+(isEN?'TO REPORT TO DSP':'DE RAPORTAT LA DSP')+'</div><div class="kv">'+d.kpi.raportabile+'</div><div class="ks">'+(isEN?'XDR + suspected PDR + C. auris':'XDR + suspiciune PDR + C. auris')+'</div></div>'+
+    '<div class="kc rd"><div class="kl">'+(isEN?'SUSPECTED PDR':'SUSPICIUNE PDR')+'</div><div class="kv">'+d.kpi.pdr+'</div></div>'+
+    '<div class="kc rd"><div class="kl">XDR</div><div class="kv">'+d.kpi.xdr+'</div></div>'+
+    '<div class="kc rd"><div class="kl">C. AURIS</div><div class="kv">'+d.kpi.cauris+'</div></div>'+
+    '<div class="kc am"><div class="kl">'+(isEN?'POSSIBLE XDR':'POSIBIL XDR')+'</div><div class="kv">'+d.kpi.posibil+'</div><div class="ks">'+(isEN?'extended antibiogram needed':'de completat antibiograma')+'</div></div>'+
+    '<div class="kc bl"><div class="kl">MDR</div><div class="kv">'+d.kpi.mdr+'</div><div class="ks">'+(isEN?'outbreak reporting only':'doar ca focar')+'</div></div>'+
+    '<div class="kc tl"><div class="kl">'+(isEN?'CLASSIFIED':'CLASIFICATE')+'</div><div class="kv">'+d.kpi.clasificate+'</div><div class="ks">'+(isEN?'of ':'din ')+d.total+(isEN?' isolates':' izolate')+'</div></div>'+
+  '</div>';
+
+  // Perioada
+  h+='<div class="ac-period-tabs">';
+  [[0,isEN?'Whole year':'Anul intreg'],[1,'T1'],[2,'T2'],[3,'T3'],[4,'T4']].forEach(function(p){
+    h+='<span class="ac-ptab'+(_xdrQ===p[0]?' act':'')+'" onclick="setXdrQ('+p[0]+')">'+p[1]+'</span>';
+  });
+  h+='</div>';
+  if(_xdrQ&&d.faraData){
+    h+='<div class="ib wrn" style="font-size:11.5px"><span>'+
+      (isEN?'<strong>'+d.faraData+'</strong> isolate(s) of this year have no date and could not be assigned to a quarter. They are not included above — switch to “Whole year” to see them.'
+           :'<strong>'+d.faraData+'</strong> izolat(e) din acest an nu au data si nu s-au putut incadra in trimestru. Nu sunt incluse mai sus — treci pe „Anul intreg" ca sa le vezi.')+'</span></div>';
+  }
+
+  // Tab-uri
+  const tabs=[['alerte',isEN?'To report to DSP':'De raportat la DSP'],
+    ['posibil',isEN?'Possible XDR':'Posibil XDR'],
+    ['mdr',isEN?'MDR — overview':'Multirezistenta (MDR)'],
+    ['registru',isEN?'Alert register':'Registrul de alerte'],
+    ['toate',isEN?'All isolates':'Toate izolatele'],
+    ['diagnostic',isEN?'Parsing diagnostics':'Diagnostic potrivire'],
+    ['referinta',isEN?'Reference tables':'Tabele de referinta']];
+  h+='<div class="ac-main-tabs">';
+  tabs.forEach(function(t){
+    h+='<span class="ac-mtab'+(_xdrTab===t[0]?' act':'')+'" onclick="setXdrTab(\''+t[0]+'\')">'+t[1]+'</span>';
+  });
+  h+='</div>';
+
+  if(_xdrTab==='alerte')          h+=_xdrTabAlerte(d,inRegistru,isEN);
+  else if(_xdrTab==='posibil')    h+=_xdrTabPosibil(d,isEN);
+  else if(_xdrTab==='mdr')        h+=_xdrTabMDR(d,isEN);
+  else if(_xdrTab==='registru')   h+=_xdrTabRegistru(alerte,isEN);
+  else if(_xdrTab==='toate')      h+=_xdrTabToate(d,isEN);
+  else if(_xdrTab==='diagnostic') h+=_xdrTabDiagnostic(d,isEN);
+  else                            h+=_xdrTabReferinta(isEN);
+
+  el.innerHTML=h;
+}
+
+// ── Tab: de raportat ──
+function _xdrTabAlerte(d,inRegistru,isEN){
+  var rap=d.rezultate.filter(function(r){return r.raportabil});
+  if(!d.total){
+    return '<div class="es"><p>'+(isEN?'No laboratory isolate recorded for ':'Niciun izolat de laborator inregistrat pentru ')+A.year+'.</p>'+
+      '<p style="font-size:12px;color:var(--txtL)">'+(isEN?'The engine classifies what the laboratory module already holds — import the antibiograms first.'
+        :'Motorul clasifica ce exista deja in modulul de laborator — importa intai antibiogramele.')+'</p>'+
+      '<button class="btn bp" onclick="nav(\'antibiograma\')">'+(isEN?'Go to Local antibiogram':'Mergi la Antibiograma Locala')+'</button></div>';
+  }
+  if(!rap.length){
+    return '<div class="es"><p><strong>'+(isEN?'No XDR / suspected PDR / C. auris case.':'Niciun caz XDR / suspiciune PDR / C. auris.')+'</strong></p>'+
+      '<p style="font-size:12px;color:var(--txtL)">'+(isEN?'Action: notify the public health authority by e-mail that there are no new alerts for the period.'
+        :'Actiune: anunta DSP prin e-mail ca nu exista alerte noi pe perioada.')+'</p></div>';
+  }
+  var h='<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn bo bsm" onclick="xdrExportAlerte()">'+
+    (isEN?'Export the DSP register (Excel)':'Export registrul DSP (Excel)')+'</button></div>';
+  h+='<div class="pn"><div class="pb" style="overflow-x:auto"><table class="dt"><thead><tr>'+
+    '<th>#</th><th>'+(isEN?'Bulletin':'Buletin')+'</th><th>'+(isEN?'Organism':'Microorganism')+'</th><th>'+(isEN?'Classification':'Incadrare')+'</th>'+
+    '<th>'+(isEN?'Ward':'Sectia')+'</th><th>'+(isEN?'Sample':'Proba')+'</th><th>'+(isEN?'Date':'Data')+'</th>'+
+    '<th>'+(isEN?'S cat. / tested':'Cat. S / testate')+'</th><th>'+(isEN?'Register':'Registru')+'</th><th>'+(isEN?'Actions':'Actiuni')+'</th></tr></thead><tbody>';
+  rap.forEach(function(r,i){
+    var c=r.clasificare;
+    var a=inRegistru[r.iso_key];
+    h+='<tr><td>'+(i+1)+'</td>'+
+      '<td>'+esc(r.nr_buletin||'—')+'</td>'+
+      '<td><i>'+esc(r.organism)+'</i></td>'+
+      '<td><span class="bdg '+xdrClassCls(r.clasa)+'">'+esc(xdrClassLabel(r.clasa))+'</span></td>'+
+      '<td style="font-size:11px">'+esc(_xdrSecName(r.section))+'</td>'+
+      '<td style="font-size:11px">'+esc(r.sample_type||'—')+'</td>'+
+      '<td style="font-size:11px">'+(r.date?fmtDate(r.date):'—')+'</td>'+
+      '<td>'+(c?c.catSensibile+' / '+c.nrTestate:'—')+'</td>'+
+      '<td>'+(a?'<span class="bdg '+xdrStatusCls(a.status)+'">'+esc(xdrStatusLabel(a.status))+'</span>':'<span style="color:var(--txtL);font-size:11px">'+(isEN?'not entered':'neinscris')+'</span>')+'</td>'+
+      '<td class="act">'+(a
+        ?'<button onclick="xdrEditAlert('+_jsArg(a.id)+')" title="'+(isEN?'Open the register entry':'Deschide inregistrarea din registru')+'">&#9998;</button>'
+        :'<button onclick="xdrAddAlert('+_jsArg(r.iso_key)+')" title="'+(isEN?'Add to the alert register':'Adauga in registrul de alerte')+'">&#43;</button>')+
+      '</td></tr>';
+    if(r.motiv||(c&&c.avertisment)){
+      h+='<tr><td></td><td colspan="9" style="font-size:11px;color:var(--txtL);padding-top:0">'+esc(r.motiv)+
+        // `--warnTxt`, nu `--amber`: masurat, amber pe fundal de card da 3,03 in modul luminos,
+        // sub pragul de 4,5 pentru text de 11px. Aceeasi pereche ca la avertismentul MDR din v13.76.
+        (c&&c.avertisment?'<div style="color:var(--warnTxt);margin-top:2px">&#9888; '+esc(xdrWarnText(c.avertisment,c))+'</div>':'')+'</td></tr>';
+    }
+  });
+  return h+'</tbody></table></div></div>';
+}
+
+// ── Tab: posibil XDR ──
+function _xdrTabPosibil(d,isEN){
+  var pos=d.rezultate.filter(function(r){return r.clasa==='posibil_XDR'});
+  if(!pos.length)return '<div class="es"><p>'+(isEN?'No isolate with an XDR-compatible profile and an incomplete antibiogram.':'Niciun izolat cu profil compatibil XDR si antibiograma incompleta.')+'</p></div>';
+  var h='<div class="ib wrn"><span>'+
+    (isEN?'These isolates look extensively resistant, but the definition cannot be applied to them — either too few categories were tested, or the key categories are missing, or the batch records only resistances. <strong>They are not reported to DSP in this state.</strong> Send the list below to the laboratory and ask for the missing categories.'
+         :'Izolatele de mai jos par extensiv rezistente, dar definitia nu li se poate aplica — ori s-au testat prea putine categorii, ori lipsesc categoriile-cheie, ori lotul contine doar rezistentele. <strong>In starea asta nu se raporteaza la DSP.</strong> Trimite lista laboratorului si cere categoriile care lipsesc.')+'</span></div>'+
+    '<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn bo bsm" onclick="xdrExportPosibil()">'+
+    (isEN?'Export the request (Excel)':'Export solicitarea (Excel)')+'</button></div>';
+  h+='<div class="pn"><div class="pb" style="overflow-x:auto"><table class="dt"><thead><tr>'+
+    '<th>#</th><th>'+(isEN?'Bulletin':'Buletin')+'</th><th>'+(isEN?'Organism':'Microorganism')+'</th><th>'+(isEN?'Sample':'Proba')+'</th>'+
+    '<th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Categories tested':'Categorii testate')+'</th><th>'+(isEN?'Key categories missing':'Categorii-cheie lipsa')+'</th></tr></thead><tbody>';
+  pos.forEach(function(r,i){
+    var c=r.clasificare;
+    h+='<tr><td>'+(i+1)+'</td><td>'+esc(r.nr_buletin||'—')+'</td><td><i>'+esc(r.organism)+'</i></td>'+
+      '<td style="font-size:11px">'+esc(r.sample_type||'—')+'</td><td style="font-size:11px">'+(r.date?fmtDate(r.date):'—')+'</td>'+
+      '<td>'+c.nrTestate+' / '+c.nrTotal+'</td>'+
+      '<td style="font-size:11px">'+(c.cheieLipsa.length?esc(c.cheieLipsa.join(', ')):(r.poateConfirma?'—':(isEN?'(batch records only resistances)':'(lotul contine doar rezistentele)')))+'</td></tr>';
+  });
+  return h+'</tbody></table></div></div>';
+}
+
+// ── Tab: multirezistenta (MDR) ──
+// Cifrele pentru analiza trimestriala, nu pentru DSP. Vezi nota de la `xdrMDRSummary`.
+function _xdrTabMDR(d,isEN){
+  if(!d.total)return '<div class="es"><p>'+(isEN?'No isolate for the period.':'Niciun izolat pe perioada.')+'</p></div>';
+  var s=xdrMDRSummary(d);
+  var T=s.total;
+
+  var h='<div class="ib inf"><span>'+
+    (isEN?'<strong>These figures are for your own quarterly analysis, not for the public health authority.</strong> A single MDR case is not reported on its own — it is reported as an outbreak, when there are at least two healthcare-associated cases with an epidemiological link. What is counted here is <strong>at least MDR</strong>: non-susceptible in three or more antimicrobial categories, which by definition also covers XDR and PDR.'
+         :'<strong>Cifrele de aici sunt pentru analiza proprie, trimestriala, nu pentru DSP.</strong> Un caz MDR nu se raporteaza singur — el se raporteaza ca focar, la cel putin doua cazuri IAAM cu legatura epidemiologica. Se numara <strong>cel putin MDR</strong>: nesensibil in trei sau mai multe categorii antimicrobiene, ceea ce prin definitie acopera si XDR, si PDR.')+
+    '</span></div>';
+
+  h+='<div class="kg">'+
+    '<div class="kc am"><div class="kl">'+(isEN?'AT LEAST MDR':'CEL PUTIN MDR')+'</div><div class="kv">'+T.mdrPlus+'</div><div class="ks">'+
+      (T.pct!==null?indFmt(T.pct,' %')+(isEN?' of the classified isolates':' din izolatele clasificate'):(isEN?'no classifiable isolate':'niciun izolat clasificabil'))+'</div></div>'+
+    '<div class="kc bl"><div class="kl">'+(isEN?'MDR (exclusive)':'MDR (clasa exclusiva)')+'</div><div class="kv">'+T.mdr+'</div><div class="ks">'+(isEN?'without XDR / PDR':'fara XDR / PDR')+'</div></div>'+
+    '<div class="kc tl"><div class="kl">'+(isEN?'CLASSIFIABLE':'CLASIFICABILE')+'</div><div class="kv">'+T.clasificate+'</div><div class="ks">'+
+      (isEN?'of '+T.n+' isolates':'din '+T.n+' izolate')+'</div></div>'+
+  '</div>';
+
+  if(s.neclasificate){
+    h+='<div class="ib wrn" style="font-size:11.5px"><span>'+
+      (isEN?'<strong>'+s.neclasificate+'</strong> isolate(s) have no Magiorakos category table for their species (streptococci, non-auris candida, C. difficile and so on). They can be neither MDR nor non-MDR, so they stay out of the denominator — otherwise the percentage would fall without anything having changed.'
+           :'<strong>'+s.neclasificate+'</strong> izolat(e) sunt din specii care nu au tabel de categorii Magiorakos (streptococi, candide non-auris, C. difficile s.a.). Ele nu pot fi nici MDR, nici non-MDR, deci raman in afara numitorului — altfel procentul ar scadea fara sa se fi schimbat nimic.')+'</span></div>';
+  }
+
+  h+=_xdrMDRTable(isEN?'By organism':'Pe germen',isEN?'Organism':'Germen',s.germeni,isEN);
+  h+=_xdrMDRTable(isEN?'By ward':'Pe sectie',isEN?'Ward':'Sectia',s.sectii,isEN);
+  h+=_xdrMDRTable(isEN?'By specimen':'Pe produs patologic',isEN?'Specimen':'Produs',s.produse,isEN);
+  return h;
+}
+function _xdrMDRTable(titlu,colLabel,lista,isEN){
+  var randuri=lista.filter(function(b){return b.n>0});
+  if(!randuri.length)return '';
+  var h='<div class="pn"><div class="ph"><h3>'+titlu+'</h3></div><div class="pb" style="overflow-x:auto"><table class="dt"><thead><tr>'+
+    '<th>'+colLabel+'</th><th>'+(isEN?'Isolates':'Izolate')+'</th><th>'+(isEN?'Classifiable':'Clasificabile')+'</th>'+
+    '<th>'+(isEN?'At least MDR':'Cel putin MDR')+'</th><th>%</th>'+
+    '<th>MDR</th><th>'+(isEN?'poss. XDR':'pos. XDR')+'</th><th>XDR</th><th>PDR</th><th>C. auris</th></tr></thead><tbody>';
+  randuri.forEach(function(b,i){
+    h+='<tr'+(i%2?' style="background:var(--bg)"':'')+'><td style="font-weight:600">'+esc(b.nume)+'</td>'+
+      '<td>'+b.n+'</td><td>'+b.clasificate+'</td>'+
+      '<td><strong>'+b.mdrPlus+'</strong></td>'+
+      '<td>'+(b.pct!==null?indFmt(b.pct,' %'):'—')+'</td>'+
+      '<td>'+(b.mdr||'—')+'</td><td>'+(b.posibil||'—')+'</td>'+
+      '<td>'+(b.xdr?'<span class="bdg bdg-r">'+b.xdr+'</span>':'—')+'</td>'+
+      '<td>'+(b.pdr?'<span class="bdg bdg-r">'+b.pdr+'</span>':'—')+'</td>'+
+      '<td>'+(b.cauris?'<span class="bdg bdg-r">'+b.cauris+'</span>':'—')+'</td></tr>';
+  });
+  return h+'</tbody></table></div></div>';
+}
+
+// ── Tab: toate izolatele ──
+function _xdrTabToate(d,isEN){
+  if(!d.total)return '<div class="es"><p>'+(isEN?'No isolate for the period.':'Niciun izolat pe perioada.')+'</p></div>';
+  var h='<div class="pn"><div class="pb" style="overflow-x:auto"><table class="dt"><thead><tr>'+
+    '<th>#</th><th>'+(isEN?'Bulletin':'Buletin')+'</th><th>'+(isEN?'Organism':'Microorganism')+'</th><th>'+(isEN?'Group':'Grup')+'</th>'+
+    '<th>'+(isEN?'Classification':'Incadrare')+'</th><th>'+(isEN?'non-S':'non-S')+'</th><th>S</th>'+
+    '<th>'+(isEN?'Tested':'Testate')+'</th><th>'+(isEN?'No. ATB':'Nr. ATB')+'</th></tr></thead><tbody>';
+  d.rezultate.forEach(function(r,i){
+    var c=r.clasificare;
+    h+='<tr><td>'+(i+1)+'</td><td>'+esc(r.nr_buletin||'—')+'</td><td><i>'+esc(r.organism)+'</i></td>'+
+      '<td style="font-size:11px">'+esc(r.numeGrup)+'</td>'+
+      '<td>'+(r.clasa?'<span class="bdg '+xdrClassCls(r.clasa)+'">'+esc(xdrClassLabel(r.clasa))+'</span>':'<span class="bdg bdg-b">—</span>')+'</td>'+
+      '<td>'+(c?c.catNonSensibile:'—')+'</td><td>'+(c?c.catSensibile:'—')+'</td>'+
+      '<td>'+(c?c.nrTestate+'/'+c.nrTotal:'—')+'</td><td>'+r.nrTeste+'</td></tr>';
+  });
+  return h+'</tbody></table></div></div>';
+}
+
+// ── Tab: diagnostic potrivire ──
+// Un antibiotic nerecunoscut iese tacit din numaratoare si poate schimba incadrarea fara nicio
+// eroare — de aceea nepotrivitele se numara si se arata, nu dispar.
+function _xdrTabDiagnostic(d,isEN){
+  var nepot={},specii={},faraAbg=0;
+  d.rezultate.forEach(function(r){
+    if(r.clasificare){
+      (r.clasificare.nepotrivite||[]).forEach(function(a){nepot[a]=(nepot[a]||0)+1});
+      if(r.clasificare.clasa==='fara_abg')faraAbg++;
+    }
+    if(!r.grup&&r.organism&&r.organism!=='—')specii[r.organism]=(specii[r.organism]||0)+1;
+  });
+  var cuCl=d.rezultate.filter(function(r){return r.clasificare});
+  var medieTestate=cuCl.length?cuCl.reduce(function(s,r){return s+r.clasificare.nrTestate},0)/cuCl.length:0;
+  var totalNepot=Object.keys(nepot).reduce(function(s,k){return s+nepot[k]},0);
+  var totalPot=cuCl.reduce(function(s,r){return s+r.nrTeste},0);
+  var procNepot=totalPot?totalNepot/totalPot:0;
+
+  var h='';
+  if(cuCl.length&&(medieTestate<3||procNepot>0.4)){
+    h+='<div class="ib wrn"><span>'+
+      (isEN?'<strong>Careful — the antimicrobial names may not be matching.</strong> On average only <strong>'+medieTestate.toFixed(1)+'</strong> categories per isolate were recognised, and <strong>'+Math.round(procNepot*100)+'%</strong> of the results were not matched to any known antimicrobial. Classifications shown can be <strong>false negatives</strong>. Map the unrecognised names in Configuration → antimicrobial aliases.'
+           :'<strong>Atentie — denumirile de antibiotic ar putea sa nu se potriveasca.</strong> In medie doar <strong>'+medieTestate.toFixed(1)+'</strong> categorii pe izolat au fost recunoscute, iar <strong>'+Math.round(procNepot*100)+'%</strong> dintre rezultate nu s-au potrivit cu niciun antibiotic cunoscut. Incadrarile afisate pot fi <strong>fals negative</strong>. Mapeaza denumirile nerecunoscute din Configurare → aliasuri de antibiotice.')+'</span></div>';
+  }
+  h+='<div class="pn"><div class="pb">';
+  var chei=Object.keys(nepot);
+  if(chei.length){
+    h+='<h4>'+(isEN?'Antimicrobials not in the Magiorakos tables':'Antibiotice care nu sunt in tabelele Magiorakos')+' ('+chei.length+')</h4>'+
+      '<p style="font-size:11.5px;color:var(--txtL)">'+(isEN?'These were ignored when classifying. Some are correct — nitrofurantoin, for instance, is not part of the Magiorakos categories.'
+        :'Acestea au fost ignorate la clasificare. Unele sunt corecte — nitrofurantoina, de exemplu, nu face parte din categoriile Magiorakos.')+'</p><div style="margin-bottom:14px">';
+    chei.sort(function(a,b){return nepot[b]-nepot[a]}).forEach(function(a){
+      h+='<span class="bdg bdg-b" style="margin:2px 4px 2px 0">'+esc(a)+' &times;'+nepot[a]+'</span>';
+    });
+    h+='</div>';
+  }
+  var sp=Object.keys(specii);
+  if(sp.length){
+    h+='<h4>'+(isEN?'Species without a category table':'Specii fara tabel de categorii')+' ('+sp.length+')</h4>'+
+      '<p style="font-size:11.5px;color:var(--txtL)">'+(isEN?'The Magiorakos definition sets no thresholds for these — they are not classified automatically.'
+        :'Definitia Magiorakos nu prevede praguri pentru ele — nu se clasifica automat.')+'</p><div style="margin-bottom:14px">';
+    sp.sort(function(a,b){return specii[b]-specii[a]}).forEach(function(a){
+      h+='<span class="bdg bdg-b" style="margin:2px 4px 2px 0">'+esc(a)+' &times;'+specii[a]+'</span>';
+    });
+    h+='</div>';
+  }
+  if(faraAbg){
+    h+='<h4>'+(isEN?'Isolates without a usable antibiogram':'Izolate fara antibiograma interpretabila')+'</h4>'+
+      '<p style="font-size:11.5px;color:var(--txtL)"><strong>'+faraAbg+'</strong> '+
+      (isEN?'isolate(s) of a covered species have no result that could be read as S/I/R.':'izolat(e) dintr-o specie acoperita nu au niciun rezultat care sa poata fi citit ca S/I/R.')+'</p>';
+  }
+  if(!chei.length&&!sp.length&&!faraAbg){
+    h+='<p style="font-size:12px;color:var(--txtL)">'+(isEN?'Nothing to flag — everything was recognised.':'Nimic de semnalat — totul a fost recunoscut.')+'</p>';
+  }
+  return h+'</div></div>';
+}
+
+// ── Tab: tabele de referinta ──
+function _xdrTabReferinta(isEN){
+  var h='<div class="ib inf"><span>'+
+    (isEN?'The antimicrobial categories used by the classification, per organism group, exactly as in Magiorakos et al. (ECDC/CDC 2012). The standard EUCAST/CLSI codes (AMP, CRO, MEM, CST…) are added automatically to each category, so an antibiogram exported with codes is matched too.'
+         :'Categoriile antimicrobiene folosite la clasificare, pe grupuri de germeni, exact ca in Magiorakos et al. (ECDC/CDC 2012). Codurile standard EUCAST/CLSI (AMP, CRO, MEM, CST…) se adauga automat la fiecare categorie, deci se potriveste si o antibiograma exportata cu coduri.')+'</span></div>';
+  Object.keys(XDR_CAT).forEach(function(g){
+    h+='<div class="pn" style="margin-bottom:12px"><div class="ph"><h3><i>'+esc(XDR_GROUP_NAME[g])+'</i> — '+XDR_CAT[g].length+
+      (isEN?' categories':' categorii')+'</h3></div><div class="pb" style="overflow-x:auto"><table class="dt"><tbody>';
+    XDR_CAT[g].forEach(function(c,i){
+      var cheie=(XDR_KEY_CAT[g]||[]).indexOf(c[0])>=0;
+      h+='<tr><td style="width:34px">'+(i+1)+'</td>'+
+        '<td style="font-weight:600">'+esc(c[0])+(cheie?' <span class="bdg bdg-a">'+(isEN?'key':'cheie')+'</span>':'')+'</td>'+
+        '<td style="font-size:11px;color:var(--txtL)">'+esc(c[1].slice(0,8).join(', '))+(c[1].length>8?' …':'')+'</td></tr>';
+    });
+    h+='</tbody></table></div></div>';
+  });
+  h+='<div class="ib inf" style="font-size:11.5px"><span>'+
+    (isEN?'A category marked <strong>key</strong> must have been tested before XDR or PDR can be confirmed. Without the last-line categories there is no way to say the isolate is non-susceptible to everything but two.'
+         :'O categorie marcata <strong>cheie</strong> trebuie sa fi fost testata ca sa se poata confirma XDR sau PDR. Fara categoriile de ultima linie nu se poate afirma ca izolatul e nesensibil la tot in afara de cel mult doua.')+'</span></div>';
+  return h;
+}
+
+// Numele sectiei. Importul de laborator stocheaza `section` fie ca id din configurare, fie ca TEXT
+// BRUT cand nu a gasit potrivirea — acelasi tratament ca in raportul microbiologic.
+function _xdrSecName(v){
+  if(typeof micNumeSectie==='function')return micNumeSectie(v);
+  if(!v)return CFG.lang==='en'?'(unspecified)':'(nespecificat)';
+  var g=(CFG.sections||[]).find(function(x){return x.id===v});
+  return g?rSec(v):String(v);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REGISTRUL — tab, dialog, salvare
+// ═══════════════════════════════════════════════════════════════
+function _xdrTabRegistru(alerte,isEN){
+  if(!alerte.length){
+    return '<div class="es"><p>'+(isEN?'The alert register is empty for ':'Registrul de alerte e gol pentru ')+A.year+'.</p>'+
+      '<p style="font-size:12px;color:var(--txtL)">'+(isEN?'Entries are added from the “To report to DSP” tab, with the classification already filled in — or by hand, for a case that did not come through the laboratory import.'
+        :'Inregistrarile se adauga din tabul „De raportat la DSP", cu incadrarea deja completata — sau manual, pentru un caz care nu a venit prin importul de laborator.')+'</p>'+
+      '<button class="btn bp" onclick="xdrEditAlert()">+ '+(isEN?'Manual entry':'Inregistrare manuala')+'</button></div>';
+  }
+  var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">'+
+    '<button class="btn bo bsm" onclick="xdrExportRegistru()">'+(isEN?'Export the register (Excel)':'Export registrul (Excel)')+'</button>'+
+    '<button class="btn bp" onclick="xdrEditAlert()">+ '+(isEN?'Manual entry':'Inregistrare manuala')+'</button></div>';
+  h+='<div class="pn"><div class="pb" style="overflow-x:auto"><table class="dt"><thead><tr>'+
+    '<th>#</th><th>'+(isEN?'Initials':'Initiale')+'</th><th>'+(isEN?'Organism':'Microorganism')+'</th><th>'+(isEN?'Class':'Incadrare')+'</th>'+
+    '<th>'+(isEN?'Ward':'Sectia')+'</th><th>'+(isEN?'Sampled':'Recoltat')+'</th><th>'+(isEN?'Reported to DSP':'Raportat la DSP')+'</th>'+
+    '<th>'+(isEN?'Status':'Status')+'</th><th>'+(isEN?'Actions':'Actiuni')+'</th></tr></thead><tbody>';
+  alerte.slice().sort(function(a,b){return (b.date_sample||'').localeCompare(a.date_sample||'')}).forEach(function(r,i){
+    h+='<tr><td>'+(i+1)+'</td>'+
+      '<td><strong>'+esc(r.initials||'—')+'</strong>'+(r.age?'<br><span style="font-size:10px;color:var(--txtL)">'+esc(String(r.age))+(r.sex?' · '+esc(r.sex):'')+'</span>':'')+'</td>'+
+      '<td><i>'+esc(r.organism||'—')+'</i></td>'+
+      '<td><span class="bdg '+xdrClassCls(r.clasa)+'">'+esc(xdrClassLabel(r.clasa))+'</span></td>'+
+      '<td style="font-size:11px">'+esc(_xdrSecName(r.section))+'</td>'+
+      '<td style="font-size:11px">'+(r.date_sample?fmtDate(r.date_sample):'—')+'</td>'+
+      // Badge, nu text rosu: `--red` pe fundal de card da 3,76 in modul luminos, sub prag.
+      // Perechea din `.bdg-r` e proiectata pentru asta si se inverseaza corect in modul intunecat.
+      '<td style="font-size:11px">'+(r.date_dsp?fmtDate(r.date_dsp):'<span class="bdg bdg-r">'+(isEN?'not reported':'neraportat')+'</span>')+'</td>'+
+      '<td><span class="bdg '+xdrStatusCls(r.status)+'">'+esc(xdrStatusLabel(r.status))+'</span></td>'+
+      '<td class="act"><button onclick="xdrEditAlert('+_jsArg(r.id)+')" title="'+T('btn_edit')+'">&#9998;</button>'+
+        '<button onclick="delRec(\'ipc_registry\','+_jsArg(r.id)+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
+  });
+  return h+'</tbody></table></div></div>';
+}
+
+// Pre-completeaza o inregistrare noua din izolatul clasificat, apoi deschide dialogul.
+async function xdrAddAlert(isoKey){
+  var d=_xdrData;
+  if(!d){render();return}
+  var r=d.rezultate.find(function(x){return x.iso_key===isoKey});
+  if(!r){alert(_M('Izolatul nu mai exista in lista. Reincarca pagina.'));return}
+  xdrEditAlert(null,r);
+}
+
+async function xdrEditAlert(id,pre){
+  const isEN=CFG.lang==='en';
+  let r=id?(await ga('ipc_registry')).find(function(x){return x.id===id}):null;
+  if(!r){
+    // `getCurrentUser()` intoarce „Necunoscut" cand nu s-a ales inca un utilizator. Acel cuvant NU
+    // are ce cauta in rubrica „persoana care a validat datele" din registrul trimis la DSP — mai
+    // bine gol, ca sa se vada ca trebuie completat.
+    var uz=(typeof getCurrentUser==='function')?getCurrentUser():'';
+    if(uz==='Necunoscut'||uz==='Unknown')uz='';
+    r={status:'initial',localitate:'',unitate:CFG.hospital_name||'',validat_de:uz};
+    if(pre){
+      r.iso_key=pre.iso_key;r.nr_buletin=pre.nr_buletin;r.organism=pre.organism;
+      r.clasa=pre.clasa;r.section=pre.section;r.sample_type=pre.sample_type;r.date_sample=pre.date;
+      r.cat_sensibile=pre.clasificare?pre.clasificare.catSensibile:null;
+      r.cat_testate=pre.clasificare?pre.clasificare.nrTestate:null;
+      r.iaam=pre.iaam_case_id?'IAAM':'';
+      r.iaam_case_id=pre.iaam_case_id||null;
+    }
+  }
+  const opt=function(arr,sel){return arr.map(function(o){return '<option value="'+o.v+'"'+(sel===o.v?' selected':'')+'>'+esc(CFG.lang==='en'?o.en:o.ro)+'</option>'}).join('')};
+  const catOpts=(typeof IAAM_CATS!=='undefined'?IAAM_CATS:[]).map(function(g){
+    return '<optgroup label="'+esc(g.g)+'">'+g.items.map(function(it){
+      return '<option value="'+esc(it.c)+'"'+(r.cod_iaam===it.c?' selected':'')+'>'+esc(it.c+' — '+it.n)+'</option>'}).join('')+'</optgroup>';
+  }).join('');
+
+  openM(id?(isEN?'Edit alert':'Editare alerta'):(isEN?'New alert in the register':'Alerta noua in registru'),
+    // Ce vine din motor — se arata, dar se poate corecta: incadrarea o valideaza epidemiologul.
+    '<div class="ib inf" style="font-size:11.5px"><span>'+
+      (isEN?'The fields filled in from the antibiogram can be corrected — the classification is validated by the epidemiologist, the engine only proposes it. Patient identification stays at initials, age and sex; the application never stores names or the personal numeric code.'
+           :'Campurile completate din antibiograma se pot corecta — incadrarea o valideaza medicul epidemiolog, motorul doar o propune. Identificarea pacientului ramane la initiale, varsta si sex; aplicatia nu stocheaza niciodata numele si nici CNP-ul.')+'</span></div>'+
+
+    // Ce vine din motor si NU se editeaza: legatura cu izolatul (dupa care se vede in tabelul de
+    // detectie ca alerta e deja inscrisa) si cele doua numere care ajung in coloanele `[auto]` ale
+    // registrului. La o inregistrare noua nu exista `vechi` din care sa fie pastrate, deci trebuie
+    // sa treaca prin formular — altfel se pierd tacut si aceeasi alerta s-ar putea adauga de doua ori.
+    '<input type="hidden" id="f-xa-isokey" value="'+esc(r.iso_key||'')+'">'+
+    '<input type="hidden" id="f-xa-catS" value="'+esc(r.cat_sensibile!=null?String(r.cat_sensibile):'')+'">'+
+    '<input type="hidden" id="f-xa-catT" value="'+esc(r.cat_testate!=null?String(r.cat_testate):'')+'">'+
+    '<input type="hidden" id="f-xa-iaamid" value="'+esc(r.iaam_case_id||'')+'">'+
+    '<div class="fr3"><div class="fg"><label>'+(isEN?'Classification':'Incadrare')+' *</label><select id="f-xa-clasa">'+
+      ['XDR','PDR','CAURIS'].map(function(c){return '<option value="'+c+'"'+(r.clasa===c?' selected':'')+'>'+esc(xdrClassLabel(c))+'</option>'}).join('')+'</select></div>'+
+      '<div class="fg"><label>'+(isEN?'Organism':'Microorganism')+' *</label><input id="f-xa-org" value="'+esc(r.organism||'')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Laboratory bulletin':'Buletin laborator')+'</label><input id="f-xa-bul" value="'+esc(r.nr_buletin||'')+'"></div></div>'+
+
+    '<div class="fr3"><div class="fg"><label>'+(isEN?'Initials':'Initiale')+'</label><input id="f-xa-ini" value="'+esc(r.initials||'')+'" placeholder="A.B."></div>'+
+      '<div class="fg"><label>'+(isEN?'Age':'Varsta')+'</label><input type="number" id="f-xa-age" value="'+esc(r.age!=null?String(r.age):'')+'" min="0" max="120"></div>'+
+      '<div class="fg"><label>'+(isEN?'Sex':'Sex')+'</label><select id="f-xa-sex"><option value="">—</option>'+
+        ['M','F'].map(function(s){return '<option value="'+s+'"'+(r.sex===s?' selected':'')+'>'+s+'</option>'}).join('')+'</select></div></div>'+
+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Ward of detection':'Sectia de depistare')+'</label><select id="f-xa-sec"><option value="">—</option>'+
+      secOptsGrouped(_xdrSecId(r.section))+'</select></div>'+
+      '<div class="fg"><label>'+(isEN?'Ward of admission':'Sectia de internare')+'</label><select id="f-xa-secadm"><option value="">—</option>'+
+      secOptsGrouped(r.section_adm||'')+'</select></div></div>'+
+
+    '<div class="fr3"><div class="fg"><label>'+(isEN?'Sample type / site':'Tip proba / localizare')+'</label><input id="f-xa-proba" value="'+esc(r.sample_type||'')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Sampling date':'Data recoltarii')+'</label><input type="date" id="f-xa-dsample" value="'+esc(r.date_sample||'')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Validation date':'Data validarii probei')+'</label><input type="date" id="f-xa-dvalid" value="'+esc(r.date_valid||'')+'"></div></div>'+
+
+    '<div class="fr3"><div class="fg"><label>'+(isEN?'Admission date':'Data internarii')+'</label><input type="date" id="f-xa-dadm" value="'+esc(r.date_admission||'')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Symptom onset':'Data debut simptomatologie')+'</label><input type="date" id="f-xa-donset" value="'+esc(r.date_onset||'')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Discharge date':'Data externarii')+'</label><input type="date" id="f-xa-ddisch" value="'+esc(r.date_discharge||'')+'"></div></div>'+
+
+    '<div class="fr3"><div class="fg"><label>'+(isEN?'HAI / non-HAI':'IAAM / non-IAAM')+'</label><select id="f-xa-iaam"><option value="">—</option>'+
+      '<option value="IAAM"'+(r.iaam==='IAAM'?' selected':'')+'>IAAM</option><option value="non-IAAM"'+(r.iaam==='non-IAAM'?' selected':'')+'>non-IAAM</option>'+
+      '<option value="colonizare"'+(r.iaam==='colonizare'?' selected':'')+'>'+(isEN?'colonisation':'colonizare')+'</option></select></div>'+
+      '<div class="fg"><label>'+(isEN?'Clinical form':'Forma clinica')+'</label><input id="f-xa-forma" value="'+esc(r.forma_clinica||'')+'" placeholder="'+(isEN?'infection / colonisation, site':'infectie / colonizare, localizare')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Isolated (yes/no)':'Izolat (da/nu)')+'</label><select id="f-xa-izolat"><option value="">—</option>'+
+        '<option value="da"'+(r.izolat==='da'?' selected':'')+'>'+(isEN?'yes':'da')+'</option><option value="nu"'+(r.izolat==='nu'?' selected':'')+'>'+(isEN?'no':'nu')+'</option></select></div></div>'+
+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'HAI diagnosis code (European Decision)':'COD diagnostic IAAM (Decizia Europeana)')+'</label>'+
+      '<select id="f-xa-cod"><option value="">—</option>'+catOpts+'</select></div>'+
+      // CFG.origins e un OBIECT cheie->eticheta, nu o lista — se citeste cu `optsO`, ca in fisa IAAM.
+      '<div class="fg"><label>'+(isEN?'Origin of the HAI':'Originea IAAM')+'</label><select id="f-xa-orig"><option value="">—</option>'+
+        optsO(CFG.origins||{},r.origine)+'</select></div></div>'+
+
+    '<div class="fr3"><div class="fg"><label>'+(isEN?'Source (known/unknown)':'Sursa infectiei')+'</label><input id="f-xa-sursa" value="'+esc(r.sursa||'')+'" placeholder="'+(isEN?'known / unknown':'cunoscuta / necunoscuta')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Suspected transmission route':'Calea de transmitere suspicionata')+'</label><input id="f-xa-cale" value="'+esc(r.cale||'')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'No. of contacts':'Nr. total contacti')+'</label><input type="number" id="f-xa-contacti" value="'+esc(r.nr_contacti!=null?String(r.nr_contacti):'')+'" min="0"></div></div>'+
+
+    '<div class="fr3"><div class="fg"><label>'+(isEN?'Population at risk':'Populatie la risc')+'</label><input id="f-xa-risc" value="'+esc(r.populatie_risc||'')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Outcome':'Stare')+'</label><input id="f-xa-stare" value="'+esc(r.stare||'')+'" placeholder="'+(isEN?'improved / transferred / deceased':'ameliorat / transferat / decedat')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Locality':'Localitate')+'</label><input id="f-xa-loc" value="'+esc(r.localitate||'')+'"></div></div>'+
+
+    '<div class="fr3"><div class="fg"><label>'+(isEN?'Status':'Status')+' *</label><select id="f-xa-status">'+opt(XDR_STATUS,r.status||'initial')+'</select></div>'+
+      '<div class="fg"><label>'+(isEN?'First reported to DSP':'Data raportarii initiale la DSP')+'</label><input type="date" id="f-xa-ddsp" value="'+esc(r.date_dsp||'')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Monitoring ended':'Data incheierii monitorizarii')+'</label><input type="date" id="f-xa-dclose" value="'+esc(r.date_close||'')+'"></div></div>'+
+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Validated by':'Numele persoanei care a validat datele')+'</label><input id="f-xa-validat" value="'+esc(r.validat_de||'')+'"></div>'+
+      '<div class="fg"><label>'+(isEN?'Health unit':'Unitate sanitara')+'</label><input id="f-xa-unit" value="'+esc(r.unitate||'')+'"></div></div>'+
+
+    '<div class="fg"><label>'+(isEN?'Other notes':'Alte observatii')+'</label><textarea id="f-xa-obs" rows="2">'+esc(r.observatii||'')+'</textarea></div>',
+
+  '<button class="btn bo" onclick="safeCloseM()">'+T('btn_cancel')+'</button>'+
+  '<button class="btn bp" onclick="xdrSaveAlert('+_jsArg(id||null)+')">'+T('btn_save')+'</button>');
+  setTimeout(function(){attachDirtyTracking()},60);
+}
+// Sectia din izolat poate fi id de configurare sau TEXT BRUT din fisierul de laborator (importul
+// il pastreaza ca atare cand nu gaseste potrivirea). Selectorul lucreaza pe id-uri, deci textul
+// brut se incearca intai pe numele sectiilor configurate; daca nici asa nu se potriveste, ramane
+// gol, ca userul sa aleaga. Fara pasul asta, dialogul aparea cu sectia goala desi tabelul de
+// deasupra o afisa — arata ca o pierdere de date.
+function _xdrSecId(v){
+  if(!v)return '';
+  var secs=CFG.sections||[];
+  if(secs.some(function(x){return x.id===v}))return v;
+  var n=String(v).trim().toLowerCase();
+  var g=secs.find(function(x){return String(x.name||'').trim().toLowerCase()===n});
+  return g?g.id:'';
+}
+
+async function xdrSaveAlert(id){
+  const isEN=CFG.lang==='en';
+  const v=function(i){var e=document.getElementById(i);return e?e.value:''};
+  const org=v('f-xa-org').trim();
+  if(!org){alert(_M('Completeaza microorganismul.'));return}
+  // Salvarile care reconstruiesc obiectul trebuie sa pastreze campurile interne ale celui existent
+  // (regula din CLAUDE.md) — altfel `iso_key` se pierde si alerta se poate adauga a doua oara din
+  // tabul de detectie, ca si cum nu ar fi fost inscrisa niciodata.
+  const vechi=id?(await ga('ipc_registry')).find(function(x){return x.id===id}):null;
+  const dSample=v('f-xa-dsample');
+  const rec=Object.assign({},vechi||{},{
+    id:id||undefined,
+    kind:'amr_alert',
+    // Anul vine din data proprie a inregistrarii, nu din bara de sus (regula din CLAUDE.md).
+    year:yearOfDate(dSample||v('f-xa-ddsp')||todayISO(),A.year),
+    iso_key:v('f-xa-isokey')||'',
+    iaam_case_id:v('f-xa-iaamid')||null,
+    cat_sensibile:v('f-xa-catS')!==''?+v('f-xa-catS'):null,
+    cat_testate:v('f-xa-catT')!==''?+v('f-xa-catT'):null,
+    clasa:v('f-xa-clasa'),
+    organism:org,
+    nr_buletin:v('f-xa-bul').trim(),
+    initials:v('f-xa-ini').trim(),
+    age:v('f-xa-age')!==''?+v('f-xa-age'):null,
+    sex:v('f-xa-sex'),
+    section:v('f-xa-sec'),
+    section_adm:v('f-xa-secadm'),
+    sample_type:v('f-xa-proba').trim(),
+    date_sample:dSample,
+    date_valid:v('f-xa-dvalid'),
+    date_admission:v('f-xa-dadm'),
+    date_onset:v('f-xa-donset'),
+    date_discharge:v('f-xa-ddisch'),
+    iaam:v('f-xa-iaam'),
+    forma_clinica:v('f-xa-forma').trim(),
+    izolat:v('f-xa-izolat'),
+    cod_iaam:v('f-xa-cod'),
+    origine:v('f-xa-orig'),
+    sursa:v('f-xa-sursa').trim(),
+    cale:v('f-xa-cale').trim(),
+    nr_contacti:v('f-xa-contacti')!==''?+v('f-xa-contacti'):null,
+    populatie_risc:v('f-xa-risc').trim(),
+    stare:v('f-xa-stare').trim(),
+    localitate:v('f-xa-loc').trim(),
+    status:v('f-xa-status'),
+    date_dsp:v('f-xa-ddsp'),
+    date_close:v('f-xa-dclose'),
+    date_update:todayISO(),
+    validat_de:v('f-xa-validat').trim(),
+    unitate:v('f-xa-unit').trim(),
+    observatii:v('f-xa-obs').trim()
+  });
+  if(!id)delete rec.id;
+  await pt('ipc_registry',rec);
+  toastSaved();
+  closeM();render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORTURI EXCEL
+// ═══════════════════════════════════════════════════════════════
+// Antetul registrului, exact cum il cere DSP. Ultimele trei coloane sunt adaugate de aplicatie si
+// marcate `[auto]`, ca sa se vada ca nu fac parte din formularul oficial.
+const XDR_REG_HEADER=['Nr. Crt.','Data raportarii initiale la DSP','STATUS (initial/ in monitorizare/ inchis)',
+  'Data ultimei actualizari','Data incheierii monitorizarii','LOCALITATE','UNITATE SANITARA',
+  'SECTIE (de internare)','SECTIE (de depistare)','MICROORGANISM','INITIALE','VARSTA','SEX',
+  'DATA INTERNARII','Data debut simptomatologie','Semne','Simptome','Forma clinica',
+  'Data recoltarii probei','Data validarii probei','TIP PROBA/ LOCALIZARE','IAAM/ non-IAAM',
+  'COD diagnostic IAAM conform Deciziei Europene','Denumire DIAGNOSTIC IAAM','ORIGINEA IAAM',
+  'Sursa infectiei (cunoscut/ necunoscut)','Calea de transmitere suspicionata','Nr. total contacti',
+  'Populatie la risc','Izolat (da/nu)','DATA EXTERNARE','STARE','ALTE OBSERVATII',
+  'Numele persoanei care a validat datele','[auto] INCADRARE','[auto] Cod cerere laborator',
+  '[auto] Categorii sensibile / testate'];
+
+function _xdrCatName(cod){
+  if(!cod||typeof IAAM_CATS==='undefined')return '';
+  for(var i=0;i<IAAM_CATS.length;i++){
+    var it=IAAM_CATS[i].items.find(function(x){return x.c===cod});
+    if(it)return it.n;
+  }
+  return '';
+}
+// In inregistrare se salveaza CHEIA originii, ca in fisa IAAM; in registrul trimis la DSP trebuie
+// sa ajunga eticheta, nu cheia interna.
+function _xdrOriginLabel(k){
+  if(!k)return '';
+  var o=CFG.origins||{};
+  return o[k]||k;
+}
+function _xdrXlsxReady(){
+  if(typeof XLSX==='undefined'){
+    alert(_M('Biblioteca de export Excel nu s-a incarcat. Verifica legatura la internet si reincarca aplicatia.'));
+    return false;
+  }
+  return true;
+}
+function _xdrSaveXlsx(aoa,sheetName,fileBase){
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,sheetName);
+  XLSX.writeFile(wb,fileBase+'_'+todayISO().replace(/-/g,'')+'.xlsx');
+}
+
+// Registrul propriu-zis — ce s-a inscris si se urmareste.
+async function xdrExportRegistru(){
+  if(!_xdrXlsxReady())return;
+  try{
+    var alerte=await xdrAlerts(A.year);
+    if(!alerte.length){alert(_M('Registrul de alerte e gol pentru anul curent.'));return}
+    var randuri=alerte.slice().sort(function(a,b){return (a.date_sample||'').localeCompare(b.date_sample||'')})
+      .map(function(r,i){
+        var a=new Array(XDR_REG_HEADER.length).fill('');
+        a[0]=i+1;
+        a[1]=r.date_dsp?fmtDate(r.date_dsp):'';
+        a[2]=xdrStatusLabel(r.status);
+        a[3]=r.date_update?fmtDate(r.date_update):'';
+        a[4]=r.date_close?fmtDate(r.date_close):'';
+        a[5]=r.localitate||'';
+        a[6]=r.unitate||CFG.hospital_name||'';
+        a[7]=r.section_adm?_xdrSecName(r.section_adm):'';
+        a[8]=r.section?_xdrSecName(r.section):'';
+        a[9]=r.organism||'';
+        a[10]=r.initials||'';
+        a[11]=r.age!=null?r.age:'';
+        a[12]=r.sex||'';
+        a[13]=r.date_admission?fmtDate(r.date_admission):'';
+        a[14]=r.date_onset?fmtDate(r.date_onset):'';
+        a[17]=r.forma_clinica||'';
+        a[18]=r.date_sample?fmtDate(r.date_sample):'';
+        a[19]=r.date_valid?fmtDate(r.date_valid):'';
+        a[20]=r.sample_type||'';
+        a[21]=r.iaam||'';
+        a[22]=r.cod_iaam||'';
+        a[23]=_xdrCatName(r.cod_iaam);
+        a[24]=_xdrOriginLabel(r.origine);
+        a[25]=r.sursa||'';
+        a[26]=r.cale||'';
+        a[27]=r.nr_contacti!=null?r.nr_contacti:'';
+        a[28]=r.populatie_risc||'';
+        a[29]=r.izolat||'';
+        a[30]=r.date_discharge?fmtDate(r.date_discharge):'';
+        a[31]=r.stare||'';
+        a[32]=r.observatii||'';
+        a[33]=r.validat_de||'';
+        a[34]=xdrClassLabel(r.clasa);
+        a[35]=r.nr_buletin||'';
+        a[36]=(r.cat_sensibile!=null&&r.cat_testate!=null)?(r.cat_sensibile+' / '+r.cat_testate):'';
+        return a;
+      });
+    _xdrSaveXlsx([XDR_REG_HEADER].concat(randuri),'Registru alerte','Registru_alerte_XDR_PDR_Cauris_'+A.year);
+  }catch(e){errAlert(e,'Nu am putut exporta registrul de alerte.','Could not export the alert register.')}
+}
+
+// Alertele detectate acum, in acelasi format — pentru cazul in care nu s-au inscris inca in registru.
+async function xdrExportAlerte(){
+  if(!_xdrXlsxReady())return;
+  try{
+    var d=_xdrData;
+    if(!d){render();return}
+    var rap=d.rezultate.filter(function(r){return r.raportabil});
+    if(!rap.length){alert(_M('Nu exista cazuri de raportat pe perioada selectata.'));return}
+    var randuri=rap.map(function(r,i){
+      var c=r.clasificare;
+      var a=new Array(XDR_REG_HEADER.length).fill('');
+      a[0]=i+1;
+      a[2]=xdrStatusLabel('initial');
+      a[6]=CFG.hospital_name||'';
+      a[8]=r.section?_xdrSecName(r.section):'';
+      a[9]=r.organism||'';
+      a[18]=r.date?fmtDate(r.date):'';
+      a[20]=r.sample_type||'';
+      a[21]=r.iaam_case_id?'IAAM':'';
+      a[32]=r.motiv||'';
+      a[34]=xdrClassLabel(r.clasa);
+      a[35]=r.nr_buletin||'';
+      a[36]=c?(c.catSensibile+' / '+c.nrTestate):'';
+      return a;
+    });
+    _xdrSaveXlsx([XDR_REG_HEADER].concat(randuri),'Alerte de raportat','Alerte_XDR_PDR_Cauris_'+A.year);
+  }catch(e){errAlert(e,'Nu am putut exporta alertele.','Could not export the alerts.')}
+}
+
+// Solicitarea catre laborator — ce categorii lipsesc ca sa se poata incadra.
+async function xdrExportPosibil(){
+  if(!_xdrXlsxReady())return;
+  try{
+    var d=_xdrData;
+    if(!d){render();return}
+    var pos=d.rezultate.filter(function(r){return r.clasa==='posibil_XDR'});
+    if(!pos.length){alert(_M('Nu exista izolate in aceasta categorie.'));return}
+    var antet=['Nr.','Buletin laborator','Data','Proba','Sectia','Microorganism',
+      'Categorii testate','Categorii-cheie netestate','Antibiotice suplimentare solicitate'];
+    var randuri=pos.map(function(r,i){
+      var c=r.clasificare;
+      return [i+1,r.nr_buletin||'',r.date?fmtDate(r.date):'',r.sample_type||'',
+        r.section?_xdrSecName(r.section):'',r.organism||'',
+        c.nrTestate+' / '+c.nrTotal,
+        c.cheieLipsa.length?c.cheieLipsa.join(', '):(r.poateConfirma?'':'(lotul contine doar rezistentele)'),''];
+    });
+    _xdrSaveXlsx([antet].concat(randuri),'Antibiograma extinsa','Solicitare_antibiograma_extinsa_'+A.year);
+  }catch(e){errAlert(e,'Nu am putut exporta solicitarea.','Could not export the request.')}
 }
 
 </script>
@@ -24926,7 +26246,7 @@ function _setupCfgIntroGroups(){
 const CFG_DEL_REFS={
   sections:[['iaam','section'],['autocontrol','section'],['deseuri','section'],['audits','section'],
     ['trainings','section'],['atb_consum','section'],['atp','section'],['uvcheck','section'],
-    ['ipc_registry','section'],['atb_approvals','section'],['outbreaks','section']],
+    ['ipc_registry','section'],['ipc_registry','section_adm'],['atb_approvals','section'],['outbreaks','section']],
   probe_types:[['autocontrol','probe_type']],
   // v13.62 - trei mapari indicau nume de camp care nu exista in inregistrari, deci
   // _cfgCountRefs citea mereu `undefined` si raporta 0 referinte: `cfgDelete` sarea exact peste
@@ -26460,6 +27780,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.86',date:'2026-08-06',summary:"Multirezistenta, ceruta de user imediat dupa motorul XDR: MDR se numara si se arata — pe germen, pe sectie, pe produs — si intra in raportul trimestrial de care are nevoie colega, dar NU in registrul de alerte pentru DSP."},
+  {version:'13.85',date:'2026-08-06',summary:"Motorul XDR / PDR / C. auris, portat in aplicatie din motorul propriu al userului. Clasifica dupa Magiorakos izolatele deja importate, scoate cazurile de raportat la DSP si tine registrul de alerte al unitatii. Refuza sa confirme XDR cand datele nu permit — si spune de ce."},
   {version:'13.84',date:'2026-08-04',summary:"Profilurile de import si aliasurile de denumiri, cerute pentru ca la 50 de spitale sunt 50 de programe. Pe drum a iesit ca importul de laborator era complet nefunctional de peste douazeci de versiuni, impreuna cu inca patru locuri stricate de aceeasi greseala."},
   {version:'13.83',date:'2026-08-04',summary:"Raportul microbiologic citeste acum orice forma in care laboratorul scrie S/I/R si scoate trei lucruri care lipseau: evolutia fata de perioada anterioara, antibioticele ramase eficiente, si fenotipurile pe germen. Pornit de la observatia userului ca la 50 de spitale sunt 50 de programe si introducere libera."},
   {version:'13.82',date:'2026-08-04',summary:"Raportul microbiologic trimestrial si anual, cerut de colege, care faceau manual enumerarea tulpinilor si tabelul de rezistenta. Verificat pe raportul lor real din trim. I 2025 — se potriveste, si a scos doua erori de numarare manuala."},

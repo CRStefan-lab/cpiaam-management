@@ -1,14 +1,13 @@
 {
-  "version": "13.84",
-  "version_note": "Profiluri de import si aliasuri de denumiri — plus repararea importului de laborator, care era nefunctional",
+  "version": "13.86",
+  "version_note": "Multirezistenta (MDR) in analiza si in raportul trimestrial, legata de antibiograma locala",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "REPARAT, grav: importul datelor de laborator din CSV era NEFUNCTIONAL. Cele sapte selectoare de coloana primeau toate acelasi identificator gol, din cauza unei greseli de scriere in cod, iar la apasarea butonului „Importa\" aplicatia dadea eroare si nu importa nimic. Era stricat din v13.62, adica de peste douazeci de versiuni.",
-    "REPARAT: la auditul de igiena a mainilor, butonul de adaugare a unui calup de observatii nu facea nimic vizibil — datele cresteau in fundal, dar randul nu aparea pe ecran. La salvare, auditul avea mai multe randuri decat introdusese auditorul. Aceeasi cauza. La fel butoanele de raspuns din auditul clinic FO antibiotice, care dadeau eroare de sintaxa si nu raspundeau la click.",
-    "REPARAT si in Calendar, Deseuri si Obiective, unde aceeasi greseala facea ca elementele sa primeasca identificatori identici. La Obiective, campurile de inregistrare a valorii nu se puteau citi corect.",
-    "REPARAT, defect ascuns de cel de mai sus: potrivirea germenului la import cauta intr-o lista de grupuri ca si cum ar fi fost o lista simpla de germeni, deci dadea eroare. Nu se vedea, pentru ca importul murea mai devreme.",
-    "REPARAT: importul cerea rezultatul scris exact „S\", „I\" sau „R\" si ARUNCA TACIT orice alta forma. Un fisier in care laboratorul scrie „Sensibil\" si „Rezistent\" se importa cu izolatele goale, fara nicio antibiograma, si nimeni nu afla de ce matricea ramane goala. Acum se citesc toate formele, inclusiv „Sensibil expunere crescuta\", care inseamna intermediar.",
-    "NOU — profiluri de import. Mapezi coloanele fisierului o data, salvezi maparea sub un nume (de exemplu programul laboratorului) si data viitoare o alegi dintr-o lista. Daca fisierul s-a schimbat si o coloana din profil nu mai exista, aplicatia spune care si o lasa nemapata, in loc sa aleaga tacit prima coloana.",
-    "NOU — tabelul de aliasuri. Denumirile pe care aplicatia nu le recunoaste apar intr-o lista, le mapezi o data si raman mapate pentru toate importurile viitoare. Se pot marca si ca „nu e antibiotic\", ca sa nu mai apara. Asta e raspunsul la faptul ca fiecare laborator scrie altfel: nu incercam sa anticipam greselile, le invatam pe cele care apar efectiv."
+    "NOU — tab „Multirezistenta (MDR)\" pe pagina de alerte. Cati germeni multirezistenti ai, pe germen, pe sectie si pe produs patologic, cu procentul din tulpinile clasificabile. Pana acum raportul dadea rezistenta pe categorii de antibiotic (cate tulpini sunt rezistente la cefalosporine), nu cati germeni multirezistenti sunt si unde.",
+    "MDR NU intra in registrul de alerte si nu se raporteaza la DSP la un singur caz — acolo raman doar XDR, suspiciunea de PDR si C. auris. Cifrele MDR sunt pentru analiza proprie si pentru raportul trimestrial.",
+    "NOU — sectiune de multirezistenta in Raportul Microbiologic Word (trimestrial si anual): fraza de sinteza, tabelul pe germeni, distributia pe sectii si nota de metoda. Se calculeaza cu acelasi motor ca pagina de alerte, deci raportul si ecranul nu pot da cifre diferite.",
+    "Doua numaratori distincte, ca sa nu se contrazica doua tabele alaturate: „cel putin MDR\" (nesensibil in 3 sau mai multe categorii — acopera si XDR, si PDR) si coloana „MDR\", care e clasa exclusiva si se aduna cu celelalte.",
+    "Numitorul e numarul de tulpini din specii care AU tabel de categorii Magiorakos. Streptococii, candidele non-auris si C. difficile nu pot fi nici MDR, nici non-MDR — daca ar intra in numitor, procentul ar scadea fara sa se schimbe nimic. Cate au ramas neclasificabile se scrie langa procent.",
+    "Antibiograma Locala are acum un card „cel putin MDR\" si un buton catre clasificarea MDR / XDR — cine se uita la profilul de rezistenta vede imediat cati multirezistenti are, nu doar procentele pe antibiotic."
   ]
 }

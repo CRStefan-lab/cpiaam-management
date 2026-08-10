@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.88</title>
+<title>CPIAAM Management v13.90</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2411,7 +2411,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.88';
+const APP_VERSION='13.90';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -15028,7 +15028,10 @@ const LF_ORGANISME=['escherichia coli','e coli','klebsiella pneumoniae','klebsie
  'stenotrophomonas maltophilia','stenotrophomonas','burkholderia cepacia','burkholderia',
  'clostridioides difficile','clostridium difficile'];
 // Rezultate care NU sunt izolate. Fara ele, „fara crestere" ar fi luat drept text de analizat.
-const LF_RE_FARA_CRESTERE=/(lipsa proba|proba nu|steril|absent|negativ|fara crestere|flora normal|1000\s*ufc|<\s*1000|nu s a izolat|nu se izoleaza|cultura negativ)/i;
+// „flora polimorfa (posibil contaminare)" apare in fisierul real al userului si NU e un izolat —
+// e o proba de repetat. Nu contine oricum un nume de specie, deci nu ar fi produs un izolat, dar
+// e mai bine numarata explicit ca proba fara crestere decat lasata sa cada din intamplare.
+const LF_RE_FARA_CRESTERE=/(lipsa proba|proba nu|steril|absent|negativ|fara crestere|flora normal|flora polimorf|1000\s*ufc|<\s*1000|nu s a izolat|nu se izoleaza|cultura negativ)/i;
 function _lfGasesteOrganism(text){
   const t=_lfNorm(text);
   let gasit=null,lung=-1;
@@ -15133,7 +15136,21 @@ function labNarrativeParse(txt){
   const text=String(txt).replace(/ /g,' ');
   if(_lfEsteGramaticaB(text))return _lfParseB(text);
 
-  const segmente=text.split(/;/);
+  // SEGMENTAREA. Textul e o insiruire de campuri „<prefix> = <valoare>" despartite prin „;".
+  // PROBLEMA, gasita pe fisierul real al userului: acelasi laborator separa si ANTIBIOTICELE tot
+  // cu „;" — „Antibiograma sensibil = Norfloxacină;Ciprofloxacină;Gentamicină;...". Spart naiv pe
+  // „;", din sase antibiotice se pastra UNUL: primul ramanea lipit de „= ", iar restul deveneau
+  // segmente proprii, fara „=", pe care bucla le trata ca segmente de identificare si le arunca.
+  // Antibiograma se pierdea aproape integral, tacut — exact tiparul care schimba un procent de
+  // rezistenta fara nicio eroare.
+  // REGULA: o bucata incepe un camp NOU doar daca are „=". Cele fara „=" sunt continuarea listei
+  // precedente si se lipesc inapoi de ea, cu virgula, ca `_lfSpargeAB` sa le poata separa.
+  const brute=text.split(/;/);
+  const segmente=[];
+  brute.forEach(function(b){
+    if(!segmente.length||b.indexOf('=')>=0)segmente.push(b);
+    else segmente[segmente.length-1]+=','+b;
+  });
   const probe=new Map();
   const iaProba=function(seg){
     let m=seg.match(/^\s*([^=]*?)\s*Antibiograma/i);
@@ -15170,10 +15187,279 @@ function labNarrativeParse(txt){
     if(!p.organism&&p.rez.length)p.organism=_lfOrganismPrezent(text);
     if(p.organism||p.rez.length)out.push(p);
   });
+  // Al treilea dialect, cu DOUA PUNCTE in loc de „=": „Identificare: Escherichia coli-prezent
+  // Sensibil la: Meropenem, Colistin Rezistent la: Ampicilina". Asa scrie registrul LIS, care pana
+  // acum avea drum separat. Se incearca numai daca parsarea de mai sus nu a scos niciun antibiotic
+  // — altfel ar dubla rezultatele deja gasite.
+  const areRez=out.some(function(p){return p.rez&&p.rez.length});
+  if(!areRez&&/(sensibil|rezistent|intermediar)[a-zăâîșț ]{0,12}:/i.test(text)){
+    const rez=[];
+    const re=/(sensibil|rezistent|intermediar)[a-zăâîșț ]{0,12}:\s*([\s\S]*?)(?=(?:sensibil|rezistent|intermediar)[a-zăâîșț ]{0,12}:|$)/gi;
+    let m;
+    while((m=re.exec(text))){
+      const et=_lfNorm(m[1]);
+      const sir=/rezistent/.test(et)?'R':(/intermediar/.test(et)?'I':'S');
+      _lfSpargeAB(m[2]).forEach(function(ab){rez.push({antibiotic:ab,sir:sir})});
+    }
+    if(rez.length){
+      const org=(out[0]&&out[0].organism)||_lfOrganismPrezent(text);
+      if(out.length)out[0].rez=rez;
+      else if(org)out.push({proba:'',organism:org,rez:rez});
+    }
+  }
   return out;
 }
 
-// ═══ 3. DETECTIA COLOANEI NARATIVE ═══
+// ═══ 3. REGISTRUL DE REZULTATE eSPITAL — raport, nu tabel ═══
+// Verificat pe fisierul real adus de user (`RegistruRezultateReport.xlsx`, 177 randuri):
+//   R1   „SPITALUL MUNICIPAL MOTRU"           <- antet de raport, celule imbinate
+//   R3   „Laborator de analize medicale"
+//   R5   „REGISTRU REZULTATE"
+//   R8   „(03.08.2026 - 09.08.2026)"
+//   R11  „Nr. | Nume pacient (cod cerere) | CNP | Data Cererii | Medic trimitator"   <- ANTETUL REAL
+//   R13  „1 | CIOVIRNACHE IOANA (4780) | 2441026252325 | 03.08.2026 | IVAN ..."      <- rand pacient
+//   R14  „Urocultura /... = < 1000 UFC/ml"                                            <- rand rezultat
+// Fisierul are 422 de celule imbinate, deci multe coloane goale intre valori.
+//
+// DE CE NU MERGEA: previzualizarea lua PRIMA linie drept antet — adica „SPITALUL MUNICIPAL MOTRU"
+// — si cerea maparea unor coloane care nu existau. Exact ce a raportat userul: „scrie spital motru
+// si multe pauze". Motorul lui original citea corect fisierul pentru ca avea detectia de mai jos;
+// eu portasem parserul de text, dar nu si extragerea din raport.
+//
+// Antetul real se recunoaste dupa „nume pacient" + („cnp" sau „data cererii"), in primele 40 de
+// randuri. Randul de pacient are Nr. numeric si nume nevid; orice alt rand e continuare de text.
+function labIsESpital(matrice){
+  if(!matrice||!matrice.length)return -1;
+  for(let i=0;i<Math.min(matrice.length,40);i++){
+    const linie=(matrice[i]||[]).map(function(c){return String(c==null?'':c)}).join(' ').toLowerCase();
+    if(linie.indexOf('nume pacient')>=0&&(linie.indexOf('cnp')>=0||linie.indexOf('data cererii')>=0))return i;
+  }
+  return -1;
+}
+// Initialele din nume. In aplicatie NU intra niciodata numele si nici CNP-ul — doar initialele si
+// codul cererii. Regula GDPR din CLAUDE.md, si e si motivul pentru care extragerea se face aici,
+// nu la import: numele nu ajunge niciodata intr-o inregistrare.
+function labInitiale(nume){
+  if(!nume)return '';
+  return String(nume).replace(/\([^)]*\)/g,' ').split(/\s+/)
+    .filter(function(w){return /[a-zA-Zăâîșț]/.test(w)})
+    .map(function(w){return w[0].toUpperCase()+'.'}).join('');
+}
+// „IONESCU STELA (3064)" -> „3064"
+function labCodCerere(nume){
+  const m=String(nume||'').match(/\((\d+)\)/);
+  return m?m[1]:'';
+}
+function labExtractESpital(matrice,idxAntet){
+  const antet=(matrice[idxAntet]||[]).map(function(c){return String(c==null?'':c).trim()});
+  const col={};
+  antet.forEach(function(h,j){
+    const n=_lfNorm(h);
+    if(!n)return;
+    if(n.indexOf('nr')===0&&col.nr===undefined)col.nr=j;
+    else if(n.indexOf('nume pacient')>=0&&col.nume===undefined)col.nume=j;
+    else if(n==='cnp'&&col.cnp===undefined)col.cnp=j;
+    else if(n.indexOf('data cererii')>=0&&col.data===undefined)col.data=j;
+    else if(n.indexOf('medic')>=0&&col.medic===undefined)col.medic=j;
+  });
+  const pacienti=[];
+  let curent=null;
+  for(let i=idxAntet+1;i<matrice.length;i++){
+    const r=(matrice[i]||[]).map(function(c){return c==null?'':String(c).trim()});
+    if(r.every(function(c){return c===''}))continue;
+    const valNr=col.nr!==undefined?r[col.nr]:'';
+    const valNume=col.nume!==undefined?r[col.nume]:'';
+    if(/^\d+$/.test(valNr)&&valNume){
+      curent={nr:valNr,initiale:labInitiale(valNume),cod:labCodCerere(valNume),
+        data:col.data!==undefined?r[col.data]:'',text:''};
+      pacienti.push(curent);
+    }else if(curent){
+      const t=r.filter(function(c){return c!==''}).join(' ');
+      // Pe paginile urmatoare antetul si titlurile raportului se repeta — nu sunt rezultate.
+      if(/nume pacient|data cererii|medic trimitator/i.test(t))continue;
+      if(/registru rezultate|spitalul|laborator de analize|^analize\s*:/i.test(t))continue;
+      curent.text+=(curent.text?' ':'')+t;
+    }
+  }
+  return {pacienti:pacienti,col:col};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 4. CITIRE AUTOMATA — dupa CONTINUT, nu dupa forma fisierului
+// ═══════════════════════════════════════════════════════════════
+// Observatia userului, si e corecta ca arhitectura: „nu putem face aplicatia doar pentru 2-3
+// programe". Se ajunsese la sase drumuri de import (tabelar, registru HTML, registru din foaie,
+// raport eSpital, coloana narativa, Word), fiecare cu detectie si mapare proprii. La 50 de spitale
+// sunt 50 de programe de laborator; drumul al saptelea nu rezolva nimic.
+//
+// SCHIMBAREA DE PRINCIPIU: nu se mai intreaba „ce format e fisierul?", ci „ce scrie in el?".
+// Aplicatia are deja dictionarele — germeni (LF_ORGANISME), antibiotice (`micCategorie`, cu
+// aliasurile invatate de user) si interpretarea S/I/R (`micSIR`). Ele pot recunoaste o coloana
+// dupa CONTINUTUL ei, indiferent cum se cheama antetul si in ce limba e scris.
+//
+// CE NU SE SCHIMBA, si e important: extragerea automata NU importa singura. Arata intai CE A
+// INTELES, cerere cu cerere, si abia dupa confirmare scrie ceva. Un parser care ghiceste bine in
+// 95% din cazuri si gresit tacut in 5% e mai periculos decat unul care cere mapare, pentru ca
+// aplicatia produce documente trimise la DSP. Maparea manuala ramane, ca portita.
+
+// E o denumire de antibiotic? Se foloseste dictionarul aplicatiei, deci si aliasurile invatate.
+function _lfEsteAtb(v){
+  const s=String(v||'').trim();
+  if(!s||s.length<3||s.length>45)return false;
+  if(typeof micCategorie==='function'&&micCategorie(s))return true;
+  // A DOUA SANSA: tabelele Magiorakos din xdr.js, care contin si denumirile ENGLEZESTI si
+  // codurile EUCAST. Expresiile lui `micCategorie` sunt scrise pentru romana, deci „Ampicillin"
+  // — cu doi de L, ca in engleza — NU se potriveste cu „ampicilin". Prins la testare pe un fisier
+  // cu antet englezesc: coloana de antibiotic iesea la jumatate recunoscuta si detectia cadea.
+  // Daca sustinem ca recunoasterea nu depinde de limba, nici dictionarul nu are voie sa depinda.
+  if(typeof xdrFindCat==='function'&&typeof XDR_CAT!=='undefined'){
+    for(var g in XDR_CAT){if(xdrFindCat(g,s)!==null)return true}
+  }
+  return false;
+}
+function _lfEsteData(v){
+  const s=String(v||'').trim();
+  if(!s)return false;
+  return /^\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}/.test(s)||/^\d{4}-\d{2}-\d{2}/.test(s);
+}
+function _lfEsteCod(v){
+  const s=String(v||'').trim();
+  return /^[A-Za-z]{0,3}[-\/]?\d{1,10}$/.test(s);
+}
+// Profilul fiecarei coloane: ce PROPORTIE din valorile ei nevide arata a germen, a antibiotic,
+// a rezultat S/I/R, a data, a cod. Din proportiile astea se deduce rolul coloanei.
+function labProfileColumns(matrice){
+  const nc=matrice.reduce(function(m,r){return Math.max(m,(r||[]).length)},0);
+  const prof=[];
+  for(let c=0;c<nc;c++){
+    let n=0,germ=0,atb=0,sir=0,dat=0,cod=0,lung=0,mark=0,distincte={};
+    for(let i=0;i<matrice.length;i++){
+      const v=String(((matrice[i]||[])[c])==null?'':(matrice[i]||[])[c]).trim();
+      if(!v)continue;
+      n++;lung+=v.length;distincte[v.toLowerCase()]=1;
+      if(v.length<60&&_lfGasesteOrganism(v))germ++;
+      if(_lfEsteAtb(v))atb++;
+      if(v.length<=30&&(typeof micSIR==='function'?micSIR(v):null))sir++;
+      if(_lfEsteData(v))dat++;
+      if(_lfEsteCod(v))cod++;
+      if(/sensibil|rezistent|antibiograma|intermediar/i.test(v))mark++;
+    }
+    prof.push({c:c,n:n,germ:n?germ/n:0,atb:n?atb/n:0,sir:n?sir/n:0,data:n?dat/n:0,cod:n?cod/n:0,
+      medieLung:n?lung/n:0,markeri:n?mark/n:0,distincte:Object.keys(distincte).length});
+  }
+  return prof;
+}
+// Randurile care contin un rezultat scris ca text (lung + markeri de antibiograma).
+function _lfEsteRandText(r){
+  const cel=(r||[]).map(function(x){return String(x==null?'':x).trim()}).filter(Boolean);
+  if(!cel.length)return false;
+  const t=cel.join(' ');
+  return t.length>60&&/sensibil|rezistent|antibiograma|ufc|identificare|cultura/i.test(t);
+}
+// Gruparea in CERERI, indiferent daca textul e pe acelasi rand cu codul (fisier tabelar cu coloana
+// narativa) sau pe randurile de dedesubt (raport). Un rand care nu e text si are un cod incepe o
+// cerere noua; randurile de text se adauga la cererea curenta.
+function labAutoRecords(matrice){
+  // Profilul pentru gasirea ANCOREI se face NUMAI pe randurile care nu sunt text. Altfel, intr-un
+  // raport unde rezultatul e scris in aceeasi coloana cu numerotarea (cazul real al userului:
+  // „1", „2", „3" si textul rezultatului, toate in coloana A), lungimea medie a coloanei sare la
+  // sute de caractere si coloana de cod nu mai e recunoscuta — iar tot fisierul devine o singura
+  // cerere anonima. Prins la testare pe fisierul lui.
+  // In plus, se pastreaza doar randurile cu CEL PUTIN DOUA celule nevide. Un rand de cerere poarta
+  // mai multe campuri (nr, nume, cnp, data); un titlu de raport („REGISTRU REZULTATE", „Analize:
+  // ...") e o celula singura, dar sta in ACEEASI coloana cu numerotarea si ii strica proportia.
+  // Pe fisierul real, cu 82 de cereri fata de 5 randuri de titlu, nu se vedea; pe unul mic, da.
+  const _nev=function(r){return (r||[]).filter(function(c){return String(c==null?'':c).trim()}).length};
+  const randuriAncora=matrice.filter(function(r){return !_lfEsteRandText(r)&&_nev(r)>=2});
+  const prof=labProfileColumns(randuriAncora.length>1?randuriAncora:matrice);
+  // coloana de cod: multe valori de tip cod, multe distincte, si NU e coloana de text
+  let cCod=-1,best=0;
+  prof.forEach(function(p){
+    if(p.n<2||p.medieLung>40)return;
+    const sc=p.cod*(p.distincte/Math.max(1,p.n));
+    if(sc>best&&p.cod>0.5){best=sc;cCod=p.c}
+  });
+  let cData=-1,bd=0;
+  prof.forEach(function(p){if(p.data>bd&&p.data>0.5){bd=p.data;cData=p.c}});
+
+  const recs=[];let cur=null;
+  for(let i=0;i<matrice.length;i++){
+    const r=matrice[i]||[];
+    const cel=r.map(function(x){return String(x==null?'':x).trim()});
+    if(cel.every(function(x){return !x}))continue;
+    const eText=_lfEsteRandText(r);
+    const codVal=cCod>=0?cel[cCod]:'';
+    // ANCORA = rand care incepe o cerere noua. Orice alt rand, dupa o ancora, e continuarea ei —
+    // NU doar randurile lungi. Prima varianta cerea peste 60 de caractere ca sa considere un rand
+    // drept rezultat, si atunci un rezultat scurt („Urocultura = < 1000 UFC/ml") se pierdea cu
+    // totul, impreuna cu cererea lui: nu aparea nici macar la „fara crestere". Pe fisierul real
+    // nu se vedea, pentru ca acolo textele sunt lungi — a iesit abia pe un fixture sintetic.
+    if(!eText&&codVal&&_lfEsteCod(codVal)&&_nev(r)>=2){
+      cur={cod:codVal,data:cData>=0?(cel[cData]||''):'',text:'',nume:''};
+      // Codul CERERII, cand exista, e mai bun decat numarul de ordine: laboratorul il scrie de
+      // obicei in paranteza, langa nume („IONESCU ANA (4780)"). Numele in sine NU se pastreaza —
+      // din el se iau doar initialele, mai jos, la construirea izolatului.
+      cel.forEach(function(v,j){
+        if(j===cCod||j===cData)return;
+        if(/\(\d+\)/.test(v)&&/[A-Za-zĂÂÎȘȚ]{3,}/.test(v)&&!cur.nume){
+          cur.nume=v;
+          const cc=labCodCerere(v);
+          if(cc)cur.cod=cc;
+        }
+      });
+      recs.push(cur);
+      // textul poate fi si pe ACELASI rand (fisier tabelar cu coloana narativa)
+      const peRand=cel.filter(function(v,j){return j!==cCod&&j!==cData&&v.length>60});
+      if(peRand.length)cur.text=peRand.join(' ');
+    }else if(cur){
+      const tc=cel.filter(Boolean).join(' ');
+      // Antetul si titlurile raportului se repeta pe paginile urmatoare — nu sunt rezultate.
+      if(/nume pacient|data cererii|medic trimitator|registru rezultate|spitalul|laborator de analize|^\s*analize\s*:/i.test(tc))continue;
+      cur.text+=(cur.text?' ':'')+tc;
+    }else if(eText&&!cur){
+      const t=cel.filter(Boolean).join(' ');
+      // Antetul raportului („Analize: Antibiograma/metoda difuzimetrica; Urocultura /...") arata
+      // ca un rand de text — e lung si contine „antibiograma" — dar e enumerarea analizelor
+      // cerute, nu un rezultat. Aparea ca o cerere in plus, fara izolat. Aceeasi lista de
+      // exceptii ca la calea specializata.
+      if(/^\s*analize\s*:|registru rezultate|spitalul|laborator de analize/i.test(t))continue;
+      // text fara cod inainte — cerere anonima, tot se citeste
+      cur={cod:'',data:'',text:t,nume:''};
+      recs.push(cur);
+    }
+  }
+  return recs.filter(function(r){return r.text});
+}
+// Decizia finala. Intoarce {mod, ...} sau null cand nu recunoaste nimic.
+//   'tabelar' — exista coloane distincte de germen / antibiotic / rezultat
+//   'text'    — rezultatul e scris ca text, pe rand sau pe randurile urmatoare
+function labAutoDetect(matrice){
+  if(!matrice||matrice.length<2)return null;
+  // Randul de antet nu se potriveste niciodata cu nimic („Pathogen", „Drug"), deci trage in jos
+  // proportia fiecarei coloane — cu atat mai mult intr-un fisier mic. De aceea se profileaza SI
+  // fara primul rand, si se ia proportia mai buna. Fara asta, un fisier cu 3 randuri de date
+  // pica exact la limita: 2 din 4 valori inseamna 0,50, adica sub prag.
+  const prof=labProfileColumns(matrice);
+  const profF=labProfileColumns(matrice.slice(1));
+  const pick=function(camp,prag){
+    let b=-1,v=prag;
+    prof.forEach(function(p,i){
+      const val=Math.max(p[camp],(profF[i]&&profF[i].n>=2)?profF[i][camp]:0);
+      if(p.n>=2&&val>v){v=val;b=p.c}
+    });
+    return b;
+  };
+  const cGerm=pick('germ',0.4),cAtb=pick('atb',0.5),cSir=pick('sir',0.6);
+  if(cGerm>=0&&cAtb>=0&&cSir>=0&&cGerm!==cAtb&&cAtb!==cSir&&cGerm!==cSir){
+    return {mod:'tabelar',cols:{germen:cGerm,atb:cAtb,result:cSir,
+      buletin:pick('cod',0.5),date:pick('data',0.5)},prof:prof};
+  }
+  const recs=labAutoRecords(matrice);
+  if(recs.length)return {mod:'text',records:recs,prof:prof};
+  return null;
+}
+
+// ═══ 5. DETECTIA COLOANEI NARATIVE ═══
 // O coloana narativa are doua semne: text LUNG in medie, si markeri de antibiograma in destule
 // randuri. Pragurile sunt cele din motorul userului (medie > 100 caractere, peste 20% din randuri
 // cu markeri) — verificate de el pe exporturi reale.
@@ -15558,7 +15844,7 @@ function importLabCSV(){
 // si alegeai unul care esueaza la parsare, butonul „Importa" ramanea activ si _labRows continea
 // inca randurile primului fisier — clic pe Importa importa fisierul precedent, cu mesaj de succes.
 function _labResetState(msg){
-  window._labRows=null;window._labHeader=null;window._labParsed=null;window._labFormat=null;
+  window._labRows=null;window._labRowsAll=null;window._labHeader=null;window._labParsed=null;window._labFormat=null;window._labESpital=null;
   var btn=document.getElementById('lab-import-btn');if(btn)btn.disabled=true;
   var pv=document.getElementById('lab-preview');
   // `.ib` e display:flex, deci marcajul inline din mesaj (<strong>, <br>) ar deveni coloane.
@@ -15633,7 +15919,15 @@ async function previewLabFile(){
     }
     let txtD;
     try{
-      txtD=labMatrixToTSV(await labReadDocx(await f.arrayBuffer()));
+      const matD=await labReadDocx(await f.arrayBuffer());
+      window._labSursa='Word (.docx)';window._labMatrix=matD;
+      // Intai recunoasterea automata dupa continut. Doar daca ea nu scoate niciun izolat se cade
+      // pe drumurile vechi — asa nu se pierde nimic din ce mergea inainte.
+      const dA=(typeof labAutoDetect==='function')?labAutoDetect(matD):null;
+      if(dA&&labAutoIzolate(matD,dA).length)return previewLabAuto(matD,dA);
+      const iD=(typeof labIsESpital==='function')?labIsESpital(matD):-1;
+      if(iD>=0)return previewLabESpital(matD,iD);
+      txtD=labMatrixToTSV(matD);
     }catch(e){
       console.log('DOCX:',e);
       _labResetState(e&&e.message==='NO_DECOMPRESSION'
@@ -15666,9 +15960,20 @@ async function previewLabFile(){
         if(nr>bestN){bestN=nr;best=ws}
       });
       if(!best){_labResetState('Fisierul Excel nu contine nicio foaie cu date.');return}
+      // Intai matricea, ca sa se poata verifica daca e un RAPORT (registru de rezultate eSpital)
+      // si nu un tabel. Un raport are antet de firma pe primele randuri si celule imbinate, deci
+      // pe drumul tabelar prima linie ar deveni „SPITALUL MUNICIPAL MOTRU" — exact ce a raportat
+      // userul. Verificat pe fisierul lui real.
+      const mat=XLSX.utils.sheet_to_json(best,{header:1,defval:'',raw:false,blankrows:true});
+      window._labSursa=eOle?'Excel (.xls binar)':'Excel (.xlsx / .ods)';window._labMatrix=mat;
+      // Intai recunoasterea automata dupa continut; drumurile vechi raman ca plasa.
+      const dA2=(typeof labAutoDetect==='function')?labAutoDetect(mat):null;
+      if(dA2&&labAutoIzolate(mat,dA2).length)return previewLabAuto(mat,dA2);
+      const iESp=(typeof labIsESpital==='function')?labIsESpital(mat):-1;
+      if(iESp>=0)return previewLabESpital(mat,iESp);
       // Separator TAB, nu „;": previzualizarea CSV imparte randul cu split() simplu, deci un „;"
       // aflat intr-o celula ar deplasa toate coloanele de dupa el. Tabul nu apare in celule.
-      txtX=XLSX.utils.sheet_to_csv(best,{FS:'\t',blankrows:false});
+      txtX=labMatrixToTSV(mat);
     }catch(e){
       console.log('XLSX:',e);
       _labResetState('Nu am putut citi fisierul Excel. Salveaza-l din Excel ca <strong>CSV</strong> si incearca din nou.');
@@ -15679,6 +15984,19 @@ async function previewLabFile(){
   }
   window._labSursa='CSV / text';
   const txt=await f.text();
+  // Fisierele text trec si ele prin recunoasterea automata: se face intai o matrice, cu acelasi
+  // separator pe care il detecteaza si previzualizarea tabelara.
+  // HTML-ul din LIS NU trece pe aici — are drum propriu, verificat, pentru dialectul lui.
+  if(!(txt.trim().startsWith('<')||txt.includes('<table')||txt.includes('<!DOCTYPE'))){
+    const lin=txt.split('\n').filter(function(l){return l.trim()});
+    if(lin.length>1){
+      const sp=lin[0].indexOf('\t')>=0?'\t':(lin[0].indexOf(';')>=0?';':',');
+      const matT=lin.map(function(l){return l.split(sp).map(function(c){return c.replace(/^["']|["']$/g,'').trim()})});
+      window._labMatrix=matT;
+      const dT=(typeof labAutoDetect==='function')?labAutoDetect(matT):null;
+      if(dT&&labAutoIzolate(matT,dT).length)return previewLabAuto(matT,dT);
+    }
+  }
   // Detect HTML (XLS from LIS is actually HTML)
   if(txt.trim().startsWith('<')||txt.includes('<table')||txt.includes('<!DOCTYPE')){
     return previewLabHTML(txt);
@@ -15967,6 +16285,307 @@ function matchAtbName(listName,labName){
   return a===b||a.startsWith(b.substring(0,6))||b.startsWith(a.substring(0,6));
 }
 
+// ═══════════════════════════════════════════════════════════════
+// CITIRE AUTOMATA — drumul principal de import (v13.90)
+// ═══════════════════════════════════════════════════════════════
+// Cerut de user: „nu putem face aplicatia doar pentru 2-3 programe". Pana aici erau sase drumuri
+// de import, fiecare cu detectie si mapare proprii. Acum se incearca INTAI recunoasterea dupa
+// continut (`labAutoDetect` din lab_formats.js), care nu se uita nici la extensie, nici la numele
+// coloanelor, ci la ce contin ele. Maparea manuala ramane, dar ca portita.
+//
+// AUTOMATUL NU IMPORTA SINGUR. Arata intai ce a inteles, cerere cu cerere, si abia dupa
+// confirmare scrie. Un parser care ghiceste bine in 95% din cazuri si gresit TACUT in 5% e mai
+// periculos decat unul care cere mapare — de aici pleaca documente la DSP.
+
+// Coloana de sectie se recunoaste comparand valorile cu sectiile configurate. Nu se poate ghici
+// dintr-un dictionar general: numele sectiilor sunt ale fiecarui spital.
+function _labGuessSecCol(matrice){
+  const secs=(CFG.sections||[]).map(function(s){return String(s.name||'').toLowerCase().trim()}).filter(Boolean);
+  if(!secs.length)return -1;
+  const nc=matrice.reduce(function(m,r){return Math.max(m,(r||[]).length)},0);
+  let best=-1,bv=0.5;
+  for(let c=0;c<nc;c++){
+    let n=0,ok=0;
+    for(let i=0;i<matrice.length;i++){
+      const v=String(((matrice[i]||[])[c])==null?'':(matrice[i]||[])[c]).trim().toLowerCase();
+      if(!v||v.length>40)continue;
+      n++;
+      if(secs.some(function(s){return v===s||v.indexOf(s)>=0||s.indexOf(v)>=0}))ok++;
+    }
+    if(n>=2&&ok/n>bv){bv=ok/n;best=c}
+  }
+  return best;
+}
+// Cuvinte de produs patologic, RO si EN. Daca sustinem ca recunoasterea nu depinde de limba
+// antetului, nici dictionarele nu au voie sa fie doar in romana — prins la testare pe un fisier
+// cu antet englezesc, unde coloana „Specimen" cu „urine" nu era recunoscuta.
+const LAB_PROBE_CUV=/urocultur|hemocultur|coprocultur|exsudat|secretie|sputa|aspirat|lichid|puroi|plaga|catete|urina|sange|urine|blood|sputum|wound|swab|stool|faec|feces|csf|catheter|pus|tissue|drain/i;
+function _labGuessProbaCol(matrice){
+  const nc=matrice.reduce(function(m,r){return Math.max(m,(r||[]).length)},0);
+  let best=-1,bv=0.5;
+  for(let c=0;c<nc;c++){
+    let n=0,ok=0;
+    for(let i=0;i<matrice.length;i++){
+      const v=String(((matrice[i]||[])[c])==null?'':(matrice[i]||[])[c]).trim();
+      if(!v||v.length>40)continue;
+      n++;if(LAB_PROBE_CUV.test(v))ok++;
+    }
+    if(n>=2&&ok/n>bv){bv=ok/n;best=c}
+  }
+  return best;
+}
+
+// Din ce a detectat motorul, construieste lista de izolate GATA de import (fara sectie si lot,
+// care vin din formular). Aceeasi functie pentru ambele moduri, deci si previzualizarea si
+// importul arata acelasi lucru — nu se poate intampla ca ecranul sa spuna una si importul alta.
+function labAutoIzolate(matrice,det){
+  const out=[];
+  if(!det)return out;
+  if(det.mod==='text'){
+    det.records.forEach(function(r){
+      const probe=labNarrativeParse(r.text).filter(function(x){return x.organism});
+      probe.forEach(function(x){
+        out.push({cod:r.cod||'',data:r.data||'',initiale:labInitiale(r.nume||''),
+          proba:(x.proba||'').trim(),organism:x.organism,rez:x.rez||[]});
+      });
+    });
+    return out;
+  }
+  // tabelar: o linie per antibiotic, grupate pe (buletin|germen)
+  const c=det.cols,cSec=_labGuessSecCol(matrice),cPro=_labGuessProbaCol(matrice);
+  det._cSec=cSec;det._cPro=cPro;
+  const map={},ord=[];
+  matrice.forEach(function(r,i){
+    const cel=(r||[]).map(function(x){return String(x==null?'':x).trim()});
+    const germ=cel[c.germen]||'';
+    if(!germ||!_lfGasesteOrganism(germ))return;// sare antetul si randurile fara germen
+    const bul=(c.buletin>=0?cel[c.buletin]:'')||('r'+i);
+    const k=bul+'|'+germ.toLowerCase();
+    if(!map[k]){
+      map[k]={cod:bul,data:c.date>=0?cel[c.date]:'',initiale:'',
+        proba:cPro>=0?cel[cPro]:'',organism:germ,rez:[],_sec:cSec>=0?cel[cSec]:''};
+      ord.push(k);
+    }
+    const ab=cel[c.atb]||'',sir=(typeof micSIR==='function')?micSIR(cel[c.result]):null;
+    if(ab&&sir&&!map[k].rez.some(function(x){return x.antibiotic.toLowerCase()===ab.toLowerCase()}))
+      map[k].rez.push({antibiotic:ab,sir:sir});
+  });
+  ord.forEach(function(k){out.push(map[k])});
+  return out;
+}
+
+function previewLabAuto(matrice,det){
+  const izo=labAutoIzolate(matrice,det);
+  window._labMatrix=matrice;window._labAuto={det:det,izolate:izo};window._labFormat='auto';
+  const nrTeste=izo.reduce(function(s,x){return s+x.rez.length},0);
+  const specii={};izo.forEach(function(x){specii[x.organism]=(specii[x.organism]||0)+1});
+  const nrCereri=det.mod==='text'?det.records.length:new Set(izo.map(function(x){return x.cod})).size;
+  const fara=det.mod==='text'?(det.records.length-new Set(izo.map(function(x){return x.cod||'?'})).size):0;
+
+  let h='<div class="ib suc"><span>Am citit fisierul: <strong>'+esc(window._labSursa||'')+'</strong><br>'+
+    'Am recunoscut: <strong>'+(det.mod==='text'
+      ?'rezultate scrise ca text, grupate pe cod de cerere'
+      :'tabel cu o linie per antibiotic (coloanele recunoscute dupa continut, nu dupa antet)')+'</strong><br>'+
+    '<strong>'+nrCereri+'</strong> cereri &#8226; <strong>'+izo.length+'</strong> izolate &#8226; '+
+    (fara>0?('<strong>'+fara+'</strong> fara crestere / negative &#8226; '):'')+
+    '<strong>'+Object.keys(specii).length+'</strong> specii, '+nrTeste+' teste antibiotic</span></div>';
+
+  if(!izo.length){
+    h+='<div class="ib wrn"><span>Nu am gasit niciun izolat. Daca fisierul chiar contine rezultate, apasa <strong>„Nu e corect — mapez manual"</strong> si alege coloanele de mana.</span></div>';
+  }else{
+    h+='<div class="ib wrn"><span><strong>Uita-te peste lista de mai jos inainte de a importa.</strong> Daca ceva nu are sens — germeni ciudati, antibiotice care lipsesc — nu importa; mapeaza manual. Din nume se pastreaza doar initialele; numele complet si CNP-ul nu se importa.</span></div>';
+    h+='<div class="pn"><div class="pb" style="overflow-x:auto;max-height:280px"><table class="dt"><thead><tr>'+
+      '<th>Cod</th><th>Data</th><th>Initiale</th><th>Proba</th><th>Germen</th><th>Antibiotice</th></tr></thead><tbody>';
+    izo.slice(0,60).forEach(function(x){
+      const s=x.rez.filter(function(y){return y.sir==='S'}).length;
+      const r=x.rez.filter(function(y){return y.sir==='R'}).length;
+      const i=x.rez.filter(function(y){return y.sir==='I'}).length;
+      h+='<tr><td>'+esc(x.cod||'—')+'</td><td style="font-size:11px">'+esc(x.data||'—')+'</td>'+
+        '<td>'+esc(x.initiale||'—')+'</td><td style="font-size:11px">'+esc(x.proba||'—')+'</td>'+
+        '<td><i>'+esc(x.organism)+'</i></td>'+
+        '<td>'+x.rez.length+(x.rez.length?' ('+[s?s+' S':'',i?i+' I':'',r?r+' R':''].filter(Boolean).join(', ')+')':'')+'</td></tr>';
+    });
+    h+='</tbody></table></div></div>';
+    if(izo.length>60)h+='<p style="font-size:11px;color:var(--txtL)">Se arata primele 60 din '+izo.length+'.</p>';
+  }
+  // Sectia: doar daca nu a fost recunoscuta din fisier.
+  const arataSec=!(det.mod==='tabelar'&&det._cSec>=0);
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0">'+
+    (arataSec?('<div class="fg"><label>Sectia (pentru tot fisierul)</label><select id="lab-auto-sec"><option value="">— nespecificata —</option>'+
+      (typeof secOptsGrouped==='function'?secOptsGrouped(''):'')+'</select></div>'):
+      '<div class="fg"><label>Sectia</label><input value="recunoscuta din fisier" disabled></div>')+
+    '<div class="fg"><label>Tip proba, daca nu reiese din fisier</label><input id="lab-auto-proba" placeholder="ex: urocultura"></div>'+
+    '</div>'+
+    '<button class="btn bo bsm" onclick="labManualFallback()">Nu e corect — mapez manual</button>';
+  document.getElementById('lab-preview').innerHTML=h;
+  document.getElementById('lab-import-btn').disabled=!izo.length;
+  var _bs=document.getElementById('lab-prof-save');if(_bs)_bs.style.display='none';
+}
+
+// Portita: reia fisierul pe drumurile vechi (raport eSpital / tabelar cu mapare de coloane).
+function labManualFallback(){
+  const m=window._labMatrix;
+  if(!m){_labResetState('Reincarca fisierul.');return}
+  window._labAuto=null;
+  const i=(typeof labIsESpital==='function')?labIsESpital(m):-1;
+  if(i>=0)return previewLabESpital(m,i);
+  return previewLabCSV(labMatrixToTSV(m));
+}
+
+async function processLabAuto(){
+  const A0=window._labAuto;
+  if(!A0||!A0.izolate.length){alert(_M('Niciun izolat de importat.'));return}
+  const secGlob=(document.getElementById('lab-auto-sec')||{}).value||'';
+  const probaMan=((document.getElementById('lab-auto-proba')||{}).value||'').trim().toLowerCase();
+  const batch=document.getElementById('f-lab-batch')?.value||A.year;
+
+  const isolates=A0.izolate.map(function(x){
+    const gm=_labMatchGerm(x.organism);
+    let sec=secGlob;
+    if(!sec&&x._sec){
+      const g=(CFG.sections||[]).find(function(s){return String(s.name||'').toLowerCase()===String(x._sec).toLowerCase()});
+      sec=g?g.id:x._sec;
+    }
+    return {
+      year:A.year,nr_buletin:x.cod||'',patient_initials:x.initiale||'',
+      date:parseLabDate(x.data||''),section:sec,
+      sample_type:((x.proba||'').trim().toLowerCase()||probaMan||'necunoscut'),
+      organism:gm?gm.n:x.organism,organism_code:gm?gm.c:'',
+      susceptibility:x.rez.map(function(y){
+        var cod='';
+        if(typeof ATB_LIST!=='undefined'){
+          (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(function(grp){grp.items.forEach(function(a){
+            if(a.n.toLowerCase()===String(y.antibiotic).toLowerCase()||a.a===y.antibiotic)cod=a.a;
+          })});
+        }
+        return {atb_code:cod,atb_name:y.antibiotic,result:y.sir};
+      }),
+      source:'lab',iaam_case_id:null,_import_batch:batch
+    };
+  });
+
+  const existing=await ga('lab_isolates');
+  const existingSet=new Set(existing.map(r=>r.year+'|'+r.nr_buletin+'|'+r.organism));
+  const iaamCases=await ga('iaam');
+  const iaamBulMap={};
+  iaamCases.forEach(c=>{
+    (c.bulletins||[]).forEach(b=>{if(b.nr)iaamBulMap[b.nr.trim()]=c.id});
+    if(c.bulletin_nr)c.bulletin_nr.split(',').forEach(n=>{const t=n.trim();if(t)iaamBulMap[t]=c.id});
+  });
+  let imported=0,skipped=0,matchedIAAM=0;
+  for(const iso of isolates){
+    const k=iso.year+'|'+iso.nr_buletin+'|'+iso.organism;
+    if(existingSet.has(k)){skipped++;continue}
+    existingSet.add(k);
+    if(iaamBulMap[iso.nr_buletin]){iso.source='iaam';iso.iaam_case_id=iaamBulMap[iso.nr_buletin];matchedIAAM++}
+    await pt('lab_isolates',iso);
+    imported++;
+  }
+  closeM();render();
+  await _labImportDone(imported,matchedIAAM,skipped,A.year);
+}
+
+// ── FORMAT 4: registru de rezultate eSpital (RAPORT, nu tabel) ──
+// Antet de firma pe primele randuri, apoi perechi rand-pacient / rand-rezultat. Vezi `labIsESpital`.
+// NU are coloana de sectie — un registru de laborator e pe spital, nu pe sectie — deci sectia se
+// alege o data pentru tot fisierul, din dialog.
+function previewLabESpital(matrice,idxAntet){
+  const esp=labExtractESpital(matrice,idxAntet);
+  window._labESpital=esp;window._labFormat='espital';
+  window._labRows=null;window._labRowsAll=null;
+
+  let cu=0,fara=0,atb=0;const specii={};
+  esp.pacienti.forEach(function(p){
+    const probe=labNarrativeParse(p.text).filter(function(x){return x.organism});
+    if(!probe.length){fara++;return}
+    cu++;
+    probe.forEach(function(x){specii[x.organism]=(specii[x.organism]||0)+1;atb+=(x.rez||[]).length});
+  });
+  const nrSpecii=Object.keys(specii).length;
+
+  let h='<div class="ib suc"><span>Fisier citit: <strong>'+esc(window._labSursa||'Excel')+'</strong>. '+
+    'Forma datelor: <strong>registru de rezultate (raport de laborator)</strong>.<br>'+
+    '<strong>'+esp.pacienti.length+'</strong> cereri &#8226; <strong>'+cu+'</strong> cu izolat &#8226; '+
+    '<strong>'+fara+'</strong> fara crestere / negative (se sar) &#8226; <strong>'+nrSpecii+'</strong> specii, '+
+    atb+' teste antibiotic</span></div>';
+  if(!cu){
+    h+='<div class="ib wrn"><span>Nu s-a gasit niciun izolat in acest fisier. Daca stii ca ar trebui sa existe, trimite fisierul dezvoltatorului — textul rezultatelor poate fi scris altfel decat stie aplicatia.</span></div>';
+  }
+  h+='<div class="ib wrn"><span><strong>Protectia datelor:</strong> numele pacientilor si CNP-ul <strong>NU</strong> se importa si nu se stocheaza. Din nume se pastreaza doar initialele, alaturi de codul cererii.</span></div>';
+  if(nrSpecii){
+    h+='<div style="margin:8px 0">'+Object.keys(specii).sort(function(a,b){return specii[b]-specii[a]})
+      .map(function(k){return '<span class="bdg bdg-b" style="margin:2px 4px 2px 0">'+esc(k)+' &times;'+specii[k]+'</span>'}).join('')+'</div>';
+  }
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0">'+
+    '<div class="fg"><label>Sectia (pentru tot fisierul)</label><select id="lab-esp-sec"><option value="">— nespecificata —</option>'+
+      (typeof secOptsGrouped==='function'?secOptsGrouped(''):'')+'</select></div>'+
+    '<div class="fg"><label>Tip proba, daca nu reiese din text</label><input id="lab-esp-proba" placeholder="ex: urocultura"></div>'+
+    '</div>';
+  document.getElementById('lab-preview').innerHTML=h;
+  document.getElementById('lab-import-btn').disabled=false;
+  var _bs=document.getElementById('lab-prof-save');if(_bs)_bs.style.display='none';
+}
+
+async function processLabESpital(){
+  const esp=window._labESpital;
+  if(!esp||!esp.pacienti.length){alert(_M('Niciun fisier incarcat.'));return}
+  const sec=(document.getElementById('lab-esp-sec')||{}).value||'';
+  const probaMan=((document.getElementById('lab-esp-proba')||{}).value||'').trim().toLowerCase();
+  const batch=document.getElementById('f-lab-batch')?.value||A.year;
+
+  const isolates=[];let fara=0;
+  esp.pacienti.forEach(function(p){
+    const probe=labNarrativeParse(p.text).filter(function(x){return x.organism});
+    if(!probe.length){fara++;return}
+    probe.forEach(function(x){
+      const gm=_labMatchGerm(x.organism);
+      isolates.push({
+        year:A.year,
+        nr_buletin:p.cod||p.nr,
+        // Initialele sunt singurul lucru care ramane din nume. Ele prefilleaza si registrul de
+        // alerte XDR, unde DSP le cere — altfel ar fi retastate de mana pentru fiecare caz.
+        patient_initials:p.initiale||'',
+        date:parseLabDate(p.data||''),
+        section:sec,
+        sample_type:((x.proba||'').trim().toLowerCase()||probaMan||'necunoscut'),
+        organism:gm?gm.n:x.organism,
+        organism_code:gm?gm.c:'',
+        susceptibility:(x.rez||[]).map(function(y){
+          var cod='';
+          if(typeof ATB_LIST!=='undefined'){
+            (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(function(grp){grp.items.forEach(function(a){
+              if(a.n.toLowerCase()===String(y.antibiotic).toLowerCase()||a.a===y.antibiotic)cod=a.a;
+            })});
+          }
+          return {atb_code:cod,atb_name:y.antibiotic,result:y.sir};
+        }),
+        source:'lab',iaam_case_id:null,_import_batch:batch
+      });
+    });
+  });
+  if(!isolates.length){alert(_M('Nu s-a gasit niciun izolat pozitiv in fisier.'));return}
+
+  const existing=await ga('lab_isolates');
+  const existingSet=new Set(existing.map(r=>r.year+'|'+r.nr_buletin+'|'+r.organism));
+  const iaamCases=await ga('iaam');
+  const iaamBulMap={};
+  iaamCases.forEach(c=>{
+    (c.bulletins||[]).forEach(b=>{if(b.nr)iaamBulMap[b.nr.trim()]=c.id});
+    if(c.bulletin_nr)c.bulletin_nr.split(',').forEach(n=>{const t=n.trim();if(t)iaamBulMap[t]=c.id});
+  });
+  let imported=0,skipped=0,matchedIAAM=0;
+  for(const iso of isolates){
+    const k=iso.year+'|'+iso.nr_buletin+'|'+iso.organism;
+    if(existingSet.has(k)){skipped++;continue}
+    existingSet.add(k);
+    if(iaamBulMap[iso.nr_buletin]){iso.source='iaam';iso.iaam_case_id=iaamBulMap[iso.nr_buletin];matchedIAAM++}
+    await pt('lab_isolates',iso);
+    imported++;
+  }
+  closeM();render();
+  await _labImportDone(imported,matchedIAAM,skipped,A.year);
+}
+
 // ── FORMAT 2: CSV tabelar (o linie per antibiotic) ──
 function previewLabCSV(txt){
   const lines=(txt||'').split('\n').filter(l=>l.trim());
@@ -16101,7 +16720,10 @@ function _labGuessRegistru(header){
 
 // ── Unified import dispatcher ──
 async function processLabImport(){
-  // Calea HTML din LIS isi are propria previzualizare si nu trece prin selectorul de forma.
+  // Calea HTML din LIS si registrul de rezultate eSpital isi au propria previzualizare si nu trec
+  // prin selectorul de forma.
+  if(window._labFormat==='auto')return processLabAuto();
+  if(window._labFormat==='espital')return processLabESpital();
   if(window._labFormat==='registru')return processLabRegistru();
   // Dispecerul citeste selectorul IN MOMENTUL IMPORTULUI, nu ce s-a detectat la previzualizare —
   // userul poate sa fi corectat intre timp, in oricare directie.
@@ -28633,6 +29255,8 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.90',date:'2026-08-10',summary:"Importul recunoaste singur fisierul, dupa continut, nu dupa forma. Un singur drum in loc de sase — cerut de user, care a spus limpede ca nu putem face aplicatia doar pentru 2-3 programe de laborator."},
+  {version:'13.89',date:'2026-08-10',summary:"Registrul de rezultate al laboratorului, adus de user ca fisier real, se citeste acum corect din Excel. Pe drum a iesit ca din antibiograma se pastra un singur antibiotic din sase."},
   {version:'13.88',date:'2026-08-06',summary:"Importul de laborator citeste acum Word si rezultate narative — ultimele doua formate din motorul original al userului. Pe drum a iesit ca specia putea fi inlocuita cu alta din aceeasi familie, defect care exista de la inceput in importul registrului LIS."},
   {version:'13.87',date:'2026-08-06',summary:"Uniformizarea denumirii claselor de beta-lactamice pe forma internationala, dupa intrebarea userului care e cea corecta. Plus o verificare noua care prinde exact greseala pe care redenumirea o putea produce."},
   {version:'13.86',date:'2026-08-06',summary:"Multirezistenta, ceruta de user imediat dupa motorul XDR: MDR se numara si se arata — pe germen, pe sectie, pe produs — si intra in raportul trimestrial de care are nevoie colega, dar NU in registrul de alerte pentru DSP."},

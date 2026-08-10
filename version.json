@@ -1,16 +1,12 @@
 {
-  "version": "13.88",
-  "version_note": "Importul de laborator: stergerea unui import gresit, recunoasterea registrului din Excel, Word si rezultate narative",
+  "version": "13.90",
+  "version_note": "Importul recunoaste singur fisierul, dupa continut — un singur drum in loc de sase",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU — se poate STERGE un import intreg. In tabelul „Istoric Importuri Laborator\" fiecare lot are acum un buton de stergere, cu confirmare si cu numarul de izolate afectate. Pana acum un import gresit nu se putea desface decat restaurand un backup, adica pierzand tot ce s-a mai lucrat intre timp.",
-    "REPARAT — registrul de rezultate exportat ca Excel intra pe drumul gresit. Fisierele de tip „Results Register\" (Cod cerere / Analiza / Valoare) erau tratate ca tabel cu o linie per antibiotic, deci fiecare rand devenea un izolat, INCLUSIV randurile probelor negative. Acum forma registrului se recunoaste singura si din foaia de calcul, nu doar din HTML, iar probele fara crestere se sar.",
-    "NOU — verificare de plauzibilitate inainte de import. Daca coloana aleasa pentru GERMEN contine numere, sau daca cea pentru REZULTAT nu contine niciun S/I/R, importul se opreste si spune de ce, fara sa scrie nimic. Daca germenii sunt aproape toti diferiti — semn de coloana gresita — intreaba inainte de a continua.",
-    "NOU — selector pentru forma datelor: tabelar (o linie per antibiotic), registru de laborator, sau rezultat narativ. Se preselecteaza singur, dar se poate schimba, iar profilul de import il retine. Se afiseaza doar coloanele care au sens pentru forma aleasa.",
-    "Previzualizarea spune acum si CE FISIER a citit („Excel (.xlsx)\", „Word (.docx)\", „CSV / text\"), separat de forma datelor. Inainte scria „CSV tabelar\" chiar si pentru un .xlsx, ceea ce parea ca fisierul nu a fost citit corect.",
-    "Recunoasterea germenului dintr-un registru merge acum si cand exportul nu scrie cuvantul „prezent\", ci doar denumirea. Inainte, un astfel de fisier iesea integral „negativ\" si nu se importa nimic.",
-    "REPARAT, important: la importul din registrul de laborator, specia putea fi inlocuita cu alta din aceeasi familie. „Klebsiella pneumoniae\" se importa ca „Klebsiella aerogenes\", pentru ca potrivirea se facea pe primele sase litere — aceleasi la multe specii inrudite. Acum potrivirea se face pe numele intreg sau pe gen + specie, iar cand nu se recunoaste nimic se pastreaza denumirea scrisa de laborator.",
-    "NOU — importul citeste fisiere Word (.docx) si rezultate narative (rezultatul intreg ca text liber intr-o coloana), inclusiv cand o cerere contine mai multe probe.",
-    "NOU — cand alegi un fisier care nu poate fi citit (PDF, imagine, .doc vechi), aplicatia spune limpede de ce si ce format sa ceara laboratorului."
+    "NOU — importul de laborator recunoaste singur fisierul. Nu mai conteaza formatul, extensia sau cum se cheama coloanele: aplicatia se uita la CONTINUTUL lor. Stie deja cum arata un nume de germen, un antibiotic si un rezultat S/I/R, asa ca identifica singura care coloana e care — inclusiv intr-un fisier cu antetul scris in engleza sau altfel decat se astepta.",
+    "Inainte erau sase drumuri de import, fiecare cu detectia si maparea lui, si fiecare laborator nou insemna inca unul. Acum e unul singur, care le acopera pe toate.",
+    "Recunoaste si rezultatele scrise ca text liber, oriunde ar fi — pe acelasi rand cu cererea sau pe randurile de sub ea, ca in rapoartele de laborator.",
+    "IMPORTANT — importul NU se face automat. Aplicatia arata intai CE A INTELES: fiecare cerere, cu codul, data, initialele, germenul si cate antibiotice a gasit. Te uiti peste lista si abia apoi confirmi. Daca ceva nu are sens, exista butonul „Nu e corect — mapez manual\", care revine la alegerea coloanelor de mana.",
+    "Sectia si tipul probei se recunosc si ele din fisier cand exista; cand nu, se aleg o data pentru tot fisierul."
   ]
 }

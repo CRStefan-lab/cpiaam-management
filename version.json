@@ -1,9 +1,14 @@
 {
-  "version": "13.91",
-  "version_note": "Raportare zilnica in Calendar; formularea de la MDR, care se citea gresit",
+  "version": "13.92",
+  "version_note": "Audit pe codul nou: anul izolatului, procente false de 0%, initialele in registrul de alerte",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU — frecventa ZILNICA la raportari. Se poate limita la zilele lucratoare (Luni–Vineri) si la anumite luni. Fara data de inceput, termenele se genereaza DE AZI INAINTE, nu retroactiv de la 1 ianuarie — altfel o raportare zilnica adaugata in august ar fi creat dintr-o data peste 150 de termene deja depasite, care ar fi inecat lista de intarzieri reale.",
-    "REPARAT formularea de la MDR, care se citea pe dos. Cardul scria „MDR 16 — doar ca focar\", iar asta se intelege ca cele 16 ar trebui raportate ca focar. Nu e asa: un caz MDR NU se raporteaza la DSP, oricate ar fi. Se raporteaza doar FOCARUL, si numai cand exista cel putin doua cazuri IAAM cu legatura epidemiologica intre ele — si atunci din modulul Focare. Cardul scrie acum „NU se raporteaza la DSP\", iar explicatia e reformulata in toate cele patru locuri unde aparea."
+    "REPARAT, cel mai important: anul unui izolat importat se lua din selectorul de an din bara de sus, nu din data lui proprie. Cu bara pe 2026 si un registru din decembrie 2025, toate izolatele intrau pe 2026 — deci in raportul microbiologic gresit si in analiza gresita, fara nicio eroare. Acum anul vine din data fiecarui izolat.",
+    "NOU, ca urmare: daca izolatele intra pe alt an decat cel din bara, mesajul de dupa import o spune limpede si iti zice sa comuti anul. Altfel importul reuseste si pagina ramane goala, fara nicio explicatie.",
+    "Stergerea unui import sterge acum tot lotul, pe toti anii. Un fisier care acopera decembrie–ianuarie produce inregistrari pe doi ani, iar „sterge tot acest import\" trebuie sa insemne tot; altfel ar ramane o jumatate invizibila pe alt an. Confirmarea arata cate sunt pe fiecare an.",
+    "REPARAT: „Sensibilitate medie 0%\" se afisa si cand nu exista NICIUN rezultat testat. Un zero fals arata identic cu o sensibilitate reala de zero, adica cu dezastrul. Acum scrie „—\" si „niciun rezultat testat\". La fel la procentul de izolate IAAM.",
+    "REPARAT: initialele pacientului, salvate la import, nu ajungeau in registrul de alerte XDR, desi asa scria in nota versiunii 13.89. Acum prefilleaza campul, cum trebuia.",
+    "REPARAT: trei casete de informatii — din pagina de antibiograma si din dialogul de import — se afisau pe coloane inguste in loc de text curgator.",
+    "Starea dialogului de import se curata complet intre fisiere: un fisier bun urmat de unul care esueaza nu mai poate lasa in urma date din primul."
   ]
 }

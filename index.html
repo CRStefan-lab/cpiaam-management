@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.91</title>
+<title>CPIAAM Management v13.92</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2411,7 +2411,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.91';
+const APP_VERSION='13.92';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -15590,7 +15590,10 @@ async function rAntibiograma(el){
       g.susceptibility.forEach(s=>{sumT++;if(s.result==='S')sumS++})}
     })});
   }
-  meanS=sumT>0?Math.round(sumS/sumT*100):0;
+  // Fara niciun rezultat testat, sensibilitatea medie NU e 0% — e necunoscuta. Un zero fals
+  // arata identic cu o sensibilitate reala de zero, adica exact cu dezastrul. Regula din CLAUDE.md:
+  // rata fara numitor intoarce null si se afiseaza „—".
+  meanS=sumT>0?Math.round(sumS/sumT*100):null;
   const germeniDist=new Set(Object.keys(germCounts)).size;
   top3=Object.entries(germCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>{const n=germenName(k);return(n||k)+' ('+v+')'}).join(', ')||'—';
 
@@ -15600,8 +15603,8 @@ async function rAntibiograma(el){
   // Info box / fallback warning
   let h='';
   if(!useLab){
-    h+='<div class="ib wrn">Nu exista date importate din laborator. Se afiseaza datele din cazurile IAAM.<br>'+
-      '<strong>Importa datele din laborator</strong> pentru antibiograma completa.</div>';
+    h+='<div class="ib wrn"><span>Nu exista date importate din laborator. Se afiseaza datele din cazurile IAAM.<br>'+
+      '<strong>Importa datele din laborator</strong> pentru antibiograma completa.</span></div>';
   } else {
     h+='<div class="ib inf">Profil de rezistenta antimicrobiana — date importate din laborator. '+totalIsolates+' izolate, '+germeniDist+' germeni diferiti.</div>';
   }
@@ -15630,8 +15633,8 @@ async function rAntibiograma(el){
     mdrCard+
     '<div class="kc bl"><div class="kl">TOTAL IZOLATE</div><div class="kv">'+totalIsolates+'</div><div class="ks">'+A.year+'</div></div>'+
     '<div class="kc tl"><div class="kl">GERMENI DIFERITI</div><div class="kv">'+germeniDist+'</div></div>'+
-    '<div class="kc '+(meanS>=70?'gn':'am')+'"><div class="kl">SENSIBILITATE MEDIE</div><div class="kv">'+meanS+'%</div></div>'+
-    (useLab?'<div class="kc rd"><div class="kl">IZOLATE IAAM</div><div class="kv">'+totalIAAM+'</div><div class="ks">'+(totalIsolates>0?Math.round(totalIAAM/totalIsolates*100):0)+'% din total</div></div>':'')+
+    '<div class="kc '+(meanS===null?'':(meanS>=70?'gn':'am'))+'"><div class="kl">SENSIBILITATE MEDIE</div><div class="kv">'+(meanS===null?'—':meanS+'%')+'</div>'+(meanS===null?'<div class="ks">niciun rezultat testat</div>':'')+'</div>'+
+    (useLab?'<div class="kc rd"><div class="kl">IZOLATE IAAM</div><div class="kv">'+totalIAAM+'</div><div class="ks">'+(totalIsolates>0?(Math.round(totalIAAM/totalIsolates*100)+'% din total'):'—')+'</div></div>':'')+
     '<div class="kc" style="flex:1;min-width:200px;border-left-color:var(--teal)"><div class="kl">TOP 3 GERMENI</div><div class="kv" style="font-size:13px">'+esc(top3)+'</div></div>'+
   '</div>';
 
@@ -15844,7 +15847,7 @@ function importLabCSV(){
 // si alegeai unul care esueaza la parsare, butonul „Importa" ramanea activ si _labRows continea
 // inca randurile primului fisier — clic pe Importa importa fisierul precedent, cu mesaj de succes.
 function _labResetState(msg){
-  window._labRows=null;window._labRowsAll=null;window._labHeader=null;window._labParsed=null;window._labFormat=null;window._labESpital=null;
+  window._labRows=null;window._labRowsAll=null;window._labHeader=null;window._labParsed=null;window._labFormat=null;window._labESpital=null;window._labAuto=null;window._labMatrix=null;
   var btn=document.getElementById('lab-import-btn');if(btn)btn.disabled=true;
   var pv=document.getElementById('lab-preview');
   // `.ib` e display:flex, deci marcajul inline din mesaj (<strong>, <br>) ar deveni coloane.
@@ -16041,10 +16044,10 @@ function previewLabHTML(txt){
   const orgSet=new Set();parsed.forEach(p=>{if(!p.negative)p.organisms.forEach(o=>orgSet.add(o.name))});
   let totalAtb=0;parsed.forEach(p=>{if(!p.negative)p.organisms.forEach(o=>{totalAtb+=o.susceptibility.length})});
 
-  let h='<div class="ib suc">Format detectat: <strong>Registru laborator (LIS)</strong><br>'+
+  let h='<div class="ib suc"><span>Format detectat: <strong>Registru laborator (LIS)</strong><br>'+
     rows.length+' randuri → '+parsed.length+' buletine ('+posCount+' pozitive, '+negCount+' negative)<br>'+
-    orgSet.size+' germeni diferiti, '+totalAtb+' teste antibiotic</div>'+
-    '<div class="ib wrn" style="margin-top:8px"><strong>Protectia datelor:</strong> Numele pacientilor, CNP si alte date personale <strong>NU</strong> se importa si nu se stocheaza in aplicatie.</div>';
+    orgSet.size+' germeni diferiti, '+totalAtb+' teste antibiotic</span></div>'+
+    '<div class="ib wrn" style="margin-top:8px"><span><strong>Protectia datelor:</strong> Numele pacientilor, CNP si alte date personale <strong>NU</strong> se importa si nu se stocheaza in aplicatie.</span></div>';
 
   // Preview table — NO patient names (GDPR)
   h+='<div style="max-height:250px;overflow-y:auto;margin:10px 0;border:1px solid var(--brd);border-radius:8px">'+
@@ -16184,11 +16187,19 @@ function parseOrganisms(line){
 async function labDeleteBatch(batch){
   const isEN=CFG.lang==='en';
   const toate=await ga('lab_isolates');
-  const ale=toate.filter(function(r){return (r._import_batch||'—')===batch&&r.year===A.year});
+  // Lotul se sterge INTREG, pe toti anii, nu doar pe cel din bara de sus. De cand anul se ia din
+  // data fiecarui izolat, un singur import poate produce inregistrari pe doi ani (un registru
+  // decembrie–ianuarie). „Sterge tot acest import" trebuie sa insemne tot importul; altfel ar
+  // ramane o jumatate invizibila, pe alt an, si userul ar crede ca a curatat.
+  const ale=toate.filter(function(r){return (r._import_batch||'—')===batch});
   if(!ale.length){render();return}
   const legate=ale.filter(function(r){return r.iaam_case_id}).length;
-  if(!confirm(_Mf('Stergi tot importul „{b}" din {an}?\n\n{n} izolate vor fi sterse definitiv.{i}\n\nCazurile IAAM NU se sterg — doar izolatele de laborator.',
-      {b:batch,an:A.year,n:ale.length,
+  const peAn={};ale.forEach(function(r){peAn[r.year]=(peAn[r.year]||0)+1});
+  const aniTxt=Object.keys(peAn).sort().map(function(y){return y+': '+peAn[y]}).join(', ');
+  const maiMultiAni=Object.keys(peAn).length>1;
+  if(!confirm(_Mf('Stergi tot importul „{b}"?\n\n{n} izolate vor fi sterse definitiv.{y}{i}\n\nCazurile IAAM NU se sterg — doar izolatele de laborator.',
+      {b:batch,n:ale.length,
+       y:maiMultiAni?('\nAtentie: lotul se intinde pe mai multi ani — '+aniTxt+'. Se sterg toate.'):'',
        i:legate?('\n'+legate+' dintre ele sunt legate de cazuri IAAM; legatura se pierde.'):''})))return;
   for(const r of ale)await dl('lab_isolates',r.id);
   toastSaved();
@@ -16446,9 +16457,14 @@ async function processLabAuto(){
       const g=(CFG.sections||[]).find(function(s){return String(s.name||'').toLowerCase()===String(x._sec).toLowerCase()});
       sec=g?g.id:x._sec;
     }
+    var dIso=parseLabDate(x.data||'');
     return {
-      year:A.year,nr_buletin:x.cod||'',patient_initials:x.initiale||'',
-      date:parseLabDate(x.data||''),section:sec,
+      // ANUL vine din DATA izolatului, nu din bara de sus (regula din CLAUDE.md). Cu bara pe 2026
+      // si un registru din decembrie 2025, toate izolatele primeau anul 2026 si intrau in raportul
+      // gresit — tacut, pentru ca fisierul chiar are datele lui. Fallback pe A.year doar cand
+      // inregistrarea nu are data deloc, ceea ce e legitim la unele formate.
+      year:yearOfDate(dIso,A.year),nr_buletin:x.cod||'',patient_initials:x.initiale||'',
+      date:dIso,section:sec,
       sample_type:((x.proba||'').trim().toLowerCase()||probaMan||'necunoscut'),
       organism:gm?gm.n:x.organism,organism_code:gm?gm.c:'',
       susceptibility:x.rez.map(function(y){
@@ -16482,7 +16498,7 @@ async function processLabAuto(){
     imported++;
   }
   closeM();render();
-  await _labImportDone(imported,matchedIAAM,skipped,A.year);
+  await _labImportDone(imported,matchedIAAM,skipped,[...new Set(isolates.map(function(i){return i.year}))]);
 }
 
 // ── FORMAT 4: registru de rezultate eSpital (RAPORT, nu tabel) ──
@@ -16539,13 +16555,14 @@ async function processLabESpital(){
     if(!probe.length){fara++;return}
     probe.forEach(function(x){
       const gm=_labMatchGerm(x.organism);
+      var dE=parseLabDate(p.data||'');
       isolates.push({
-        year:A.year,
+        year:yearOfDate(dE,A.year),
         nr_buletin:p.cod||p.nr,
         // Initialele sunt singurul lucru care ramane din nume. Ele prefilleaza si registrul de
         // alerte XDR, unde DSP le cere — altfel ar fi retastate de mana pentru fiecare caz.
         patient_initials:p.initiale||'',
-        date:parseLabDate(p.data||''),
+        date:dE,
         section:sec,
         sample_type:((x.proba||'').trim().toLowerCase()||probaMan||'necunoscut'),
         organism:gm?gm.n:x.organism,
@@ -16583,7 +16600,7 @@ async function processLabESpital(){
     imported++;
   }
   closeM();render();
-  await _labImportDone(imported,matchedIAAM,skipped,A.year);
+  await _labImportDone(imported,matchedIAAM,skipped,[...new Set(isolates.map(function(i){return i.year}))]);
 }
 
 // ── FORMAT 2: CSV tabelar (o linie per antibiotic) ──
@@ -16784,10 +16801,11 @@ async function processLabNarrative(){
       // raporteaza, nu se importa un izolat fara nume.
       if(!p.organism){faraGermen++;return}
       const germMatch=_labMatchGerm(p.organism);
+      var dN=parseLabDate(r[ci.date]||'');
       isolates.push({
-        year:A.year,
+        year:yearOfDate(dN,A.year),
         nr_buletin:bul,
-        date:parseLabDate(r[ci.date]||''),
+        date:dN,
         section:secMatch?secMatch.id:secName,
         sample_type:((ci.sample>=0?r[ci.sample]:'')||p.proba||'necunoscut').trim().toLowerCase(),
         organism:germMatch?germMatch.n:p.organism,
@@ -16828,7 +16846,7 @@ async function processLabNarrative(){
     imported++;
   }
   closeM();render();
-  await _labImportDone(imported,matchedIAAM,skipped,A.year);
+  await _labImportDone(imported,matchedIAAM,skipped,[...new Set(isolates.map(function(i){return i.year}))]);
   // Ce nu s-a putut citi se SPUNE, nu se pierde tacit — un germen nerecunoscut iese din
   // numaratoare si poate schimba o incadrare fara nicio eroare.
   if(faraGermen){
@@ -16899,10 +16917,11 @@ async function processLabCSV(){
       // Match germen to GERMENI_LIST
       const germMatch=_germFind(function(g){return (g.n||'').toLowerCase()===germ.toLowerCase()||(g.c||'').toLowerCase()===germ.toLowerCase()});
 
+      var dC=parseLabDate(r[ci.date]);
       isoMap[key]={
-        year:A.year,
+        year:yearOfDate(dC,A.year),
         nr_buletin:bul,
-        date:parseLabDate(r[ci.date]),
+        date:dC,
         section:secMatch?secMatch.id:secName,
         sample_type:(r[ci.sample]||'').trim().toLowerCase()||'necunoscut',
         organism:germMatch?germMatch.n:germ,
@@ -16971,7 +16990,7 @@ async function processLabCSV(){
   }
 
   closeM();render();
-  await _labImportDone(imported,matchedIAAM,skipped,A.year);
+  await _labImportDone(imported,matchedIAAM,skipped,[...new Set(isolates.map(function(i){return i.year}))]);
 }
 
 // ═══ CE SE INTAMPLA DUPA UN IMPORT REUSIT ═══
@@ -16980,14 +16999,27 @@ async function processLabCSV(){
 // raporteaza la DSP in aceeasi zi. Pana acum aflai doar daca te intamplai sa deschizi pagina de
 // alerte. Acum se spune in secunda in care intra datele, cu buton direct catre ele.
 // `alert()` nu poate avea buton, deci e modal — acelasi tipar ca restul dialogurilor.
-async function _labImportDone(imported,matchedIAAM,skipped,year){
+// `ani` = anul (sau lista de ani) pe care au intrat izolatele. De cand anul se ia din DATA fiecarui
+// izolat, un fisier poate produce inregistrari pe mai multi ani — de exemplu un registru care
+// acopera decembrie–ianuarie. Daca nu se spune, userul importa si nu vede nimic pe pagina, pentru
+// ca bara de sus e pe alt an.
+async function _labImportDone(imported,matchedIAAM,skipped,ani){
   const isEN=CFG.lang==='en';
+  const lista=(Array.isArray(ani)?ani:[ani]).filter(function(x){return x}).sort();
   let k=null;
   if(imported&&typeof xdrRun==='function'){
     // Daca motorul crapa dintr-un motiv oarecare, importul TOT trebuie confirmat — de aceea e in
     // try/catch si nu blocheaza raportul de import.
-    try{k=(await xdrRun(year,0)).kpi}catch(e){console.log('XDR dupa import:',e)}
+    try{
+      k={raportabile:0,pdr:0,xdr:0,cauris:0,posibil:0,mdr:0,clasificate:0};
+      for(const y of lista){
+        const kk=(await xdrRun(y,0)).kpi;
+        Object.keys(k).forEach(function(p){k[p]+=kk[p]||0});
+      }
+    }catch(e){console.log('XDR dupa import:',e);k=null}
   }
+  const year=lista[0]||A.year;
+  const altAn=lista.filter(function(y){return y!==A.year});
   // Pluralul romanesc: „1 izolate" e gresit, la fel „cele 1 izolate clasificabile". Aceeasi
   // atentie ca la v13.82 („1 tulpina", nu „1 tulpini").
   var pl=function(n,sg,plr){return n===1?sg:plr};
@@ -16995,6 +17027,17 @@ async function _labImportDone(imported,matchedIAAM,skipped,year){
     '&#8226; <strong>'+imported+'</strong> '+(isEN?pl(imported,'isolate imported','isolates imported'):pl(imported,'izolat importat','izolate importate'))+'<br>'+
     '&#8226; <strong>'+matchedIAAM+'</strong> '+(isEN?pl(matchedIAAM,'linked to a HAI record','linked to HAI records'):pl(matchedIAAM,'legat de un caz IAAM','legate de cazuri IAAM'))+'<br>'+
     '&#8226; <strong>'+skipped+'</strong> '+(isEN?pl(skipped,'duplicate, skipped','duplicates, skipped'):pl(skipped,'duplicat (sarit)','duplicate (sarite)'))+'</span></div>';
+
+  // Anul in care au intrat efectiv, cand difera de cel din bara de sus. Fara randul asta, userul
+  // importa cu succes si pagina ii ramane goala, fara nicio explicatie.
+  if(imported&&altAn.length){
+    b+='<div class="ib wrn"><span><strong>'+
+      (isEN?'The isolates were recorded under '+(lista.length>1?'the years ':'the year ')+lista.join(', ')+'.'
+           :'Izolatele au intrat pe '+(lista.length>1?'anii ':'anul ')+lista.join(', ')+'.')+
+      '</strong> '+(isEN?'The year comes from each isolate’s own date, not from the year selector. Switch the year at the top to see them.'
+                        :'Anul se ia din data fiecarui izolat, nu din selectorul de an. Comuta anul din bara de sus ca sa le vezi.')+
+      '</span></div>';
+  }
 
   if(k&&k.raportabile>0){
     b+='<div class="ib wrn"><span><strong>'+k.raportabile+' '+
@@ -25707,6 +25750,11 @@ async function xdrRun(year,q){
       iso_id:r.id,
       iso_key:r.year+'|'+(r.nr_buletin||'')+'|'+(r.organism||''),
       nr_buletin:r.nr_buletin||'',
+      // Initialele, cand importul le-a putut extrage. Ele prefilleaza registrul de alerte, unde
+      // DSP le cere — altfel s-ar retasta de mana pentru fiecare caz. Salvasem campul pe izolat
+      // la v13.89 si scrisesem in changelog ca prefilleaza registrul, dar nu-l dusesem pana aici:
+      // afirmatia era falsa. Prins la auditul de la v13.92.
+      patient_initials:r.patient_initials||'',
       date:r.date||'',
       section:r.section||'',
       sample_type:r.sample_type||'',
@@ -26266,6 +26314,7 @@ async function xdrEditAlert(id,pre){
     r={status:'initial',localitate:'',unitate:CFG.hospital_name||'',validat_de:uz};
     if(pre){
       r.iso_key=pre.iso_key;r.nr_buletin=pre.nr_buletin;r.organism=pre.organism;
+      r.initials=pre.patient_initials||'';
       r.clasa=pre.clasa;r.section=pre.section;r.sample_type=pre.sample_type;r.date_sample=pre.date;
       r.cat_sensibile=pre.clasificare?pre.clasificare.catSensibile:null;
       r.cat_testate=pre.clasificare?pre.clasificare.nrTestate:null;
@@ -29310,6 +29359,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.92',date:'2026-08-11',summary:"Audit pe codul scris in v13.85-13.91. Cinci defecte reale, dintre care unul punea izolatele importate pe anul gresit, si unul era o functionalitate pe care o descrisesem in changelog dar nu o legasem niciodata."},
   {version:'13.91',date:'2026-08-11',summary:"Frecventa zilnica la raportari, ceruta de user, si reformularea de la MDR, care se citea exact pe dos fata de ce inseamna."},
   {version:'13.90',date:'2026-08-10',summary:"Importul recunoaste singur fisierul, dupa continut, nu dupa forma. Un singur drum in loc de sase — cerut de user, care a spus limpede ca nu putem face aplicatia doar pentru 2-3 programe de laborator."},
   {version:'13.89',date:'2026-08-10',summary:"Registrul de rezultate al laboratorului, adus de user ca fisier real, se citeste acum corect din Excel. Pe drum a iesit ca din antibiograma se pastra un singur antibiotic din sase."},

@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.90</title>
+<title>CPIAAM Management v13.91</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2411,7 +2411,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.90';
+const APP_VERSION='13.91';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -18621,7 +18621,7 @@ async function rTerm(el){
       }
       const overdueCnt=allInstances.filter(i=>i.status!=='finalizat'&&i.status!=='trimis'&&i.due_date&&new Date(i.due_date)<new Date()).length;
       const expanded=_termExpanded[t.name]===true;
-      const freqLabel=t.frequency==='saptamanal'?(isEN?'Weekly':'Saptamanal'):t.frequency==='lunar'?(isEN?'Monthly':'Lunar'):t.frequency==='trimestrial'?(isEN?'Quarterly':'Trimestrial'):t.frequency==='anual'?(isEN?'Yearly':'Anual'):t.frequency;
+      const freqLabel=t.frequency==='zilnic'?(isEN?'Daily':'Zilnic'):t.frequency==='saptamanal'?(isEN?'Weekly':'Saptamanal'):t.frequency==='lunar'?(isEN?'Monthly':'Lunar'):t.frequency==='trimestrial'?(isEN?'Quarterly':'Trimestrial'):t.frequency==='anual'?(isEN?'Yearly':'Anual'):t.frequency;
       const pctDone=allInstances.length?Math.round(done/allInstances.length*100):0;
       const badgeColor=pctDone===100?'#27AE60':pctDone>=50?'#D4A017':'#C0392B';
 
@@ -18814,7 +18814,18 @@ function _dlFreqExtra(r){
   // Conditional fields based on frequency
   var f=r.frequency||'singulara';
   var h='<div id="freq-extra" style="margin-top:8px">';
-  if(f==='saptamanal'){
+  if(f==='zilnic'){
+    // Zilnic genereaza pana la 365 de termene pe an, deci are nevoie de doua limitari care la
+    // celelalte frecvente nu conteaza: zilele lucratoare (multe raportari zilnice de spital nu se
+    // fac sambata si duminica) si lunile active. Fara ele, un singur sablon zilnic ar umple
+    // calendarul si lista „urmatoarele 30 de zile" ar avea 30 de randuri numai de la el.
+    h+='<div class="fg"><label style="display:flex;align-items:center;gap:6px;font-weight:400">'+
+      '<input type="checkbox" id="f-lucr"'+((r.workdays_only!==false)?' checked':'')+'> Doar in zilele lucratoare (Luni–Vineri)</label></div>';
+    h+='<div class="fg"><label>Lunile active</label><div id="f-months" style="display:flex;flex-wrap:wrap;gap:3px">';
+    var amZ=r.active_months||[];
+    for(var mz=1;mz<=12;mz++){var chZ=amZ.includes(mz);h+='<label style="font-size:10px;cursor:pointer;padding:2px 5px;border:1px solid var(--brd);border-radius:4px;background:'+(chZ?'var(--teal)':'var(--bg)')+';color:'+(chZ?'var(--onAccent)':'inherit')+'"><input type="checkbox" value="'+mz+'" '+(chZ?'checked':'')+' onchange="this.parentElement.style.background=this.checked?\'var(--teal)\':\'var(--bg)\';this.parentElement.style.color=this.checked?\'var(--onAccent)\':\'inherit\'" style="display:none">'+MO[mz-1].slice(0,3)+'</label>';}
+    h+='</div><div style="font-size:10px;color:var(--txtL)">Nebifat = tot anul. Fara „Data inceput", termenele se genereaza <strong>de azi inainte</strong>, nu retroactiv de la 1 ianuarie.</div></div>';
+  } else if(f==='saptamanal'){
     h+='<div class="fr"><div class="fg"><label>Ziua din saptamana</label><select id="f-dow">';
     for(var i=0;i<7;i++)h+='<option value="'+i+'"'+((r.day_of_week||0)==i?' selected':'')+'>'+_DL_DAYS[i]+'</option>';
     h+='</select></div>';
@@ -18835,6 +18846,7 @@ async function editDeadline(id){
     '<div class="fr"><div class="fg"><label>Destinatar</label><input id="f-dest" value="'+(r.recipient||'')+'" placeholder="'+COUNTRY.authorities.publicHealthDir+', '+COUNTRY.authorities.environment+', '+COUNTRY.authorities.accreditation+', Manager..."></div>'+
     '<div class="fg"><label>Frecventa</label><select id="f-freq" onchange="_dlFreqChange()">'+
       '<option value="singulara"'+(r.frequency==='singulara'?' selected':'')+'>Singulara</option>'+
+      '<option value="zilnic"'+(r.frequency==='zilnic'?' selected':'')+'>Zilnic</option>'+
       '<option value="saptamanal"'+(r.frequency==='saptamanal'?' selected':'')+'>Saptamanal</option>'+
       '<option value="lunar"'+(r.frequency==='lunar'?' selected':'')+'>Lunar</option>'+
       '<option value="trimestrial"'+(r.frequency==='trimestrial'?' selected':'')+'>Trimestrial</option>'+
@@ -18869,6 +18881,13 @@ async function saveDeadline(id){
   // v13.46 - validare interval: data de inceput nu poate fi dupa termenul limita
   if(rec.start_date&&rec.due_date&&rec.start_date>rec.due_date){alert(_M('Data de inceput este dupa termenul limita. Corecteaza intervalul.'));return}
   // Save frequency-specific fields
+  if(rec.frequency==='zilnic'){
+    var elLucr=document.getElementById('f-lucr');
+    rec.workdays_only=elLucr?!!elLucr.checked:true;
+    var mCbsZ=document.querySelectorAll('#f-months input[type=checkbox]:checked');
+    var amZ=Array.from(mCbsZ).map(cb=>+cb.value);
+    rec.active_months=amZ.length===12?[]:amZ;
+  }
   if(rec.frequency==='saptamanal'){
     rec.day_of_week=+(v('f-dow'))||0;
     var mCbs=document.querySelectorAll('#f-months input[type=checkbox]:checked');
@@ -18898,6 +18917,10 @@ async function saveDeadline(id){
   await pt('deadlines',rec);
   // Auto-generate instances for recurring deadlines
   if(rec.frequency&&rec.frequency!=='singulara'&&rec.frequency!=='perioada'){
+    // MASURAT, nu presupus: generarea a 103 instante zilnice dureaza 64 ms, iar randarea paginii
+    // cu ele e instantanee. Pusesem aici un ecran de asteptare crezand ca dureaza secunde — dar
+    // cele „9 secunde" pe care le masurasem erau propriul sleep din test, nu aplicatia. Un overlay
+    // care apare si dispare in 50 ms e un clipit, adica mai rau decat nimic.
     var genCnt=await _genInstancesForTemplate(rec);
     logActivity((id?'Editat':'Adaugat')+' termen — '+rec.name+(genCnt?' (+'+genCnt+' instante)':''));
   } else {
@@ -18919,6 +18942,15 @@ async function _genInstancesForTemplate(t){
   var hardLimit=t.due_date?new Date(t.due_date+'T23:59:59'):null;
   // v13.46 - limita INFERIOARA (simetrica cu hardLimit): nu genereaza termene inainte de start_date
   var softStart=t.start_date?new Date(t.start_date+'T00:00:00'):null;
+  // ZILNIC, fara data de inceput: se genereaza DE AZI INAINTE, nu de la 1 ianuarie.
+  // La saptamanal, generarea retroactiva pe tot anul inseamna vreo 30 de termene depasite —
+  // suparator, dar suportabil. La zilnic inseamna 159, care ineaca lista de „Depasite" si o fac
+  // inutila: adevaratele intarzieri se pierd printre ele. Nimeni nu vrea sa raporteze retroactiv
+  // triajul de acum sapte luni. Cine chiar vrea istoricul, pune explicit data de inceput.
+  if(!softStart&&t.frequency==='zilnic'){
+    var azi=new Date();azi.setHours(0,0,0,0);
+    if(azi.getFullYear()===y)softStart=azi;
+  }
   // Index instante existente ale acestui template, dupa due_date. Daca exista mai multe pentru acelasi due_date, pastram prima si stergem restul (cleanup duplicate generate de bug v13.18)
   var ownInsts=existing.filter(function(d){return d._parentName===t.name});
   var byDue={};
@@ -18927,7 +18959,29 @@ async function _genInstancesForTemplate(t){
     if(!byDue[due])byDue[due]=inst;
     else{await dl('deadlines',inst.id);dedupedDup++}
   }
-  if(t.frequency==='saptamanal'){
+  if(t.frequency==='zilnic'){
+    // Un termen pe zi. Numele instantei poarta data, nu numarul saptamanii — la o raportare
+    // zilnica „S32" nu ar spune nimic.
+    var amD=t.active_months||[];var toateD=!amD.length;
+    var lucr=(t.workdays_only!==false);
+    var dz=new Date(y,0,1);
+    while(dz.getFullYear()===y){
+      if(hardLimit&&dz>hardLimit)break;
+      if(softStart&&dz<softStart){dz.setDate(dz.getDate()+1);continue}
+      var jd=dz.getDay();// 0=Duminica, 6=Sambata
+      var okZi=!lucr||(jd>=1&&jd<=5);
+      var moD=dz.getMonth()+1;
+      if(okZi&&(toateD||amD.includes(moD))){
+        var dueD=_localDateStr(dz);
+        if(!byDue[dueD]){
+          await pt('deadlines',{name:t.name+' — '+fmtDate(dueD),recipient:t.recipient,
+            frequency:'singulara',due_date:dueD,status:'neinceput',_parentName:t.name});
+          cnt++;
+        }
+      }
+      dz.setDate(dz.getDate()+1);
+    }
+  } else if(t.frequency==='saptamanal'){
     var targetDow=t.day_of_week||0;
     var jsDow=(targetDow+1)%7; // 0=Luni→JS1, ..., 6=Duminica→JS0
     var am=t.active_months||[];var allMonths=!am.length;
@@ -18983,7 +19037,8 @@ async function _genInstancesForTemplate(t){
   // instantele din lunile excluse trebuie sterse. Re-iau lista existing dupa cleanup-uri anterioare.
   var fresh=await ga('deadlines');
   var ownAfter=fresh.filter(function(d){return d._parentName===t.name&&d.due_date});
-  if(t.frequency==='saptamanal'){
+  if(t.frequency==='saptamanal'||t.frequency==='zilnic'){
+    // Acelasi cleanup se aplica si la „zilnic": lunile sunt bifate de user in ambele cazuri.
     var amSat=t.active_months||[];
     if(amSat.length>0){ // doar daca user a bifat luni specific (nu toate)
       for(var ai=0;ai<ownAfter.length;ai++){
@@ -25610,7 +25665,7 @@ function xdrReportable(grup,cl){
   if(cl.clasa==='PDR')return {da:true,motiv:isEN?'Suspected PDR — report immediately':'Suspiciune PDR — raportare imediata'};
   if(cl.clasa==='XDR')return {da:true,motiv:isEN?'XDR confirmed — report immediately (1 case, HAI or non-HAI)':'XDR confirmat — raportare imediata (1 caz, IAAM sau non-IAAM)'};
   if(cl.clasa==='posibil_XDR')return {da:false,motiv:isEN?'Profile compatible with XDR but NOT confirmed — incomplete antibiogram. Not reported until extended testing.':'Profil compatibil XDR, dar NECONFIRMAT — antibiograma incompleta. Nu se raporteaza pana la testarea extinsa.'};
-  if(cl.clasa==='MDR')return {da:false,motiv:isEN?'MDR — reported only as an outbreak (>=2 HAI cases with an epidemiological link)':'MDR — se raporteaza doar ca focar (>=2 cazuri IAAM cu legatura epidemiologica)'};
+  if(cl.clasa==='MDR')return {da:false,motiv:isEN?'MDR — reported only as an outbreak (>=2 HAI cases with an epidemiological link)':'MDR — NU se raporteaza la DSP; doar focarul se raporteaza (>=2 cazuri IAAM cu legatura epidemiologica)'};
   return {da:false,motiv:''};
 }
 
@@ -25796,7 +25851,7 @@ async function rXDR(el){
 
   let h='<div class="ib inf"><span>'+
     (isEN?'<strong>What this page does:</strong> it applies the Magiorakos (ECDC/CDC 2012) definition to the isolates already imported into the laboratory module, and singles out the cases that must be reported to the public health authority — <strong>confirmed XDR</strong>, <strong>suspected PDR</strong> and <strong>every Candidozyma (Candida) auris</strong>, one case being enough, HAI or not. MDR alone is not reported here; it is reported as an outbreak, from the Outbreaks module.'
-         :'<strong>Ce face pagina:</strong> aplica definitia Magiorakos (ECDC/CDC 2012) peste izolatele deja importate in modulul de laborator si scoate cazurile care trebuie raportate la DSP — <strong>XDR confirmat</strong>, <strong>suspiciune PDR</strong> si <strong>orice Candidozyma (Candida) auris</strong>, la un singur caz, IAAM sau non-IAAM. MDR nu se raporteaza singur de aici; el se raporteaza ca focar, din modulul Focare.')+
+         :'<strong>Ce face pagina:</strong> aplica definitia Magiorakos (ECDC/CDC 2012) peste izolatele deja importate in modulul de laborator si scoate cazurile care trebuie raportate la DSP — <strong>XDR confirmat</strong>, <strong>suspiciune PDR</strong> si <strong>orice Candidozyma (Candida) auris</strong>, la un singur caz, IAAM sau non-IAAM. MDR NU se raporteaza la DSP — nici individual, nici pe total. Se raporteaza doar FOCARUL, cand exista cel putin doua cazuri IAAM cu legatura epidemiologica, si asta din modulul Focare.')+
     '</span></div>';
 
   // Poarta pe modul datelor — se spune PE ECRAN, nu doar in raport.
@@ -25819,7 +25874,7 @@ async function rXDR(el){
     '<div class="kc rd"><div class="kl">XDR</div><div class="kv">'+d.kpi.xdr+'</div></div>'+
     '<div class="kc rd"><div class="kl">C. AURIS</div><div class="kv">'+d.kpi.cauris+'</div></div>'+
     '<div class="kc am"><div class="kl">'+(isEN?'POSSIBLE XDR':'POSIBIL XDR')+'</div><div class="kv">'+d.kpi.posibil+'</div><div class="ks">'+(isEN?'extended antibiogram needed':'de completat antibiograma')+'</div></div>'+
-    '<div class="kc bl"><div class="kl">MDR</div><div class="kv">'+d.kpi.mdr+'</div><div class="ks">'+(isEN?'outbreak reporting only':'doar ca focar')+'</div></div>'+
+    '<div class="kc bl"><div class="kl">MDR</div><div class="kv">'+d.kpi.mdr+'</div><div class="ks">'+(isEN?'NOT reported to DSP':'NU se raporteaza la DSP')+'</div></div>'+
     '<div class="kc tl"><div class="kl">'+(isEN?'CLASSIFIED':'CLASIFICATE')+'</div><div class="kv">'+d.kpi.clasificate+'</div><div class="ks">'+(isEN?'of ':'din ')+d.total+(isEN?' isolates':' izolate')+'</div></div>'+
   '</div>';
 
@@ -25906,7 +25961,7 @@ function _xdrLegend(isEN){
      ce:isEN?'non-susceptible in at least 3 antimicrobial categories'
             :'nesensibil in cel putin 3 categorii antimicrobiene',
      unde:isEN?'Own analysis. To DSP only as an outbreak (at least 2 linked HAI cases).'
-              :'Analiza proprie. La DSP doar ca focar (cel putin 2 cazuri IAAM cu legatura).',uc:'var(--txtL)'}
+              :'Cifra de analiza proprie. NU se raporteaza la DSP. Doar un FOCAR se raporteaza — cel putin 2 cazuri IAAM cu legatura epidemiologica — si atunci din modulul Focare.',uc:'var(--txtL)'}
   ];
   var h='<div style="border:1px solid var(--brd);border-radius:10px;padding:10px 12px;margin-bottom:14px;background:var(--card)">'+
     '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--txtL);margin-bottom:8px">'+
@@ -26009,7 +26064,7 @@ function _xdrTabMDR(d,isEN){
 
   var h='<div class="ib inf"><span>'+
     (isEN?'<strong>These figures are for your own quarterly analysis, not for the public health authority.</strong> A single MDR case is not reported on its own — it is reported as an outbreak, when there are at least two healthcare-associated cases with an epidemiological link. What is counted here is <strong>at least MDR</strong>: non-susceptible (R or I) in three or more antimicrobial categories, which by definition also covers XDR and PDR.'
-         :'<strong>Cifrele de aici sunt pentru analiza proprie, trimestriala, nu pentru DSP.</strong> Un caz MDR nu se raporteaza singur — el se raporteaza ca focar, la cel putin doua cazuri IAAM cu legatura epidemiologica. Se numara <strong>cel putin MDR</strong>: nesensibil (R sau I) in trei sau mai multe categorii antimicrobiene, ceea ce prin definitie acopera si XDR, si PDR.')+
+         :'<strong>Cifrele de aici sunt pentru analiza proprie, trimestriala, nu pentru DSP.</strong> Un caz MDR NU se raporteaza la DSP, oricate ar fi. Se raporteaza FOCARUL, si numai daca exista cel putin doua cazuri IAAM cu legatura epidemiologica intre ele — si atunci din modulul Focare, nu de aici. Se numara <strong>cel putin MDR</strong>: nesensibil (R sau I) in trei sau mai multe categorii antimicrobiene, ceea ce prin definitie acopera si XDR, si PDR.')+
     '</span></div>';
 
   h+='<div class="kg">'+
@@ -29255,6 +29310,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.91',date:'2026-08-11',summary:"Frecventa zilnica la raportari, ceruta de user, si reformularea de la MDR, care se citea exact pe dos fata de ce inseamna."},
   {version:'13.90',date:'2026-08-10',summary:"Importul recunoaste singur fisierul, dupa continut, nu dupa forma. Un singur drum in loc de sase — cerut de user, care a spus limpede ca nu putem face aplicatia doar pentru 2-3 programe de laborator."},
   {version:'13.89',date:'2026-08-10',summary:"Registrul de rezultate al laboratorului, adus de user ca fisier real, se citeste acum corect din Excel. Pe drum a iesit ca din antibiograma se pastra un singur antibiotic din sase."},
   {version:'13.88',date:'2026-08-06',summary:"Importul de laborator citeste acum Word si rezultate narative — ultimele doua formate din motorul original al userului. Pe drum a iesit ca specia putea fi inlocuita cu alta din aceeasi familie, defect care exista de la inceput in importul registrului LIS."},

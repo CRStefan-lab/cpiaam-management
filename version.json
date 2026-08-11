@@ -1,12 +1,9 @@
 {
-  "version": "13.90",
-  "version_note": "Importul recunoaste singur fisierul, dupa continut — un singur drum in loc de sase",
+  "version": "13.91",
+  "version_note": "Raportare zilnica in Calendar; formularea de la MDR, care se citea gresit",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "NOU — importul de laborator recunoaste singur fisierul. Nu mai conteaza formatul, extensia sau cum se cheama coloanele: aplicatia se uita la CONTINUTUL lor. Stie deja cum arata un nume de germen, un antibiotic si un rezultat S/I/R, asa ca identifica singura care coloana e care — inclusiv intr-un fisier cu antetul scris in engleza sau altfel decat se astepta.",
-    "Inainte erau sase drumuri de import, fiecare cu detectia si maparea lui, si fiecare laborator nou insemna inca unul. Acum e unul singur, care le acopera pe toate.",
-    "Recunoaste si rezultatele scrise ca text liber, oriunde ar fi — pe acelasi rand cu cererea sau pe randurile de sub ea, ca in rapoartele de laborator.",
-    "IMPORTANT — importul NU se face automat. Aplicatia arata intai CE A INTELES: fiecare cerere, cu codul, data, initialele, germenul si cate antibiotice a gasit. Te uiti peste lista si abia apoi confirmi. Daca ceva nu are sens, exista butonul „Nu e corect — mapez manual\", care revine la alegerea coloanelor de mana.",
-    "Sectia si tipul probei se recunosc si ele din fisier cand exista; cand nu, se aleg o data pentru tot fisierul."
+    "NOU — frecventa ZILNICA la raportari. Se poate limita la zilele lucratoare (Luni–Vineri) si la anumite luni. Fara data de inceput, termenele se genereaza DE AZI INAINTE, nu retroactiv de la 1 ianuarie — altfel o raportare zilnica adaugata in august ar fi creat dintr-o data peste 150 de termene deja depasite, care ar fi inecat lista de intarzieri reale.",
+    "REPARAT formularea de la MDR, care se citea pe dos. Cardul scria „MDR 16 — doar ca focar\", iar asta se intelege ca cele 16 ar trebui raportate ca focar. Nu e asa: un caz MDR NU se raporteaza la DSP, oricate ar fi. Se raporteaza doar FOCARUL, si numai cand exista cel putin doua cazuri IAAM cu legatura epidemiologica intre ele — si atunci din modulul Focare. Cardul scrie acum „NU se raporteaza la DSP\", iar explicatia e reformulata in toate cele patru locuri unde aparea."
   ]
 }

@@ -1,5 +1,5 @@
-// CPIAAM Service Worker — v13.92
-const CACHE_NAME = 'cpiaam-v13.92';
+// CPIAAM Service Worker — v13.95
+const CACHE_NAME = 'cpiaam-v13.95';
 const CDN_CACHE = 'cpiaam-cdn-v1';
 
 // CDN resources — cached permanently (versions pinned)
@@ -40,7 +40,9 @@ self.addEventListener('fetch', event => {
   if (url.pathname.endsWith('/version.json')) return;
 
   // CDN resources → Cache First (never change, pinned versions)
-  if (CDN_URLS.some(cdn => event.request.url.startsWith(cdn.split('/').slice(0, 3).join('/')))) {
+  // Doar cele 5 URL-uri pinuite, nu ORICE de pe originile CDN — altfel orice alt fisier de pe
+  // unpkg/cdnjs cerut vreodata ar ramane in cache permanent.
+  if (CDN_URLS.indexOf(event.request.url) !== -1) {
     event.respondWith(
       caches.match(event.request).then(cached => cached || fetch(event.request).then(resp => {
         if (resp.ok) { const c = resp.clone(); caches.open(CDN_CACHE).then(cache => cache.put(event.request, c)); }

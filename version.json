@@ -1,14 +1,10 @@
 {
-  "version": "13.92",
-  "version_note": "Audit pe codul nou: anul izolatului, procente false de 0%, initialele in registrul de alerte",
+  "version": "13.95",
+  "version_note": "Cele trei decizii de dupa audit: fisa IAAM fara adresa (doar urban/rural), DDD/100 pe om-zile (standard OMS/ECDC), anul raportarii editabil in fisa IAAM",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "REPARAT, cel mai important: anul unui izolat importat se lua din selectorul de an din bara de sus, nu din data lui proprie. Cu bara pe 2026 si un registru din decembrie 2025, toate izolatele intrau pe 2026 — deci in raportul microbiologic gresit si in analiza gresita, fara nicio eroare. Acum anul vine din data fiecarui izolat.",
-    "NOU, ca urmare: daca izolatele intra pe alt an decat cel din bara, mesajul de dupa import o spune limpede si iti zice sa comuti anul. Altfel importul reuseste si pagina ramane goala, fara nicio explicatie.",
-    "Stergerea unui import sterge acum tot lotul, pe toti anii. Un fisier care acopera decembrie–ianuarie produce inregistrari pe doi ani, iar „sterge tot acest import\" trebuie sa insemne tot; altfel ar ramane o jumatate invizibila pe alt an. Confirmarea arata cate sunt pe fiecare an.",
-    "REPARAT: „Sensibilitate medie 0%\" se afisa si cand nu exista NICIUN rezultat testat. Un zero fals arata identic cu o sensibilitate reala de zero, adica cu dezastrul. Acum scrie „—\" si „niciun rezultat testat\". La fel la procentul de izolate IAAM.",
-    "REPARAT: initialele pacientului, salvate la import, nu ajungeau in registrul de alerte XDR, desi asa scria in nota versiunii 13.89. Acum prefilleaza campul, cum trebuia.",
-    "REPARAT: trei casete de informatii — din pagina de antibiograma si din dialogul de import — se afisau pe coloane inguste in loc de text curgator.",
-    "Starea dialogului de import se curata complet intre fisiere: un fisier bun urmat de unul care esueaza nu mai poate lasa in urma date din primul."
+    "GDPR: campul „Domiciliu (oras, strada)\" a fost scos din fisa IAAM si din Ancheta epidemiologica; ramane doar mediul urban/rural, cum cere Figura 2. Adresele salvate de versiunile vechi sunt sterse automat, o singura data, la prima pornire pe fiecare calculator.",
+    "Consum Antibiotice: DDD/100 se calculeaza pe OM-ZILE (zile-pacient) din Statistici Spital — standardul OMS/ECDC si acelasi numitor ca in Raportul Anual, Statistici si Obiective. Inainte pagina si raportul Word foloseau paturile inmultite cu zilele (ocupare 100%), deci o rata sistematic mai mica si diferita de restul aplicatiei. Fara om-zile pe perioada, rata apare „—\" si pagina spune unde se completeaza; pe sectie se folosesc om-zilele sectiei.",
+    "Fisa IAAM: camp nou „Anul raportarii\", langa luna raportarii, precompletat cu anul din bara de sus (sau cu anul fisei, la editare). Pana acum anul se stampila tacit din bara si un caz din alt an nu putea fi declarat. Daca salvezi pe alt an decat cel din bara, aplicatia iti spune sa comuti anul ca sa-l vezi in lista."
   ]
 }

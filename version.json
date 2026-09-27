@@ -1,10 +1,10 @@
 {
-  "version": "13.98",
-  "version_note": "Garda de conflict la salvare: daca altcineva a modificat inregistrarea cat timp o aveai deschisa, aplicatia intreaba inainte sa o suprascrie — in fisa IAAM si in toate celelalte dialoguri de editare",
+  "version": "13.99",
+  "version_note": "Reparatie urgenta: aplicatia instalata murea cu „Out of Memory” — backup-urile automate acumulate la fiecare actualizare (1,4 GB) se incarcau in memorie la pornire; acum se citeste doar configurarea, iar backup-urile vechi se sterg singure (raman ultimele 3)",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "SINCRONIZARE — garda de conflict la salvare. Scenariul care o cerea: lasi fisa IAAM deschisa la 20% si pleci, colega o termina intre timp de pe alt calculator, te intorci, o duci la 50% si salvezi — pana acum versiunea ta stergea tot ce facuse ea, fara niciun mesaj. Acum, la Salveaza, aplicatia aduce intai fisierul de sincronizare si, daca inregistrarea a fost modificata (sau stearsa) intre timp, iti spune cine si cand si te lasa sa alegi: suprascrii cu versiunea ta sau pastrezi versiunea ei (si redeschizi inregistrarea ca sa o vezi).",
-    "Garda e activa in toate dialogurile de editare: fisa IAAM, cazuri ICD, expuneri accidentale, focare, probe de autocontrol, harta de risc, ATP, UV, miscari de biocide, documente, rapoarte de responsabil, sanctiuni, raportari si evenimente din calendar, alerte XDR, consum si avizari de antibiotice, instruiri, PPS, cele 6 tipuri de audit, Statistici Spital si valorile inregistrate la obiective.",
-    "Cand nu e conectat niciun fisier de sincronizare, nimic nu se schimba: garda compara doar cu baza locala si nu apare niciodata."
+    "REPARATIE URGENTA — „Aw, Snap! Out of Memory” la pornirea aplicatiei instalate. Cauza: inainte de fiecare actualizare aplicatia face un backup automat cu toata baza (~15 MB), il tine in IndexedDB si, pana acum, il incarca in memorie la fiecare pornire impreuna cu TOATE cele dinaintea lui — 82 de backup-uri, 1,4 GB, cate unul pe versiune din martie. Curatarea adaugata in 13.96 rula abia dupa ce le incarca a doua oara si a dat totul peste cap.",
+    "Acum la pornire se citeste doar inregistrarea de configurare, iar backup-urile automate vechi se sterg singure in fundal, la prima pornire (raman ultimele 3, se vad si se descarca din Configurare → Date & Backup, cu marimea fiecaruia).",
+    "Daca aplicatia instalata nu mai porneste: deschide-o o data (chiar daca apare eroarea, versiunea noua se descarca in fundal), inchide-o si deschide-o din nou."
   ]
 }

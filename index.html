@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.98</title>
+<title>CPIAAM Management v13.99</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1249,6 +1249,23 @@ var _syncTimer=null;function _syncDebounce(){if(!_fileHandle)return;clearTimeout
 // v13.96 (G-42) - stergere REALA (fara tombstone), doar pentru inregistrari interne care nu se sincronizeaza
 // (backup-urile automate din store-ul config). Pentru date, foloseste dl().
 async function _idbHardDelete(s,id){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).delete(id);r.onsuccess=()=>ok();r.onerror=()=>no(r.error)})}
+// v13.99 - citiri PUNCTUALE din store-ul 'config'. Store-ul tine inregistrarea de configurare (id 1) SI
+// backup-urile automate de la actualizari ('_auto_backup_<versiune>', cate ~15 MB fiecare, cu toata baza
+// serializata inauntru). getAll() pe store le deserializa pe TOATE ca sa ia primul element: 82 de
+// backup-uri = 1,4 GB de siruri la fiecare pornire, iar curatarea din v13.96 le incarca a doua oara,
+// peste snapshot-ul nou — „Aw, Snap! Out of Memory” in aplicatia instalata. NICIODATA ga()/gaAll() pe 'config'.
+async function _idbGet(s,id){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).get(id);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+async function _idbGetAllKeys(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readonly'),r=t.objectStore(s).getAllKeys();r.onsuccess=()=>ok(r.result||[]);r.onerror=()=>no(r.error)})}
+function _isAutoBackupKey(k){return typeof k==='string'&&k.indexOf('_auto_backup_')===0}
+// Inregistrarea de configurare, fara sa incarce backup-urile: get(1); daca lipseste (baze vechi, id
+// diferit), se cauta printre CHEI prima care nu e backup si se citeste doar aceea.
+async function _cfgLoadMain(){
+  var c=null;try{c=await _idbGet('config',1)}catch(e){}
+  if(c)return c;
+  try{var keys=(await _idbGetAllKeys('config')).filter(function(k){return !_isAutoBackupKey(k)});
+    for(var i=0;i<keys.length;i++){var r=await _idbGet('config',keys[i]);if(r&&r.type!=='auto_backup')return r}}catch(e){}
+  return null;
+}
 async function cl(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).clear();r.onsuccess=()=>ok();r.onerror=()=>no(r.error)})}
 
 // ═══ v13.98 — GARDA DE CONFLICT LA SALVARE (optimistic locking) ═══
@@ -2510,7 +2527,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.98';
+const APP_VERSION='13.99';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -2669,7 +2686,7 @@ const SEC_TPL={
 };
 
 async function loadCfg(){
-  try{const all=await ga('config');if(all.length>0){const c=all[0];Object.assign(CFG,c)}}catch(e){}
+  try{const c=await _cfgLoadMain();if(c)Object.assign(CFG,c)}catch(e){}   // v13.99 get(1), nu getAll: store-ul tine si backup-urile automate (1,4 GB la user → Out of Memory)
   // Migrate: populate atp_surface_types if missing
   if(!CFG.atp_surface_types||!CFG.atp_surface_types.length){
     CFG.atp_surface_types=_DEFAULT_ATP_SURFACES.map(s=>({...s}));
@@ -28351,13 +28368,15 @@ function _cfgMarkDeleted(key,item){
 // sau folosi nimeni. Se listeaza aici si se descarca ca JSON, de restaurat cu „Incarca Backup din fisier".
 async function _cfgListAutoBackups(){
   var el=document.getElementById('cfg-autobk');if(!el)return;
-  var list=(await ga('config')).filter(function(r){return r&&r.type==='auto_backup'}).sort(function(a,b){return String(b.date).localeCompare(String(a.date))});
+  // v13.99 - pe chei + get() una cate una, doar meta: getAll() pe 'config' incarca TOATE backup-urile in memorie.
+  var keys=(await _idbGetAllKeys('config')).filter(_isAutoBackupKey).sort(function(a,b){return vCmp(b.slice(13),a.slice(13))});
+  var list=[];for(var i=0;i<keys.length;i++){try{var r=await _idbGet('config',keys[i]);if(r&&r.type==='auto_backup')list.push({id:r.id,version:r.version,date:r.date,mb:Math.round((r.data||'').length/1048576*10)/10})}catch(e){}}
   if(!list.length){el.textContent=CFG.lang==='en'?'No automatic pre-update backups stored on this computer.':'Niciun backup automat de la actualizari pe acest calculator.';return}
   el.innerHTML='<span>'+(CFG.lang==='en'?'Automatic backups made before updates, on this computer (restore with „Load backup from file"): ':'Backup-uri automate facute inainte de actualizari, pe acest calculator (se restaureaza cu „Incarca Backup din fisier"): ')+'</span>'+
-    list.map(function(r){return '<button class="btn bo bsm" style="margin:2px" onclick="_cfgDownloadAutoBackup('+_jsArg(r.id)+')">v'+esc(r.version)+' — '+esc(fmtDate(String(r.date).slice(0,10)))+'</button>'}).join('');
+    list.map(function(r){return '<button class="btn bo bsm" style="margin:2px" onclick="_cfgDownloadAutoBackup('+_jsArg(r.id)+')">v'+esc(r.version)+' — '+esc(fmtDate(String(r.date).slice(0,10)))+(r.mb?' ('+r.mb+' MB)':'')+'</button>'}).join('');
 }
 async function _cfgDownloadAutoBackup(id){
-  var r=(await ga('config')).find(function(x){return x&&x.id===id});
+  var r=null;try{r=await _idbGet('config',id)}catch(e){}   // v13.99 get(id), nu getAll
   if(!r||!r.data){alert(_M('Backup-ul nu mai exista.'));return}
   saveAs(new Blob([r.data],{type:'application/json'}),'CPIAAM_AutoBackup_v'+r.version+'_'+String(r.date).slice(0,10)+'.json');
 }
@@ -28931,10 +28950,10 @@ async function runDiagnostic(){
     // 4. Config check
     lines.push('=== CONFIGURARE ===');
     try{
-      var cfg=await ga('config');
-      if(cfg.length===0){warn('Config gol — spitalul nu este configurat')}
+      var c=await _cfgLoadMain();   // v13.99 get(1), nu getAll: store-ul tine si backup-urile automate (1,4 GB la user)
+      try{var _abk=(await _idbGetAllKeys('config')).filter(_isAutoBackupKey);lines.push('  Backup-uri automate la actualizari (IndexedDB): '+_abk.length+(_abk.length>3?' — se curata la pornire':''))}catch(e3){}
+      if(!c){warn('Config gol — spitalul nu este configurat')}
       else{
-        var c=cfg[0];
         if(c.hospital_name)ok('Spital: '+c.hospital_name);else warn('Nume spital neconfigurat');
         var sects=c.sections||[];
         if(sects.length>0)ok('Sectii: '+sects.length+' configurate');else warn('Nicio sectie configurata');
@@ -29857,6 +29876,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.99',date:'2026-09-27',summary:"Reparatie urgenta: aplicatia instalata (PWA) murea cu „Aw, Snap! Out of Memory”. Cauza: backup-urile automate facute inainte de fiecare actualizare (unul pe versiune din v11.6, cate ~15 MB, cu toata baza inauntru) se incarcau TOATE in memorie la fiecare pornire — 82 de backup-uri, 1,4 GB. Acum se citeste doar inregistrarea de configurare, iar backup-urile vechi se sterg singure la prima pornire (raman ultimele 3)."},
   {version:'13.98',date:'2026-09-27',summary:"Garda de conflict la salvare, ceruta de user dupa ce a descris scenariul exact: fisa IAAM lasata deschisa la 20%, terminata intre timp de colega de pe alt calculator, apoi salvata de el la 50% — pana acum versiunea lui stergea tot ce facuse ea, fara niciun mesaj. Acum aplicatia intreaba, in fisa IAAM si in toate celelalte dialoguri de editare."},
   {version:'13.97',date:'2026-09-27',summary:"Ultimele reparatii din lista auditului care aduc o imbunatatire fara risc: raportarile recurente primesc termenele noului an automat, focarele trec granita de an, editorul de produse biocide nu mai pierde ce ai tastat, iar lista de tipuri de probe din Configurare e in sfarsit folosita la import."},
   {version:'13.96',date:'2026-09-27',summary:"Continuarea reparatiilor din audit, cat timp asteptam exportul HelicsWin pentru Tabelul II.6: stergerile si editarile din Configurare se propaga intre calculatoare, backup-urile automate de la actualizari se pot descarca, importul Excel la consum ATB, exportul Word pentru auditurile FO si Dotare, si inca vreo 25 de reparatii mici din lista."},
@@ -31295,17 +31315,31 @@ async function checkUpgradeBackup(){
   // Versiune diferita — facem backup automat
   try{
     // v13.96 (G-42) - gaAll: cu ga() backup-ul pierdea tombstone-urile si o restaurare reinvia stergerile la primul merge.
+    // v13.99 - INTAI curatarea (pe chei, fara sa incarce nimic), APOI snapshot-ul. Curatarea din v13.96 rula
+    // dupa snapshot si cu getAll() pe 'config': la prima ei rulare, cu 82 de backup-uri vechi (1,4 GB) in
+    // store, le incarca pe toate PESTE baza intreaga ca obiecte + sirul JSON + inca un sir JSON indentat
+    // intr-un Blob pe care nu-l folosea nimeni — „Out of Memory” in aplicatia instalata.
+    await _pruneAutoBackups(2);
     const d={};for(const s of ST){if(s==='config')continue;d[s]=await gaAll(s)}
     const out={version:lastVer,upgraded_to:APP_VERSION,auto_backup:true,exported:new Date().toISOString(),config:CFG,...d};
-    const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
-    const fname='CPIAAM_AutoBackup_v'+lastVer+'_'+todayISO()+'.json';
-    // Salvam in IndexedDB un backup intern (nu cerem file picker)
+    // Salvam in IndexedDB un backup intern (nu cerem file picker); se pastreaza ultimele 3, se descarca din
+    // Configurare → Date & Backup (v13.96, G-42).
     await pt('config',{id:'_auto_backup_'+lastVer,type:'auto_backup',version:lastVer,date:new Date().toISOString(),data:JSON.stringify(out)},true);
-    // v13.96 (G-42) - se pastreaza doar ultimele 3; inainte se acumulau la fiecare versiune (cu atasamente
-    // base64 cu tot) si nu le citea nimeni. Se descarca din Configurare → Date & Backup.
-    try{const olds=(await ga('config')).filter(r=>r&&r.type==='auto_backup').sort((a,b)=>String(b.date).localeCompare(String(a.date)));for(let i=3;i<olds.length;i++)await _idbHardDelete('config',olds[i].id)}catch(e){console.warn('Auto-backup prune:',e)}
     showUpgradeNotice(lastVer);
   }catch(e){console.error('Auto-backup failed:',e)}
+}
+// v13.99 - curatarea backup-urilor automate pe CHEI (getAllKeys + delete), fara sa incarce nicio valoare:
+// raman cele mai noi `keep` (dupa versiune, vCmp), restul se sterg definitiv (nu se sincronizeaza, deci
+// fara tombstone). Ruleaza si la fiecare pornire, in fundal: cine a ramas cu zeci de backup-uri din
+// versiunile fara curatare (v11.6 → v13.95) scapa de ele la prima pornire, nu abia la urmatoarea actualizare.
+async function _pruneAutoBackups(keep){
+  try{
+    var keys=(await _idbGetAllKeys('config')).filter(_isAutoBackupKey);
+    keys.sort(function(a,b){return vCmp(b.slice(13),a.slice(13))});   // '_auto_backup_' are 13 caractere
+    var n=0;for(var i=keep;i<keys.length;i++){await _idbHardDelete('config',keys[i]);n++}
+    if(n)console.info('[CPIAAM] Backup-uri automate vechi sterse: '+n+' (raman '+Math.min(keep,keys.length)+').');
+    return n;
+  }catch(e){console.warn('Auto-backup prune:',e);return 0}
 }
 function showUpgradeNotice(fromVer){
   const d=document.createElement('div');d.id='upgrade-notice';
@@ -31325,7 +31359,7 @@ function showUpgradeNotice(fromVer){
   // fara avertisment, pentru userii care nu au fisier de sincronizare. Apelul nu deschide
   // niciun dialog in Chrome/Edge (se acorda pe euristici); refuzul nu strica nimic.
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().then(function(g){console.info('[CPIAAM] Stocare persistenta: '+(g?'acordata':'refuzata — datele raman best-effort'))})}catch(e){}
-  const configs=await ga('config');
+  const _cfgMain=await _cfgLoadMain();const configs=_cfgMain?[_cfgMain]:[];   // v13.99 doar inregistrarea de configurare, nu si backup-urile automate
   // A2-11 - ecranul de incarcare se ascunde DUPA prima randare, nu inainte de ea.
   // Pana acum disparea imediat ce se citea configurarea, dar aplicatia devine vizibila abia
   // dupa render(), care face 17 citiri din baza si construieste graficele. Intre cele doua
@@ -31369,6 +31403,7 @@ function showUpgradeNotice(fromVer){
     restoreAttDirHandle();
     _migrateDeseuriToHA().catch(function(){});
     if(typeof _purgeIaamDomiciliu==='function')_purgeIaamDomiciliu().catch(function(){});   // v13.95 (G-64)
+    setTimeout(function(){_pruneAutoBackups(3).catch(function(){})},1500);   // v13.99 curata backup-urile automate acumulate
     setTimeout(buildNotifications,3000);
     // v13.97 (G-51) - sabloanele de raportari fara instante pe anul curent primesc instantele la pornire.
     setTimeout(function(){if(typeof _calEnsureInstancesForYear==='function')_calEnsureInstancesForYear().then(function(n){if(n){A._notifDismissedAt=0;buildNotifications()}}).catch(function(){})},2500);

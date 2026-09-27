@@ -1,10 +1,10 @@
 {
-  "version": "13.99",
-  "version_note": "Reparatie urgenta: aplicatia instalata murea cu „Out of Memory” — backup-urile automate acumulate la fiecare actualizare (1,4 GB) se incarcau in memorie la pornire; acum se citeste doar configurarea, iar backup-urile vechi se sterg singure (raman ultimele 3)",
+  "version": "14.0",
+  "version_note": "Actualizarile ajung sigur si imediat: service worker-ul ocoleste cache-ul HTTP de 10 minute, iar o copie veche servita temporar din cache e anuntata ca atare, fara „Upgrade reusit” si fara snapshot cu eticheta gresita",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "REPARATIE URGENTA — „Aw, Snap! Out of Memory” la pornirea aplicatiei instalate. Cauza: inainte de fiecare actualizare aplicatia face un backup automat cu toata baza (~15 MB), il tine in IndexedDB si, pana acum, il incarca in memorie la fiecare pornire impreuna cu TOATE cele dinaintea lui — 82 de backup-uri, 1,4 GB, cate unul pe versiune din martie. Curatarea adaugata in 13.96 rula abia dupa ce le incarca a doua oara si a dat totul peste cap.",
-    "Acum la pornire se citeste doar inregistrarea de configurare, iar backup-urile automate vechi se sterg singure in fundal, la prima pornire (raman ultimele 3, se vad si se descarca din Configurare → Date & Backup, cu marimea fiecaruia).",
-    "Daca aplicatia instalata nu mai porneste: deschide-o o data (chiar daca apare eroarea, versiunea noua se descarca in fundal), inchide-o si deschide-o din nou."
+    "Dupa 13.99 urmeaza 14.0 — conventia de numerotare, nu o schimbare mare.",
+    "ACTUALIZARI — versiunea noua ajunge la a doua deschidere, garantat: service worker-ul aduce fisierele aplicatiei cu revalidare pe server (ETag), nu din cache-ul HTTP de 10 minute al GitHub Pages; cand cheia paginii lipseste din cache (chiar dupa un service worker nou), se foloseste index.html-ul pre-cache-uit, si offline.",
+    "Cand browserul serveste temporar o versiune mai veche decat ultima deschisa pe acel calculator, aplicatia o spune (banner galben) in loc de „Upgrade reusit”, nu mai face un backup automat cu eticheta versiunii pe care nu o contine si nu uita care a fost ultima versiune rulata."
   ]
 }

@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.99</title>
+<title>CPIAAM Management v14.0</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2527,7 +2527,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.99';
+const APP_VERSION='14.0';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -29876,6 +29876,7 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'14.0',date:'2026-09-27',summary:"Dupa 13.99 urmeaza 14.0 (conventia de numerotare). Doua schimbari mici la actualizari: service worker-ul aduce versiunea noua ocolind cache-ul HTTP de 10 minute al GitHub Pages, iar cand browserul serveste temporar o versiune mai veche decat ultima deschisa, aplicatia o spune ca atare, in loc de „Upgrade reusit”, si nu mai face un snapshot cu eticheta gresita."},
   {version:'13.99',date:'2026-09-27',summary:"Reparatie urgenta: aplicatia instalata (PWA) murea cu „Aw, Snap! Out of Memory”. Cauza: backup-urile automate facute inainte de fiecare actualizare (unul pe versiune din v11.6, cate ~15 MB, cu toata baza inauntru) se incarcau TOATE in memorie la fiecare pornire — 82 de backup-uri, 1,4 GB. Acum se citeste doar inregistrarea de configurare, iar backup-urile vechi se sterg singure la prima pornire (raman ultimele 3)."},
   {version:'13.98',date:'2026-09-27',summary:"Garda de conflict la salvare, ceruta de user dupa ce a descris scenariul exact: fisa IAAM lasata deschisa la 20%, terminata intre timp de colega de pe alt calculator, apoi salvata de el la 50% — pana acum versiunea lui stergea tot ce facuse ea, fara niciun mesaj. Acum aplicatia intreaba, in fisa IAAM si in toate celelalte dialoguri de editare."},
   {version:'13.97',date:'2026-09-27',summary:"Ultimele reparatii din lista auditului care aduc o imbunatatire fara risc: raportarile recurente primesc termenele noului an automat, focarele trec granita de an, editorul de produse biocide nu mai pierde ce ai tastat, iar lista de tipuri de probe din Configurare e in sfarsit folosita la import."},
@@ -31309,6 +31310,11 @@ function showEmptyDBWarning(){
 // ═══ AUTO-BACKUP LA UPGRADE ═══
 async function checkUpgradeBackup(){
   const lastVer=localStorage.getItem('cpiaam_last_version');
+  // v14.0 - rulare temporara a unei versiuni MAI VECHI decat ultima deschisa (cache-ul HTTP de 10 minute al
+  // GitHub Pages servea copia veche imediat dupa o actualizare, 27.09.2026): nu e „upgrade reusit”, nu se face
+  // snapshot (cel de dinaintea versiunii noi exista deja, iar unul nou ar purta eticheta versiunii pe care NU o
+  // contine) si „ultima versiune rulata” ramane cea mare, ca sa nu se repete snapshot-ul cand revine cea noua.
+  if(lastVer&&vCmp(lastVer,APP_VERSION)>0){showOlderVersionNotice(lastVer);return}
   localStorage.setItem('cpiaam_last_version',APP_VERSION);
   if(!lastVer)return; // prima rulare, nu exista date vechi
   if(lastVer===APP_VERSION)return; // aceeasi versiune
@@ -31340,6 +31346,15 @@ async function _pruneAutoBackups(keep){
     if(n)console.info('[CPIAAM] Backup-uri automate vechi sterse: '+n+' (raman '+Math.min(keep,keys.length)+').');
     return n;
   }catch(e){console.warn('Auto-backup prune:',e);return 0}
+}
+function showOlderVersionNotice(lastVer){
+  const d=document.createElement('div');d.id='upgrade-notice';
+  d.style.cssText='background:#FEF3C7;color:#92400E;padding:12px 18px;font-size:13px;border-bottom:2px solid #FCD34D;font-family:var(--f);display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap';
+  var isEN=CFG.lang==='en';
+  d.innerHTML='<div style="flex:1"><strong>'+(isEN?'You are running v'+esc(APP_VERSION)+', but v'+esc(lastVer)+' was already opened on this computer':'Rulezi v'+esc(APP_VERSION)+', desi pe acest calculator a fost deja deschisa v'+esc(lastVer))+'</strong> — '+
+    (isEN?'the browser served an older copy from its cache. The newer version loads at the next start, or press „Update now” when the banner appears. Your data was not touched.':'browserul a servit o copie mai veche din cache. Versiunea noua se incarca la urmatoarea deschidere, sau apasa „Actualizeaza acum” cand apare bannerul. Datele tale nu au fost atinse.')+'</div>'+
+    '<button class="btn bo bsm" onclick="document.getElementById(\'upgrade-notice\').remove()" style="line-height:1">&times;</button>';
+  const mn=document.getElementById('app-mn');if(mn)mn.insertBefore(d,mn.firstChild);
 }
 function showUpgradeNotice(fromVer){
   const d=document.createElement('div');d.id='upgrade-notice';

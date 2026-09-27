@@ -1,5 +1,5 @@
-// CPIAAM Service Worker — v13.99
-const CACHE_NAME = 'cpiaam-v13.99';
+// CPIAAM Service Worker — v14.0
+const CACHE_NAME = 'cpiaam-v14.0';
 const CDN_CACHE = 'cpiaam-cdn-v1';
 
 // CDN resources — cached permanently (versions pinned)
@@ -15,7 +15,10 @@ const CDN_URLS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     Promise.all([
-      caches.open(CACHE_NAME).then(cache => cache.addAll(['./index.html', './manifest.json', './favicon.ico', './icon-192.png'])),
+      // v14.0: cache:'no-cache' = browserul intreaba serverul (ETag) in loc sa serveasca copia din cache-ul HTTP.
+      // GitHub Pages trimite max-age=600, deci fara asta, 10 minute dupa un upload, pre-cache-ul putea primi
+      // versiunea VECHE si aplicatia rula 13.98 dupa ce rulase deja 13.99 (27.09.2026).
+      caches.open(CACHE_NAME).then(cache => cache.addAll(['./index.html', './manifest.json', './favicon.ico', './icon-192.png'].map(u => new Request(u, { cache: 'no-cache' })))),
       caches.open(CDN_CACHE).then(cache => cache.addAll(CDN_URLS))
     ]).then(() => self.skipWaiting())
   );
@@ -55,10 +58,14 @@ self.addEventListener('fetch', event => {
   // App files (index.html, manifest) → Stale-While-Revalidate
   if (url.origin === self.location.origin) {
     event.respondWith(
-      caches.match(event.request).then(cached => {
+      // v14.0: navigarea cere '/cpiaam-management/', iar pre-cache-ul tine '/cpiaam-management/index.html' —
+      // chei diferite. Imediat dupa activarea unui SW nou (cache-ul vechi sters) prima navigare nu gasea nimic
+      // si mergea la retea, adica la cache-ul HTTP (copia veche) sau, offline, la eroare. Acum cade pe
+      // index.html-ul pre-cache-uit (adus cu no-cache la instalare, deci versiunea noua).
+      caches.match(event.request).then(c => c || (event.request.mode === 'navigate' ? caches.match('./index.html') : undefined)).then(cached => {
         // Clone cached BEFORE returning it — the original stream gets consumed by the page
         const cachedCompare = cached ? cached.clone() : null;
-        const fetchPromise = fetch(event.request).then(resp => {
+        const fetchPromise = fetch(event.request.url, { cache: 'no-cache', credentials: 'same-origin' }).then(resp => {   // v14.0 revalidare, nu copia din cache-ul HTTP
           if (resp.ok) {
             // Two independent clones: one for cache.put, one for text() comparison
             const putClone = resp.clone();

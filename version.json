@@ -1,10 +1,10 @@
 {
-  "version": "13.95",
-  "version_note": "Cele trei decizii de dupa audit: fisa IAAM fara adresa (doar urban/rural), DDD/100 pe om-zile (standard OMS/ECDC), anul raportarii editabil in fisa IAAM",
+  "version": "13.98",
+  "version_note": "Garda de conflict la salvare: daca altcineva a modificat inregistrarea cat timp o aveai deschisa, aplicatia intreaba inainte sa o suprascrie — in fisa IAAM si in toate celelalte dialoguri de editare",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "GDPR: campul „Domiciliu (oras, strada)\" a fost scos din fisa IAAM si din Ancheta epidemiologica; ramane doar mediul urban/rural, cum cere Figura 2. Adresele salvate de versiunile vechi sunt sterse automat, o singura data, la prima pornire pe fiecare calculator.",
-    "Consum Antibiotice: DDD/100 se calculeaza pe OM-ZILE (zile-pacient) din Statistici Spital — standardul OMS/ECDC si acelasi numitor ca in Raportul Anual, Statistici si Obiective. Inainte pagina si raportul Word foloseau paturile inmultite cu zilele (ocupare 100%), deci o rata sistematic mai mica si diferita de restul aplicatiei. Fara om-zile pe perioada, rata apare „—\" si pagina spune unde se completeaza; pe sectie se folosesc om-zilele sectiei.",
-    "Fisa IAAM: camp nou „Anul raportarii\", langa luna raportarii, precompletat cu anul din bara de sus (sau cu anul fisei, la editare). Pana acum anul se stampila tacit din bara si un caz din alt an nu putea fi declarat. Daca salvezi pe alt an decat cel din bara, aplicatia iti spune sa comuti anul ca sa-l vezi in lista."
+    "SINCRONIZARE — garda de conflict la salvare. Scenariul care o cerea: lasi fisa IAAM deschisa la 20% si pleci, colega o termina intre timp de pe alt calculator, te intorci, o duci la 50% si salvezi — pana acum versiunea ta stergea tot ce facuse ea, fara niciun mesaj. Acum, la Salveaza, aplicatia aduce intai fisierul de sincronizare si, daca inregistrarea a fost modificata (sau stearsa) intre timp, iti spune cine si cand si te lasa sa alegi: suprascrii cu versiunea ta sau pastrezi versiunea ei (si redeschizi inregistrarea ca sa o vezi).",
+    "Garda e activa in toate dialogurile de editare: fisa IAAM, cazuri ICD, expuneri accidentale, focare, probe de autocontrol, harta de risc, ATP, UV, miscari de biocide, documente, rapoarte de responsabil, sanctiuni, raportari si evenimente din calendar, alerte XDR, consum si avizari de antibiotice, instruiri, PPS, cele 6 tipuri de audit, Statistici Spital si valorile inregistrate la obiective.",
+    "Cand nu e conectat niciun fisier de sincronizare, nimic nu se schimba: garda compara doar cu baza locala si nu apare niciodata."
   ]
 }

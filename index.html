@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v13.95</title>
+<title>CPIAAM Management v13.98</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -1246,7 +1246,50 @@ async function dl(s,id){
 }
 var _syncTimer=null;function _syncDebounce(){if(!_fileHandle)return;clearTimeout(_syncTimer);_syncTimer=setTimeout(async ()=>{_syncTimer=null;await syncWrite()},2000)}
 
+// v13.96 (G-42) - stergere REALA (fara tombstone), doar pentru inregistrari interne care nu se sincronizeaza
+// (backup-urile automate din store-ul config). Pentru date, foloseste dl().
+async function _idbHardDelete(s,id){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).delete(id);r.onsuccess=()=>ok();r.onerror=()=>no(r.error)})}
 async function cl(s){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(s,'readwrite'),r=t.objectStore(s).clear();r.onsuccess=()=>ok();r.onerror=()=>no(r.error)})}
+
+// ═══ v13.98 — GARDA DE CONFLICT LA SALVARE (optimistic locking) ═══
+// Merge-ul e last-write-wins pe inregistrarea INTREAGA, fara imbinare pe campuri. Scenariul adus de user:
+// A lasa fisa IAAM deschisa la 20% si pleaca; B o termina intre timp; A se intoarce, o duce la 50% si
+// salveaza — versiunea lui A (construita din copia veche din dialog) e „mai noua", castiga merge-ul si
+// sterge tot ce a facut B, fara niciun mesaj. Garda: la deschidere retinem marca de timp a inregistrarii;
+// la salvare aducem intai fisierul de sync (daca s-a schimbat de la ultima citire) si, daca marca din
+// baza difera de cea de la deschidere, intrebam: suprascrie sau pastreaza versiunea lor.
+var _editLoadedMeta={};
+function _editRemember(store,rec){if(!rec||rec.id===undefined||rec.id===null)return;_editLoadedMeta[store+'|'+rec.id]=rec._modifiedAt||''}
+async function _editCheckConflict(store,id,opts){
+  opts=opts||{};
+  if(id===undefined||id===null||id==='')return true;
+  var key=store+'|'+id;var loaded=_editLoadedMeta[key];
+  if(loaded===undefined)return true;   // deschis fara sa fi trecut pe aici (creare) — nu avem cu ce compara
+  try{
+    if(typeof _fileHandle!=='undefined'&&_fileHandle&&typeof _importFromHandle==='function'){
+      var f=await _fileHandle.getFile();
+      if(f.lastModified>(typeof _lastSyncRead!=='undefined'?_lastSyncRead:0)||f.size!==(typeof _lastSyncSize!=='undefined'?_lastSyncSize:0))await _importFromHandle(_fileHandle,true);
+    }
+  }catch(e){console.warn('[CPIAAM] conflict check: sync read failed',e)}
+  var cur=null;try{cur=(await gaAll(store)).find(function(r){return r&&String(r.id)===String(id)})}catch(e){}
+  if(!cur)return true;
+  var curMod=cur._modifiedAt||'';
+  if(curMod===loaded&&!cur._deleted)return true;
+  var isEN=(typeof CFG!=='undefined'&&CFG&&CFG.lang==='en');
+  var who=cur._deleted?(cur._deletedBy||'?'):(cur._modifiedBy||'?');
+  var when=cur._deleted?(cur._deletedAt||''):(cur._modifiedAt||'');
+  var whenStr='';try{var d=new Date(when);if(!isNaN(d))whenStr=(typeof fmtDate==='function'&&typeof dateISO==='function'?fmtDate(dateISO(d)):'')+' '+d.toTimeString().slice(0,5)}catch(e){}
+  var msg=cur._deleted
+    ?(isEN?'This record was DELETED in the meantime by '+who+' ('+whenStr+').\n\nOK = save anyway (the record comes back with your version)\nCancel = keep it deleted (your changes are discarded)'
+          :'Aceasta inregistrare a fost STEARSA intre timp de '+who+' ('+whenStr+').\n\nOK = salveaza oricum (inregistrarea revine cu versiunea ta)\nAnuleaza = ramane stearsa (modificarile tale se pierd)')
+    :(isEN?'This record was modified in the meantime by '+who+' ('+whenStr+'). Saving would OVERWRITE their changes with your version.\n\nOK = overwrite with your version\nCancel = keep their version (what you changed in this dialog is discarded; reopen the record to see their version)'
+          :'Aceasta inregistrare a fost modificata intre timp de '+who+' ('+whenStr+'). Salvarea ta ar SUPRASCRIE modificarile lor cu versiunea ta.\n\nOK = suprascrie cu versiunea ta\nAnuleaza = pastreaza versiunea lor (ce ai modificat in acest dialog se pierde; redeschide inregistrarea ca sa vezi versiunea lor)');
+  if(confirm(msg)){if(typeof logActivity==='function')logActivity('Conflict la salvare, suprascris: '+store+' '+id+' (versiunea lui '+who+')');return true}
+  delete _editLoadedMeta[key];
+  if(typeof opts.onReload==='function')opts.onReload();
+  else{try{if(typeof closeM==='function')closeM()}catch(e){}if(typeof render==='function')render()}
+  return false;
+}
 
 // ═══ ID SYSTEM ═══
 // Generate unique ID with prefix
@@ -1803,12 +1846,25 @@ function _smartMergeCfg(local,remote){
   // celuilalt calculator: categoriile IPC (genId pe fiecare PC) lasau toate auditurile locale cu
   // „(sters din configurare)" dupa „Combina datele"; la fel suprafetele ATP/UV, personalul si
   // categoriile IAAM personalizate. Acum se imbina pe nume, ca sectiile (name sau name_ro).
+  // v13.96 (G-20) - registrul de stergeri (CFG._cfg_del[lista][id]=data): reuniune cu marca cea mai noua,
+  // apoi elementele sterse ies din lista locala si nu se mai adauga din remote. O editare LOCALA mai
+  // noua decat stergerea (element cu _modifiedAt > data stergerii) castiga si elementul revine.
+  var _del={};
+  [local._cfg_del,remote._cfg_del].forEach(function(reg){
+    if(!reg||typeof reg!=='object')return;
+    Object.keys(reg).forEach(function(k){if(!_del[k])_del[k]={};Object.keys(reg[k]||{}).forEach(function(id){var ts=reg[k][id];if(!_del[k][id]||String(ts)>String(_del[k][id]))_del[k][id]=ts})});
+  });
+  local._cfg_del=_del;delete remote._cfg_del;
+  var _isDel=function(key,it){if(!it||typeof it!=='object'||!it.id)return false;var ts=_del[key]&&_del[key][it.id];if(!ts)return false;return !(it._modifiedAt&&String(it._modifiedAt)>String(ts))};
   const arrayKeys=['sections','biocide_products','waste_recipients','probe_types','waste_codes','doc_categories','infection_types','ipc_categories','atp_surface_types','uv_surface_types','personnel','iaam_custom_cats'];
   // ALL arrays merge by name to prevent duplicates when same item has different IDs across users
   arrayKeys.forEach(key=>{
     if(!remote[key]||!Array.isArray(remote[key]))return;
-    if(!local[key]||!Array.isArray(local[key])){local[key]=remote[key];return}
+    if(!local[key]||!Array.isArray(local[key])){local[key]=remote[key].filter(function(it){return !_isDel(key,it)});delete remote[key];return}
     const localArr=local[key];const remoteArr=remote[key];
+    // v13.96 (G-20) - intai ies elementele sterse (pe oricare calculator), ca potrivirea pe nume sa nu le
+    // lege de un element re-creat cu acelasi nume.
+    for(var _di=localArr.length-1;_di>=0;_di--){if(_isDel(key,localArr[_di]))localArr.splice(_di,1)}
     // Build local map by name (primary) and id (fallback)
     const localByName={};const localById={};
     localArr.forEach((item,i)=>{
@@ -1817,6 +1873,7 @@ function _smartMergeCfg(local,remote){
       if(item.id)localById[item.id]={item,idx:i};
     });
     remoteArr.forEach(rItem=>{
+      if(typeof rItem!=='string'&&_isDel(key,rItem))return;   // v13.96 (G-20) sters — nu se mai adauga
       if(typeof rItem==='string'){if(!localByName[rItem])localArr.push(rItem);return}
       // Match by name first, then by id
       var _nmR=rItem.name||rItem.name_ro;var match=_nmR?localByName[_nmR]:null;
@@ -1827,10 +1884,13 @@ function _smartMergeCfg(local,remote){
       } else {
         // Existing item — merge remote fields into local (keep local id)
         var lItem=match.item;
+        // v13.96 (G-20) - editarile se propaga: elementul cu marca de timp mai noua da campurile
+        // (last-write-wins pe element, ca la inregistrari). Fara marci (elemente vechi) ramane regula
+        // veche: se completeaza doar campurile locale goale, deci redenumirile nu treceau niciodata.
+        var rNewer=!!(rItem._modifiedAt&&(!lItem._modifiedAt||String(rItem._modifiedAt)>String(lItem._modifiedAt)));
         Object.keys(rItem).forEach(function(k){
           if(k==='id')return; // keep local id
-          if(lItem[k]===undefined||lItem[k]===null||lItem[k]===''){
-            // Local field missing/empty — take remote value
+          if(rNewer||lItem[k]===undefined||lItem[k]===null||lItem[k]===''){
             lItem[k]=rItem[k];
           }
         });
@@ -1893,7 +1953,7 @@ async function _importFromHandle(fh,skipReload,mode){
     CFG.sync_file_name=fh.name;
     // v12.72: dupa sync, asigura categoriile IPC standard definite in cod (fisierul sync poate fi dintr-o app mai veche)
     if(typeof ensureStandardIpcCategories==='function')ensureStandardIpcCategories();
-    await saveCfg();
+    await saveCfg(true);   // v13.96 (G-20) snapshot fara stampile: ce a venit de la colega nu e editare locala
   }}
   // Support old format keys → remap to current store names
   const oldMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines'};
@@ -2211,7 +2271,7 @@ function toggleUserMenu(){
     if(typeof ROLE_HIDDEN_FROM_USER_MENU!=='undefined'&&ROLE_HIDDEN_FROM_USER_MENU.indexOf(p.role)>=0)return;
     var isActive=CFG.current_user===p.name;
     var initials=getUserInitials(p.name);
-    h+='<div class="user-menu-item'+(isActive?' active':'')+'" onclick="setCurrentUser(\''+p.name.replace(/'/g,"\\'")+'\')">';
+    h+='<div class="user-menu-item'+(isActive?' active':'')+'" onclick="setCurrentUser('+_jsArg(p.name)+')">';
     h+='<div class="user-avatar" style="width:20px;height:20px;font-size:8px">'+initials+'</div>';
     h+='<div><div>'+esc(p.name)+'</div>';
     if(p.title)h+='<div style="font-size:10px;color:var(--txtL)">'+esc(p.title)+'</div>';
@@ -2450,7 +2510,7 @@ function _extractCfg(c){
   return null;
 }
 
-const APP_VERSION='13.95';
+const APP_VERSION='13.98';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -2840,7 +2900,23 @@ async function loadCfg(){
   if(ensureConfigIds()||_comorbAdded){await saveCfg();await migrateDataToIds()}
   updateSidebar();
 }
-async function saveCfg(){CFG.id=1;await pt('config',CFG);updateSidebar()}
+// v13.96 (G-20) - marca de timp pe elementele de configurare MODIFICATE local (sectii, probe, produse…),
+// ca merge-ul sa poata propaga redenumirile, paturile, tipul etc. prin last-write-wins pe element.
+// Snapshot-ul se compara la fiecare salvare; dupa un merge se reface fara stampile (saveCfg(true)),
+// ca elementele venite de la colega sa nu para modificate aici.
+var _cfgSnap=null;
+const _CFG_STAMP_KEYS=['sections','biocide_products','waste_recipients','probe_types','waste_codes','doc_categories','infection_types','ipc_categories','atp_surface_types','uv_surface_types','personnel','iaam_custom_cats'];
+function _cfgStampChanged(){
+  var snap={},now=new Date().toISOString();
+  _CFG_STAMP_KEYS.forEach(function(k){(Array.isArray(CFG[k])?CFG[k]:[]).forEach(function(it){
+    if(!it||typeof it!=='object'||!it.id)return;
+    var j=JSON.stringify(Object.assign({},it,{_modifiedAt:undefined}));var sk=k+'|'+it.id;
+    if(_cfgSnap&&_cfgSnap[sk]!==undefined&&_cfgSnap[sk]!==j)it._modifiedAt=now;
+    snap[sk]=j;
+  })});
+  _cfgSnap=snap;
+}
+async function saveCfg(fromMerge){if(fromMerge)_cfgSnap=null;_cfgStampChanged();CFG.id=1;await pt('config',CFG);updateSidebar()}
 // Debounced variant — coalesces multiple rapid calls into 1 DB write (prevents double-click duplicates)
 var _saveCfgTimer=null,_saveCfgPending=null;
 function saveCfgDebounced(){
@@ -4292,7 +4368,7 @@ function getApplicableCombinations(probeTypes,sections){
 }
 
 function _secDisplayName(s){var n=sn(s);if(s.type==='cabinet'&&!n.startsWith('Cab.'))return 'Cab. '+n;if(s.type==='spitalizare_zi'&&!n.startsWith('SpZi'))return 'SpZi '+n;return n}
-function secOpts(selId){return CFG.sections.slice().sort(function(a,b){return _secDisplayName(a).localeCompare(_secDisplayName(b))}).map(s=>'<option value="'+s.id+'" '+(s.id===selId?'selected':'')+'>'+_secDisplayName(s)+'</option>').join('')}
+function secOpts(selId){return CFG.sections.slice().sort(function(a,b){return _secDisplayName(a).localeCompare(_secDisplayName(b))}).map(s=>'<option value="'+s.id+'" '+(s.id===selId?'selected':'')+'>'+esc(_secDisplayName(s))+'</option>').join('')}
 // v13.23 - 3 grupuri: Spital sectii/structuri, Spitalizare de Zi, Ambulatoriu cabinete
 function secOptsGrouped(selId){
   var sp=[],sz=[],am=[];
@@ -4304,9 +4380,9 @@ function secOptsGrouped(selId){
   sp.sort(function(a,b){return sn(a).localeCompare(sn(b))});
   sz.sort(function(a,b){return sn(a).localeCompare(sn(b))});
   am.sort(function(a,b){return sn(a).localeCompare(sn(b))});
-  var h='<optgroup label="Spital - Sectii / Structuri">'+sp.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+sn(s)+'</option>'}).join('')+'</optgroup>';
-  if(sz.length)h+='<optgroup label="Spitalizare de Zi">'+sz.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+_secDisplayName(s)+'</option>'}).join('')+'</optgroup>';
-  if(am.length)h+='<optgroup label="Ambulatoriu - Cabinete">'+am.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+_secDisplayName(s)+'</option>'}).join('')+'</optgroup>';
+  var h='<optgroup label="Spital - Sectii / Structuri">'+sp.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+esc(sn(s))+'</option>'}).join('')+'</optgroup>';
+  if(sz.length)h+='<optgroup label="Spitalizare de Zi">'+sz.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+esc(_secDisplayName(s))+'</option>'}).join('')+'</optgroup>';
+  if(am.length)h+='<optgroup label="Ambulatoriu - Cabinete">'+am.map(function(s){return '<option value="'+s.id+'"'+(s.id===selId?' selected':'')+'>'+esc(_secDisplayName(s))+'</option>'}).join('')+'</optgroup>';
   return h;
 }
 
@@ -4340,7 +4416,9 @@ function parseLocalNum(v){
   else if(lastC>=0&&lastD>=0)dec=Math.max(lastC,lastD);
   else{
     var only=lastC>=0?lastC:lastD;
-    if(s.length-only-1===3&&s.charAt(only)==='.')dec=-1;
+    var cnt=(s.match(lastC>=0?/,/g:/\./g)||[]).length;
+    if(cnt>1)dec=-1;   // v13.97 - acelasi separator de mai multe ori („1,000,000") e sigur separator de mii
+    else if(s.length-only-1===3&&s.charAt(only)==='.')dec=-1;
     else dec=only;
   }
   var intPart=dec>=0?s.slice(0,dec):s;
@@ -4644,6 +4722,9 @@ function applyDark(){
 // 5A.2 — NOTIFICATIONS
 // ═══════════════════════════════════════════════════════════════
 async function buildNotifications(){
+  // v13.97 (G-51) - sabloanele de raportari fara instante pe anul curent le primesc aici (o data pe an si
+  // pe sesiune): la pornire, la schimbarea anului din bara si la fiecare deschidere a dashboard-ului.
+  try{if(typeof _calEnsureInstancesForYear==='function')await _calEnsureInstancesForYear()}catch(e){}
   // Skip rebuild if user dismissed recently (within 4 hours)
   var dismissed=A._notifDismissedAt||+localStorage.getItem('cpiaam_notif_dismissed')||0;
   if(dismissed&&(Date.now()-dismissed)<4*3600000){updateNotifBadge();return}
@@ -4872,6 +4953,9 @@ function _sbGroupsInit(){
 async function rDash(el){
   var _dashOmZile=0;
   try{if(typeof getOmZileForPeriod==='function')_dashOmZile=await getOmZileForPeriod(A.year,1,12)||0}catch(e){}
+  // v13.96 (G-59) - externatii vin tot din Statistici Spital; campul vechi din deseuri (`pac_ext`) nu e
+  // scris de nimeni, deci cardul „kg deseuri / pacient externat" nu aparea niciodata.
+  var _dashExt=0;try{if(typeof getExternatiForPeriod==='function')_dashExt=await getExternatiForPeriod(A.year,1,12)||0}catch(e){}
   const y=A.year,ia=(await ga('iaam')).filter(r=>r.year===y),au=(await ga('autocontrol')).filter(r=>r.year===y),
     de=(await ga('deseuri')).filter(r=>r.year===y),bi=(await ga('biocide')).filter(r=>r.year===y);
   // Previous year data for KPI trends
@@ -5067,7 +5151,7 @@ async function rDash(el){
     '<div class="kc gn" onclick="nav(\'config\')"><div class="kl"><span>'+T('kpi_paturi')+'</span></div><div class="kv">'+wb.toFixed(0)+'</div><div class="ks">'+T('kpi_capacitate')+' '+y+'</div></div>'+
     // A1-05: zilele-pacient vin din Statistici Spital (sursa unica din v12.35). Pe campul vechi
     // din deseuri erau mereu 0, deci cele doua carduri de rate nu se afisau niciodata.
-    (()=>{const tzs=_dashOmZile||de.reduce((s,r)=>s+(+r.zile_spit||0),0);const iaam1000=tzs>0?((ia.length*1000)/tzs).toFixed(2):'—';const tpe=de.reduce((s,r)=>s+(+r.pac_ext||0),0);const des1000=tzs>0?((totD*1000)/tzs).toFixed(2):'—';const desPe=tpe>0?(totD/tpe).toFixed(2):'—';return (tzs>0?'<div class="kc bl" onclick="nav(\'iaam\')"><div class="kl">IAAM/1000 zile spit.</div><div class="kv">'+iaam1000+'</div></div><div class="kc am" onclick="nav(\'deseuri\')"><div class="kl">kg des/1000 zile spit.</div><div class="kv">'+des1000+'</div></div>':'')+(tpe>0?'<div class="kc tl" onclick="nav(\'deseuri\')"><div class="kl">kg des/pac. ext.</div><div class="kv">'+desPe+'</div></div>':'')})()+'</div></div>';
+    (()=>{const tzs=_dashOmZile||de.reduce((s,r)=>s+(+r.zile_spit||0),0);const iaam1000=tzs>0?((ia.length*1000)/tzs).toFixed(2):'—';const tpe=_dashExt||de.reduce((s,r)=>s+(+r.pac_ext||0),0);const des1000=tzs>0?((totD*1000)/tzs).toFixed(2):'—';const desPe=tpe>0?(totD/tpe).toFixed(2):'—';return (tzs>0?'<div class="kc bl" onclick="nav(\'iaam\')"><div class="kl">IAAM/1000 zile spit.</div><div class="kv">'+iaam1000+'</div></div><div class="kc am" onclick="nav(\'deseuri\')"><div class="kl">kg des/1000 zile spit.</div><div class="kv">'+des1000+'</div></div>':'')+(tpe>0?'<div class="kc tl" onclick="nav(\'deseuri\')"><div class="kl">kg des/pac. ext.</div><div class="kv">'+desPe+'</div></div>':'')})()+'</div></div>';
   // 5. Docs & deadlines KPI - v13.14: tab bar 30/60/90 zile peste cardurile PROXIME (motiv: viza anuala mediu si alte raportari au fereastra 30-60 zile pentru depunere documente)
   // Total counts pentru fiecare perioada inscrise pe tabs (user vede diferenta dintre 30/60/90 instant)
   const _totFor=p=>_counts[p].dls+_counts[p].docs+_counts[p].evts+_counts[p].trains+_counts[p].audits;
@@ -6591,7 +6675,7 @@ async function editIAAM(id){
   // Build draft
   if(r){
     _iaamDraft=JSON.parse(JSON.stringify(r));
-    _iaamEditId=r.id;
+    _iaamEditId=r.id;_editRemember('iaam',r);   // v13.98 garda de conflict la salvare
   } else {
     // Smart defaults — section blank for new cases (user must pick explicitly)
     _iaamDraft={year:A.year,month:new Date().getMonth()+1,section:'',mediu:'Urban',
@@ -6637,6 +6721,10 @@ async function duplicateIAAM(id){
   _iaamDraft.comorbidities=[];_iaamDraft.procedures='';_iaamDraft.procedures_list=[];_iaamDraft.prev_admissions=[];
   _iaamDraft.biocides_used=[];_iaamDraft.biocide_conform_po=false;_iaamDraft.biocide_po_name='';
   _iaamDraft.invasive_devices='';_iaamDraft.domiciliu='';
+  // v13.96 (G-55) - tooltip-ul promite „sterge datele pacient"; ramaneau contactii (initiale + FO ale ALTOR
+  // pacienti), datele de internare/externare/raportare/debut, simptomele, validarea CPIAAM etc.
+  ['contacts','no_contacts','date_admission','date_discharge','days','date_reported','date_symptom_onset','symptoms','localization','status_externare','validated_by','validated_date','classification_note','risk_factor_details','date_negativare','bulletins_neg','age_months','outbreak_details'].forEach(function(k){delete _iaamDraft[k]});
+  _iaamDraft.contacts='Fara contacti de salon';_iaamDraft.bulletins_neg=[];
   _iaamDraft.classification='';_iaamDraft.conclusions='';_iaamDraft.date_deces='';_iaamDraft.cauza_deces='';
   _iaamDraft.date_confirmed='';_iaamDraft.bulletin_nr='';_iaamDraft.bulletins=[];
   _iaamEditId=null;
@@ -6708,6 +6796,8 @@ async function saveIAAM(){
   if(_iaamEditId)rec.id=_iaamEditId;
   // Save last section for smart defaults
   if(rec.section)localStorage.setItem('iaam_last_section',rec.section);
+  // v13.98 - daca altcineva a modificat fisa cat timp dialogul era deschis, intreaba inainte sa suprascrii.
+  if(_iaamEditId&&!(await _editCheckConflict('iaam',_iaamEditId)))return;
   await pt('iaam',rec);
   logActivity((_iaamEditId?'Editat':'Adaugat')+' caz IAAM — '+rSec(rec.section)+' ('+comp.total+'%)');toastSaved();
   if(rec.year!==A.year)alert(_Mf('Cazul a fost salvat pe anul {y}. Comuta anul din bara de sus pe {y} ca sa-l vezi in lista.',{y:rec.year}));
@@ -7301,8 +7391,16 @@ function _focMkCluster(key,chain){
 // ═══ Pagina principala ═══
 async function rFocare(el){
   const isEN=CFG.lang==='en';
-  const all=(await ga('outbreaks')).filter(function(f){return f.year===A.year});
-  const iaamAll=(await ga('iaam')).filter(function(r){return r.year===A.year});
+  // v13.97 (G-54) - focarele si cazurile trec granita de an: un focar inceput pe 28.12 se vede si in
+  // ianuarie (cat timp e deschis sau se inchide in anul curent), iar cazurile din anul vecin se pot
+  // lega si intra in detectia lantului 28.12 → 05.01 → 10.01.
+  const _y=A.year;
+  const all=(await ga('outbreaks')).filter(function(f){
+    if(f.year===_y)return true;
+    var ds=String(f.date_start||''),de=String(f.date_stop||'');
+    return !!ds&&ds<=_y+'-12-31'&&(de?de>=_y+'-01-01':f.status!=='inchis');
+  });
+  const iaamAll=(await ga('iaam')).filter(function(r){return Math.abs((+r.year||0)-_y)<=1});
   const caseById={};iaamAll.forEach(function(r){caseById[r.id]=r});
 
   // cazuri deja atribuite unui focar
@@ -7326,7 +7424,7 @@ async function rFocare(el){
   '</div>';
 
   // ── Alerta clustere nedeclarate ──
-  const clusters=focDetectClusters(iaamAll,assigned);
+  const clusters=focDetectClusters(iaamAll,assigned).filter(function(c){return (c.ids||[]).some(function(id){return caseById[id]&&caseById[id].year===A.year})});   // v13.97 (G-54) doar lanturile cu macar un caz in anul barei
   if(clusters.length>0){
     h+='<div class="pn" style="border-color:var(--amber);margin-bottom:14px"><div class="ph" style="background:rgba(245,158,11,.12)"><h3 style="color:var(--amber)">&#9888;&#65039; '+
       (isEN?'Possible undeclared outbreaks':'Posibile focare nedeclarate')+' ('+clusters.length+')</h3></div><div class="pb">'+
@@ -7501,14 +7599,14 @@ var _focDraft=null;
 async function editFocar(id,preset){
   const isEN=CFG.lang==='en';
   const all=await ga('outbreaks');
-  let f=id?all.find(function(x){return x.id===id}):null;
+  let f=id?all.find(function(x){return x.id===id}):null;if(f)_editRemember('outbreaks',f);   // v13.98
   _focDraft=f?JSON.parse(JSON.stringify(f)):Object.assign({year:A.year,name:'',pathogen:'',mdr:'',sections:[],
     date_start:todayISO(),date_stop:'',status:'suspiciune',case_ids:[],description:'',actions:[],conclusions:''},preset||{});
   if(!Array.isArray(_focDraft.sections))_focDraft.sections=[];
   if(!Array.isArray(_focDraft.case_ids))_focDraft.case_ids=[];
   if(!Array.isArray(_focDraft.actions))_focDraft.actions=[];
 
-  const iaamAll=(await ga('iaam')).filter(function(r){return r.year===A.year});
+  const iaamAll=(await ga('iaam')).filter(function(r){return Math.abs((+r.year||0)-A.year)<=1});   // v13.97 (G-54) si anii vecini
   window._focIaamCache=iaamAll;
 
   openM(id?'Editare focar':'Focar nou',
@@ -7583,6 +7681,7 @@ async function saveFocar(id){
   if(rec.date_start&&rec.date_stop&&rec.date_start>rec.date_stop){alert(_M('Data de debut este dupa data de inchidere.'));return}
   rec.actions=(rec.actions||[]).filter(function(a){return a&&((a.action||'').trim()||(a.responsible||'').trim()||a.deadline)});
   if(id)rec.id=id;
+  if(id&&!(await _editCheckConflict('outbreaks',id)))return;   // v13.98
   await pt('outbreaks',rec);
   logActivity((id?'Editat':'Adaugat')+' focar — '+rec.name);toastSaved();
   closeM();render();
@@ -7958,7 +8057,7 @@ function _icdTableHTML(all){
 // ═══ DIALOG CAZ ═══
 async function editICD(id){
   const isEN=CFG.lang==='en';
-  let r=id?(await ga('icd_cases')).find(function(x){return x.id===id}):null;
+  let r=id?(await ga('icd_cases')).find(function(x){return x.id===id}):null;if(r)_editRemember('icd_cases',r);   // v13.98
   // Fisele IAAM din acelasi an, pentru selectorul de legatura. Doar cele confirmate.
   const iaamList=(await ga('iaam')).filter(function(x){return x.year===A.year&&x.classification!=='infirmat'});
   if(!r)r={source:'',onset_place:'',test_type:'',risk:{}};
@@ -8075,6 +8174,7 @@ async function saveICD(id){
   if(id){
     rec.id=id;
     // Pastram campurile interne ale inregistrarii existente (regula A1-15 / A1-33).
+    if(!(await _editCheckConflict('icd_cases',id)))return;   // v13.98
     var ex=(await gaAll('icd_cases')).find(function(x){return x.id===id});
     if(ex)Object.keys(ex).forEach(function(k){if(k.charAt(0)==='_'&&!(k in rec))rec[k]=ex[k]});
   }
@@ -8785,7 +8885,7 @@ async function rAES(el){
 // ═══ DIALOGUL — urmeaza rubricile fisei oficiale, in ordinea din ea ═══
 async function editAES(id){
   const isEN=CFG.lang==='en';
-  let r=id?(await ga('aes_events')).find(function(x){return x.id===id}):null;
+  let r=id?(await ga('aes_events')).find(function(x){return x.id===id}):null;if(r)_editRemember('aes_events',r);   // v13.98
   if(!r)r={epp:[]};
   const epp=Array.isArray(r.epp)?r.epp:[];
   const opt=function(arr,sel){return arr.map(function(o){return '<option value="'+o.v+'"'+(sel===o.v?' selected':'')+'>'+esc(_aesL(o))+'</option>'}).join('')};
@@ -8918,6 +9018,7 @@ async function saveAES(id){
   var epp=[];AES_EPP.forEach(function(o){if(ck('f-aes-epp-'+o.v))epp.push(o.v)});
   // Pastrez campurile interne ale inregistrarii existente — functia reconstruieste obiectul de la
   // zero, iar fara asta s-ar pierde orice camp intern (regula din CLAUDE.md).
+  if(id&&!(await _editCheckConflict('aes_events',id)))return;   // v13.98
   var vechi=id?(await ga('aes_events')).find(function(x){return x.id===id}):null;
   var rec={kind:'event',year:yearOfDate(data),cod:cod,date:data,ora:v('f-aes-ora'),
     categorie:v('f-aes-categ'),section:v('f-aes-sec'),loc:v('f-aes-loc').trim(),
@@ -9453,7 +9554,7 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
 
   function renderMatrix(secList,title){
     if(secList.length===0||probeTypes.length===0)return '';
-    var _autoFilterKey=title==='Ambulatoriu'?'_autoFiltAmbul':'_autoFiltSpital';
+    var _autoFilterKey=(title==='Ambulatoriu'||title==='Outpatient')?'_autoFiltAmbul':'_autoFiltSpital';   // v13.96 - titlul e localizat
     var filtVal=window[_autoFilterKey]||'all';
     // Filter sections by conformity
     var filteredSec=secList;
@@ -10012,6 +10113,7 @@ function autoResChanged(){
 async function editAuto(id){
   const isEN=CFG.lang==='en';
   let r=id?(await ga('autocontrol')).find(x=>x.id===id):{year:A.year,month:new Date().getMonth()+1,result:'conform',quarter:Math.ceil((new Date().getMonth()+1)/3)};
+  if(id&&r)_editRemember('autocontrol',r);   // v13.98
   if(!r)r={year:A.year,month:new Date().getMonth()+1,result:'conform',quarter:1};
   // Germen dropdown options
   const germOpts='<option value="">— '+(isEN?'Select pathogen':'Selecteaza germen')+' —</option>'+
@@ -10054,6 +10156,7 @@ async function _collectAutoRec(id){
 }
 async function saveAuto(id){
   const rec=await _collectAutoRec(id);if(!rec)return;
+  if(id&&!(await _editCheckConflict('autocontrol',id)))return;   // v13.98
   await pt('autocontrol',rec);logActivity((id?'Editat':'Adaugat')+' proba autocontrol — '+rSec(rec.section));toastSaved();closeM();render();
 }
 async function saveAutoAndNew(){
@@ -10111,11 +10214,14 @@ function impAutoCSV(){const inp=document.createElement('input');inp.type='file';
     const ptNm=get(ci.pt),secNm=get(ci.sec);
     if(!ptNm&&!secNm){skip++;continue}
     const mo=parseInt(get(ci.mo),10)||0;
-    const yr=ci.year>=0?(parseInt(get(ci.year),10)||A.year):A.year;
+    // v13.96 (G-58) - data se normalizeaza (un CSV re-salvat din Excel vine „05.03.2026"), iar anul vine
+    // din data proprie cand fisierul nu are coloana „An", nu din bara de sus.
+    const _dIso=(typeof parseDateISO==='function')?parseDateISO(get(ci.date)):null;
+    const yr=ci.year>=0?(parseInt(get(ci.year),10)||yearOfDate(_dIso,A.year)):yearOfDate(_dIso,A.year);
     if(yr!==A.year)otherYears.add(yr);
     const ufcRaw=get(ci.ufc);
     await pt('autocontrol',{year:yr,
-      quarter:parseInt(get(ci.q),10)||(mo?Math.ceil(mo/3):1),month:mo||1,date:get(ci.date),
+      quarter:parseInt(get(ci.q),10)||(mo?Math.ceil(mo/3):1),month:mo||1,date:(_dIso||get(ci.date)),
       probe_type:(findBy(CFG.probe_types,ptNm)||{}).id||ptNm,
       section:(findBy(CFG.sections,secNm)||{}).id||secNm,
       result:get(ci.res).toLowerCase().indexOf('neconform')>=0?'neconform':'conform',
@@ -10235,7 +10341,7 @@ async function renderAutoTab4(isEN){
 async function editRiskPoint(id){
   var isEN=CFG.lang==='en';
   var all=await ga('ipc_registry');
-  var r=id?all.find(function(x){return x.id===id}):null;
+  var r=id?all.find(function(x){return x.id===id}):null;if(r)_editRemember('ipc_registry',r);   // v13.98
   if(!r)r={kind:'risc',section:'',zone:'',points:'',level:'mediu',frequency:'',measures:'',reviewed_date:todayISO(),notes:''};
   var lvOpts=RISK_LEVELS.map(function(l){return '<option value="'+l.v+'"'+(l.v===r.level?' selected':'')+'>'+(isEN?l.en:l.ro)+'</option>'}).join('');
   openM(id?(isEN?'Edit risk point':'Editare punct de risc'):(isEN?'New risk point':'Punct de risc nou'),
@@ -10265,6 +10371,7 @@ async function saveRiskPoint(id){
     level:v('f-rk-lv')||'mediu',frequency:v('f-rk-freq').trim(),measures:v('f-rk-meas').trim(),
     reviewed_date:v('f-rk-rev'),notes:v('f-rk-n').trim()};
   if(id)rec.id=id;
+  if(id&&!(await _editCheckConflict('ipc_registry',id)))return;   // v13.98
   await pt('ipc_registry',rec);
   logActivity((id?'Editat':'Adaugat')+' punct de risc — '+rSec(sec)+' / '+zone);toastSaved();
   closeM();render();
@@ -10446,6 +10553,7 @@ async function renderAtpModule(isEN){
 async function editAtp(id){
   const isEN=CFG.lang==='en';
   let r=id?(await ga('atp')).find(x=>x.id===id):{year:A.year,date:todayISO(),rlu_value:'',rlu_repeat:'',surface_type:'',section:'',location:'',notes:''};
+  if(id&&r)_editRemember('atp',r);   // v13.98
   if(!r)r={year:A.year,date:todayISO(),rlu_value:'',rlu_repeat:'',surface_type:'',section:'',location:'',notes:''};
   const surfaces=getAtpSurfaces();
   // v13.62 - optiune goala + validare la salvare. Valoarea implicita era 'sup_lucru', un id
@@ -10458,7 +10566,7 @@ async function editAtp(id){
     '<div class="fg"><label>'+(isEN?'Section':'Sec\u021Bia')+'</label><select id="f-atp-sec"><option value="">\u2014</option>'+secOptsGrouped(r.section)+'</select></div></div>'+
     '<div class="fr"><div class="fg"><label>'+(isEN?'Surface type':'Tip suprafa\u021B\u0103')+'</label><select id="f-atp-surf" onchange="updateAtpResult()">'+surfOpts+'</select></div>'+
     '<div class="fg"><label>'+(isEN?'Location detail':'Locatie detaliu')+'</label><input id="f-atp-loc" value="'+((r.location||'').replace(/"/g,'&quot;'))+'" placeholder="'+(isEN?'e.g. Room 3, bed 2':'ex. Salon 3, pat 2')+'"></div></div>'+
-    '<div class="fr"><div class="fg"><label>RLU '+(isEN?'(initial reading)':'(citire ini\u021Bial\u0103)')+' *</label><input type="number" id="f-atp-rlu" value="'+(r.rlu_value||'')+'" min="0" step="1" oninput="updateAtpResult()"></div>'+
+    '<div class="fr"><div class="fg"><label>RLU '+(isEN?'(initial reading)':'(citire ini\u021Bial\u0103)')+' *</label><input type="number" id="f-atp-rlu" value="'+((r.rlu_value===0||r.rlu_value)?r.rlu_value:'')+'" min="0" step="1" oninput="updateAtpResult()"></div>'+
     '<div class="fg"><label>RLU '+(isEN?'(repeat reading)':'(repeti\u021Bie)')+' <span style="color:var(--txtL);font-size:11px">('+( isEN?'optional':'op\u021Bional')+')</span></label><input type="number" id="f-atp-rlu2" value="'+(r.rlu_repeat!=null&&r.rlu_repeat!==''?r.rlu_repeat:'')+'" min="0" step="1" oninput="updateAtpResult()"></div></div>'+
     '<div id="f-atp-result-preview" style="margin:8px 0"></div>'+
     '<div class="fg"><label>'+(isEN?'Notes':'Observa\u021Bii')+'</label><textarea id="f-atp-notes" rows="2">'+((r.notes||'').replace(/</g,'&lt;'))+'</textarea></div>',
@@ -10472,7 +10580,7 @@ function updateAtpResult(){
   const rlu2=document.getElementById('f-atp-rlu2')?.value||'';
   const thr=atpThreshold(surf);
   let html='';
-  if(rlu>0){
+  if(rlu>=0&&!isNaN(rlu)&&String((document.getElementById('f-atp-rlu')||{}).value||'').trim()!==''){   // v13.96 - RLU 0 e o citire valida
     const res=atpResult(rlu,surf);
     html='<div style="display:flex;gap:12px;align-items:center;padding:8px 12px;border-radius:8px;background:'+(res==='conform'?'#F0FDF4;border:1px solid #86EFAC':'#FEF2F2;border:1px solid #FCA5A5')+'">'+
       '<strong style="color:'+(res==='conform'?'var(--green)':'var(--red)')+'">Rezultat initial: '+(res==='conform'?'CONFORM':'NECONFORM')+'</strong>'+
@@ -10502,7 +10610,7 @@ async function saveAtp(id){
   const rlu2=v('f-atp-rlu2');
   const rec={year:yearOfDate(v('f-atp-date'),A.year),date:v('f-atp-date'),section:sec,surface_type:v('f-atp-surf'),location:v('f-atp-loc').trim(),
     rlu_value:rlu,rlu_repeat:rlu2!==''?+rlu2:null,notes:v('f-atp-notes').trim()};
-  if(id)rec.id=id;await pt('atp',rec);logActivity((id?'Editat':'Adaugat')+' proba ATP — '+rSec(rec.section));toastSaved();closeM();render();
+  if(id)rec.id=id;if(id&&!(await _editCheckConflict('atp',id)))return;await pt('atp',rec);logActivity((id?'Editat':'Adaugat')+' proba ATP — '+rSec(rec.section));toastSaved();closeM();render();
 }
 
 function editAtpSurfaces(){
@@ -10656,6 +10764,7 @@ async function renderUvModule(isEN){
 async function editUv(id){
   const isEN=CFG.lang==='en';
   let r=id?(await ga('uvcheck')).find(x=>x.id===id):{year:A.year,date:todayISO(),section:'',surface:'',result:'pass',notes:''};
+  if(id&&r)_editRemember('uvcheck',r);   // v13.98
   if(!r)r={year:A.year,date:todayISO(),section:'',surface:'',result:'pass',notes:''};
   const uvSurfaces=CFG.uv_surface_types||[];
   const uvSurfOpts=uvSurfaces.map(s=>'<option value="'+s.id+'"'+(r.surface===s.id||r.surface===s.name?' selected':'')+'>'+s.name+'</option>').join('');
@@ -10672,7 +10781,7 @@ async function saveUv(id){
   const v=s=>document.getElementById(s)?document.getElementById(s).value:'';
   const sec=v('f-uv-sec');if(needSection(sec))return;
   const rec={year:yearOfDate(v('f-uv-date'),A.year),date:v('f-uv-date'),section:sec,surface:v('f-uv-surf').trim(),result:v('f-uv-res'),notes:v('f-uv-notes').trim()};
-  if(id)rec.id=id;await pt('uvcheck',rec);logActivity((id?'Editat':'Adaugat')+' verificare UV — '+rSec(rec.section));toastSaved();closeM();render();
+  if(id)rec.id=id;if(id&&!(await _editCheckConflict('uvcheck',id)))return;await pt('uvcheck',rec);logActivity((id?'Editat':'Adaugat')+' verificare UV — '+rSec(rec.section));toastSaved();closeM();render();
 }
 
 
@@ -10905,6 +11014,7 @@ async function rStatistici(el){
   var isEN=CFG.lang==='en';
   var year=A.year;
   var ha=await getHospitalActivity(year);
+  if(ha&&ha.id)_editRemember('hospital_activity',ha);   // v13.98 - la randare, NU in getHospitalActivity (saveHA reincarca si ar masca conflictul)
 
   // ── Calculate indicators first (needed for display above tables) ──
   var totalOmZile=0,totalExternati=0,totalPaturi=0,cntPaturi=0;
@@ -10922,7 +11032,7 @@ async function rStatistici(el){
   var iaamCount=iaamData.filter(function(r){return r.year===year&&r.classification!=='infirmat'}).length;
   var deseuri=await ga('deseuri');
   var deseuriKg=0;
-  deseuri.forEach(function(r){if(r.year===year)(CFG.waste_codes||[]).forEach(function(w){deseuriKg+=(+r[w.id]||0)})});
+  deseuri.forEach(function(r){if(r.year===year)(CFG.waste_codes||[]).forEach(function(w){if(w.active===false)return;deseuriKg+=(+r[w.id]||0)})});   // v13.96 - codurile dezactivate nu intra, ca in Deseuri si dashboard
   // Fara numitor rata e null si se afiseaza „—", niciodata 0: un zero fals nu se distinge de o
   // performanta reala si ajunge asa intr-un raport oficial. Regula e deja respectata in restul
   // fisierului prin rate1000/ratePer100/indFmt — doar aceste trei carduri o incalcau.
@@ -11152,6 +11262,7 @@ async function saveHA(){
     sd[f]=inp.value?+inp.value:null;
   });
   ha.id='ha_'+year;ha.year=year;
+  if(!(await _editCheckConflict('hospital_activity',ha.id,{onReload:render})))return;   // v13.98
   await pt('hospital_activity',ha);
   showToast(CFG.lang==='en'?'Saved!':'Salvat!');render();
 }
@@ -11542,6 +11653,13 @@ function bioToggleProd(k){_bioExpanded[k]=!_bioExpanded[k];render()}
 function bioExpandAll(){document.querySelectorAll('[data-bio-key]').forEach(function(n){_bioExpanded[n.dataset.bioKey]=true});render()}
 function bioCollapseAll(){_bioExpanded={};render()}
 // v12.55: add blank aviz slot for a product — editable inline in the product card
+// v13.97 (G-27b) - orice actiune pe avize/documente redesena editorul din CFG, care nu avea inca ce era
+// tastat in formular (producator, distribuitor, substante, profile): totul se pierdea, fara mesaj.
+// Se salveaza intai silentios (ca la profile), apoi se redeseneaza.
+async function _bioKeepAndRerender(pid){
+  try{if(document.getElementById('bep-mfr'))await bioSaveProduct(pid,true);else await saveCfg()}catch(e){console.warn('[CPIAAM] bioKeep',e);await saveCfg()}
+  bioEditProduct(pid);
+}
 function bioAddAviz(pid){
   if(!pid)return;
   var prod=(CFG.biocide_products||[]).find(function(p){return p.id===pid});
@@ -11941,7 +12059,7 @@ async function rBio(el){
             var src=(it.type==='intrare'?'Intrare ':it.type==='iesire'?'Iesire ':'Stoc initial ')+(it.month?MO[it.month-1]:'');
             docsPanel+='<div style="display:flex;align-items:center;gap:4px;padding:3px 0;font-size:11px;opacity:.85">'+
               '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(it.file.name)+'">'+esc(it.file.name)+' <span style="color:#D97706;font-size:10px">('+src+' — legacy)</span></span>'+
-              '<button onclick="bioViewAttByRec('+it.recId+',\''+it.key+'\','+it.fi+')" title="Vizualizeaza" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">&#128065;</button>'+
+              '<button onclick="bioViewAttByRec('+_jsArg(it.recId)+',\''+it.key+'\','+it.fi+')" title="Vizualizeaza" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">&#128065;</button>'+
               '<button onclick="bioDownloadAttByRec('+it.recId+',\''+it.key+'\','+it.fi+')" title="Descarca" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">&#11015;</button>'+
               '</div>';
           }
@@ -12021,7 +12139,9 @@ function bioQuickAddProduct(){
     '<div class="ib inf" style="margin-top:10px;font-size:11px"><span>\uD83D\uDCCE Documentele (Aviz BPR, Fisa tehnica, SDS) le adaugi ulterior din cardul de produs → click <strong>&#9998;</strong> din header.</span></div>'+
   '</div>';
   // Save current editBio record state (qty, val, type, month, lot)
-  _bioRecSnapshot=_editBioRec?JSON.parse(JSON.stringify(_editBioRec)):null;
+  _bioRecSnapshot=_editBioRec?JSON.parse(JSON.stringify(_editBioRec)):{};
+  // v13.97 (G-27c) - si valorile TASTATE in formularul de miscare (existau doar in DOM si se pierdeau)
+  try{['f-qty','f-val','f-tp','f-mo','f-lot','f-um','f-bio-mfr','f-bio-dist','f-bio-ptype'].forEach(function(id){var el=document.getElementById(id);if(el)_bioRecSnapshot['_dom_'+id]=el.value})}catch(e){}
   openM('+ Produs nou in catalog',h,
     '<button class="btn bp" onclick="bioQuickAddProductSave()">Salveaza produs</button>'+
     '<button class="btn bo" onclick="bioQuickAddProductCancel()">Anuleaza</button>');
@@ -12046,13 +12166,22 @@ async function bioQuickAddProductSave(){
   // Re-open editBio cu record-ul restaurat + produs preselectat
   var snap=_bioRecSnapshot;_bioRecSnapshot=null;
   if(snap){snap.product_id=pid;snap.product_name=name;if(!snap.product_type)snap.product_type=newProd.product_type;if(!snap.unit)snap.unit=newProd.unit;_editBioRec=snap}
-  editBio(snap&&snap.id);
+  await editBio(snap&&snap.id);_bioApplySnapshot(snap);   // v13.97 (G-27c) produsul preselectat + valorile tastate
   if(typeof showToast==='function')showToast('Produs „'+name+'" adaugat'+(applied>0?' (protocol pre-populat din template RO)':''));
+}
+// v13.97 (G-27c) - editBio reincarca inregistrarea din baza (sau creeaza una goala), deci snapshot-ul se
+// pune inapoi DUPA randare: produsul ales si valorile tastate inainte de „+ Produs nou".
+function _bioApplySnapshot(snap){
+  if(!snap)return;
+  try{
+    Object.keys(snap).forEach(function(k){if(k.indexOf('_dom_')!==0)return;var el=document.getElementById(k.slice(5));if(el&&snap[k]!==undefined&&snap[k]!=='')el.value=snap[k]});
+    if(snap.product_id){var ps=document.getElementById('f-prod');if(ps){ps.value=snap.product_id;ps.dispatchEvent(new Event('change'))}}
+  }catch(e){console.warn('[CPIAAM] bioApplySnapshot',e)}
 }
 function bioQuickAddProductCancel(){
   closeM();
   var snap=_bioRecSnapshot;_bioRecSnapshot=null;
-  if(snap){_editBioRec=snap;editBio(snap.id)}
+  if(snap){_editBioRec=snap;editBio(snap.id).then(function(){_bioApplySnapshot(snap)})}
 }
 function bioProdChanged(){
   const sel=document.getElementById('f-prod');if(!sel||!sel.value)return;
@@ -12066,6 +12195,7 @@ async function editBio(id){
   // v12.93 - FIX: id poate fi number (records vechi) sau string (records noi via genId).
   // Strict equal === esua pentru records migrate (id number) vs onclick stringify (id string).
   let r=id!=null?(await ga('biocide')).find(x=>String(x.id)===String(id)):{year:A.year,type:'iesire',month:new Date().getMonth()+1};
+  if(id!=null&&r)_editRemember('biocide',r);   // v13.98
   if(!r)r={year:A.year,type:'iesire',month:new Date().getMonth()+1};
   _editBioRec=r;
   const selProd=r.product_id||'';
@@ -12235,10 +12365,10 @@ function bioEditProduct(pid){
         stat=exp<now?'<span style="color:var(--red);font-weight:700">&#9888; Expirat</span>':exp<soon?'<span style="color:#D97706;font-weight:700">&#9203; Curand</span>':'<span style="color:#059669">&#10004; Valabil</span>';}
       avizHtml+='<tr>'+
         '<td style="padding:3px 4px"><input value="'+esc(a.nr||a.number||'')+'" placeholder="Nr." onchange="CFG.biocide_products['+idx+'].avize['+ai+'].nr=this.value;saveCfg()" style="width:110px;padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
-        '<td style="padding:3px 4px"><input type="date" value="'+(a.date_issued||'')+'" onchange="CFG.biocide_products['+idx+'].avize['+ai+'].date_issued=this.value;saveCfg();bioEditProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
-        '<td style="padding:3px 4px"><input type="date" value="'+(a.date_expiry||'')+'" onchange="CFG.biocide_products['+idx+'].avize['+ai+'].date_expiry=this.value;saveCfg();bioEditProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
+        '<td style="padding:3px 4px"><input type="date" value="'+(a.date_issued||'')+'" onchange="CFG.biocide_products['+idx+'].avize['+ai+'].date_issued=this.value;_bioKeepAndRerender(\''+String(pid).replace(/\x27/g,"\\x27")+'\')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
+        '<td style="padding:3px 4px"><input type="date" value="'+(a.date_expiry||'')+'" onchange="CFG.biocide_products['+idx+'].avize['+ai+'].date_expiry=this.value;_bioKeepAndRerender(\''+String(pid).replace(/\x27/g,"\\x27")+'\')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
         '<td style="padding:3px 4px">'+stat+'</td>'+
-        '<td style="padding:3px 4px"><button onclick="if(confirm(\''+_M('Stergi aviz?')+'\')){CFG.biocide_products['+idx+'].avize.splice('+ai+',1);saveCfg();bioEditProduct(\''+String(pid).replace(/\x27/g,"\\x27")+'\')}" title="Sterge" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">&#128465;</button></td>'+
+        '<td style="padding:3px 4px"><button onclick="if(confirm(\''+_M('Stergi aviz?')+'\')){CFG.biocide_products['+idx+'].avize.splice('+ai+',1);_bioKeepAndRerender(\''+String(pid).replace(/\x27/g,"\\x27")+'\')}" title="Sterge" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">&#128465;</button></td>'+
       '</tr>';
     });
     avizHtml+='</table>';
@@ -12495,17 +12625,17 @@ function _bioReRenderEditor(pid,opts){
   },60);
 }
 // CRUD profile utilizare
-function bioAddUsageProfile(pid){
-  bioSaveProduct(pid,true); // save fields inainte de re-render
+async function bioAddUsageProfile(pid){
+  await bioSaveProduct(pid,true); // save fields inainte de re-render. v13.96 (G-53) await: altfel redenumirea din formular se pierdea
   var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p)return;
   if(!p.usage_profiles)p.usage_profiles=[];
   p.usage_profiles.push({use:'suprafete',level:'intermediar',concentration:'',dose:'',contact_time:'',technique:'',protocol:''});
   saveCfg();
   _bioReRenderEditor(pid,{scrollToLastProfile:true}); // v13.1 scroll la noul profil
 }
-function bioDeleteUsageProfile(pid,idx){
+async function bioDeleteUsageProfile(pid,idx){
   if(!confirm(_M('Stergi acest profil de utilizare?')))return;
-  bioSaveProduct(pid,true);
+  await bioSaveProduct(pid,true);
   var p=(CFG.biocide_products||[]).find(function(x){return x.id===pid});if(!p||!p.usage_profiles)return;
   p.usage_profiles.splice(idx,1);
   saveCfg();
@@ -12615,7 +12745,7 @@ async function bioMergeProduct(sourcePid){
     }
     // 4. Revalidate source e tot acolo (in caz ca sync a venit intre timp)
     var sIdxFinal=CFG.biocide_products.findIndex(function(p){return p.id===sourcePid});
-    if(sIdxFinal>=0)CFG.biocide_products.splice(sIdxFinal,1);
+    if(sIdxFinal>=0){if(typeof _cfgMarkDeleted==='function')_cfgMarkDeleted('biocide_products',CFG.biocide_products[sIdxFinal]);CFG.biocide_products.splice(sIdxFinal,1)}   // v13.96 (G-20)
     // 5. Salveaza catalog
     await saveCfg();
     closeM();render();
@@ -12658,7 +12788,7 @@ function bioAddProductDoc(pid,key){
         p.documents[key].push({name:f.name,type:f.type,size:f.size,filename:fname,on_disk:true});
       }catch(err){errAlert(err,'Nu am putut salva fisierul atasat.','Could not save the attached file.');return}
     }
-    await saveCfg();bioEditProduct(pid);render();
+    await _bioKeepAndRerender(pid);render();   // v13.97 (G-27b) pastreaza ce e tastat in formular
   };inp.click();
 }
 function bioViewProductDoc(pid,key,fi){
@@ -12708,7 +12838,7 @@ async function bioDeleteProductDoc(pid,key,fi){
   var att=p.documents[key][fi];
   if(att&&att.on_disk&&att.filename){try{await attDeleteFile('biocide',att.filename)}catch(e){}}
   p.documents[key].splice(fi,1);
-  await saveCfg();bioEditProduct(pid);render();
+  await _bioKeepAndRerender(pid);render();   // v13.97 (G-27b) pastreaza ce e tastat in formular
 }
 // v12.82 — Migratie atasamente de pe records la nivel de produs
 // Deduplicare: fisiere cu acelasi `name` din miscari diferite ale aceluiasi produs → pastram primul
@@ -12754,6 +12884,7 @@ async function saveBio(id){
     if(old&&old.notes!==undefined&&old.notes!=='')rec.notes=old.notes;
     rec.id=id;
   }
+  if(id!=null&&!(await _editCheckConflict('biocide',id)))return;   // v13.98
   await pt('biocide',rec);logActivity((id?'Editat':'Adaugat')+' biocid — '+rec.product_name);toastSaved();closeM();render();
 }
 
@@ -12912,7 +13043,9 @@ function addBioAviz(prodIdx){
 function getBioExpiredAvize(){
   var now=new Date();var soon=new Date(Date.now()+30*86400000);var results=[];
   (CFG.biocide_products||[]).forEach(function(p){
-    if(!p.in_stock)return;
+    // v13.96 (G-53) - `in_stock` e scris doar din Configurare; produsele create din modul sau importate
+    // nu-l au si clopotelul tacea, desi dashboard-ul si calendarul alertau. Doar `false` explicit exclude.
+    if(p.in_stock===false)return;
     (p.avize||[]).forEach(function(a){
       if(!a.date_expiry)return;
       var exp=new Date(a.date_expiry);
@@ -14083,7 +14216,8 @@ function _buildPatients(pats, warnings) {
     if (p.p_sex !== 2 && p.p_sex !== 3) unknownSex++;
     // p_surg resolution: integer → 'N' | 'NHSN-COLO' | etc.
     const surgCode = CM ? CM.resolvePSurg(p.p_surg) : null;
-    const hasSurgery = surgCode !== null && surgCode !== 'N';
+    // v13.96 (G-60) - „necunoscut" (UNK) si codurile nerezolvate (HW:…) nu inseamna chirurgie.
+    const hasSurgery = surgCode !== null && surgCode !== 'N' && surgCode !== 'UNK' && !/^HW:/.test(String(surgCode));
     const nhsnCode = (surgCode && surgCode.startsWith('NHSN-')) ? surgCode : null;
 
     return {
@@ -14304,7 +14438,9 @@ function _ppsAggregatesFromIR(ir){
   for(const a of ir.amu){
     const sec = patToSec[a.patientId]; if(!sec || !patsBySec[sec]) continue;
     patsBySec[sec].prescriptions = (patsBySec[sec].prescriptions || 0) + 1;
-    if(a.indication && a.indication !== 'UNK' && a.indication !== 'UI' && !a.indication.startsWith('HW:')){
+    // v13.97 (G-60) - „indicatie documentata" e indicatorul ECDC „motivul notat in FO" (reasonInNotes), acelasi
+    // ca in raportul Word; „indicatia nu e UNK" dadea ~100% pe orice export si un „✓ Conform" fals pe ecran.
+    if(a.reasonInNotes){
       patsBySec[sec].documented = (patsBySec[sec].documented || 0) + 1;
     }
   }
@@ -14312,6 +14448,13 @@ function _ppsAggregatesFromIR(ir){
 }
 
 // Map IR ward code to CPIAAM section ID — try by name match, fallback to ward code
+// v13.96 (G-60) - o sectie HelicsWin nepotrivita ramane cu codul ei (ex. SURGEN); rSec o afisa ca „(sters
+// din configurare)", eticheta falsa pentru ceva ce n-a fost niciodata in configurare.
+function _ppsSecLabel(v,raw){
+  var known=(CFG.sections||[]).some(function(s){return s.id===v});
+  if(known)return rSec(v);
+  var t=String(v||'—');return raw?t:esc(t);
+}
 function _ppsMapSec(wardCode, ir){
   if(!wardCode) return wardCode;
   const ward = ir.wards.find(w => w.code === wardCode);
@@ -14421,7 +14564,7 @@ async function processHelicsWin(){
     // Try matching to configured sections by name, return ID
     const secMatch=CFG.sections.find(s=>s.name.toLowerCase()===secName.toLowerCase())||CFG.sections.find(s=>secName.toLowerCase().includes(s.name.toLowerCase().substring(0,5)));
     const section=secMatch?secMatch.id:secName;
-    await pt('pps',{year:A.year,section,patients:+r[ci.pat]||0,patients_au:+r[ci.au]||0,iaam_found:+r[ci.ia]||0,prescriptions:+r[ci.rx]||0,date_pps:todayISO(),documented:0,notes:'Import HelicsWin'});cnt++;
+    await pt('pps',{year:A.year,section,patients:+r[ci.pat]||0,patients_au:+r[ci.au]||0,iaam_found:+r[ci.ia]||0,prescriptions:+r[ci.rx]||0,date_pps:'',documented:0,notes:'Import HelicsWin'});cnt++;
   }
   alert(_Mf('{c} sectii PPS importate din HelicsWin.',{c:cnt}));closeM();render();
 }
@@ -14490,11 +14633,11 @@ async function rPPS(el){
   if(data.length===0){
     h+='<div class="es"><p>Nicio inregistrare PPS pentru '+A.year+'. Adauga manual sau importa din HelicsWin.</p></div>';
   } else {
-    h+='<table class="dt"><thead><tr><th>Sectie</th><th>Data PPS</th><th>N pacienti</th><th>Cu AB</th><th>AU%</th><th>IAAM</th><th>Prescriptii</th><th>Ind. doc.</th><th>Actiuni</th></tr></thead><tbody>';
+    h+='<table class="dt" id="pps-sec-tbl"><thead><tr><th>Sectie</th><th>Data PPS</th><th>N pacienti</th><th>Cu AB</th><th>AU%</th><th>IAAM</th><th>Prescriptii</th><th>Ind. doc.</th><th>Actiuni</th></tr></thead><tbody>';
     data.forEach(r=>{
       const rAU=r.patients>0?((r.patients_au/r.patients)*100).toFixed(1)+'%':'—';
       const rDoc=r.prescriptions>0?((r.documented/r.prescriptions)*100).toFixed(0)+'%':'—';
-      h+='<tr><td>'+rSec(r.section)+'</td><td>'+(r.date_pps||'')+'</td><td>'+(r.patients||0)+'</td>'+
+      h+='<tr><td>'+_ppsSecLabel(r.section)+'</td><td>'+(r.date_pps||'')+'</td><td>'+(r.patients||0)+'</td>'+
         '<td>'+(r.patients_au||0)+'</td><td>'+rAU+'</td><td>'+(r.iaam_found||0)+'</td>'+
         '<td>'+(r.prescriptions||0)+'</td><td>'+rDoc+'</td>'+
         '<td class="act"><button onclick="editPPS('+_jsArg(r.id)+')">&#9998;</button><button onclick="delRec(\'pps\','+_jsArg(r.id)+')">&#128465;</button></td></tr>';
@@ -14548,7 +14691,7 @@ function renderPPSChart(){
   var canvas=document.getElementById('pps-chart-au');if(!canvas)return;
   if(A.charts.ppsAU){try{A.charts.ppsAU.destroy()}catch(e){}}
   var el=document.getElementById('pc');
-  var rows=document.querySelectorAll('.dt tbody tr');
+  var rows=document.querySelectorAll('#pps-sec-tbl tbody tr');   // v13.96 (G-60) nu si randurile tabelului multi-an
   var labels=[],values=[];
   rows.forEach(tr=>{
     var tds=tr.querySelectorAll('td');
@@ -14881,7 +15024,7 @@ async function _exportPPSWordLegacy(data,meta){
   const WS=[3000,1500,1500,1500,1526];
   children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WS,rows:[
     wTblHead(['Sectie','Pacienti','AU','IAAM','Prescriptii'],WS),
-    ...data.map((r,i)=>wTblRow([rSec(r.section),String(r.patients||0),String(r.patients_au||0),String(r.iaam_found||0),String(r.prescriptions||0)],WS,i%2===1,+r.iaam_found>0)),
+    ...data.map((r,i)=>wTblRow([_ppsSecLabel(r.section,true),String(r.patients||0),String(r.patients_au||0),String(r.iaam_found||0),String(r.prescriptions||0)],WS,i%2===1,+r.iaam_found>0)),
     wTblRow([{text:'TOTAL',bold:true},{text:String(totPat),bold:true},{text:String(totAU),bold:true},{text:String(totIA),bold:true},{text:String(totRx),bold:true}],WS)
   ]}));
   wSigBlock().forEach(s=>children.push(s));
@@ -14889,7 +15032,7 @@ async function _exportPPSWordLegacy(data,meta){
   await saveDocx(doc,'Raport_PPS_'+A.year+'.docx');
 }
 async function editPPS(id){
-  let r=id?(await ga('pps')).find(x=>x.id===id):{year:A.year};
+  let r=id?(await ga('pps')).find(x=>x.id===id):{year:A.year};if(id&&r&&r.id!==undefined)_editRemember('pps',r);   // v13.98
   if(!r)r={year:A.year};
   openM(id?'Editare PPS':'Sectie PPS Noua',
     '<div class="fr"><div class="fg"><label>Sectie</label><select id="f-sec"><option value="">—</option>'+secOptsGrouped(r.section)+'</select></div>'+
@@ -14923,6 +15066,7 @@ async function savePPS(id){
     const _ex=(await gaAll('pps')).find(x=>x.id===id);
     if(_ex)Object.keys(_ex).forEach(function(k){if(k.charAt(0)==='_'&&!(k in rec))rec[k]=_ex[k]});
   }
+  if(id&&!(await _editCheckConflict('pps',id)))return;   // v13.98
   await pt('pps',rec);toastSaved();closeM();render();
 }
 
@@ -14941,9 +15085,14 @@ async function ppsShowIRDetails(){
   // Indication distribution
   const indDist={}; ir.amu.forEach(a=>{indDist[a.indication]=(indDist[a.indication]||0)+1});
   // Resistance markers
-  const mrsa=ir.resistance.filter(r=>r.microorganism==='SAU'&&r.marker1?.antibiotic==='OXA'&&r.marker1?.sir==='R').length;
-  const carR=ir.resistance.filter(r=>(r.marker1?.antibiotic==='CAR'&&r.marker1?.sir==='R')||(r.marker2?.antibiotic==='CAR'&&r.marker2?.sir==='R')).length;
-  const c3gR=ir.resistance.filter(r=>(r.marker1?.antibiotic==='C3G'&&r.marker1?.sir==='R')||(r.marker2?.antibiotic==='C3G'&&r.marker2?.sir==='R')).length;
+  // v13.96 (G-60) - aceleasi reguli ca in Tabelul II.6 din Word: ambii markeri la MRSA, filtru pe specie la
+  // C3G (Enterobacterales) si la carbapeneme (bacili gram-negativi). Codurile de specie raman cele
+  // provizorii pana la G-14 (export HelicsWin real cu HAI).
+  const _isR=(r,ab)=>(r.marker1?.antibiotic===ab&&r.marker1?.sir==='R')||(r.marker2?.antibiotic===ab&&r.marker2?.sir==='R');
+  const _entero=['ECO','KPN','ENB','EBC','ENTSPP'],_gnb=['ECO','KPN','PAE','ACIBAU','ACI','ENB','EBC'];
+  const mrsa=ir.resistance.filter(r=>r.microorganism==='SAU'&&_isR(r,'OXA')).length;
+  const carR=ir.resistance.filter(r=>_gnb.some(g=>String(r.microorganism||'').startsWith(g))&&_isR(r,'CAR')).length;
+  const c3gR=ir.resistance.filter(r=>_entero.includes(r.microorganism)&&_isR(r,'C3G')).length;
 
   let html='<div style="font-size:12px;line-height:1.6">';
   html+='<div class="kg" style="margin-bottom:12px">'+
@@ -14958,9 +15107,9 @@ async function ppsShowIRDetails(){
   html+='</tbody></table>';
 
   html+='<h4 style="margin:12px 0 6px">Markere rezistenta (ECDC Table II.6)</h4><div class="flex" style="display:flex;gap:8px;flex-wrap:wrap">'+
-    '<div class="kpi" style="background:#fef2f2;border:1px solid #fecaca;padding:6px 12px;border-radius:6px">MRSA: <b>'+mrsa+'</b></div>'+
-    '<div class="kpi" style="background:#fef2f2;border:1px solid #fecaca;padding:6px 12px;border-radius:6px">CAR-R: <b>'+carR+'</b></div>'+
-    '<div class="kpi" style="background:#fef3c7;border:1px solid #fde68a;padding:6px 12px;border-radius:6px">C3G-R: <b>'+c3gR+'</b></div></div>';
+    '<div class="kpi" style="background:var(--bg);border:1px solid var(--red);padding:6px 12px;border-radius:6px">MRSA: <b>'+mrsa+'</b></div>'+
+    '<div class="kpi" style="background:var(--bg);border:1px solid var(--red);padding:6px 12px;border-radius:6px">CAR-R: <b>'+carR+'</b></div>'+
+    '<div class="kpi" style="background:var(--bg);border:1px solid var(--amber);padding:6px 12px;border-radius:6px">C3G-R: <b>'+c3gR+'</b></div></div>';
 
   html+='<h4 style="margin:12px 0 6px">Top 10 antibiotice prescrise</h4><table class="dt"><thead><tr><th>Antibiotic</th><th>N</th></tr></thead><tbody>';
   topAtb.forEach(([n,c])=>{html+='<tr><td>'+esc(n)+'</td><td>'+c+'</td></tr>'});
@@ -15950,7 +16099,7 @@ function importLabCSV(){
     '&#8226; <strong>Rezultat narativ</strong> — rezultatul intreg ca text liber intr-o coloana; se recunoaste singur<br>'+
     '&#8226; <strong>Word (.docx)</strong> — tabelele din document se citesc ca foaie de calcul</span></div>'+
     '<div class="fg"><label>Fisier din laborator</label><input type="file" id="f-lab" accept=".csv,.txt,.tsv,.xls,.xlsx,.xlsm,.ods,.html,.htm,.docx"></div>'+
-    '<div class="fg"><label>Label import (ex: T1-2026)</label><input id="f-lab-batch" value="'+A.year+'" style="width:160px"></div>'+
+    '<div class="fg"><label>Label import (ex: T1-2026)</label><input id="f-lab-batch" value="'+esc('import-'+todayISO())+'" style="width:160px"></div>'+
     '<div id="lab-profil-box">'+(typeof labProfileOptions==='function'?labProfileOptions():'')+'</div>'+
     '<div id="lab-preview"></div>',
   '<button class="btn bo" onclick="closeM()">Anuleaza</button>'+
@@ -15965,6 +16114,7 @@ function importLabCSV(){
 // inca randurile primului fisier — clic pe Importa importa fisierul precedent, cu mesaj de succes.
 function _labResetState(msg){
   window._labRows=null;window._labRowsAll=null;window._labHeader=null;window._labParsed=null;window._labFormat=null;window._labESpital=null;window._labAuto=null;window._labMatrix=null;
+  window._labYear=null;   // v13.96 (G-62) altfel un registru .xlsx mostenea anul HTML-ului importat inainte
   var btn=document.getElementById('lab-import-btn');if(btn)btn.disabled=true;
   var pv=document.getElementById('lab-preview');
   // `.ib` e display:flex, deci marcajul inline din mesaj (<strong>, <br>) ar deveni coloane.
@@ -16341,6 +16491,21 @@ function _labNormGerm(s){
     .replace(/\b(spp|sp|species)\b\.?/g,' ')
     .replace(/[^a-z0-9]+/g,' ').trim();
 }
+// v13.97 (G-49) - lista „Tipuri probe laborator" din Configurare exista, dar nu o citea nimeni. Acum
+// normalizeaza denumirea produsului venita din fisier („URC ", „Urocultură", „urocultura urina") la tipul
+// configurat, ca raportul microbiologic si filtrele sa nu numere acelasi produs sub trei nume.
+function _labNormSample(v){
+  var s=String(v||'').trim().toLowerCase();if(!s)return s;
+  var lst=(typeof CFG!=='undefined'&&CFG&&Array.isArray(CFG.lab_sample_types))?CFG.lab_sample_types:[];
+  var norm=function(x){return String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[ţț]/g,'t').replace(/[şș]/g,'s').trim()};
+  var ns=norm(s);
+  for(var i=0;i<lst.length;i++){
+    var nm=typeof lst[i]==='string'?lst[i]:((lst[i]&&lst[i].name)||'');var nn=norm(nm);if(!nn)continue;
+    if(nn===ns)return nm.toLowerCase();
+    if(ns.length>=6&&(ns.indexOf(nn)===0||nn.indexOf(ns)===0))return nm.toLowerCase();
+  }
+  return s;
+}
 function _labMatchGerm(nume){
   const brut=String(nume||'').trim();
   const n=_labNormGerm(brut);
@@ -16591,7 +16756,7 @@ async function processLabAuto(){
       // inregistrarea nu are data deloc, ceea ce e legitim la unele formate.
       year:yearOfDate(dIso,A.year),nr_buletin:x.cod||'',patient_initials:x.initiale||'',
       date:dIso,section:sec,
-      sample_type:((x.proba||'').trim().toLowerCase()||probaMan||'necunoscut'),
+      sample_type:_labNormSample((x.proba||'').trim().toLowerCase()||probaMan||'necunoscut'),
       organism:gm?gm.n:x.organism,organism_code:gm?gm.c:'',
       susceptibility:x.rez.map(function(y){
         var cod='';
@@ -16690,7 +16855,7 @@ async function processLabESpital(){
         patient_initials:p.initiale||'',
         date:dE,
         section:sec,
-        sample_type:((x.proba||'').trim().toLowerCase()||probaMan||'necunoscut'),
+        sample_type:_labNormSample((x.proba||'').trim().toLowerCase()||probaMan||'necunoscut'),
         organism:gm?gm.n:x.organism,
         organism_code:gm?gm.c:'',
         susceptibility:(x.rez||[]).map(function(y){
@@ -16748,7 +16913,7 @@ function previewLabCSV(txt){
   window._labFormat='csv';
 
   function findCol(hints){return header.findIndex(h=>hints.some(x=>h.toLowerCase().includes(x)))}
-  const defaults={buletin:findCol(['buletin','bulletin','nr_bul','nr.','cod']),date:findCol(['data','date']),
+  const defaults={buletin:findCol(['buletin','bulletin','nr_bul','nr.','cod']),date:header.findIndex(h=>/data|date/i.test(String(h))&&!/nast|nasc|birth/i.test(String(h))),   /* v13.96 - nu „Data nasterii" */
     section:findCol(['sect','ward']),sample:findCol(['proba','sample','tip','specimen']),
     germen:findCol(['germen','organism','germ','pathogen']),atb:findCol(['antibiotic','atb','drug']),
     result:findCol(['rezultat','result','sir','s/i/r'])};
@@ -16933,7 +17098,7 @@ async function processLabNarrative(){
         nr_buletin:bul,
         date:dN,
         section:secMatch?secMatch.id:secName,
-        sample_type:((ci.sample>=0?r[ci.sample]:'')||p.proba||'necunoscut').trim().toLowerCase(),
+        sample_type:_labNormSample(((ci.sample>=0?r[ci.sample]:'')||p.proba||'necunoscut').trim().toLowerCase()),
         organism:germMatch?germMatch.n:p.organism,
         organism_code:germMatch?germMatch.c:'',
         susceptibility:(p.rez||[]).map(function(x){
@@ -17041,7 +17206,9 @@ async function processLabCSV(){
       const secMatch=(CFG.sections||[]).find(s=>s.name.toLowerCase()===secName.toLowerCase())||
         (CFG.sections||[]).find(s=>secName.toLowerCase().includes(s.name.toLowerCase().substring(0,4)));
       // Match germen to GERMENI_LIST
-      const germMatch=_germFind(function(g){return (g.n||'').toLowerCase()===germ.toLowerCase()||(g.c||'').toLowerCase()===germ.toLowerCase()});
+      // v13.96 (G-62) - aceeasi potrivire ca pe celelalte cai (_labMatchGerm): cod exact → nume normalizat →
+      // gen+specie; egalitatea stricta dadea „Klebsiella pneumoniae" si „… complex" pe doua randuri.
+      const germMatch=(typeof _labMatchGerm==='function')?_labMatchGerm(germ):_germFind(function(g){return (g.n||'').toLowerCase()===germ.toLowerCase()||(g.c||'').toLowerCase()===germ.toLowerCase()});
 
       var dC=parseLabDate(r[ci.date]);
       isoMap[key]={
@@ -17049,7 +17216,7 @@ async function processLabCSV(){
         nr_buletin:bul,
         date:dC,
         section:secMatch?secMatch.id:secName,
-        sample_type:(r[ci.sample]||'').trim().toLowerCase()||'necunoscut',
+        sample_type:_labNormSample((r[ci.sample]||'').trim().toLowerCase()||'necunoscut'),
         organism:germMatch?germMatch.n:germ,
         organism_code:germMatch?germMatch.c:'',
         susceptibility:[],
@@ -17210,7 +17377,7 @@ async function processLabRegistru(){
       const germMatch=_labMatchGerm(org.name);
       isolates.push({
         year,nr_buletin:p.cod,date:'',
-        section:'',sample_type:sampleType,
+        section:'',sample_type:_labNormSample(sampleType),
         organism:germMatch?germMatch.n:org.name,
         organism_code:germMatch?germMatch.c:'',
         susceptibility:org.susceptibility,
@@ -17251,9 +17418,11 @@ function parseLabDate(val){
   val=val.trim();
   // Try ISO format first
   if(/^\d{4}-\d{2}-\d{2}/.test(val))return val.substring(0,10);
-  // Try dd.mm.yyyy or dd/mm/yyyy or dd-mm-yyyy
-  const m=val.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
-  if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+  // Try dd.mm.yyyy or dd/mm/yyyy or dd-mm-yyyy. v13.96 (G-62) - si cu ora dupa („03.08.2026 10:15",
+  // cum exporta LIS-ul „Data cererii") si cu anul din doua cifre („8.3.26", cum afiseaza SheetJS
+  // formatul Excel implicit); inainte sirul brut ajungea in `date` si izolatul cadea in alt trimestru.
+  const m=val.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2}|\d{4})(?:[ T,].*)?$/);
+  if(m){const yy=m[3].length===2?('20'+m[3]):m[3];return yy+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0')}
   return val;
 }
 
@@ -17570,6 +17739,7 @@ async function dddRefresh(){
 async function editConsumATB(id){
   const allData=await ga('atb_consum');
   let r=id?allData.find(x=>x.id===id):{year:A.year,month:new Date().getMonth()+1,section:'',atc:'',atb_name:'',quantity_g:'',route:'IV',notes:''};
+  if(id&&r)_editRemember('atb_consum',r);   // v13.98
   if(!r)r={year:A.year,month:new Date().getMonth()+1};
 
   const mo=getMO();
@@ -17626,6 +17796,7 @@ async function saveConsumATB(id){
   if(qty<=0){alert(_M('Introdu cantitatea in grame.'));return}
   const rec={year:A.year,month:mo,section:sec,atc:atc,atb_name:atbName(atc),quantity_g:qty,route:route,doctor:v('f-doc').trim(),notes:notes};
   if(id)rec.id=id;
+  if(id&&!(await _editCheckConflict('atb_consum',id)))return;   // v13.98
   await pt('atb_consum',rec);
   logActivity((id?'Editat':'Adaugat')+' consum ATB — '+atbName(atc)+' '+qty+'g '+rSec(sec));toastSaved();
   closeM();render();
@@ -17720,8 +17891,23 @@ function _dddParseMonth(val){
 async function dddParseFile(file){
   if(!file)return;
   document.getElementById('ddd-imp-fname').textContent=file.name+' ('+Math.round(file.size/1024)+' KB)';
-  var txt=await file.text();
   var rows=[];
+  // v13.96 (G-33c) - butonul spunea „CSV / Excel" si accepta .xlsx, dar citea fisierul ca TEXT: un .xlsx
+  // (arhiva ZIP) dadea antete gunoi si „Nu s-au gasit randuri valide". Un Excel adevarat (ZIP sau OLE)
+  // se citeste cu SheetJS, deja incarcat, si intra pe acelasi drum ca un CSV.
+  if(/\.xlsx?$/i.test(file.name)&&typeof XLSX!=='undefined'){
+    try{
+      var _buf=await file.arrayBuffer();var _u8=new Uint8Array(_buf);
+      var _isZip=_u8[0]===0x50&&_u8[1]===0x4B,_isOle=_u8[0]===0xD0&&_u8[1]===0xCF;
+      if(_isZip||_isOle){
+        var _wb=XLSX.read(_buf,{type:'array'});var _ws=_wb.Sheets[_wb.SheetNames[0]];
+        rows=XLSX.utils.sheet_to_json(_ws,{header:1,raw:false,defval:''}).map(function(r){return r.map(function(c){return String(c==null?'':c).trim()})}).filter(function(r){return r.some(function(c){return c!==''})});
+        if(rows.length<2){alert(_M('Fisierul trebuie sa aiba cel putin un header + un rand de date.'));return}
+        _dddBuildMapping(rows);return;
+      }
+    }catch(e){errAlert(e,'Nu am putut citi fisierul Excel.','Could not read the Excel file.');return}
+  }
+  var txt=await file.text();
   // Auto-detect HTML (Excel saves as HTML)
   if(txt.trim().startsWith('<')||file.name.match(/\.xls$/i)){
     var parser=new DOMParser();
@@ -17952,7 +18138,7 @@ async function genConsumATBWord(aiText){
       if(mx.rows.length>0){
         var top10c=mx.rows.slice(0,10);
         var topChart=await wChartImage('bar',{labels:top10c.map(function(r){return(r.name||r.atc||'').substring(0,24)}),
-          datasets:[{label:'DDD total',data:top10c.map(function(r){return Math.round(r.totalDDD*10)/10}),backgroundColor:top10c.map(function(r){return r.aw==='Access'?'#16A34A':r.aw==='Watch'?'#D97706':r.aw==='Reserve'?'#DC2626':'#94A3B8'})}]},
+          datasets:[{label:'DDD total',data:top10c.map(function(r){return Math.round(r.totalDDD*10)/10}),backgroundColor:top10c.map(function(r){return (r.aw==='A'||r.aw==='Access')?'#16A34A':r.aw==='Watch'?'#D97706':r.aw==='Reserve'?'#DC2626':'#94A3B8'})}]},
           {width:600,height:320,title:(E?'Top 10 antibiotics by DDD':'Top 10 antibiotice dupa DDD'),chartOptions:{indexAxis:'y',plugins:{legend:{display:false}}}});
         children.push(topChart);
       }
@@ -18131,7 +18317,7 @@ async function _dddTherapyStats(year){
     list.forEach(function(a){
       var d=calcDays(a.date_start,a.date_stop);
       if(d===''||d===null||isNaN(+d))return;
-      var days=+d;
+      var days=+d+1;   // v13.97 - zile de terapie INCLUSIV ziua de start (conventia DOT): o cura de o zi nu mai e exclusa, iar media nu mai e cu o zi mai scurta
       if(days<=0)return;
       used=true;
       durations.push(days);
@@ -18269,7 +18455,7 @@ function _dddApprovalsHTML(approvals,data){
 async function editAtbApproval(id){
   var isEN=CFG.lang==='en';
   var all=await ga('atb_approvals');
-  var r=id?all.find(function(x){return x.id===id}):null;
+  var r=id?all.find(function(x){return x.id===id}):null;if(r)_editRemember('atb_approvals',r);   // v13.98
   if(!r)r={date:todayISO(),fo:'',atc:'',section:'',requested_by:'',approved_by:'',decision:'avizat',indication:'',duration_days:'',notes:''};
   // In lista intra antibioticele marcate cu avizare; daca lista e goala, oferim toate.
   var restricted=CFG.atb_restricted||[];
@@ -18311,6 +18497,7 @@ async function saveAtbApproval(id){
     decision:v('f-av-dec')||'avizat',duration_days:(v('f-av-dur')===''?null:+v('f-av-dur')),
     indication:v('f-av-ind').trim(),notes:v('f-av-n').trim()};
   if(id)rec.id=id;
+  if(id&&!(await _editCheckConflict('atb_approvals',id)))return;   // v13.98
   await pt('atb_approvals',rec);
   _dddPanelOpen['ddd-p-avz']=true;
   logActivity((id?'Editata':'Adaugata')+' avizare antibiotic — '+atbName(atc));toastSaved();
@@ -18419,7 +18606,9 @@ async function rDoc(el){
 }
 async function editDoc(id){
   let r=id?(await ga('documents')).find(x=>x.id===id):{category:''};if(!r)r={category:''};
-  const catOpts=optsId(getDocCats(),r.category);
+  if(id&&r.id!==undefined)_editRemember('documents',r);   // v13.98
+  // v13.96 - categoria stearsa din configurare ramane vizibila (nu se reatribuie tacit primei din lista)
+  const catOpts=((r.category&&!getDocCats().some(function(c){return c.id===r.category}))?'<option value="'+esc(r.category)+'" selected>'+esc(_orphanLabel())+'</option>':'')+optsId(getDocCats(),r.category);
   openM(id?'Editare Document':'Document Nou',
     '<div class="fg"><label>Categorie</label><select id="f-cat">'+catOpts+'</select></div>'+
     // v13.62 - esc() pe valorile puse in atribute. Fara el, o denumire care contine ghilimele
@@ -18458,6 +18647,7 @@ async function saveDoc(id){
       delete rec.file_data;
     }catch(err){errAlert(err,'Nu am putut salva fisierul atasat.','Could not save the attached file.');return}
   }
+  if(id&&!(await _editCheckConflict('documents',id)))return;   // v13.98
   await pt('documents',rec);logActivity((id?'Editat':'Adaugat')+' document — '+rec.name);toastSaved();closeM();render();
 }
 async function downloadDocFile(id){
@@ -18553,7 +18743,7 @@ function _regReportsHTML(list){
 async function editIpcReport(id){
   var isEN=CFG.lang==='en';
   var all=await ga('ipc_registry');
-  var r=id?all.find(function(x){return x.id===id}):null;
+  var r=id?all.find(function(x){return x.id===id}):null;if(r)_editRemember('ipc_registry',r);   // v13.98
   if(!r)r={kind:'raport_sectie',date:todayISO(),period:'',section:'',
     reported_by:'',subject:'',findings:'',followup:'',followup_done:false,notes:''};
   openM(id?(isEN?'Edit report':'Editare raport'):(isEN?'Record ward report':'Inregistrare raport de la responsabil'),
@@ -18592,6 +18782,7 @@ async function saveIpcReport(id){
     reported_by:v('f-rp-by').trim(),subject:v('f-rp-subj').trim(),findings:v('f-rp-find').trim(),
     followup:v('f-rp-fu').trim(),followup_done:ck('f-rp-fud'),notes:''};
   if(id)rec.id=id;
+  if(id&&!(await _editCheckConflict('ipc_registry',id)))return;   // v13.98
   await pt('ipc_registry',rec);
   _regPanelOpen['doc-p-resp']=true;
   logActivity((id?'Editat':'Inregistrat')+' raport responsabil sectie — '+rSec(sec));toastSaved();
@@ -18610,7 +18801,7 @@ function sanctStatus(v){return SANCT_STATUS.find(function(x){return x.v===v})||S
 function _regSanctHTML(list){
   var isEN=CFG.lang==='en';
   var h='<div class="ib inf" style="margin-bottom:10px">'+(isEN
-    ? 'Register of disciplinary proposals submitted by the IPC lead. Records the role and the ward, not personal data beyond the name of the person concerned as written in the submission.'
+    ? 'Register of disciplinary proposals submitted by the IPC lead. Records the role and the ward only; no personal data (no names) are stored.'
     : 'Registrul propunerilor de sanctiuni inaintate de seful CPIAAM (atributie prevazuta in Anexa 4). Se consemneaza fapta, sectia si destinatarul propunerii, plus rezultatul.')+'</div>';
   h+='<div style="display:flex;justify-content:flex-end;margin-bottom:10px">'+
     '<button class="btn bp bsm" onclick="editSanct()">+ '+(isEN?'Add proposal':'Adauga propunere')+'</button></div>';
@@ -18645,7 +18836,7 @@ function _regSanctHTML(list){
 async function editSanct(id){
   var isEN=CFG.lang==='en';
   var all=await ga('ipc_registry');
-  var r=id?all.find(function(x){return x.id===id}):null;
+  var r=id?all.find(function(x){return x.id===id}):null;if(r)_editRemember('ipc_registry',r);   // v13.98
   if(!r)r={kind:'sanctiune',date:todayISO(),section:'',role:'',
     finding:'',proposal:'',submitted_to:'',status:'inaintata',result_date:'',notes:''};
   var stOpts=SANCT_STATUS.map(function(s){return '<option value="'+s.v+'"'+(s.v===r.status?' selected':'')+'>'+(isEN?s.en:s.ro)+'</option>'}).join('');
@@ -18675,6 +18866,7 @@ async function saveSanct(id){
     finding:fin,proposal:v('f-sn-prop').trim(),submitted_to:v('f-sn-to').trim(),
     status:v('f-sn-st')||'inaintata',result_date:v('f-sn-rd'),notes:v('f-sn-n').trim()};
   if(id)rec.id=id;
+  if(id&&!(await _editCheckConflict('ipc_registry',id)))return;   // v13.98
   await pt('ipc_registry',rec);
   _regPanelOpen['doc-p-sanct']=true;
   logActivity((id?'Editata':'Adaugata')+' propunere de sanctiune');toastSaved();
@@ -19014,7 +19206,7 @@ function _dlFreqExtra(r){
     h+='</select></div>';
     h+='<div class="fg"><label>Lunile active</label><div id="f-months" style="display:flex;flex-wrap:wrap;gap:3px">';
     var am=r.active_months||[];
-    for(var m=1;m<=12;m++){var ch=am.includes(m);h+='<label style="font-size:10px;cursor:pointer;padding:2px 5px;border:1px solid var(--brd);border-radius:4px;background:'+(ch?'var(--teal)':'var(--bg)')+';color:'+(ch?'#fff':'inherit')+'"><input type="checkbox" value="'+m+'" '+(ch?'checked':'')+' onchange="this.parentElement.style.background=this.checked?\'var(--teal)\':\'var(--bg)\';this.parentElement.style.color=this.checked?\'#fff\':\'inherit\'" style="display:none">'+MO[m-1].slice(0,3)+'</label>';}
+    for(var m=1;m<=12;m++){var ch=am.includes(m);h+='<label style="font-size:10px;cursor:pointer;padding:2px 5px;border:1px solid var(--brd);border-radius:4px;background:'+(ch?'var(--teal)':'var(--bg)')+';color:'+(ch?'var(--onAccent)':'inherit')+'"><input type="checkbox" value="'+m+'" '+(ch?'checked':'')+' onchange="this.parentElement.style.background=this.checked?\'var(--teal)\':\'var(--bg)\';this.parentElement.style.color=this.checked?\'#fff\':\'inherit\'" style="display:none">'+MO[m-1].slice(0,3)+'</label>';}
     h+='</div><div style="font-size:10px;color:var(--txtL)">Bifeaza lunile in care raportezi. Nebifat = tot anul.</div></div></div>';
   } else if(f==='lunar'){
     h+='<div class="fg" style="max-width:200px"><label>Pana pe data de</label><input type="number" id="f-dom" min="1" max="28" value="'+(r.day_of_month||15)+'" style="width:60px"><span style="font-size:11px;color:var(--txtL);margin-left:4px">a fiecarei luni</span></div>';
@@ -19024,9 +19216,10 @@ function _dlFreqExtra(r){
 }
 async function editDeadline(id){
   let r=id?(await ga('deadlines')).find(x=>x.id===id):{frequency:'singulara',status:'neinceput'};if(!r)r={frequency:'singulara',status:'neinceput'};
+  if(id&&r.id!==undefined)_editRemember('deadlines',r);   // v13.98
   openM(id?'Editare Raportare':'Raportare Noua',
-    '<div class="fg"><label>Denumire raportare</label><input id="f-name" value="'+(r.name||'')+'"></div>'+
-    '<div class="fr"><div class="fg"><label>Destinatar</label><input id="f-dest" value="'+(r.recipient||'')+'" placeholder="'+COUNTRY.authorities.publicHealthDir+', '+COUNTRY.authorities.environment+', '+COUNTRY.authorities.accreditation+', Manager..."></div>'+
+    '<div class="fg"><label>Denumire raportare</label><input id="f-name" value="'+esc(r.name||'')+'"></div>'+   // v13.96 (G-52) esc: un ghilimel in nume trunchia campul si orfaniza instantele
+    '<div class="fr"><div class="fg"><label>Destinatar</label><input id="f-dest" value="'+esc(r.recipient||'')+'" placeholder="'+COUNTRY.authorities.publicHealthDir+', '+COUNTRY.authorities.environment+', '+COUNTRY.authorities.accreditation+', Manager..."></div>'+
     '<div class="fg"><label>Frecventa</label><select id="f-freq" onchange="_dlFreqChange()">'+
       '<option value="singulara"'+(r.frequency==='singulara'?' selected':'')+'>Singulara</option>'+
       '<option value="zilnic"'+(r.frequency==='zilnic'?' selected':'')+'>Zilnic</option>'+
@@ -19047,8 +19240,8 @@ async function editDeadline(id){
       '<option value="neinceput"'+(r.status==='neinceput'?' selected':'')+'>Neinceput</option>'+
       '<option value="in_lucru"'+(r.status==='in_lucru'?' selected':'')+'>In lucru</option>'+
       '<option value="finalizat"'+(r.status==='finalizat'||r.status==='trimis'?' selected':'')+'>Finalizat</option></select></div></div>'+
-    '<div class="fg"><label>Link / URL extern (optional)</label><input id="f-url" value="'+(r.url||'')+'"></div>'+
-    '<div class="fg"><label>Observatii</label><textarea id="f-obs" rows="2">'+(r.observations||'')+'</textarea></div>',
+    '<div class="fg"><label>Link / URL extern (optional)</label><input id="f-url" value="'+esc(r.url||'')+'"></div>'+
+    '<div class="fg"><label>Observatii</label><textarea id="f-obs" rows="2">'+esc(r.observations||'')+'</textarea></div>',
   '<button class="btn bo" onclick="safeCloseM()">Anuleaza</button><button class="btn bp" onclick="saveDeadline('+_jsArg(id||null)+')">Salveaza</button>');
   setTimeout(()=>{addDatePreview('f-start');addDatePreview('f-due');attachDirtyTracking()},50);
 }
@@ -19087,6 +19280,7 @@ async function saveDeadline(id){
     // din contorul lui, iar la urmatoarea salvare a template-ului _genInstancesForTemplate n-o mai
     // vedea si genera inca una pentru aceeasi luna — doua termene pentru acelasi raport.
     // Pastram campurile interne ale inregistrarii existente, nu doar acesta.
+    if(!(await _editCheckConflict('deadlines',id)))return;   // v13.98
     var _ex=(await gaAll('deadlines')).find(function(x){return x.id===id});
     if(_ex)Object.keys(_ex).forEach(function(k){if(k.charAt(0)==='_'&&k!=='_isTemplate'&&!(k in rec))rec[k]=_ex[k]});
   }
@@ -19178,7 +19372,7 @@ async function _genInstancesForTemplate(t){
       var mo=dt.getMonth()+1;
       if(allMonths||am.includes(mo)){
         var dueW=_localDateStr(dt);
-        var wk=Math.ceil(((dt-new Date(y,0,1))/86400000+1)/7);
+        var wk=Math.ceil((Math.round((dt-new Date(y,0,1))/86400000)+1)/7);   // v13.97 zile intregi, imun la ora de vara
         // v13.21 dedup pe _parentName (corect)
         if(!byDue[dueW]){
           await pt('deadlines',{name:t.name+' — S'+wk+' '+y,recipient:t.recipient,frequency:'singulara',due_date:dueW,status:'neinceput',_parentName:t.name});
@@ -19236,6 +19430,24 @@ async function _genInstancesForTemplate(t){
   return cnt;
 }
 
+// v13.97 (G-51) - instantele unui sablon se generau doar la salvarea lui: in ianuarie KPI-ul „Urmatoarele
+// 30 zile" era 0 si clopotelul tacea pana redeschideai si salvai fiecare sablon. Acum, o data pe an si pe
+// sesiune (la pornire si la deschiderea calendarului), sabloanele fara nicio instanta pe anul curent
+// primesc instantele — aceeasi functie, acelasi dedup pe _parentName + data.
+var _calEnsuredYears={};
+async function _calEnsureInstancesForYear(){
+  var y=A.year;if(_calEnsuredYears[y])return 0;_calEnsuredYears[y]=true;
+  var all=await ga('deadlines');
+  var templates=all.filter(function(d){return d._isTemplate&&d.frequency&&d.frequency!=='singulara'&&d.frequency!=='perioada'});
+  var cnt=0;
+  for(var i=0;i<templates.length;i++){var t=templates[i];
+    var hasInst=all.some(function(d){return d._parentName===t.name&&String(d.due_date||'').indexOf(y+'-')===0});
+    if(hasInst)continue;
+    if(t.due_date&&String(t.due_date)<y+'-01-01')continue;   // termen limita in trecut: sablonul e incheiat
+    try{cnt+=await _genInstancesForTemplate(t)}catch(e){console.warn('[CPIAAM] instante sablon',t.name,e)}
+  }
+  return cnt;
+}
 async function genRecurringDeadlines(){
   var y=A.year;var existing=await ga('deadlines');
   var templates=existing.filter(d=>d._isTemplate&&d.frequency&&d.frequency!=='singulara'&&d.frequency!=='perioada');
@@ -19323,6 +19535,7 @@ function buildMonthGrid(y,m,events,compact){
   return grid;
 }
 async function rCalendar(el){
+  try{await _calEnsureInstancesForYear()}catch(e){}   // v13.97 (G-51)
   const isEN=CFG.lang==='en';
   // Tab bar: Calendar | Raportari
   let tabs_h='<div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--brd)">'+
@@ -19418,7 +19631,7 @@ function _calNavToEvent(link,dlId){
 async function editCalEvent(id,prefillDate){
   const isEN=CFG.lang==='en';
   let r={title:'',date:prefillDate||todayISO(),date_end:'',category:'general',description:'',notes:''};
-  if(id){const rec=(await ga('events')).find(x=>x.id===id);if(rec)r=rec;}
+  if(id){const rec=(await ga('events')).find(x=>x.id===id);if(rec){r=rec;_editRemember('events',rec)}}   // v13.98
   const catOpts=[{v:'general',n:isEN?'General':'General'},{v:'meeting',n:isEN?'Meeting':'Sedinta'},{v:'training',n:isEN?'Training':'Instruire'},{v:'audit',n:isEN?'Audit':'Audit'},{v:'deadline',n:isEN?'Deadline':'Termen'},{v:'inspection',n:isEN?'Inspection':'Inspectie'},{v:'other',n:isEN?'Other':'Altele'}];
   const catSel=catOpts.map(c=>'<option value="'+c.v+'"'+(r.category===c.v?' selected':'')+'>'+c.n+'</option>').join('');
   openM(id?(isEN?'Edit Event':'Editare Eveniment'):(isEN?'New Event':'Eveniment Nou'),
@@ -19444,6 +19657,7 @@ async function saveCalEvent(id){
   if(!date){alert(CFG.lang==='en'?'Date is required':'Data este obligatorie');return}
   const rec={title:title,date:date,date_end:dateEnd,category:cat,description:desc,notes:notes};
   if(id)rec.id=id;
+  if(id&&!(await _editCheckConflict('events',id)))return;   // v13.98
   await pt('events',rec);
   logActivity((id?'Editat':'Adaugat')+' eveniment — '+title);toastSaved();closeM();render();
 }
@@ -19527,7 +19741,7 @@ async function renderDashCalendar(){
   periods.forEach(function(p){
     var cnt=filterByDays(p.days).length;
     var act=_dashCalPeriod===p.key;
-    tabsHtml+='<button onclick="window._dashCalPeriod=\''+p.key+'\';renderDashCalendar().then(function(h){document.getElementById(\'dash-mini-cal\').innerHTML=h})" style="padding:3px 10px;border-radius:12px;border:1px solid '+(act?'var(--teal)':'var(--brd)')+';background:'+(act?'var(--teal)':'var(--card)')+';color:'+(act?'#fff':'var(--txt)')+';font-size:11px;cursor:pointer;font-weight:'+(act?'700':'400')+'">'+p.label+(cnt?' <span style="font-size:9px;opacity:.8">('+cnt+')</span>':'')+'</button>';
+    tabsHtml+='<button onclick="window._dashCalPeriod=\''+p.key+'\';renderDashCalendar().then(function(h){document.getElementById(\'dash-mini-cal\').innerHTML=h})" style="padding:3px 10px;border-radius:12px;border:1px solid '+(act?'var(--teal)':'var(--brd)')+';background:'+(act?'var(--teal)':'var(--card)')+';color:'+(act?'var(--onAccent)':'var(--txt)')+';font-size:11px;cursor:pointer;font-weight:'+(act?'700':'400')+'">'+p.label+(cnt?' <span style="font-size:9px;opacity:.8">('+cnt+')</span>':'')+'</button>';
   });
   tabsHtml+='</div>';
 
@@ -20174,7 +20388,7 @@ function _fisaGoalBanner(onclickCode){
   '</div>';
 }
 function _audCatName(catId){
-  var c=ipcCatById(catId);if(!c)return catId||'—';
+  var c=ipcCatById(catId);if(!c)return catId?((typeof _orphanLabel==='function')?_orphanLabel():catId):'—';   // v13.96 (G-61) categorie stearsa → eticheta, nu id brut
   return (CFG.lang==='en')?(c.name_en||c.name_ro):c.name_ro;
 }
 function _audCatColor(catId){var c=ipcCatById(catId);return c?c.color:'#64748B'}
@@ -20211,13 +20425,13 @@ async function rAudit(el){
 
   // KPIs
   var total=allData.length;
-  var avgC=total>0?Math.round(allData.reduce((s,r)=>s+(r.compliance_pct||0),0)/total*10)/10:0;
+  var avgC=total>0?Math.round(allData.reduce((s,r)=>s+(r.compliance_pct||0),0)/total*10)/10:null;   // v13.96 - fara audituri „—", nu 0% rosu
   var ncCount=allData.reduce((s,r)=>s+((r.total_items||0)-(r.conform_items||0)),0);
   var secsAud=new Set(allData.map(r=>r.section).filter(Boolean));
 
   var h='<div class="kg">'+
     '<div class="kc bl"><div class="kl">'+T('aud_total')+'</div><div class="kv">'+total+'</div></div>'+
-    '<div class="kc '+(avgC>=80?'gn':avgC>=60?'am':'rd')+'"><div class="kl">'+T('aud_conformitate_medie')+'</div><div class="kv">'+avgC+'%</div></div>'+
+    '<div class="kc '+(avgC===null?'':avgC>=80?'gn':avgC>=60?'am':'rd')+'"><div class="kl">'+T('aud_conformitate_medie')+'</div><div class="kv">'+(avgC===null?'—':avgC+'%')+'</div></div>'+
     '<div class="kc '+(ncCount>0?'rd':'gn')+'"><div class="kl">'+T('aud_neconformitati')+'</div><div class="kv">'+ncCount+'</div></div>'+
     '<div class="kc tl"><div class="kl">'+T('aud_sectii_auditate')+'</div><div class="kv">'+secsAud.size+'</div></div>'+
   '</div>';
@@ -20263,9 +20477,12 @@ async function rAudit(el){
     data.forEach((r,i)=>{
       var pct=r.compliance_pct||0;var pCls=pct>=80?'bdg-g':pct>=60?'bdg-a':'bdg-r';
       var catClr=_audCatColor(r.audit_type);
+      // v13.96 (G-61) - auditurile IGM salveaza `section` ca nume unite cu virgula; rSec le dadea „(sters din
+      // configurare)". Cand exista lista `sections`, se afiseaza numele din ea.
+      var secLbl=(Array.isArray(r.sections)&&r.sections.length)?esc(r.sections.map(function(s){return s&&(s.name||rSec(s.id))}).filter(Boolean).join(', ')):rSec(r.section);
       h+='<tr><td>'+(i+1)+'</td><td>'+fmtDate(r.date)+'</td>'+
         '<td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+catClr+';margin-right:4px"></span>'+esc(_audCatName(r.audit_type))+'</td>'+
-        '<td>'+rSec(r.section)+'</td><td>'+esc(_persName(r.auditor))+'</td>'+
+        '<td>'+secLbl+'</td><td>'+esc(_persName(r.auditor))+'</td>'+
         '<td><span class="bdg '+pCls+'">'+pct+'%</span></td>'+
         '<td class="act">'+
           '<button onclick="_editExistingAudit('+_jsArg(r.id)+')" title="'+T('btn_edit')+'">&#9998;</button>'+
@@ -20373,7 +20590,7 @@ var _igmMeta={};
 
 async function _renderIgmAudit(el,id){
   var r=null;
-  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r&&!_igmSecs.length)_igmSecs=JSON.parse(JSON.stringify(r.sections||[]))}
+  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r)_editRemember('audits',r);if(r&&!_igmSecs.length)_igmSecs=JSON.parse(JSON.stringify(r.sections||[]))}
   if(!r)r={date:todayISO(),auditor:'',audit_subtype:'planif',duration:60};
   r=_audApplyDraft(r,_igmDraft);_igmDraft=null;
   _igmMeta=r;
@@ -20429,10 +20646,10 @@ async function _renderIgmAudit(el,id){
           '<button class="btn bo bsm" onclick="event.stopPropagation();_igmRemSec('+_jsArg(sec.id)+')" style="padding:2px 8px;font-size:14px">&#215;</button>'+
         '</div>'+
       '</div>';
-      h+='<div class="aud-sbody" id="igm-bd-'+sec.id+'" style="display:block">';
+      h+='<div class="aud-sbody" id="igm-bd-'+sec.id+'" style="display:'+(_igmSecOpen[sec.id]===false?'none':'block')+'">';
       // v12.68 — Checklist Cunoastere si Conformitate Proces (grupate pe parti)
       if(!sec.knowledge)sec.knowledge={};
-      h+='<details style="margin-bottom:14px;border:1px solid var(--brd);border-radius:6px;overflow:hidden"><summary style="padding:8px 12px;cursor:pointer;background:var(--bg);font-size:12px;font-weight:600;color:var(--navy)">&#128218; Checklist Cunoastere si Conformitate Proces ('+_igmKnowledgeScore(sec).done+'/'+IGM_KNOWLEDGE.length+' evaluate)</summary>';
+      h+='<details'+(_igmKnowOpen[sec.id]?' open':'')+' ontoggle="_igmKnowOpen['+_jsArg(sec.id)+']=this.open" style="margin-bottom:14px;border:1px solid var(--brd);border-radius:6px;overflow:hidden"><summary style="padding:8px 12px;cursor:pointer;background:var(--bg);font-size:12px;font-weight:600;color:var(--navy)">&#128218; Checklist Cunoastere si Conformitate Proces ('+_igmKnowledgeScore(sec).done+'/'+IGM_KNOWLEDGE.length+' evaluate)</summary>';
       h+='<div style="padding:10px 12px;font-size:11px">';
       h+='<div style="color:var(--txtL);margin-bottom:8px">Evalueaza structura procesului, cunoasterea teoretica si observatia directa. Per sectie (agregat). Pentru fiecare item: <strong>C</strong>=Conform, <strong>NC</strong>=Neconform, <strong>NA</strong>=Neaplicabil.</div>';
       var lastPart='';
@@ -20529,7 +20746,10 @@ function _igmKnowledgeScore(sec){
   return{done:done,evaluable:done-na,conform:conform,na:na};
 }
 function _igmRemSec(sid){if(!confirm(CFG.lang==='en'?'Remove section from audit?':'Eliminati sectia din audit?'))return;_igmDraft=_audGrabDraft(_IGM_FIELDS);_igmSecs=_igmSecs.filter(s=>s.id!==sid);render()}
-function _igmTogSec(sid){var bd=document.getElementById('igm-bd-'+sid);if(bd)bd.style.display=bd.style.display==='none'?'block':'none'}
+// v13.96 (G-26e) - starea „deschis/pliat" a checklist-ului de cunoastere si a sectiei se pastreaza peste
+// render(): fiecare bifa redesena formularul si inchidea panoul, deci 20 de itemi x fiecare sectie.
+var _igmKnowOpen={},_igmSecOpen={};
+function _igmTogSec(sid){var bd=document.getElementById('igm-bd-'+sid);if(bd){var open=bd.style.display==='none';bd.style.display=open?'block':'none';_igmSecOpen[sid]=open}}
 function _igmAddCalup(sid){var s=_igmSecs.find(x=>x.id===sid);if(!s)return;s.calups.push(_mkCalup());_igmRenderTbody(sid);_igmUpdScore(sid)}
 function _igmRemCalup(sid,cid){var s=_igmSecs.find(x=>x.id===sid);if(!s)return;s.calups=s.calups.filter(x=>x.id!==cid);_igmRenderTbody(sid);_igmUpdScore(sid)}
 function _igmSetCat(sid,cid,val){var s=_igmSecs.find(x=>x.id===sid);if(!s)return;var c=s.calups.find(x=>x.id===cid);if(c)c.cat=val}
@@ -20612,7 +20832,8 @@ async function _saveIgmAudit(){
     compliance_pct:pct,total_items:tot,conform_items:da,
     observations:'',recommendations:'',created_at:new Date().toISOString()};
   if(_igmEditId)rec.id=_igmEditId;
-  await pt('audits',rec);
+  if(rec.id&&!(await _editCheckConflict('audits',rec.id,{onReload:_backToList})))return;   // v13.98
+  await pt('audits',rec);toastSaved();
   logActivity((_igmEditId?'Editat':'Adaugat')+' audit Igiena Mainilor — '+pct+'%');
   _backToList();
 }
@@ -20624,7 +20845,7 @@ var _genEditCatId='';
 
 async function _renderGenericAudit(el,id){
   var r=null;
-  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r&&!_genItems.length)_genItems=JSON.parse(JSON.stringify(r.items||[]))}
+  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r)_editRemember('audits',r);if(r&&!_genItems.length)_genItems=JSON.parse(JSON.stringify(r.items||[]))}
   if(!r)r={date:todayISO(),auditor:'',section:'',observations:'',recommendations:'',measures:'',measure_deadline:'',measure_responsible:''};
   r=_audApplyDraft(r,_genDraft);_genDraft=null;
 
@@ -20674,11 +20895,11 @@ async function _renderGenericAudit(el,id){
 
   // Observations and measures
   h+='<div class="pn"><div class="ph"><h3>'+T('aud_observatii')+' / '+T('aud_recomandari')+'</h3></div><div class="pb">'+
-    '<div class="fr"><div class="fg"><label>'+T('aud_observatii')+'</label><textarea id="f-gen-obs" rows="2">'+(r.observations||'')+'</textarea></div>'+
-    '<div class="fg"><label>'+T('aud_recomandari')+'</label><textarea id="f-gen-rec" rows="2">'+(r.recommendations||'')+'</textarea></div></div>'+
-    '<div class="fr"><div class="fg"><label>'+T('aud_masuri_corective')+'</label><textarea id="f-gen-measures" rows="2">'+(r.measures||'')+'</textarea></div>'+
+    '<div class="fr"><div class="fg"><label>'+T('aud_observatii')+'</label><textarea id="f-gen-obs" rows="2">'+esc(r.observations||'')+'</textarea></div>'+
+    '<div class="fg"><label>'+T('aud_recomandari')+'</label><textarea id="f-gen-rec" rows="2">'+esc(r.recommendations||'')+'</textarea></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+T('aud_masuri_corective')+'</label><textarea id="f-gen-measures" rows="2">'+esc(r.measures||'')+'</textarea></div>'+
     '<div class="fg"><label>'+T('aud_termen')+'</label><input type="date" id="f-gen-deadline" value="'+(r.measure_deadline||'')+'"></div>'+
-    '<div class="fg"><label>'+T('aud_responsabil')+'</label><input id="f-gen-resp" value="'+(r.measure_responsible||'')+'"></div></div>'+
+    '<div class="fg"><label>'+T('aud_responsabil')+'</label><input id="f-gen-resp" value="'+esc(r.measure_responsible||'')+'"></div></div>'+
   '</div></div>';
 
   // Actions (v12.58: buton fisa goala mutat in banner-ul din capul paginii)
@@ -20763,7 +20984,8 @@ async function _saveGenericAudit(){
     measures:v('f-gen-measures').trim(),measure_deadline:v('f-gen-deadline'),measure_responsible:v('f-gen-resp').trim(),
     created_at:new Date().toISOString()};
   if(_genEditId)rec.id=_genEditId;
-  await pt('audits',rec);
+  if(rec.id&&!(await _editCheckConflict('audits',rec.id,{onReload:_backToList})))return;   // v13.98
+  await pt('audits',rec);toastSaved();
   logActivity((_genEditId?'Editat':'Adaugat')+' audit '+_audCatName(_genEditCatId)+' — '+pct+'%');
   _backToList();
 }
@@ -20774,7 +20996,10 @@ async function _saveGenericAudit(){
 
 async function _renderDotareAudit(el,id){
   var r=null;
-  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r)_dotareData=JSON.parse(JSON.stringify(r))}
+  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r)_editRemember('audits',r);if(r)_dotareData=JSON.parse(JSON.stringify(r))}
+  // v13.96 (G-26b) - salvarea scrie `sections_data`, formularul citea `.sections`: la redeschidere grila
+  // era goala si o salvare suprascria datele. Se incarca din campul salvat.
+  if(_dotareData&&!_dotareData.sections&&_dotareData.sections_data)_dotareData.sections=JSON.parse(JSON.stringify(_dotareData.sections_data));
   if(!r)r={date:todayISO(),auditor:''};
   var dotareCat=(CFG.ipc_categories||[]).find(c=>c.audit_type==='dotare_igiena');
   var catId=dotareCat?dotareCat.id:(_dotareData.catId||'');
@@ -20823,7 +21048,7 @@ async function _renderDotareAudit(el,id){
 
   // Observations
   h+='<div class="pn"><div class="ph"><h3>'+T('aud_observatii')+'</h3></div><div class="pb">'+
-    '<textarea id="f-dot-obs" rows="3">'+(r.observations||'')+'</textarea>'+
+    '<textarea id="f-dot-obs" rows="3">'+esc(r.observations||'')+'</textarea>'+
   '</div></div>';
 
   h+='<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
@@ -20856,7 +21081,8 @@ async function _saveDotareAudit(){
     compliance_pct:pct,total_items:totalEval,conform_items:conform,
     observations:v('f-dot-obs').trim(),created_at:new Date().toISOString()};
   if(_dotareEditId)rec.id=_dotareEditId;
-  await pt('audits',rec);
+  if(rec.id&&!(await _editCheckConflict('audits',rec.id,{onReload:_backToList})))return;   // v13.98
+  await pt('audits',rec);toastSaved();
   logActivity((_dotareEditId?'Editat':'Adaugat')+' audit Dotare Puncte Igiena — '+pct+'%');
   _backToList();
 }
@@ -20867,7 +21093,7 @@ async function _saveDotareAudit(){
 
 async function _renderAgregatAudit(el,id){
   var r=null;
-  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r)_agregatData=JSON.parse(JSON.stringify(r))}
+  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r)_editRemember('audits',r);if(r)_agregatData=JSON.parse(JSON.stringify(r))}
   if(!r)r={date:todayISO(),auditor:'',quarter:Math.ceil((new Date().getMonth()+1)/3),conclusions:''};
   var agregCat=(CFG.ipc_categories||[]).find(c=>c.audit_type==='agregat');
   var catId=agregCat?agregCat.id:'';
@@ -20978,7 +21204,7 @@ async function _renderAgregatAudit(el,id){
 
   // Conclusions
   h+='<div class="pn"><div class="ph"><h3>'+T('aud_concluzii')+'</h3></div><div class="pb">'+
-    '<textarea id="f-agr-conclusions" rows="3">'+(r.conclusions||'')+'</textarea>'+
+    '<textarea id="f-agr-conclusions" rows="3">'+esc(r.conclusions||'')+'</textarea>'+
   '</div></div>';
 
   h+='<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
@@ -21023,7 +21249,8 @@ async function _saveAgregatAudit(){
     compliance_pct:pct,total_items:vals.length,conform_items:vals.filter(v=>v>=80).length,
     created_at:new Date().toISOString()};
   if(_agregatEditId)rec.id=_agregatEditId;
-  await pt('audits',rec);
+  if(rec.id&&!(await _editCheckConflict('audits',rec.id,{onReload:_backToList})))return;   // v13.98
+  await pt('audits',rec);toastSaved();
   logActivity((_agregatEditId?'Editat':'Adaugat')+' audit Agregat IPC T'+rec.quarter+' — '+pct+'%');
   _backToList();
 }
@@ -21035,7 +21262,7 @@ var _customCatId='';
 
 async function _renderCustomAudit(el,id){
   var r=null;
-  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r&&!_customItems.length)_customItems=JSON.parse(JSON.stringify(r.items||[]))}
+  if(id){r=(await ga('audits')).find(x=>x.id===id);if(r)_editRemember('audits',r);if(r&&!_customItems.length)_customItems=JSON.parse(JSON.stringify(r.items||[]))}
   if(!r)r={date:todayISO(),auditor:'',section:'',observations:'',recommendations:''};
   r=_audApplyDraft(r,_customDraft);_customDraft=null;
 
@@ -21074,8 +21301,8 @@ async function _renderCustomAudit(el,id){
 
   // Observations
   h+='<div class="pn"><div class="ph"><h3>'+T('aud_observatii')+'</h3></div><div class="pb">'+
-    '<div class="fr"><div class="fg"><label>'+T('aud_observatii')+'</label><textarea id="f-cust-obs" rows="2">'+(r.observations||'')+'</textarea></div>'+
-    '<div class="fg"><label>'+T('aud_recomandari')+'</label><textarea id="f-cust-rec" rows="2">'+(r.recommendations||'')+'</textarea></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+T('aud_observatii')+'</label><textarea id="f-cust-obs" rows="2">'+esc(r.observations||'')+'</textarea></div>'+
+    '<div class="fg"><label>'+T('aud_recomandari')+'</label><textarea id="f-cust-rec" rows="2">'+esc(r.recommendations||'')+'</textarea></div></div>'+
   '</div></div>';
 
   h+='<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
@@ -21105,7 +21332,8 @@ async function _saveCustomAudit(){
     observations:v('f-cust-obs').trim(),recommendations:v('f-cust-rec').trim(),
     created_at:new Date().toISOString()};
   if(_customEditId)rec.id=_customEditId;
-  await pt('audits',rec);
+  if(rec.id&&!(await _editCheckConflict('audits',rec.id,{onReload:_backToList})))return;   // v13.98
+  await pt('audits',rec);toastSaved();
   logActivity((_customEditId?'Editat':'Adaugat')+' audit custom — '+pct+'%');
   _backToList();
 }
@@ -21343,7 +21571,22 @@ async function genAuditWordGeneric(r){
   try{
     var {Table,WidthType}=docx;
     var catName=_audCatName(r.audit_type);
-    var items=r.items||[];
+    var items=(r.items||[]).slice();
+    // v13.96 (G-26c) - auditul FO salveaza `rows` (prescriptii x indicatori), Dotare `sections_data`
+    // (sectie x punct x criterii); niciunul nu are `items`, deci exportul Word iesea cu tabelul gol.
+    if(!items.length&&Array.isArray(r.rows)&&typeof FO_IND!=='undefined'){
+      r.rows.forEach(function(row,ri){FO_IND.forEach(function(ind){var v=row[ind.id];if(!v)return;
+        var lbl=(row.fo?('FO '+row.fo):('Prescriptia '+(ri+1)))+(row.atb?' — '+row.atb:'')+' · '+_foIndLabel(ind);
+        items.push({text_ro:lbl,text_en:lbl,ref:'',result:v,note:row.note||''})})});
+    }
+    if(!items.length&&r.sections_data&&typeof r.sections_data==='object'){
+      var dotItems=(typeof AUDIT_ITEMS!=='undefined'&&AUDIT_ITEMS.dotare_igiena)||[];
+      Object.keys(r.sections_data).forEach(function(secId){var sd=r.sections_data[secId]||{};Object.keys(sd).forEach(function(k){
+        var d=sd[k];if(!d||!(d.p||d.f||d.c||d.a||d.obs))return;var it=dotItems[+k]||{};
+        var txt=it.text_ro||it.ro||it.text||('Punct '+(+k+1)),txtEn=it.text_en||it.en||txt;
+        items.push({text_ro:rSec(secId)+' · '+txt,text_en:rSec(secId)+' · '+txtEn,ref:'',result:(d.p&&d.f&&d.c&&d.a)?'C':'NC',
+          note:[d.p?'prezent':'',d.f?'functional':'',d.c?'curat':'',d.a?'accesibil':''].filter(Boolean).join(', ')+(d.obs?' — '+d.obs:'')})})});
+    }
     var tW=[500,4000,1200,800,800,800,2000];
     var headCells=[T('aud_nr_crt'),T('aud_element'),T('aud_referinta'),'C','NC','N/A',T('aud_nota')];
     var rows=[wTblHead(headCells,tW)];
@@ -21646,7 +21889,7 @@ function _foScore(rows){
 async function _renderFoAudit(el,id){
   var isEN=CFG.lang==='en';
   var r=null;
-  if(id){r=(await ga('audits')).find(function(x){return x.id===id});if(r&&!_foRows.length)_foRows=JSON.parse(JSON.stringify(r.rows||[]))}
+  if(id){r=(await ga('audits')).find(function(x){return x.id===id});if(r)_editRemember('audits',r);if(r&&!_foRows.length)_foRows=JSON.parse(JSON.stringify(r.rows||[]))}
   if(!r)r={date:todayISO(),auditor:'',section:'',observations:'',recommendations:'',measures:'',measure_deadline:'',measure_responsible:''};
   if(!_foRows.length)_foRows=[_foMkRow()];
 
@@ -21801,7 +22044,8 @@ async function _saveFoAudit(){
     measures:v('f-fo-measures').trim(),measure_deadline:v('f-fo-deadline'),measure_responsible:v('f-fo-resp').trim(),
     created_at:new Date().toISOString()};
   if(_foEditId)rec.id=_foEditId;
-  await pt('audits',rec);
+  if(rec.id&&!(await _editCheckConflict('audits',rec.id,{onReload:_backToList})))return;   // v13.98
+  await pt('audits',rec);toastSaved();
   logActivity((_foEditId?'Editat':'Adaugat')+' audit clinic FO antibiotice - '+rows.length+' prescriptii, '+(sc.pct===null?'-':sc.pct+'%'));
   _backToList();
 }
@@ -22082,7 +22326,9 @@ async function _calcAutoValue(obj,year){
 // ═══ DATA FUNCTIONS ═══
 async function _loadObjectives(year){
   var all=await ga('objectives');
-  return all.filter(function(o){return o.year===year});
+  var res=all.filter(function(o){return o.year===year});
+  res.forEach(function(o){_editRemember('objectives',o)});   // v13.98 garda de conflict la inregistrarea valorilor
+  return res;
 }
 
 async function _initYearFromTemplate(year){
@@ -22132,6 +22378,7 @@ async function _recordManualValue(objId,period,value,note){
   var all=await ga('objectives');
   var obj=all.find(function(o){return o.id===objId});
   if(!obj)return;
+  if(!(await _editCheckConflict('objectives',objId,{onReload:render})))return;   // v13.98
   if(!obj.recorded_values)obj.recorded_values=[];
   obj.recorded_values.push({period:period,value:+value,date:todayISO(),note:note||''});
   await pt('objectives',obj);
@@ -22339,6 +22586,7 @@ async function _updateObj(id,field,value){
   var all=await ga('objectives');
   var obj=all.find(function(o){return o.id===id});
   if(!obj)return;
+  if(!(await _editCheckConflict('objectives',id,{onReload:render})))return;   // v13.98
   obj[field]=value;
   await pt('objectives',obj);
   render();
@@ -22577,7 +22825,7 @@ async function rInstr(el){
 }
 
 async function editTraining(id){
-  let r=id?(await ga('trainings')).find(x=>x.id===id):null;
+  let r=id?(await ga('trainings')).find(x=>x.id===id):null;if(r)_editRemember('trainings',r);   // v13.98
   if(!r)r={year:A.year,date:todayISO(),topic:'',section:'',
     trainers:[],trainer:'',participants:[],duration_hours:1,observations:''};
   _instrParticipants=Array.isArray(r.participants)&&r.participants.length?JSON.parse(JSON.stringify(r.participants)):[];
@@ -22650,7 +22898,7 @@ async function saveTraining(id){
     trainers:trainers,trainer:trainers.map(function(t){return t.name}).join(', '),
     participants,duration_hours:parseFloat(v('f-tdur'))||1,observations:v('f-tobs').trim(),
     test_max:(v('f-tmax')===''?null:+v('f-tmax')),test_pass:(v('f-tpass')===''?null:+v('f-tpass'))};
-  if(id)rec.id=id;await pt('trainings',rec);
+  if(id)rec.id=id;if(id&&!(await _editCheckConflict('trainings',id)))return;await pt('trainings',rec);
   logActivity((id?'Editata':'Adaugata')+' instruire — '+topic);toastSaved();
   closeM();render();
 }
@@ -22688,7 +22936,7 @@ async function genTrainingWord(id){
       wH1('DETALII INSTRUIRE'),
       wP('Data: '+fmtDate(r.date)),
       wP('Tema: '+(r.topic||'—'),{bold:true}),
-      wP(secLabel(r.section)),
+      wP(r.section?secLabel(r.section):(CFG.lang==='en'?'Ward: general (all staff)':'Sectia: generala (tot personalul)')),   // v13.97 - fara „Sectia —"
       wP('Formator(i): '+trainerStr),
       wP('Durata: '+(r.duration_hours||'—')+' ore'),
       wH1('LISTA PARTICIPANTI'),
@@ -22842,7 +23090,8 @@ function genWord(fnOrName,label,args){
   var personnel=CFG.personnel||[];
   if(personnel.length===0){
     // Nici un personal configurat - genereaza fara semnatari
-    return fn.apply(null,args);
+    // v13.96 - o exceptie inainte de saveDocx lasa overlay-ul pe watchdog-ul de 90 s, fara niciun mesaj.
+    return Promise.resolve().then(function(){return fn.apply(null,args)}).catch(function(e){hideGen();errAlert(e,'Nu am putut genera documentul.','Could not generate the document.')});
   }
   // Dialog: checkbox pe fiecare persoana, default=p.sign
   var rows=personnel.map(function(p,i){
@@ -22904,7 +23153,7 @@ function _genWordConfirm(){
   var args=window._genWordArgs||[];
   safeCloseM();
   // Apel async, apoi reset override (chiar daca esueaza)
-  Promise.resolve().then(function(){return fn.apply(null,args)}).finally(function(){
+  Promise.resolve().then(function(){return fn.apply(null,args)}).catch(function(e){hideGen();errAlert(e,'Nu am putut genera documentul.','Could not generate the document.')}).finally(function(){
     window._reportSignersOverride=null;
     window._genWordFn=null;window._genWordArgs=null;
   });
@@ -23658,7 +23907,7 @@ async function genRaportAnualWord(){
   // ─── Grafice IAAM (trend lunar + top sectii + top germens) ───
   if(ia.length>0){
     children.push(wPB());
-    children.push(wH1('7. Analize Grafice IAAM '+y,WC.blue));children.push(wSp(40));
+    children.push(wH1('9. Analize Grafice IAAM '+y,WC.blue));children.push(wSp(40));
     try{
       var iaamTrendChart=await wChartImage('line',{labels:MO,datasets:[
         {label:y+' — Cazuri IAAM',data:iaamR.trends.monthly,borderColor:CHART_PALETTE[0],backgroundColor:'rgba(27,58,107,0.12)',fill:true,tension:0.3,pointRadius:3},
@@ -23706,7 +23955,7 @@ async function genRaportAnualWord(){
   // ─── Grafice Autocontrol ───
   showGen('8/9 Grafice Autocontrol...');
   if(au.length>0||(data.atp&&data.atp.length>0)||(data.uv&&data.uv.length>0)){
-    children.push(wPB());children.push(wH1('8. Analize Grafice Autocontrol '+y,WC.teal));children.push(wSp(40));
+    children.push(wPB());children.push(wH1('10. Analize Grafice Autocontrol '+y,WC.teal));children.push(wSp(40));
     // Trend lunar
     if(au.length>0){
       try{
@@ -23738,7 +23987,7 @@ async function genRaportAnualWord(){
   // ─── Grafice ATB (AWaRe doughnut + top DDD) ───
   showGen('8/9 Grafice ATB...');
   if(atb&&atb.length>0){
-    children.push(wPB());children.push(wH1('9. Analize Grafice Consum Antibiotice '+y,WC.navy));children.push(wSp(40));
+    children.push(wPB());children.push(wH1('11. Analize Grafice Consum Antibiotice '+y,WC.navy));children.push(wSp(40));
     // v13.62 - graficele foloseau r.ddd si r.aware, campuri care nu exista in inregistrari
     // (A1-05 le-a reparat in tabele, dar nu si aici, in aceeasi functie). Rezultatul:
     // inelul AWaRe iesea integral gri „Neclasificat" si graficul Top 10 avea toate barele 0,
@@ -23779,7 +24028,7 @@ async function genRaportAnualWord(){
   // ─── Grafic Audituri ───
   showGen('8/9 Grafice Audituri...');
   if(audits&&audits.length>0){
-    children.push(wPB());children.push(wH1('10. Analize Grafice Audituri IPC '+y,WC.teal));children.push(wSp(40));
+    children.push(wPB());children.push(wH1('12. Analize Grafice Audituri IPC '+y,WC.teal));children.push(wSp(40));
     var byType={};audits.forEach(function(a){var t=a.audit_type||'General';if(!byType[t])byType[t]={n:0,sum:0};byType[t].n++;byType[t].sum+=(+a.compliance_pct||+a.compliance||0)});
     var typeLabels=[],typeAvgs=[];Object.keys(byType).forEach(function(k){typeLabels.push((typeof _audCatName==='function'?_audCatName(k):k).substring(0,22));typeAvgs.push(Math.round(byType[k].sum/byType[k].n))});
     if(typeLabels.length>0){
@@ -23802,14 +24051,14 @@ async function genRaportAnualWord(){
   // ─── Insight-uri Corelate (cross-module) ───
   showGen('9/9 Insight-uri corelate...');
   if(correlations&&correlations.length>0){
-    children.push(wPB());children.push(wH1('11. Insight-uri Corelate (cross-module)',WC.red));children.push(wSp(40));
+    children.push(wPB());children.push(wH1('13. Insight-uri Corelate (cross-module)',WC.red));children.push(wSp(40));
     children.push(wP('Observatii rezultate din suprapunerea datelor intre module — identifica pattern-uri care nu sunt vizibile analizand fiecare modul separat.',{size:18,italic:true,color:WC.gray}));
     children.push(wSp(40));
     correlations.forEach(function(c){children.push(wCorrelationInsight(c.title,c.text,c.sev));children.push(wSp(40))});
   }
 
   // ─── Recomandari Data-Driven ───
-  children.push(wPB());children.push(wH1('12. Recomandari Data-Driven pentru '+(y+1),WC.amber));children.push(wSp(40));
+  children.push(wPB());children.push(wH1('14. Recomandari Data-Driven pentru '+(y+1),WC.amber));children.push(wSp(40));
   // Generam recomandari specifice din datele analizate
   var recs=[];
   if(iaamR.bySection[0]&&iaamR.bySection[0].val>=3){
@@ -23841,7 +24090,7 @@ async function genRaportAnualWord(){
   recs.forEach(function(r){var kids=wDataRecommendation(r.target,r.actions);kids.forEach(function(k){children.push(k)})});
 
   // ─── Concluzii Finale (sintetizate) ───
-  children.push(wPB());children.push(wH1('13. Concluzii Finale'));children.push(wSp(40));
+  children.push(wPB());children.push(wH1('15. Concluzii Finale'));children.push(wSp(40));
   var concl=[];
   concl.push('In anul '+y+', '+CFG.cpiaam_name+' a inregistrat '+ia.length+' cazuri IAAM'+(iaamRate!==null?' (rata: '+iaamRate.toFixed(2).replace('.',',')+'\u2030)':'')+(iaamR.kpis.mdrPct>0?', dintre care '+iaamR.kpis.mdrPct+'% cu germeni multirezistenti':'')+'.');
   concl.push('Autocontrol microbiologic: '+au.length+' probe, conformitate '+(au.length>0?fp(conf,au.length):'\u2014')+(autoR.kpis.yoyConfDelta!=null?' ('+(autoR.kpis.yoyConfDelta>=0?'\u25B2 +':'\u25BC ')+Math.abs(autoR.kpis.yoyConfDelta)+' pp vs '+(y-1)+')':'')+'.');
@@ -24144,8 +24393,9 @@ async function genTrimestrial(q){
   const ha=await getHospitalActivity(y);
   var paturiSum=0,paturiCnt=0;for(var mi=ms-1;mi<me;mi++){var mo=ha.months[mi];if(mo&&mo.paturi_medii){paturiSum+=+mo.paturi_medii;paturiCnt++}}
   var avgPaturi=paturiCnt>0?Math.round(paturiSum/paturiCnt*10)/10:getTotalWeightedBeds(y);
-  var gradUtil=avgPaturi>0&&omZileQ>0?Math.round(omZileQ/(avgPaturi*qMonths.length*30.44)*100):0;
-  var dms=extQ>0?Math.round(omZileQ/extQ*10)/10:0;
+  // v13.96 (G-59) - fara numitor „—", nu 0; paturile din configurare se spun ca atare.
+  var gradUtil=avgPaturi>0&&omZileQ>0?Math.round(omZileQ/(avgPaturi*qMonths.length*30.44)*100):null;
+  var dms=extQ>0&&omZileQ>0?Math.round(omZileQ/extQ*10)/10:null;
   var iaamRate=omZileQ>0?(ia.length/omZileQ*1000):null;
 
   // Derived stats
@@ -24180,9 +24430,9 @@ async function genTrimestrial(q){
     children.push(new Table({width:{size:9026,type:WidthType.DXA},columnWidths:WS,rows:[wTblHead(['Indicator','Valoare'],WS),
       wTblRow(['Om-zile spitalizare',fn(omZileQ)],WS),
       wTblRow(['Pacienti externati',fn(extQ)],WS,true),
-      wTblRow(['Paturi medii functionale',String(avgPaturi)],WS),
-      wTblRow(['Grad utilizare paturi',gradUtil+'%'],WS,true),
-      wTblRow(['DMS (zile)',String(dms)],WS)]}));
+      wTblRow(['Paturi medii functionale',String(avgPaturi)+(paturiCnt>0?'':' (din configurare)')],WS),
+      wTblRow(['Grad utilizare paturi',gradUtil===null?'—':gradUtil+'%'],WS,true),
+      wTblRow(['DMS (zile)',dms===null?'—':String(dms)],WS)]}));
   } else {
     children.push(wP('Date statistice lunare neintroduse. Accesati modulul Statistici Spital pentru completare.',{size:20,italics:true,color:'996600'}));
   }
@@ -24322,7 +24572,7 @@ async function genTrimestrial(q){
   var prevTr=allTr.filter(function(r){if(r.date){var d=new Date(r.date);return d.getFullYear()===prevY&&qM[prevQ].includes(d.getMonth()+1)}return false});
   var prevIaamRate=prevOmZile>0?(prevIa.length/prevOmZile*1000):null;
 
-  function _trend(curr,prev,inverse){if(prev===null||prev===undefined||prev==='—'||curr==='—')return '—';var d=curr-prev;var pct=prev>0?Math.abs(d/prev*100):0;if(pct<2)return '=';if(inverse)return d>0?'▲ (-)':'▼ (+)';return d>0?'▲':'▼'}
+  function _trend(curr,prev,inverse){if(prev===null||prev===undefined||prev==='—'||curr==='—')return '—';var d=curr-prev;var pct=prev>0?Math.abs(d/prev*100):(d!==0?100:0);if(pct<2)return '=';   /* v13.96 (G-59) de la 0 la N nu e „=" */if(inverse)return d>0?'▲ (-)':'▼ (+)';return d>0?'▲':'▼'}
   function _delta(c,p){if(p===null||p===undefined)return '—';var d=c-p;return (d>=0?'+':'')+d}
 
   var WC2=[3000,1500,1500,1000,1026];
@@ -25151,7 +25401,7 @@ function micEficiente(d){
     Object.keys(G.cat).forEach(function(k){
       var c=G.cat[k];if(!c.testatComplet)return;
       var pctR=Math.round(c.rComplet/c.testatComplet*1000)/10;
-      if(pctR<=20)ef.push({cat:k,nume:(MIC_CAT.find(function(x){return x.k===k})||{}).ro||k,
+      if(pctR<=20)ef.push({cat:k,nume:(function(dd){return dd?_micL(dd):k})(MIC_CAT.find(function(x){return x.k===k})),
         pctR:pctR,testat:c.testatComplet});
     });
     if(ef.length)out.push({germen:G.nume,n:G.n,eficiente:ef.sort(function(a,b){return a.pctR-b.pctR})});
@@ -26502,7 +26752,7 @@ async function xdrAddAlert(isoKey){
 
 async function xdrEditAlert(id,pre){
   const isEN=CFG.lang==='en';
-  let r=id?(await ga('ipc_registry')).find(function(x){return x.id===id}):null;
+  let r=id?(await ga('ipc_registry')).find(function(x){return x.id===id}):null;if(r)_editRemember('ipc_registry',r);   // v13.98
   if(!r){
     // `getCurrentUser()` intoarce „Necunoscut" cand nu s-a ales inca un utilizator. Acel cuvant NU
     // are ce cauta in rubrica „persoana care a validat datele" din registrul trimis la DSP — mai
@@ -26619,6 +26869,7 @@ async function xdrSaveAlert(id){
   // Salvarile care reconstruiesc obiectul trebuie sa pastreze campurile interne ale celui existent
   // (regula din CLAUDE.md) — altfel `iso_key` se pierde si alerta se poate adauga a doua oara din
   // tabul de detectie, ca si cum nu ar fi fost inscrisa niciodata.
+  if(id&&!(await _editCheckConflict('ipc_registry',id)))return;   // v13.98
   const vechi=id?(await ga('ipc_registry')).find(function(x){return x.id===id}):null;
   const dSample=v('f-xa-dsample');
   const rec=Object.assign({},vechi||{},{
@@ -27089,8 +27340,13 @@ function toggleProbeApplicability(secIdx,ptId,checked){
   }
   if(checked&&!s.applicable_probes.includes(ptId)){s.applicable_probes.push(ptId)}
   else if(!checked){s.applicable_probes=s.applicable_probes.filter(function(id){return id!==ptId})}
-  // If all are checked, clear array (=all applicable, default)
-  if(s.applicable_probes.length>=pts.length)s.applicable_probes=[];
+  // v13.96 (G-46) - placeholder-ul '__none__' nu se numara: dupa ⇅, bifarea a N-1 probe dadea N elemente
+  // (>= total) si lista se golea, adica TOATE aplicabile. Iar debifarea tuturor ajungea la [], care
+  // inseamna tot „toate" — deci bifele reveneau. Zero probe reale = '__none__' explicit.
+  var reale=s.applicable_probes.filter(function(id){return id!=='__none__'});
+  if(reale.length>=pts.length)s.applicable_probes=[];            // toate bifate = implicit (toate aplicabile)
+  else if(reale.length===0)s.applicable_probes=['__none__'];     // niciuna bifata
+  else s.applicable_probes=reale;
   saveCfg();
 }
 function toggleAllProbes(secIdx){
@@ -27148,9 +27404,9 @@ async function rCfg(el){
   h+=
   '<div class="pn" id="cfg-info"><div class="ph"><h3>'+(isEN?'Hospital Information':'Informatii Spital')+'</h3></div><div class="pb">'+
     '<div class="fr"><div class="fg"><label>'+(isEN?'Hospital name':'Denumire spital')+'</label><input id="c-name" value="'+esc(CFG.hospital_name)+'"></div>'+
-    '<div class="fg"><label>'+(isEN?'Short name':'Denumire scurta')+'</label><input id="c-short" value="'+(CFG.hospital_short||'')+'"></div></div>'+
+    '<div class="fg"><label>'+(isEN?'Short name':'Denumire scurta')+'</label><input id="c-short" value="'+esc(CFG.hospital_short||'')+'"></div></div>'+
     '<div class="fr"><div class="fg"><label>'+(isEN?'Department name':'Nume compartiment')+'</label><input id="c-cpiaam" value="'+esc(CFG.cpiaam_name)+'"></div>'+
-    '<div class="fg"><label>'+(isEN?'PPS Hospital Code':'Cod spital PPS')+'</label><input id="c-code" value="'+(CFG.hospital_code||'')+'"></div></div>'+
+    '<div class="fg"><label>'+(isEN?'PPS Hospital Code':'Cod spital PPS')+'</label><input id="c-code" value="'+esc(CFG.hospital_code||'')+'"></div></div>'+
     '<div class="fr"><div class="fg"><label>'+(isEN?'Biocide budget limit (lei/year)':'Limita bugetara biocide (lei/an)')+'</label><input type="number" id="c-bb" value="'+(CFG.biocide_budget||'')+'"></div>'+
     '<div class="fg"></div></div>'+
     '<div class="fr" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--brd)"><div class="fg"><label>&#128100; '+(isEN?'Current user':'Utilizator curent')+' <span style="font-size:10px;color:var(--txtL)">('+(isEN?'who is working now on this computer':'cine lucreaza acum pe acest calculator')+')</span></label>'+
@@ -27296,7 +27552,7 @@ async function rCfg(el){
     // ═══ GRUPUL 2: AUTOCONTROL ═══
   '<div class="pn" id="cfg-probe"><div class="ph"><h3>'+(isEN?'Autocontrol Sample Types':'Tipuri Probe Autocontrol')+'</h3></div><div class="pb">'+
     // v13.29 - editare in-place a numelui tipului de proba (click pe pencil ✎)
-    '<div class="tag-list">'+CFG.probe_types.map((p,i)=>{const nm=typeof p==='string'?p:(p.name||p.id||'?');return '<span class="tag">'+nm+'<span class="tag-x" onclick="renameProbe('+i+')" title="Redenumeste" style="cursor:pointer;color:#2563B0;margin-right:4px">&#9998;</span><span class="tag-x" onclick="cfgDelete(&quot;probe_types&quot;,'+i+')" title="Sterge">&#215;</span></span>'}).join('')+'</div>'+
+    '<div class="tag-list">'+CFG.probe_types.map((p,i)=>{const nm=typeof p==='string'?p:(p.name||p.id||'?');return '<span class="tag">'+esc(nm)+'<span class="tag-x" onclick="renameProbe('+i+')" title="Redenumeste" style="cursor:pointer;color:#2563B0;margin-right:4px">&#9998;</span><span class="tag-x" onclick="cfgDelete(&quot;probe_types&quot;,'+i+')" title="Sterge">&#215;</span></span>'}).join('')+'</div>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-probe" placeholder="Tip proba nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-probe\').value.trim();if(v){CFG.probe_types.push({id:genId(\'probe\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
@@ -27425,7 +27681,7 @@ async function rCfg(el){
       '<td><span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:'+(c.color||'#999')+'" title="'+(c.color||'')+'"></span></td>'+
       '<td>'+esc(c.name_ro||'')+'</td>'+
       '<td>'+esc(c.name_en||'')+'</td>'+
-      '<td>'+(c.source_module||'Manual')+(c.audit_type?' <span style="font-size:10px;color:var(--txtL)">('+c.audit_type+')</span>':'')+'</td>'+
+      '<td>'+(c.source_module||'Manual')+(c.audit_type?' <span style="font-size:10px;color:var(--txtL)">('+esc(c.audit_type)+')</span>':'')+'</td>'+
       '<td><span class="bdg '+(c.standard?'bdg-b':'bdg-g')+'" style="font-size:9px">'+(c.standard?T('obj_standard'):T('obj_personalizat'))+'</span></td>'+
       '<td style="text-align:center"><input type="checkbox" '+(c.active!==false?'checked':'')+' onchange="CFG.ipc_categories['+i+'].active=this.checked;saveCfg();render()" style="accent-color:'+(c.color||'#0D9488')+'"></td>'+
       '<td class="act">'+(c.standard?'':'<button onclick="cfgDelete(&quot;ipc_categories&quot;,'+i+')">&#128465;</button>')+'</td></tr>'}).join('')+
@@ -27513,6 +27769,7 @@ async function rCfg(el){
     '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">'+
       '<button class="btn bw" onclick="expAll()" style="padding:10px 18px;font-size:13px">&#128190; Descarca Backup JSON</button>'+
       '<button class="btn bo" onclick="impAll()" style="padding:10px 18px">&#128193; Incarca Backup din fisier</button>'+
+      '<div id="cfg-autobk" style="flex-basis:100%;margin-top:6px;font-size:12px;color:var(--txtL)"></div>'+
     '</div>'+
     '<div class="fr"><div class="fg"><label>Reminder backup (zile)</label><input type="number" id="c-bkpint" value="'+(CFG.backup_interval_days||7)+'" min="1" max="90" style="width:80px" onchange="CFG.backup_interval_days=+this.value||7;saveCfg()"><span style="font-size:11px;color:var(--txtL);margin-left:6px">Primesti notificare daca nu ai facut backup in acest interval</span></div></div>'+
   '</div></div>'+
@@ -27579,6 +27836,7 @@ async function rCfg(el){
   }
 
   el.innerHTML=h;
+  setTimeout(function(){if(typeof _cfgListAutoBackups==='function')_cfgListAutoBackups()},0);   // v13.96 (G-42)
   if(_cfgTab==='ai')setTimeout(showAiFields,50);
   if(_cfgTab==='dateintro')setTimeout(function(){_setupCfgIntroGroups();_setupCfgIntroCollapse()},0);
 }
@@ -27811,10 +28069,10 @@ function showAiFields(){
       '<div><strong>'+info.name+'</strong> — Cost: '+info.cost+'<br>'+info.tutorial+
       (info.link?'<br><a href="'+info.link+'" target="_blank" style="color:var(--blue)">&#128279; '+info.link+'</a>':'')+
     '</div></div>'+
-    (info.needsKey?'<div class="fg"><label>Cheie API</label><input type="password" id="c-aikey" value="'+(CFG.ai_api_key||'')+'" placeholder="Introdu cheia API"></div>':'')+
+    (info.needsKey?'<div class="fg"><label>Cheie API</label><input type="password" id="c-aikey" value="'+esc(CFG.ai_api_key||'')+'" placeholder="Introdu cheia API"></div>':'')+
     '<div class="fr">'+
       '<div class="fg"><label>Model</label><input id="c-aimodel" value="'+(CFG.ai_model||info.defaultModel)+'" placeholder="'+info.defaultModel+'"></div>'+
-      (prov==='custom'?'<div class="fg"><label>Endpoint URL</label><input id="c-aiendpoint" value="'+(CFG.ai_endpoint||'')+'" placeholder="https://..."></div>':'<div></div>')+
+      (prov==='custom'?'<div class="fg"><label>Endpoint URL</label><input id="c-aiendpoint" value="'+esc(CFG.ai_endpoint||'')+'" placeholder="https://..."></div>':'<div></div>')+
     '</div>';
 }
 async function saveAiCfg(){
@@ -28021,9 +28279,11 @@ function _setupCfgIntroGroups(){
 // probe, deseuri, audituri si instruiri care o refereau prin id — afisate ca UUID, nerecuperabile.
 // Aici numar intai referintele reale din IndexedDB si spun exact cate sunt.
 const CFG_DEL_REFS={
-  sections:[['iaam','section'],['autocontrol','section'],['deseuri','section'],['audits','section'],
+  sections:[['iaam','section'],['iaam','section_attribution'],['autocontrol','section'],['deseuri','section'],['audits','section'],
     ['trainings','section'],['atb_consum','section'],['atp','section'],['uvcheck','section'],
-    ['ipc_registry','section'],['ipc_registry','section_adm'],['atb_approvals','section'],['outbreaks','section']],
+    ['ipc_registry','section'],['ipc_registry','section_adm'],['atb_approvals','section'],['outbreaks','section'],
+    // v13.96 (G-45) - store-uri care salveaza `section` si lipseau: „Nicio inregistrare nu il foloseste" era fals.
+    ['pps','section'],['lab_isolates','section'],['icd_cases','section'],['aes_events','section']],
   probe_types:[['autocontrol','probe_type']],
   // v13.62 - trei mapari indicau nume de camp care nu exista in inregistrari, deci
   // _cfgCountRefs citea mereu `undefined` si raporta 0 referinte: `cfgDelete` sarea exact peste
@@ -28078,6 +28338,29 @@ async function _cfgCountRefs(key,item){
 
 // v13.94 (G-21) - „Stergere date" golea store-ul cu cl(), fara tombstone-uri, deci merge-ul readucea
 // totul de pe celalalt calculator (pastreaza ce e doar local). Stergerea trece prin dl(), ca peste tot.
+// v13.96 (G-20) - registru de stergeri din configurare (CFG._cfg_del[lista][id] = data). Merge-ul adauga
+// orice element remote lipsa local, deci fara registru tot ce stergeai revenea de pe celalalt calculator
+// la urmatoarea combinare. Registrul se sincronizeaza in CFG si se aplica in _smartMergeCfg.
+function _cfgMarkDeleted(key,item){
+  var id=(item&&typeof item==='object')?item.id:null;if(!id)return;
+  if(!CFG._cfg_del||typeof CFG._cfg_del!=='object')CFG._cfg_del={};
+  if(!CFG._cfg_del[key])CFG._cfg_del[key]={};
+  CFG._cfg_del[key][id]=new Date().toISOString();
+}
+// v13.96 (G-42) - backup-urile automate de la actualizari erau scrise in IndexedDB, dar nu le putea vedea
+// sau folosi nimeni. Se listeaza aici si se descarca ca JSON, de restaurat cu „Incarca Backup din fisier".
+async function _cfgListAutoBackups(){
+  var el=document.getElementById('cfg-autobk');if(!el)return;
+  var list=(await ga('config')).filter(function(r){return r&&r.type==='auto_backup'}).sort(function(a,b){return String(b.date).localeCompare(String(a.date))});
+  if(!list.length){el.textContent=CFG.lang==='en'?'No automatic pre-update backups stored on this computer.':'Niciun backup automat de la actualizari pe acest calculator.';return}
+  el.innerHTML='<span>'+(CFG.lang==='en'?'Automatic backups made before updates, on this computer (restore with „Load backup from file"): ':'Backup-uri automate facute inainte de actualizari, pe acest calculator (se restaureaza cu „Incarca Backup din fisier"): ')+'</span>'+
+    list.map(function(r){return '<button class="btn bo bsm" style="margin:2px" onclick="_cfgDownloadAutoBackup('+_jsArg(r.id)+')">v'+esc(r.version)+' — '+esc(fmtDate(String(r.date).slice(0,10)))+'</button>'}).join('');
+}
+async function _cfgDownloadAutoBackup(id){
+  var r=(await ga('config')).find(function(x){return x&&x.id===id});
+  if(!r||!r.data){alert(_M('Backup-ul nu mai exista.'));return}
+  saveAs(new Blob([r.data],{type:'application/json'}),'CPIAAM_AutoBackup_v'+r.version+'_'+String(r.date).slice(0,10)+'.json');
+}
 async function _cfgWipeStore(s,msg){
   if(!confirm(msg))return;
   var all=await ga(s);
@@ -28105,6 +28388,7 @@ async function cfgDelete(key,idx){
   }
   if(!confirm(msg))return;
 
+  _cfgMarkDeleted(key,item);   // v13.96 (G-20) altfel merge-ul o readuce de pe celalalt calculator
   arr.splice(idx,1);
   if(key==='custom_antibiotics'&&typeof _invalidateAtbCache==='function')_invalidateAtbCache();
   await saveCfg();
@@ -28141,14 +28425,16 @@ async function wizSkipImport(){
     window.showOpenFilePicker(_wOpts).then(async([fh])=>{
       const file=await fh.getFile();const text=await file.text();
       try{
-        const d=JSON.parse(text);
-        // Import config
-        if(d.config){Object.assign(CFG,d.config);CFG.setup_complete=true;await saveCfg()}
+        // v13.96 (G-43) - acelasi drum ca impAll: migrarile de campuri, config despachetat cu _extractCfg,
+        // identitatea locala (utilizator, autor) NU se ia de la colega, inregistrarile cu preserveMeta
+        // (altfel toate primeau ora importului si castigau merge-ul in fata versiunilor colegei).
+        const d=(typeof migrateBackupData==='function')?migrateBackupData(JSON.parse(text)):JSON.parse(text);
+        if(d.config){const cfg=(typeof _extractCfg==='function')?_extractCfg(d.config):d.config;if(cfg){const keep={current_user:CFG.current_user,author_name:CFG.author_name};Object.assign(CFG,cfg);Object.keys(keep).forEach(k=>{if(keep[k])CFG[k]=keep[k]})}CFG.setup_complete=true;await saveCfg()}
         // Import all data stores
         const storeMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines',events:'events',audits:'audits',trainings:'trainings',atp:'atp',uvcheck:'uvcheck',ac:'atb_consum'};
-        for(const[key,store] of Object.entries(storeMap)){if(d[key])for(const r of d[key])await pt(store,r)}
+        for(const[key,store] of Object.entries(storeMap)){if(d[key]&&!d[store])for(const r of d[key])await pt(store,r,true)}
         // Also try direct store names (from full backup)
-        for(const s of ST){if(d[s]&&Array.isArray(d[s]))for(const r of d[s])await pt(s,r)}
+        for(const s of ST){if(d[s]&&Array.isArray(d[s]))for(const r of d[s])await pt(s,r,true)}
         // Set file handle for future sync
         _fileHandle=fh;CFG.sync_file_name=fh.name;await saveCfg();await saveFileHandle(fh);
         localStorage.setItem('cpiaam_had_data','true');
@@ -28161,10 +28447,11 @@ async function wizSkipImport(){
     const inp=document.createElement('input');inp.type='file';inp.accept='.json';
     inp.onchange=async e=>{const f=e.target.files[0];if(!f)return;
       try{
-        const d=JSON.parse(await f.text());
-        if(d.config){Object.assign(CFG,d.config);CFG.setup_complete=true;await saveCfg()}
+        let d=JSON.parse(await f.text());
+        d=(typeof migrateBackupData==='function')?migrateBackupData(d):d;   // v13.96 (G-43)
+        if(d.config){const cfg=(typeof _extractCfg==='function')?_extractCfg(d.config):d.config;if(cfg){const keep={current_user:CFG.current_user,author_name:CFG.author_name};Object.assign(CFG,cfg);Object.keys(keep).forEach(k=>{if(keep[k])CFG[k]=keep[k]})}CFG.setup_complete=true;await saveCfg()}
         // Import all data stores (direct names)
-        for(const s of ST){if(d[s]&&Array.isArray(d[s])){await cl(s);for(const r of d[s])await pt(s,r)}}
+        for(const s of ST){if(d[s]&&Array.isArray(d[s])){await cl(s);for(const r of d[s])await pt(s,r,true)}}
         // Import short-key aliases from older backups
         const storeMap={ia:'iaam',au:'autocontrol',de:'deseuri',bi:'biocide',pp:'pps',docs:'documents',terms:'deadlines',events:'events',audits:'audits',trainings:'trainings',atp:'atp',uvcheck:'uvcheck',ac:'atb_consum',obj:'objectives',lab:'lab_isolates'};
         for(const[key,store] of Object.entries(storeMap)){if(d[key]&&Array.isArray(d[key]))for(const r of d[key])await pt(store,r)}
@@ -29570,6 +29857,9 @@ function rManual(el){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'13.98',date:'2026-09-27',summary:"Garda de conflict la salvare, ceruta de user dupa ce a descris scenariul exact: fisa IAAM lasata deschisa la 20%, terminata intre timp de colega de pe alt calculator, apoi salvata de el la 50% — pana acum versiunea lui stergea tot ce facuse ea, fara niciun mesaj. Acum aplicatia intreaba, in fisa IAAM si in toate celelalte dialoguri de editare."},
+  {version:'13.97',date:'2026-09-27',summary:"Ultimele reparatii din lista auditului care aduc o imbunatatire fara risc: raportarile recurente primesc termenele noului an automat, focarele trec granita de an, editorul de produse biocide nu mai pierde ce ai tastat, iar lista de tipuri de probe din Configurare e in sfarsit folosita la import."},
+  {version:'13.96',date:'2026-09-27',summary:"Continuarea reparatiilor din audit, cat timp asteptam exportul HelicsWin pentru Tabelul II.6: stergerile si editarile din Configurare se propaga intre calculatoare, backup-urile automate de la actualizari se pot descarca, importul Excel la consum ATB, exportul Word pentru auditurile FO si Dotare, si inca vreo 25 de reparatii mici din lista."},
   {version:'13.95',date:'2026-09-27',summary:"Cele trei decizii lasate userului dupa audit, luate si implementate: fisa IAAM nu mai stocheaza adresa (ramane doar urban/rural), DDD/100 in Consum Antibiotice se calculeaza pe om-zile, ca in restul aplicatiei si ca la OMS/ECDC, iar anul raportarii din fisa IAAM e editabil, precompletat cu anul din bara."},
   {version:'13.94',date:'2026-09-27',summary:"Audit general al aplicatiei, urmat de repararea a 8 defecte critice si a peste 40 de defecte ridicate sau medii, fiecare verificat la rulare. Cele mai grave: Raportul Trimestrial numara probele de autocontrol dupa un filtru care compara trimestrul cu lunile, sectiunea Obiective din Raportul Anual citea campuri inexistente (toate ieseau „0% Nerealizat”), pagina Audituri nu se deschidea deloc cu un audit de igiena a mainilor in an, iar Dashboard-ul crea la fiecare deschidere inca o copie a termenelor recurente depasite."},
   {version:'13.93',date:'2026-08-12',summary:"Bugul raportat de user — butonul „Deschide\" la termenele depasite — plus toate reparatiile din analiza de aplicatie: anul din data proprie in modulele vechi, stocare persistenta, SRI pe CDN-uri, escapari lipsa, casetele flex."},
@@ -30215,7 +30505,7 @@ async function rMultiAn(el){
   var ySel='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center"><span style="font-size:12px;color:var(--txtL);margin-right:4px">'+(isEN?'Years:':'Ani:')+'</span>';
   allAvail.forEach(function(y){
     var on=_maSelectedYears.has(y);
-    ySel+='<button onclick="_maToggleYear('+y+')" style="padding:4px 14px;border-radius:20px;border:1px solid '+(on?'var(--blue)':'var(--brd)')+';background:'+(on?'var(--blue)':'transparent')+';color:'+(on?'#fff':'var(--txt)')+';cursor:pointer;font-size:13px;font-weight:'+(on?'600':'400')+';transition:all .15s">'+y+'</button>';
+    ySel+='<button onclick="_maToggleYear('+y+')" style="padding:4px 14px;border-radius:20px;border:1px solid '+(on?'var(--blue)':'var(--brd)')+';background:'+(on?'var(--blue)':'transparent')+';color:'+(on?'var(--onAccent)':'var(--txt)')+';cursor:pointer;font-size:13px;font-weight:'+(on?'600':'400')+';transition:all .15s">'+y+'</button>';
   });
   ySel+='</div>';
   if(years.length<2){
@@ -31004,12 +31294,16 @@ async function checkUpgradeBackup(){
   if(lastVer===APP_VERSION)return; // aceeasi versiune
   // Versiune diferita — facem backup automat
   try{
-    const d={};for(const s of ST){if(s==='config')continue;d[s]=await ga(s)}
+    // v13.96 (G-42) - gaAll: cu ga() backup-ul pierdea tombstone-urile si o restaurare reinvia stergerile la primul merge.
+    const d={};for(const s of ST){if(s==='config')continue;d[s]=await gaAll(s)}
     const out={version:lastVer,upgraded_to:APP_VERSION,auto_backup:true,exported:new Date().toISOString(),config:CFG,...d};
     const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
     const fname='CPIAAM_AutoBackup_v'+lastVer+'_'+todayISO()+'.json';
     // Salvam in IndexedDB un backup intern (nu cerem file picker)
     await pt('config',{id:'_auto_backup_'+lastVer,type:'auto_backup',version:lastVer,date:new Date().toISOString(),data:JSON.stringify(out)},true);
+    // v13.96 (G-42) - se pastreaza doar ultimele 3; inainte se acumulau la fiecare versiune (cu atasamente
+    // base64 cu tot) si nu le citea nimeni. Se descarca din Configurare → Date & Backup.
+    try{const olds=(await ga('config')).filter(r=>r&&r.type==='auto_backup').sort((a,b)=>String(b.date).localeCompare(String(a.date)));for(let i=3;i<olds.length;i++)await _idbHardDelete('config',olds[i].id)}catch(e){console.warn('Auto-backup prune:',e)}
     showUpgradeNotice(lastVer);
   }catch(e){console.error('Auto-backup failed:',e)}
 }
@@ -31017,7 +31311,7 @@ function showUpgradeNotice(fromVer){
   const d=document.createElement('div');d.id='upgrade-notice';
   d.style.cssText='background:#D1FAE5;color:#065F46;padding:12px 18px;font-size:13px;border-bottom:2px solid #6EE7B7;font-family:var(--f);display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap';
   d.innerHTML='<div style="flex:1"><strong>&#10004; Upgrade reusit: v'+esc(fromVer)+' &#8594; v'+esc(APP_VERSION)+'</strong>'+
-    ' — Un backup automat al datelor tale a fost creat. '+
+    ' — Un backup automat al datelor tale a fost creat (Configurare &#8594; Date &amp; Backup &#8594; backup-uri automate). '+
     '<span style="font-size:12px;opacity:.8">Recomandam sa salvezi si un backup manual (Configurare &#8594; Backup).</span></div>'+
     '<button class="btn bo bsm" onclick="document.getElementById(\'upgrade-notice\').remove()" style="line-height:1">&times;</button>';
   const mn=document.getElementById('app-mn');
@@ -31044,6 +31338,9 @@ function showUpgradeNotice(fromVer){
     if(lsSetup&&(configs.length===0||!configs[0].setup_complete)){try{await loadCfg()}catch(e){}}
 
     await loadCfg();
+    // v13.96 (G-20) - snapshot-ul initial al elementelor de configurare se ia DUPA incarcare; luat inainte,
+    // prima editare de dupa pornire nu primea marca de timp si nu se propaga la merge.
+    if(typeof _cfgStampChanged==='function'){_cfgSnap=null;_cfgStampChanged()}
     // Dark mode: prefer localStorage (per-browser) over CFG (synced)
     var lsDark=localStorage.getItem('cpiaam_dark_mode');
     A.darkMode=lsDark!==null?lsDark==='true':!!CFG.dark_mode;
@@ -31073,6 +31370,8 @@ function showUpgradeNotice(fromVer){
     _migrateDeseuriToHA().catch(function(){});
     if(typeof _purgeIaamDomiciliu==='function')_purgeIaamDomiciliu().catch(function(){});   // v13.95 (G-64)
     setTimeout(buildNotifications,3000);
+    // v13.97 (G-51) - sabloanele de raportari fara instante pe anul curent primesc instantele la pornire.
+    setTimeout(function(){if(typeof _calEnsureInstancesForYear==='function')_calEnsureInstancesForYear().then(function(n){if(n){A._notifDismissedAt=0;buildNotifications()}}).catch(function(){})},2500);
     setTimeout(checkForUpdate,4000);
     setTimeout(_updateInstallBtn,500);
   } else {

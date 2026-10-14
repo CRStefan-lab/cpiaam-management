@@ -1,10 +1,11 @@
 {
-  "version": "14.13",
-  "version_note": "Clasificarea MDR/XDR: cefalosporinele scrise prin cod nu mai sunt numarate ca si carbapeneme; formele „Cefepim”, „Oxacilin”, „Cefixim” sunt recunoscute",
+  "version": "14.15",
+  "version_note": "Teste rapide de proteine pe suprafete (colorimetric), separat de ATP, in pagina, pe dashboard si in rapoarte",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "ALERTE XDR / PDR: cand laboratorul scrie codurile antibioticelor (CAZ, FEP, CTX, CRO), la Pseudomonas si Acinetobacter cefalosporinele erau numarate gresit la carbapeneme, ceea ce putea schimba clasa unui izolat (de exemplu MDR afisat ca non-MDR). Reparat.",
-    "Formele scurte „Cefepim”, „Oxacilin” si „Cefixim” sunt acum recunoscute; inainte, un S. aureus cu „Oxacilin: R” nu era incadrat ca MRSA / MDR.",
-    "Semnalate si verificate din editia europeana (IPC Manager). Dupa actualizare, deschide pagina Alerte XDR / PDR: clasificarea se recalculeaza singura din izolatele importate."
+    "AUTOCONTROL: fila „ATP / Proteine” — pe langa ATP poti inregistra teste rapide de proteine pe suprafete (de ex. Pro-Check). Alegi culoarea citita: curat = conform; atentie si proteine prezente = neconform. Optional: retestul dupa recuratare si lotul kitului.",
+    "Testele de proteine au carduri proprii pe pagina si pe dashboard si rand separat in Raportul Anual, Analiza Autocontrol, Raportul Trimestrial si PV-ul sedintei — nu se aduna niciodata la ATP. „Atentie” se numara la neconforme si apare si separat.",
+    "Randul TOTAL din sumarul autocontrolului (Raportul Anual si Analiza Autocontrol) aduna toate metodele, deci include si testele de proteine; randul ATP ramane doar al ATP-ului.",
+    "Corectat: cardul ATP de pe dashboard numara neconformele la fel ca rapoartele (o proba pe o suprafata stearsa din lista aparea „conforma” doar pe dashboard); pagina ATP fara probe arata „—” in loc de „0%”."
   ]
 }

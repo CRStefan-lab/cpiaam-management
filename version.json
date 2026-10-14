@@ -1,11 +1,8 @@
 {
-  "version": "14.15",
-  "version_note": "Teste rapide de proteine pe suprafete (colorimetric), separat de ATP, in pagina, pe dashboard si in rapoarte",
+  "version": "14.16",
+  "version_note": "Raportul Trimestrial si PV-ul pomenesc si testele de proteine cand perioada nu are inregistrari",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "AUTOCONTROL: fila „ATP / Proteine” — pe langa ATP poti inregistra teste rapide de proteine pe suprafete (de ex. Pro-Check). Alegi culoarea citita: curat = conform; atentie si proteine prezente = neconform. Optional: retestul dupa recuratare si lotul kitului.",
-    "Testele de proteine au carduri proprii pe pagina si pe dashboard si rand separat in Raportul Anual, Analiza Autocontrol, Raportul Trimestrial si PV-ul sedintei — nu se aduna niciodata la ATP. „Atentie” se numara la neconforme si apare si separat.",
-    "Randul TOTAL din sumarul autocontrolului (Raportul Anual si Analiza Autocontrol) aduna toate metodele, deci include si testele de proteine; randul ATP ramane doar al ATP-ului.",
-    "Corectat: cardul ATP de pe dashboard numara neconformele la fel ca rapoartele (o proba pe o suprafata stearsa din lista aparea „conforma” doar pe dashboard); pagina ATP fara probe arata „—” in loc de „0%”."
+    "RAPOARTE: in Raportul Trimestrial si in PV-ul sedintei CPIAAM, mesajul pentru o perioada fara inregistrari numeste acum si testele rapide de proteine („ATP, teste rapide de proteine si UV Check — fara inregistrari”)."
   ]
 }

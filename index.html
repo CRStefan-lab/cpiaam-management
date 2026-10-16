@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v14.18</title>
+<title>CPIAAM Management v14.19</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2778,7 +2778,7 @@ function _extractCfg0(c){
   return null;
 }
 
-const APP_VERSION='14.18';
+const APP_VERSION='14.19';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -10914,7 +10914,9 @@ function atpHasRepeat(r){return atpTestType(r)==='protein'?!!r.protein_repeat:(r
 const ATP_PROT_EXCLUDE=/aeromicroflor|^\s*aer\b|(^|[^a-z])apa([^a-z]|$)|teste?\s+biologic/;
 function _atpNameNorm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/\p{M}/gu,'')}
 function atpProtProbeTypes(){
-  return (CFG.probe_types||[]).filter(function(p){var n=typeof p==='string'?p:(p&&p.name)||'';return n&&!ATP_PROT_EXCLUDE.test(_atpNameNorm(n))});
+  // v14.19 - alfabetic, ca lista probelor microbiologice (optsId)
+  return (CFG.probe_types||[]).filter(function(p){var n=typeof p==='string'?p:(p&&p.name)||'';return n&&!ATP_PROT_EXCLUDE.test(_atpNameNorm(n))})
+    .slice().sort(function(a,b){return String((a&&a.name)||a||'').localeCompare(String((b&&b.name)||b||''))});
 }
 // Ce s-a testat: la proteine tipul probei (cu cadere pe suprafata ATP la testele salvate in 14.15-14.17), la ATP suprafata.
 function atpSampleName(r){
@@ -28800,7 +28802,9 @@ async function rCfg(el){
     // ═══ GRUPUL 2: AUTOCONTROL ═══
   '<div class="pn" id="cfg-probe"><div class="ph"><h3>'+(isEN?'Autocontrol Sample Types':'Tipuri Probe Autocontrol')+'</h3></div><div class="pb">'+
     // v13.29 - editare in-place a numelui tipului de proba (click pe pencil ✎)
-    '<div class="tag-list">'+CFG.probe_types.map((p,i)=>{const nm=typeof p==='string'?p:(p.name||p.id||'?');return '<span class="tag">'+esc(nm)+'<span class="tag-x" onclick="renameProbe('+i+')" title="Redenumeste" style="cursor:pointer;color:#2563B0;margin-right:4px">&#9998;</span><span class="tag-x" onclick="cfgDelete(&quot;probe_types&quot;,'+i+')" title="Sterge">&#215;</span></span>'}).join('')+'</div>'+
+    // v14.19 - afisate alfabetic; fiecare eticheta pastreaza indexul REAL (renameProbe / cfgDelete lucreaza pe pozitie), iar
+    // lista salvata nu se reordoneaza (ar schimba fisierul comun fara ca nimeni sa fi modificat ceva)
+    '<div class="tag-list">'+CFG.probe_types.map((p,i)=>({p:p,i:i,nm:typeof p==='string'?p:(p.name||p.id||'?')})).sort((a,b)=>a.nm.localeCompare(b.nm)).map(({p,i,nm})=>{return '<span class="tag">'+esc(nm)+'<span class="tag-x" onclick="renameProbe('+i+')" title="Redenumeste" style="cursor:pointer;color:#2563B0;margin-right:4px">&#9998;</span><span class="tag-x" onclick="cfgDelete(&quot;probe_types&quot;,'+i+')" title="Sterge">&#215;</span></span>'}).join('')+'</div>'+
     '<div class="fr" style="margin-top:10px"><div class="fg"><input id="new-probe" placeholder="Tip proba nou"></div><div><button class="btn bp" onclick="var v=document.getElementById(\'new-probe\').value.trim();if(v){CFG.probe_types.push({id:genId(\'probe\'),name:v});saveCfg();render()}" style="margin-top:22px">+ Adauga</button></div></div>'+
   '</div></div>'+
 
@@ -30351,6 +30355,7 @@ function downloadReportFile(){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'14.19',date:'2026-10-16',summary:"Tipurile de proba apar in ordine alfabetica si in Configurare (Introducere date → Tipuri Probe Autocontrol), si la testele de proteine (lista „Tip proba” din dialog si grupa din filtru), ca in restul aplicatiei."},
   {version:'14.18',date:'2026-10-16',summary:"Testele rapide de proteine se inregistreaza pe „Tip proba”, din aceeasi lista ca probele microbiologice (Configurare → Tipuri probe), fara cele la care testul nu are sens: apa, aeromicroflora, testele biologice de sterilizare. ATP-ul ramane pe „Tip suprafata”, cu pragurile RLU. Rapoartele grupeaza testele de proteine pe tipuri de proba."},
   {version:'14.17',date:'2026-10-16',summary:"Autocontrol: cautare dupa nr. de inregistrare in fila Probe si in fila ATP / Proteine; un click pe o proba din fereastra unei celule a matricei te duce la ea in fila Probe; testele de proteine (si ATP) au nr. de inregistrare si butonul „Salveaza + Noua”, ca probele microbiologice."},
   {version:'14.16',date:'2026-10-14',summary:"Raportul Trimestrial si PV-ul sedintei CPIAAM pomenesc si testele rapide de proteine in mesajul pentru perioadele fara inregistrari („ATP, teste rapide de proteine si UV Check — fara inregistrari”)."},

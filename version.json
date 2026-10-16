@@ -1,10 +1,9 @@
 {
-  "version": "14.18",
-  "version_note": "Autocontrol: cautare dupa nr. de inregistrare, click din matrice la proba, testele de proteine pe tipuri de proba si cu Salveaza + Noua",
+  "version": "14.19",
+  "version_note": "Tipurile de proba in ordine alfabetica in Configurare si la testele de proteine",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "AUTOCONTROL: in fila Probe (si in ATP / Proteine) poti cauta o proba dupa nr. de inregistrare — merge si o parte din numar.",
-    "In fila Prezentare, un click pe o proba din fereastra unei celule te duce direct la ea in fila Probe, cu randul evidentiat.",
-    "Testele de proteine se inregistreaza acum pe „Tip proba”, din aceeasi lista ca probele microbiologice (fara apa, aeromicroflora si testele biologice de sterilizare), au nr. de inregistrare si butonul „Salveaza + Noua”. ATP-ul ramane pe „Tip suprafata”, cu pragurile RLU."
+    "Tipurile de proba apar in ordine alfabetica in Configurare (Tipuri Probe Autocontrol) si in lista „Tip proba” de la testele de proteine, ca in restul aplicatiei.",
+    "Include si 14.18: testele de proteine pe „Tip proba”, cautarea dupa nr. de inregistrare, click din matrice la proba, „Salveaza + Noua”."
   ]
 }

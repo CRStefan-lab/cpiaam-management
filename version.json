@@ -1,8 +1,10 @@
 {
-  "version": "14.16",
-  "version_note": "Raportul Trimestrial si PV-ul pomenesc si testele de proteine cand perioada nu are inregistrari",
+  "version": "14.18",
+  "version_note": "Autocontrol: cautare dupa nr. de inregistrare, click din matrice la proba, testele de proteine pe tipuri de proba si cu Salveaza + Noua",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "RAPOARTE: in Raportul Trimestrial si in PV-ul sedintei CPIAAM, mesajul pentru o perioada fara inregistrari numeste acum si testele rapide de proteine („ATP, teste rapide de proteine si UV Check — fara inregistrari”)."
+    "AUTOCONTROL: in fila Probe (si in ATP / Proteine) poti cauta o proba dupa nr. de inregistrare — merge si o parte din numar.",
+    "In fila Prezentare, un click pe o proba din fereastra unei celule te duce direct la ea in fila Probe, cu randul evidentiat.",
+    "Testele de proteine se inregistreaza acum pe „Tip proba”, din aceeasi lista ca probele microbiologice (fara apa, aeromicroflora si testele biologice de sterilizare), au nr. de inregistrare si butonul „Salveaza + Noua”. ATP-ul ramane pe „Tip suprafata”, cu pragurile RLU."
   ]
 }

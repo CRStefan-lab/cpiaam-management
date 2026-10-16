@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v14.16</title>
+<title>CPIAAM Management v14.18</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2778,7 +2778,7 @@ function _extractCfg0(c){
   return null;
 }
 
-const APP_VERSION='14.16';
+const APP_VERSION='14.18';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -9766,7 +9766,19 @@ var _autoTab='prezentare'; // main tab: 'prezentare','planificare','probe'
 var _autoPopup=null; // {ptId,secId} for cell popup
 var _autoSort={col:'date',dir:'desc'}; // probe table sort
 var _autoPage=0; // probe table pagination
-var _autoProbeFilters={sec:'',type:'',result:'',dsp:'',dateFrom:'',dateTo:''}; // probe filters
+var _autoProbeFilters={reg:'',sec:'',type:'',result:'',dsp:'',dateFrom:'',dateTo:''}; // probe filters (v14.17 + reg)
+var _autoFocusId=null;   // v14.17 - proba la care duce un click din fereastra matricei (fila Probe o arata si o evidentiaza)
+// v14.17 - nr. de inregistrare comparat fara spatii si fara diferenta de majuscule („1234 / 2026” = „1234/2026”)
+function _regNorm(s){return String(s||'').toLowerCase().replace(/\s+/g,'')}
+// Click pe o proba din fereastra unei celule: fila Probe, filtrata pe tipul si sectia celulei, la pagina probei, cu randul evidentiat.
+async function _autoGoToSample(id){
+  var r=(await ga('autocontrol')).find(function(x){return x.id===id});if(!r)return;
+  closeAutoPopup();
+  _autoProbeFilters={reg:'',sec:r.section||'',type:r.probe_type||'',result:'',dsp:'',dateFrom:'',dateTo:''};
+  _autoFocusId=id;_autoTab='probe';
+  await render();
+  var row=document.getElementById('ac-row-'+id);if(row)row.scrollIntoView({block:'center'});
+}
 var _autoSummaryOpen=false;
 var _autoChartOpen=false;
 var AC_PAGE_SIZE=50;
@@ -10059,7 +10071,7 @@ function showAutoPopup(evt,ptId,secId){
     html+='<table><thead><tr><th>'+(isEN?'Reg. No.':'Nr. Inreg.')+'</th><th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Result':'Rezultat')+'</th><th>'+(isEN?'Pathogen':'Germen')+'</th></tr></thead><tbody>';
     records.forEach(r=>{
       const regDisp=r.reg_number?r.reg_number:'—';
-      html+='<tr><td>'+regDisp+'</td><td>'+(r.date||MO[r.month-1]||'—')+'</td><td>'+(r.result==='conform'?'<span class="bdg bdg-g">C</span>':'<span class="bdg bdg-r">NC</span>')+'</td><td>'+(r.organism||'—')+'</td></tr>';
+      html+='<tr style="cursor:pointer" title="'+(isEN?'Open this sample in the Samples tab':'Deschide proba in fila Probe')+'" onclick="_autoGoToSample('+_jsArg(r.id)+')"><td>'+esc(regDisp)+'</td><td>'+(r.date||MO[r.month-1]||'—')+'</td><td>'+(r.result==='conform'?'<span class="bdg bdg-g">C</span>':'<span class="bdg bdg-r">NC</span>')+'</td><td>'+(r.organism||'—')+'</td></tr>';
     });
     html+='</tbody></table>';
     if(records.length===0) html+='<div style="color:var(--txtL);text-align:center;padding:8px">—</div>';
@@ -10350,6 +10362,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
 
   // Filters
   h+='<div class="ac-filters">';
+  h+='<div class="fg"><label>'+(isEN?'Registration No.':'Nr. inregistrare')+'</label><input id="ac-f-reg" type="search" value="'+esc(_autoProbeFilters.reg||'')+'" placeholder="'+(isEN?'e.g. 1234':'ex: 1234')+'" oninput="_autoProbeFilters.reg=this.value;_autoPage=0;_renderKeepFocus()"></div>';
   h+='<div class="fg"><label>'+(isEN?'Section':'Sectie')+'</label><select onchange="_autoProbeFilters.sec=this.value;_autoPage=0;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+secOptsGrouped(_autoProbeFilters.sec)+'</select></div>';
   h+='<div class="fg"><label>'+(isEN?'Sample Type':'Tip Proba')+'</label><select onchange="_autoProbeFilters.type=this.value;_autoPage=0;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+optsId(CFG.probe_types,_autoProbeFilters.type)+'</select></div>';
   h+='<div class="fg"><label>'+(isEN?'Result':'Rezultat')+'</label><select onchange="_autoProbeFilters.result=this.value;_autoPage=0;render()"><option value="">'+(isEN?'All':'Toate')+'</option><option value="conform"'+ (_autoProbeFilters.result==='conform'?' selected':'')+'>Conforme</option><option value="neconform"'+(_autoProbeFilters.result==='neconform'?' selected':'')+'>Neconforme</option></select></div>';
@@ -10375,6 +10388,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
 
   // Apply filters
   let filtered=data.slice();
+  if(_autoProbeFilters.reg){var _rq=_regNorm(_autoProbeFilters.reg);filtered=filtered.filter(r=>_regNorm(r.reg_number).indexOf(_rq)>=0)}
   if(_autoProbeFilters.sec)filtered=filtered.filter(r=>r.section===_autoProbeFilters.sec);
   if(_autoProbeFilters.type)filtered=filtered.filter(r=>r.probe_type===_autoProbeFilters.type);
   if(_autoProbeFilters.result)filtered=filtered.filter(r=>r.result===_autoProbeFilters.result);
@@ -10405,6 +10419,9 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
     return va<vb?-sd:va>vb?sd:0;
   });
 
+  // v14.17 - venit din fereastra matricei: pagina pe care e proba (o singura data; apoi paginarea e a userului)
+  const _focus=_autoFocusId;_autoFocusId=null;
+  if(_focus){var _fi=filtered.findIndex(r=>r.id===_focus);if(_fi>=0)_autoPage=Math.floor(_fi/AC_PAGE_SIZE)}
   // Pagination
   const totalPages=Math.max(1,Math.ceil(filtered.length/AC_PAGE_SIZE));
   if(_autoPage>=totalPages)_autoPage=totalPages-1;
@@ -10413,7 +10430,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
 
   h+='<div style="overflow-x:auto">';
   if(filtered.length===0){
-    h+='<div class="es"><p>'+(isEN?'No samples match the filters.':'Nicio proba nu corespunde filtrelor.')+'</p></div>';
+    h+='<div class="es"><p>'+(_autoProbeFilters.reg?(isEN?'No sample has this registration number in the selected period.':'Nicio proba cu acest nr. de inregistrare in perioada aleasa.'):(isEN?'No samples match the filters.':'Nicio proba nu corespunde filtrelor.'))+'</p></div>';
   } else {
     h+='<table class="dt"><thead><tr>'+
       '<th>#</th>'+
@@ -10428,7 +10445,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
     '</tr></thead><tbody>';
     pageData.forEach((r,i)=>{
       const rowNum=_autoPage*AC_PAGE_SIZE+i+1;
-      h+='<tr><td>'+rowNum+'</td>'+
+      h+='<tr id="ac-row-'+esc(r.id)+'"'+(r.id===_focus?' style="background:var(--bgBlue,#EFF6FF);box-shadow:inset 4px 0 0 var(--teal)"':'')+'><td>'+rowNum+'</td>'+
         '<td>'+fmtDate(r.date)+'</td>'+
         '<td style="font-size:11px">'+(r.reg_number||'—')+'</td>'+
         '<td>'+rProbe(r.probe_type)+'</td>'+
@@ -10890,6 +10907,23 @@ function atpVerdict(r,repeat){
 }
 function atpIsCaution(r,repeat){return atpTestType(r)==='protein'&&(repeat?r.protein_repeat:r.protein_result)==='caution'}
 function atpHasRepeat(r){return atpTestType(r)==='protein'?!!r.protein_repeat:(r.rlu_repeat!=null&&r.rlu_repeat!=='')}
+// v14.18 - cerut de user: testele de proteine aleg TIPUL PROBEI din aceeasi lista ca autocontrolul microbiologic
+// (Configurare → Tipuri probe), salvat in `probe_type`; ATP-ul ramane pe suprafetele ATP (`surface_type`, cu prag RLU).
+// Se scot tipurile pe care un test de proteine nu le are sens (spusa userului: apa sterila, aeromicroflora, teste biologice
+// de sterilizare): orice apa, aerul / aeromicroflora, testele biologice. Pe NUME, fiindca listele difera de la spital la spital.
+const ATP_PROT_EXCLUDE=/aeromicroflor|^\s*aer\b|(^|[^a-z])apa([^a-z]|$)|teste?\s+biologic/;
+function _atpNameNorm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/\p{M}/gu,'')}
+function atpProtProbeTypes(){
+  return (CFG.probe_types||[]).filter(function(p){var n=typeof p==='string'?p:(p&&p.name)||'';return n&&!ATP_PROT_EXCLUDE.test(_atpNameNorm(n))});
+}
+// Ce s-a testat: la proteine tipul probei (cu cadere pe suprafata ATP la testele salvate in 14.15-14.17), la ATP suprafata.
+function atpSampleName(r){
+  if(atpTestType(r)==='protein'){
+    if(r.probe_type)return typeof rProbe==='function'?rProbe(r.probe_type):r.probe_type;
+    return r.surface_type?getAtpSurfaceName(r.surface_type):'—';
+  }
+  return getAtpSurfaceName(r.surface_type);
+}
 // Numaratoarea pe un tip: {n, conf, nc, caution, pct (null fara date), rep:{n, conf, pct}}. Fara date → pct null → „—”.
 function atpStats(list,type){
   var l=(list||[]).filter(function(r){return atpTestType(r)===type});
@@ -10901,7 +10935,7 @@ function atpStats(list,type){
 }
 
 // v13.34 - state filtre ATP (sec, surface, result, dateFrom, dateTo); v14.15 + type (ATP / proteine)
-var _atpFilters={type:'',sec:'',surface:'',result:'',dateFrom:'',dateTo:''};
+var _atpFilters={reg:'',type:'',sec:'',surface:'',result:'',dateFrom:'',dateTo:''};   // v14.17 + reg
 function _handleAtpDateInput(input,field){
   var v=input.value||'';
   if(v){var p=v.split('-');if(p.length===3 && parseInt(p[0],10)<1000) return}
@@ -10940,9 +10974,10 @@ async function renderAtpModule(isEN){
 
   // v13.34 - aplica filtre
   let allAtp=allAtpRaw.slice();
+  if(_atpFilters.reg){const q=_regNorm(_atpFilters.reg);allAtp=allAtp.filter(r=>_regNorm(r.reg_number).indexOf(q)>=0)}
   if(_atpFilters.type)allAtp=allAtp.filter(r=>atpTestType(r)===_atpFilters.type);
   if(_atpFilters.sec)allAtp=allAtp.filter(r=>r.section===_atpFilters.sec);
-  if(_atpFilters.surface)allAtp=allAtp.filter(r=>r.surface_type===_atpFilters.surface);
+  if(_atpFilters.surface)allAtp=allAtp.filter(r=>r.surface_type===_atpFilters.surface||r.probe_type===_atpFilters.surface);
   if(_atpFilters.result)allAtp=allAtp.filter(r=>atpVerdict(r)===_atpFilters.result);
   if(_atpFilters.dateFrom)allAtp=allAtp.filter(r=>r.date&&r.date>=_atpFilters.dateFrom);
   if(_atpFilters.dateTo)allAtp=allAtp.filter(r=>r.date&&r.date<=_atpFilters.dateTo);
@@ -10961,11 +10996,14 @@ async function renderAtpModule(isEN){
 
   // v13.34 - filtre; v14.15 + Tip
   h+='<div class="ac-filters">';
+  h+='<div class="fg"><label>'+(isEN?'Registration No.':'Nr. inregistrare')+'</label><input id="atp-f-reg" type="search" value="'+esc(_atpFilters.reg||'')+'" placeholder="'+(isEN?'e.g. 1234':'ex: 1234')+'" oninput="_atpFilters.reg=this.value;_renderKeepFocus()"></div>';
   h+='<div class="fg"><label>'+(isEN?'Type':'Tip')+'</label><select onchange="_atpFilters.type=this.value;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+
     '<option value="atp"'+(_atpFilters.type==='atp'?' selected':'')+'>ATP</option><option value="protein"'+(_atpFilters.type==='protein'?' selected':'')+'>'+(isEN?'Proteins':'Proteine')+'</option></select></div>';
   h+='<div class="fg"><label>'+(isEN?'Section':'Sectie')+'</label><select onchange="_atpFilters.sec=this.value;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+secOptsGrouped(_atpFilters.sec)+'</select></div>';
-  var surfOpts=surfaces.map(s=>'<option value="'+esc(s.id)+'"'+(_atpFilters.surface===s.id?' selected':'')+'>'+esc(s.name)+'</option>').join('');
-  h+='<div class="fg"><label>'+(isEN?'Surface':'Suprafata')+'</label><select onchange="_atpFilters.surface=this.value;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+surfOpts+'</select></div>';
+  // v14.18 - ATP: suprafetele; proteine: tipurile de proba (aceeasi lista ca la microbiologic)
+  var surfOpts='<optgroup label="'+(isEN?'ATP surfaces':'Suprafete ATP')+'">'+surfaces.map(s=>'<option value="'+esc(s.id)+'"'+(_atpFilters.surface===s.id?' selected':'')+'>'+esc(s.name)+'</option>').join('')+'</optgroup>'+
+    '<optgroup label="'+(isEN?'Protein — sample types':'Proteine — tipuri de proba')+'">'+atpProtProbeTypes().map(p=>'<option value="'+esc(p.id)+'"'+(_atpFilters.surface===p.id?' selected':'')+'>'+esc(p.name)+'</option>').join('')+'</optgroup>';
+  h+='<div class="fg"><label>'+(isEN?'Surface / sample':'Suprafata / proba')+'</label><select onchange="_atpFilters.surface=this.value;render()"><option value="">'+(isEN?'All':'Toate')+'</option>'+surfOpts+'</select></div>';
   h+='<div class="fg"><label>'+(isEN?'Result':'Rezultat')+'</label><select onchange="_atpFilters.result=this.value;render()"><option value="">'+(isEN?'All':'Toate')+'</option><option value="conform"'+(_atpFilters.result==='conform'?' selected':'')+'>Conform</option><option value="neconform"'+(_atpFilters.result==='neconform'?' selected':'')+'>Neconform</option></select></div>';
   function _atpDt(field,label){
     var val=_atpFilters[field]||'';
@@ -10983,18 +11021,18 @@ async function renderAtpModule(isEN){
 
   // Table
   if(allAtp.length===0){
-    var hasFilters=_atpFilters.type||_atpFilters.sec||_atpFilters.surface||_atpFilters.result||_atpFilters.dateFrom||_atpFilters.dateTo;
+    var hasFilters=_atpFilters.reg||_atpFilters.type||_atpFilters.sec||_atpFilters.surface||_atpFilters.result||_atpFilters.dateFrom||_atpFilters.dateTo;
     h+='<div class="es"><p>'+(hasFilters?(isEN?'No test matches the filters.':'Niciun test nu corespunde filtrelor.'):(isEN?'No ATP or protein tests for':'Niciun test ATP sau de proteine pentru')+' '+A.year)+'.</p></div>';
   }else{
-    h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Test':'Test')+'</th><th>'+(isEN?'Section':'Secția')+'</th><th>'+(isEN?'Surface':'Suprafață')+'</th>'+
+    h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Reg. No.':'Nr. Inreg.')+'</th><th>'+(isEN?'Test':'Test')+'</th><th>'+(isEN?'Section':'Secția')+'</th><th>'+(isEN?'Surface / sample':'Suprafață / probă')+'</th>'+
       '<th>'+(isEN?'Reading':'Citire')+'</th><th>'+(isEN?'Result':'Rezultat')+'</th><th>'+(isEN?'Repeat':'Repetiție')+'</th><th>'+(isEN?'After repeat':'După rep.')+'</th><th>'+(isEN?'Actions':'Acțiuni')+'</th></tr></thead><tbody>';
     allAtp.forEach((r,i)=>{
       const prot=atpTestType(r)==='protein';
-      const sName=getAtpSurfaceName(r.surface_type);
+      const sName=atpSampleName(r);
       const thr=atpThreshold(r.surface_type);
       const read=prot?_atpProtChip(r.protein_result):'<strong>'+esc(r.rlu_value)+'</strong> RLU';
       const rep=prot?(r.protein_repeat?_atpProtChip(r.protein_repeat):'—'):(r.rlu_repeat!=null&&r.rlu_repeat!==''?'<strong>'+esc(r.rlu_repeat)+'</strong> RLU':'—');
-      h+='<tr><td>'+(i+1)+'</td><td>'+fmtDate(r.date)+'</td><td>'+(prot?(isEN?'Protein':'Proteine')+(r.kit_lot?'<div style="font-size:10px;color:var(--txtL)">'+(isEN?'lot ':'lot ')+esc(r.kit_lot)+'</div>':''):'ATP')+'</td><td>'+rSec(r.section)+'</td>'+
+      h+='<tr><td>'+(i+1)+'</td><td>'+fmtDate(r.date)+'</td><td style="font-size:11px">'+esc(r.reg_number||'\u2014')+'</td><td>'+(prot?(isEN?'Protein':'Proteine')+(r.kit_lot?'<div style="font-size:10px;color:var(--txtL)">'+(isEN?'lot ':'lot ')+esc(r.kit_lot)+'</div>':''):'ATP')+'</td><td>'+rSec(r.section)+'</td>'+
         '<td>'+esc(sName)+(prot?'':' <span style="font-size:10px;color:var(--txtL)">(≤'+thr+')</span>')+'</td>'+
         '<td>'+read+'</td><td>'+_atpBadge(r)+'</td><td>'+rep+'</td><td>'+(atpHasRepeat(r)?_atpBadge(r,true):'—')+'</td>'+
         '<td class="act"><button onclick="editAtp('+_jsArg(r.id)+')" title="'+T('btn_edit')+'">&#9998;</button><button onclick="delRec(\'atp\','+_jsArg(r.id)+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
@@ -11016,15 +11054,19 @@ async function renderAtpModule(isEN){
 
 async function editAtp(id){
   const isEN=CFG.lang==='en';
-  const blank={year:A.year,date:todayISO(),test_type:'atp',rlu_value:'',rlu_repeat:'',protein_result:'',protein_repeat:'',kit_lot:'',surface_type:'',section:'',location:'',notes:''};
+  const blank={year:A.year,date:todayISO(),test_type:'atp',reg_number:'',rlu_value:'',rlu_repeat:'',protein_result:'',protein_repeat:'',kit_lot:'',surface_type:'',probe_type:'',section:'',location:'',notes:''};
   let r=id?(await ga('atp')).find(x=>x.id===id):blank;
   if(id&&r)_editRemember('atp',r);   // v13.98
   if(!r)r=blank;
   const type=atpTestType(r);
   const surfaces=getAtpSurfaces();
   // v13.62 - optiune goala + validare la salvare (vezi istoricul: o suprafata aleasa tacit dadea alt prag).
-  // v14.15 - textul optiunii arata pragul RLU doar la ATP; la proteine pragul nu are sens (_atpTypeToggle il schimba).
-  const surfOpts='<option value="">—</option>'+surfaces.map(s=>'<option value="'+esc(s.id)+'" data-name="'+esc(s.name)+'" data-thr="'+esc(s.threshold)+'"'+(r.surface_type===s.id?' selected':'')+'>'+esc(s.name)+(type==='atp'?' (prag ≤'+s.threshold+' RLU)':'')+'</option>').join('');
+  // v14.18 - suprafetele (cu prag RLU) sunt doar ale ATP-ului; proteinele aleg tipul probei (lista microbiologica, fara
+  // apa / aer / teste biologice). Un tip deja salvat pe test ramane in lista la editare, chiar daca intre timp a iesit din ea.
+  const surfOpts='<option value="">—</option>'+surfaces.map(s=>'<option value="'+esc(s.id)+'"'+(r.surface_type===s.id?' selected':'')+'>'+esc(s.name)+' (prag ≤'+s.threshold+' RLU)</option>').join('');
+  const ptList=atpProtProbeTypes().slice();
+  if(r.probe_type&&!ptList.some(p=>p.id===r.probe_type))ptList.push({id:r.probe_type,name:rProbe(r.probe_type)});
+  const ptOpts='<option value="">—</option>'+ptList.map(p=>'<option value="'+esc(p.id)+'"'+(r.probe_type===p.id?' selected':'')+'>'+esc(p.name)+'</option>').join('');
   const pOpts=function(cur,withEmpty){return (withEmpty?'<option value="">—</option>':'')+ATP_PROTEIN_CODES.map(c=>'<option value="'+c+'"'+(cur===c?' selected':'')+'>'+esc(atpProteinLabel(c,isEN))+'</option>').join('')};
   const opt=' <span style="color:var(--txtL);font-size:11px">('+(isEN?'optional':'opțional')+')</span>';
   openM(id?(isEN?'Edit test':'Editare test'):(isEN?'New test':'Test nou'),
@@ -11033,8 +11075,10 @@ async function editAtp(id){
       '<option value="protein"'+(type==='protein'?' selected':'')+'>'+(isEN?'Rapid protein test (colour)':'Test rapid de proteine (culoare)')+'</option></select></div>'+
     '<div class="fg"><label>'+(isEN?'Date':'Data')+'</label><input type="date" id="f-atp-date" value="'+(r.date||'')+'"></div></div>'+
     '<div class="fr"><div class="fg"><label>'+(isEN?'Section':'Secția')+'</label><select id="f-atp-sec"><option value="">—</option>'+secOptsGrouped(r.section)+'</select></div>'+
-    '<div class="fg"><label>'+(isEN?'Surface type':'Tip suprafață')+'</label><select id="f-atp-surf" onchange="updateAtpResult()">'+surfOpts+'</select></div></div>'+
-    '<div class="fg"><label>'+(isEN?'Location detail':'Locatie detaliu')+'</label><input id="f-atp-loc" value="'+esc(r.location||'')+'" placeholder="'+(isEN?'e.g. Room 3, bed 2':'ex. Salon 3, pat 2')+'"></div>'+
+    '<div class="fg" id="f-atp-surf-box"'+(type==='atp'?'':' style="display:none"')+'><label>'+(isEN?'Surface type':'Tip suprafață')+'</label><select id="f-atp-surf" onchange="updateAtpResult()">'+surfOpts+'</select></div>'+
+    '<div class="fg" id="f-atp-ptype-box"'+(type==='protein'?'':' style="display:none"')+'><label>'+(isEN?'Sample type':'Tip probă')+'</label><select id="f-atp-ptype">'+ptOpts+'</select></div></div>'+
+    '<div class="fr"><div class="fg"><label>'+(isEN?'Registration No.':'Nr. inregistrare')+'</label><input id="f-atp-reg" value="'+esc(r.reg_number||'')+'" placeholder="'+(isEN?'e.g. 1234/2026':'ex: 1234/2026')+'"></div>'+
+    '<div class="fg"><label>'+(isEN?'Location detail':'Locatie detaliu')+'</label><input id="f-atp-loc" value="'+esc(r.location||'')+'" placeholder="'+(isEN?'e.g. Room 3, bed 2':'ex. Salon 3, pat 2')+'"></div></div>'+
     // ATP: citirile RLU
     '<div id="f-atp-rlu-box" class="fr"'+(type==='atp'?'':' style="display:none"')+'><div class="fg"><label>RLU '+(isEN?'(initial reading)':'(citire inițială)')+' *</label><input type="number" id="f-atp-rlu" value="'+((r.rlu_value===0||r.rlu_value)?esc(r.rlu_value):'')+'" min="0" step="1" oninput="updateAtpResult()"></div>'+
     '<div class="fg"><label>RLU '+(isEN?'(repeat reading)':'(repetiție)')+opt+'</label><input type="number" id="f-atp-rlu2" value="'+(r.rlu_repeat!=null&&r.rlu_repeat!==''?esc(r.rlu_repeat):'')+'" min="0" step="1" oninput="updateAtpResult()"></div></div>'+
@@ -11044,7 +11088,7 @@ async function editAtp(id){
     '<div class="fg"><label>'+(isEN?'Kit lot':'Lot kit')+opt+'</label><input id="f-atp-lot" value="'+esc(r.kit_lot||'')+'"></div></div>'+
     '<div id="f-atp-result-preview" style="margin:8px 0"></div>'+
     '<div class="fg"><label>'+(isEN?'Notes':'Observații')+'</label><textarea id="f-atp-notes" rows="2">'+esc(r.notes||'')+'</textarea></div>',
-    '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anulează')+'</button><button class="btn bp" onclick="saveAtp('+_jsArg(id||null)+')">'+(isEN?'Save':'Salvează')+'</button>');
+    '<button class="btn bo" onclick="safeCloseM()">'+(isEN?'Cancel':'Anulează')+'</button>'+(!id?'<button class="btn bp" style="background:var(--teal);opacity:.85" onclick="saveAtpAndNew()">'+(isEN?'Save + New':'Salvează + Nouă')+'</button>':'')+'<button class="btn bp" onclick="saveAtp('+_jsArg(id||null)+')">'+(isEN?'Save':'Salvează')+'</button>');
   setTimeout(()=>{updateAtpResult();addDatePreview('f-atp-date');attachDirtyTracking()},50);
 }
 // v14.15 - schimbarea tipului arata/ascunde campurile, fara render() global (formularul ramane cum l-a completat userul)
@@ -11053,8 +11097,10 @@ function _atpTypeToggle(){
   var rb=document.getElementById('f-atp-rlu-box'),pb=document.getElementById('f-atp-prot-box');
   if(rb)rb.style.display=t==='atp'?'':'none';
   if(pb)pb.style.display=t==='protein'?'':'none';
-  var sel=document.getElementById('f-atp-surf');
-  if(sel)[].forEach.call(sel.options,function(o){if(!o.value)return;var n=o.getAttribute('data-name')||o.textContent;o.textContent=n+(t==='atp'?' (prag ≤'+o.getAttribute('data-thr')+' RLU)':'')});
+  // v14.18 - ATP: tipul suprafetei (prag RLU); proteine: tipul probei
+  var sb=document.getElementById('f-atp-surf-box'),qb=document.getElementById('f-atp-ptype-box');
+  if(sb)sb.style.display=t==='atp'?'':'none';
+  if(qb)qb.style.display=t==='protein'?'':'none';
   updateAtpResult();
 }
 function _atpPreviewBox(ok,caution,title,detail){
@@ -11093,25 +11139,41 @@ function updateAtpResult(){
   el.innerHTML=html;
 }
 async function saveAtp(id){
+  const rec=await _collectAtpRec(id);if(!rec)return;
+  if(id&&!(await _editCheckConflict('atp',id)))return;
+  await pt('atp',rec);logActivity((id?'Editat':'Adaugat')+' '+(rec.test_type==='protein'?'test proteine':'proba ATP')+' — '+rSec(rec.section));toastSaved();closeM();render();
+}
+// v14.17 - ca la probele microbiologice: se salveaza testul si se deschide imediat unul nou cu campurile comune unei serii
+// (tipul testului, data, sectia, suprafata, nr. de inregistrare, lotul kitului); se golesc citirea / culoarea si retestul.
+async function saveAtpAndNew(){
+  const rec=await _collectAtpRec(null);if(!rec)return;
+  await pt('atp',rec);logActivity('Adaugat '+(rec.test_type==='protein'?'test proteine':'proba ATP')+' — '+rSec(rec.section));toastSaved();
+  const keep={type:rec.test_type,date:rec.date,sec:rec.section,surf:rec.surface_type||'',ptype:rec.probe_type||'',reg:rec.reg_number||'',lot:rec.kit_lot||''};
+  closeM();render();
+  setTimeout(()=>{editAtp(null);setTimeout(()=>{const s=(i,val)=>{const el=document.getElementById(i);if(el)el.value=val};
+    s('f-atp-type',keep.type);_atpTypeToggle();s('f-atp-date',keep.date);s('f-atp-sec',keep.sec);s('f-atp-surf',keep.surf);s('f-atp-ptype',keep.ptype);s('f-atp-reg',keep.reg);s('f-atp-lot',keep.lot);updateAtpResult()},100)},100);
+}
+async function _collectAtpRec(id){
   const v=s=>document.getElementById(s)?document.getElementById(s).value:'';
   const type=v('f-atp-type')==='protein'?'protein':'atp';
   const sec=v('f-atp-sec');if(needSection(sec))return;
-  const surf=v('f-atp-surf');
-  if(!surf){alert(type==='atp'?_M('Selecteaza tipul de suprafata — el stabileste pragul RLU.'):_M('Selecteaza tipul de suprafata testate.'));return}
-  const rec={year:yearOfDate(v('f-atp-date'),A.year),date:v('f-atp-date'),test_type:type,section:sec,surface_type:surf,location:v('f-atp-loc').trim(),notes:v('f-atp-notes').trim()};
+  // v14.18 - ATP: suprafata (pragul RLU); proteine: tipul probei din lista microbiologica. Se scrie DOAR campul tipului.
+  const rec={year:yearOfDate(v('f-atp-date'),A.year),date:v('f-atp-date'),test_type:type,section:sec,reg_number:v('f-atp-reg').trim(),location:v('f-atp-loc').trim(),notes:v('f-atp-notes').trim()};
+  if(type==='atp'){const surf=v('f-atp-surf');if(!surf){alert(_M('Selecteaza tipul de suprafata — el stabileste pragul RLU.'));return}rec.surface_type=surf}
+  else{const ptype=v('f-atp-ptype');if(!ptype){alert(_M('Selecteaza tipul probei testate.'));return}rec.probe_type=ptype}
   if(type==='atp'){
     // v13.62 - garda veche `if(!rlu&&rlu!==0)` nu se declansa niciodata: pe camp gol +'' === 0, deci proba se salva cu
     // RLU 0 si iesea CONFORMA. O proba la care userul a uitat sa treaca citirea nu se distingea de una curata.
     const rluRaw=v('f-atp-rlu').trim();
-    if(rluRaw===''){alert(_M('Introdu valoarea RLU.'));return}
+    if(rluRaw===''){alert(_M('Introdu valoarea RLU.'));return null}
     const rlu=+rluRaw;
-    if(!isFinite(rlu)||rlu<0){alert(_M('Valoarea RLU trebuie sa fie un numar pozitiv.'));return}
+    if(!isFinite(rlu)||rlu<0){alert(_M('Valoarea RLU trebuie sa fie un numar pozitiv.'));return null}
     const rlu2=v('f-atp-rlu2');
     rec.rlu_value=rlu;rec.rlu_repeat=rlu2!==''?+rlu2:null;
   }else{
     // v14.15 - la proteine NU se scriu rlu_value / rlu_repeat: un test fara culoare nu se salveaza (ar intra „neconform” in
     // rapoarte fara sa fi fost citit), iar retestul si lotul sunt optionale (D2, D4).
-    const p1=v('f-atp-pres');if(ATP_PROTEIN_CODES.indexOf(p1)<0){alert(_M('Alege rezultatul testului de proteine (culoarea citita).'));return}
+    const p1=v('f-atp-pres');if(ATP_PROTEIN_CODES.indexOf(p1)<0){alert(_M('Alege rezultatul testului de proteine (culoarea citita).'));return null}
     const p2=v('f-atp-prep');
     rec.protein_result=p1;rec.protein_repeat=ATP_PROTEIN_CODES.indexOf(p2)>=0?p2:null;rec.kit_lot=v('f-atp-lot').trim();
   }
@@ -11120,9 +11182,8 @@ async function saveAtp(id){
     // salvarea reconstruieste inregistrarea: campurile interne (_...) ale celei existente se pastreaza
     const old=(await ga('atp')).find(x=>x.id===id);
     if(old)Object.keys(old).forEach(function(k){if(k.charAt(0)==='_'&&!(k in rec))rec[k]=old[k]});
-    if(!(await _editCheckConflict('atp',id)))return;
   }
-  await pt('atp',rec);logActivity((id?'Editat':'Adaugat')+' '+(type==='protein'?'test proteine':'proba ATP')+' — '+rSec(rec.section));toastSaved();closeM();render();
+  return rec;
 }
 
 function editAtpSurfaces(){
@@ -24416,8 +24477,9 @@ async function checkIncompleteIaam(){
 // v14.15 - testele rapide de proteine pe tipuri de suprafete (Raportul Anual §2.2 si Analiza Autocontrol §3.2).
 // Numaratoarea vine din atpStats / atpVerdict (atp.js): „atentie” e neconform si se spune separat sub tabel.
 function _wProtSurfTable(prot,W){
-  var by={};prot.list.forEach(function(r){var sn=(typeof getAtpSurfaceName==='function')?getAtpSurfaceName(r.surface_type):(r.surface_type||'—');if(!by[sn])by[sn]={t:0,nc:0};by[sn].t++;if(atpVerdict(r)==='neconform')by[sn].nc++});
-  return new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W,rows:[wTblHead(['Tip suprafata','Total','Conforme','Neconf.','Conformitate'],W),
+  // v14.18 - testele de proteine se grupeaza pe TIPUL PROBEI (lista microbiologica), cu cadere pe suprafata ATP la testele vechi
+  var by={};prot.list.forEach(function(r){var sn=(typeof atpSampleName==='function')?atpSampleName(r):(r.surface_type||'—');if(!by[sn])by[sn]={t:0,nc:0};by[sn].t++;if(atpVerdict(r)==='neconform')by[sn].nc++});
+  return new Table({width:{size:9026,type:WidthType.DXA},columnWidths:W,rows:[wTblHead(['Tip proba','Total','Conforme','Neconf.','Conformitate'],W),
     ...Object.entries(by).sort(function(a,b){return b[1].t-a[1].t}).map(function(e,i){var t=e[0],d=e[1];return wTblRow([t,String(d.t),String(d.t-d.nc),String(d.nc),fp(d.t-d.nc,d.t)],W,i%2===1,d.nc>0)}),
     wTblRow([{text:'TOTAL',bold:true},{text:String(prot.n),bold:true},{text:String(prot.conf),bold:true},{text:String(prot.nc),bold:true},{text:fp(prot.conf,prot.n),bold:true}],W)]});
 }
@@ -24517,7 +24579,7 @@ async function genRaportAnualWord(){
   }
   // v14.15 - testele rapide de proteine, dupa ATP, cu tabelul lor
   children.push(wSp(40));
-  if(_rpProt.n){children.push(wP('Teste rapide de proteine (colorimetric) — pe tipuri de suprafete:',{bold:true,size:20}));children.push(_wProtSurfTable(_rpProt,WA));_wProtPush(children,_wProtNote(_rpProt,true),{size:18,italics:true})}
+  if(_rpProt.n){children.push(wP('Teste rapide de proteine (colorimetric) — pe tipuri de probe:',{bold:true,size:20}));children.push(_wProtSurfTable(_rpProt,WA));_wProtPush(children,_wProtNote(_rpProt,true),{size:18,italics:true})}
   else children.push(wP('Teste rapide de proteine: nu au fost efectuate in '+y+'.',{size:20,italics:true}));
   // 2.3 UV
   children.push(wSp(60));children.push(wH2('2.3. Verificare UV (Eficacitate Curatenie)'));children.push(wSp(40));
@@ -29534,7 +29596,7 @@ const CFG_DEL_REFS={
     ['ipc_registry','section'],['ipc_registry','section_adm'],['atb_approvals','section'],['outbreaks','sections'],   /* v14.1 focarele salveaza o LISTA de sectii */
     // v13.96 (G-45) - store-uri care salveaza `section` si lipseau: „Nicio inregistrare nu il foloseste" era fals.
     ['pps','section'],['lab_isolates','section'],['icd_cases','section'],['aes_events','section']],
-  probe_types:[['autocontrol','probe_type']],
+  probe_types:[['autocontrol','probe_type'],['atp','probe_type']],   // v14.18 + testele de proteine
   // v13.62 - trei mapari indicau nume de camp care nu exista in inregistrari, deci
   // _cfgCountRefs citea mereu `undefined` si raporta 0 referinte: `cfgDelete` sarea exact peste
   // avertismentul pentru care a fost scris si stergea fara frana.
@@ -30006,7 +30068,7 @@ function rAjutor(el){
     ['I imported the same file twice. What now?','The application warns you beforehand if records already exist for the period in the file — the import <strong>adds</strong>, it does not replace. If you confirmed anyway and the figures doubled, the cleanest fix is to restore the backup from before the import (Settings > Data & Backup). If you sync through OneDrive or Google Drive, you can also recover an earlier version of the file from the service history.'],
     ['What happens to records if I delete a ward in Settings?','The records are NOT deleted. Before deleting, the application counts how many records use that ward and asks you explicitly. If you delete anyway, they stay in the database and will show "(deleted from settings)" instead of the name, including in Word reports. In per-ward distribution tables, all deleted items collapse into a single row.'],
     ['The Annual Report has empty sections. Why?','Each report section relies on its own module. An empty section means there is no data for the selected year in that module — check the year in the top bar. If only the <strong>rates</strong> are missing while raw figures appear, then patient-days are missing from Hospital Statistics. Before generating, the application also warns you if there are incomplete HAI cases, and tells you which ones.'],
-    ['What are rapid protein tests and where do I record them?','In Quality control, tab <strong>ATP / Proteins</strong>: <strong>+ Add test</strong>, then “Test type” = rapid protein test and the colour read on the swab: <strong>clean</strong> = compliant, <strong>caution</strong> and <strong>protein present</strong> = non-compliant. The test shows protein residues, so it checks <strong>cleaning, not disinfection</strong>, and does not replace microbiological samples. With “caution” the surface is re-cleaned and retested; the retest and the kit lot are optional. In reports they have their own row, never added to ATP.'],
+    ['What are rapid protein tests and where do I record them?','In Quality control, tab <strong>ATP / Proteins</strong>: <strong>+ Add test</strong>, then “Test type” = rapid protein test, “Sample type” (the same list as microbiological samples, without water, air sampling and biological sterilisation tests) and the colour read on the swab: <strong>clean</strong> = compliant, <strong>caution</strong> and <strong>protein present</strong> = non-compliant. The test shows protein residues, so it checks <strong>cleaning, not disinfection</strong>, and does not replace microbiological samples. With “caution” the surface is re-cleaned and retested; the retest and the kit lot are optional. In reports they have their own row, never added to ATP.'],
     ['How do I declare an outbreak?','The application flags possible outbreaks on its own: at least 3 cases with the same organism, in the same ward, less than 30 days apart. From the alert, <strong>Declare outbreak</strong> carries over the organism, ward, period and cases. You can also declare manually with <strong>New outbreak</strong>. The 3-case threshold is the one required by the order.'],
     ['I imported a wrong isolate from the laboratory. How do I fix it?','The Antibiogram module is import and viewing only — there is no per-isolate editing. Correct it in the file received from the laboratory and import again. The reason is traceability: the data must match what the laboratory reported.'],
     ['The application starts slowly. Can anything be done?','At startup the application loads a few external libraries (for Word documents, Excel and charts). The first time you open it after an update they are downloaded again, so startup takes longer than usual. Subsequent starts are faster because everything is already cached. If the application is installed as a desktop app (PWA), closing and reopening the window does not clear anything.']
@@ -30033,7 +30095,7 @@ function rAjutor(el){
     ['Am importat acelasi fisier de doua ori. Ce fac?','Aplicatia te avertizeaza inainte, daca exista deja inregistrari pe perioada din fisier — importul <strong>adauga</strong>, nu inlocuieste. Daca ai confirmat oricum si cifrele s-au dublat, cea mai curata solutie e sa restaurezi backupul dinainte de import (Configurare > Date & Backup). Daca sincronizezi prin OneDrive sau Google Drive, poti recupera si o versiune anterioara a fisierului direct din istoricul serviciului.'],
     ['Ce se intampla cu inregistrarile daca sterg o sectie din Configurare?','Inregistrarile NU se sterg. Inainte de stergere, aplicatia numara cate inregistrari folosesc sectia si te intreaba explicit. Daca stergi oricum, ele raman in baza si vor afisa „(sters din configurare)" in locul denumirii, inclusiv in rapoartele Word. In tabelele de distributie pe sectii, toate elementele sterse se aduna intr-un singur rand.'],
     ['Raportul Anual iese cu sectiuni goale. De ce?','Fiecare sectiune a raportului se bazeaza pe modulul ei. O sectiune goala inseamna ca nu exista date pe anul selectat in modulul respectiv — verifica anul din bara de sus. Daca lipsesc doar <strong>ratele</strong>, dar cifrele brute apar, atunci lipsesc om-zilele din Statistici Spital. Inainte de generare, aplicatia te avertizeaza si daca exista cazuri IAAM incomplete, si iti spune care sunt.'],
-    ['Ce sunt testele rapide de proteine si unde le inregistrez?','In Autocontrol, fila <strong>ATP / Proteine</strong>: <strong>+ Adauga test</strong>, apoi „Tipul testului” = test rapid de proteine si culoarea citita pe tampon: <strong>curat</strong> = conform, <strong>atentie</strong> si <strong>proteine prezente</strong> = neconform. Testul arata reziduurile proteice, deci <strong>curatenia, nu dezinfectia</strong>, si nu inlocuieste probele microbiologice. La „atentie” suprafata se recurata si se retesteaza; retestul si lotul kitului sunt optionale. In rapoarte apar pe rand separat, niciodata adunate la ATP.'],
+    ['Ce sunt testele rapide de proteine si unde le inregistrez?','In Autocontrol, fila <strong>ATP / Proteine</strong>: <strong>+ Adauga test</strong>, apoi „Tipul testului” = test rapid de proteine, „Tip proba” (aceeasi lista ca la probele microbiologice, fara apa, aeromicroflora si testele biologice de sterilizare) si culoarea citita pe tampon: <strong>curat</strong> = conform, <strong>atentie</strong> si <strong>proteine prezente</strong> = neconform. Testul arata reziduurile proteice, deci <strong>curatenia, nu dezinfectia</strong>, si nu inlocuieste probele microbiologice. La „atentie” suprafata se recurata si se retesteaza; retestul si lotul kitului sunt optionale. In rapoarte apar pe rand separat, niciodata adunate la ATP.'],
     ['Cum declar un focar?','Aplicatia semnaleaza singura posibilele focare: cel putin 3 cazuri cu acelasi germen, in aceeasi sectie, la mai putin de 30 de zile unul de altul. Din alerta, butonul <strong>Declara focar</strong> preia automat germenul, sectia, perioada si cazurile. Poti declara si manual, cu <strong>Focar nou</strong>. Pragul de 3 cazuri e cel cerut de ordin.'],
     ['Am importat un izolat gresit din laborator. Cum il corectez?','Modulul Antibiograma este doar import si vizualizare — nu are editare pe izolat. Corectia se face in fisierul primit de la laborator si se reimporta. Motivul e trasabilitatea: datele trebuie sa corespunda cu ce a raportat laboratorul.'],
     ['Aplicatia porneste greu. Se poate face ceva?','Aplicatia incarca la pornire cateva biblioteci externe (pentru documente Word, Excel si grafice). La prima deschidere dupa o actualizare, ele se descarca din nou, deci pornirea dureaza mai mult decat de obicei. Urmatoarele porniri sunt mai rapide, pentru ca totul e deja in memoria browserului. Daca aplicatia e instalata ca aplicatie desktop (PWA), inchiderea si redeschiderea ferestrei nu sterge nimic.']
@@ -30289,6 +30351,8 @@ function downloadReportFile(){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'14.18',date:'2026-10-16',summary:"Testele rapide de proteine se inregistreaza pe „Tip proba”, din aceeasi lista ca probele microbiologice (Configurare → Tipuri probe), fara cele la care testul nu are sens: apa, aeromicroflora, testele biologice de sterilizare. ATP-ul ramane pe „Tip suprafata”, cu pragurile RLU. Rapoartele grupeaza testele de proteine pe tipuri de proba."},
+  {version:'14.17',date:'2026-10-16',summary:"Autocontrol: cautare dupa nr. de inregistrare in fila Probe si in fila ATP / Proteine; un click pe o proba din fereastra unei celule a matricei te duce la ea in fila Probe; testele de proteine (si ATP) au nr. de inregistrare si butonul „Salveaza + Noua”, ca probele microbiologice."},
   {version:'14.16',date:'2026-10-14',summary:"Raportul Trimestrial si PV-ul sedintei CPIAAM pomenesc si testele rapide de proteine in mesajul pentru perioadele fara inregistrari („ATP, teste rapide de proteine si UV Check — fara inregistrari”)."},
   {version:'14.15',date:'2026-10-14',summary:"Teste rapide de proteine pe suprafete (de ex. Pro-Check, colorimetric), in Autocontrol, fila „ATP / Proteine”. Se alege culoarea citita pe tampon — curat, atentie sau proteine prezente — cu retest optional dupa recuratare si lotul kitului. Au carduri, randuri si fraze proprii in pagina, pe dashboard si in rapoarte (anual, analiza autocontrol, trimestrial, PV) si nu se aduna niciodata la ATP. In plus, cardul ATP de pe dashboard numara acum neconformele la fel ca rapoartele. Atentie: randul TOTAL din sumarul autocontrolului (Raportul Anual si Analiza Autocontrol) aduna toate metodele, deci include si testele de proteine."},
   {version:'14.14',date:'2026-10-14',summary:"Unsprezece reparatii venite din editia europeana (IPC Manager), fiecare verificata aici inainte de aplicare. Cele mai importante: sincronizarea intre calculatoare nu mai pierde salvari si nu mai rescrie fisierul la nesfarsit; termenele din calendar nu se mai dubleaza; codurile ATC gresite (ceftolozan, nitrofurantoina, ceftarolina) se corecteaza singure; analiza AI nu mai trimite numele spitalului si al sectiilor, iar cheia API ramane pe calculator; ce stergi nu-si mai pastreaza continutul, iar resetul complet chiar sterge tot. Plus: bifele „numar FO” si „status HVB” in Configurare si pagina „Securitate si date”."},
@@ -31748,17 +31812,17 @@ var MAN_SECTIONS=[
   _mTbl(null,[
    ['Prezentare','Carduri (Total probe, Conformitate, Acoperire sectii, Acoperire tipuri, NC recurente) si <strong>matricea de acoperire</strong>: sectiile pe randuri, tipurile de probe pe coloane, separat pentru Spital / Spitalizare de zi / Ambulatoriu.'],
    ['Planificare','Lista de facut pentru perioada aleasa: (1) neconformitati de re-testat, (2) combinatii nerecoltate in perioada, (3) combinatii nerecoltate de peste 6 luni sau niciodata. Fiecare cu data si '+_mUi('&#128197; Salveaza')+', sau '+_mUi('Salveaza planificarea in Calendar')+' pentru toate.'],
-   ['Probe','Tabelul probelor, 50 pe pagina, sortabil, cu filtre (inclusiv „cu DSP / fara DSP”). '+_mUi('+ Adauga Proba')+', '+_mUi('Import CSV')+', '+_mUi('Export CSV')+'.'],
+   ['Probe','Tabelul probelor, 50 pe pagina, sortabil, cu filtre (inclusiv „cu DSP / fara DSP”) si cautare dupa <strong>Nr. inregistrare</strong> — merge si o parte din numar, fara spatii sau majuscule. '+_mUi('+ Adauga Proba')+', '+_mUi('Import CSV')+', '+_mUi('Export CSV')+'.'],
    ['Harta de risc','Punctele de risc pe sectii: nivel (inalt / mediu / scazut), zona, puncte critice, frecventa de recoltare, masuri de control, data revizuirii. '+_mUi('+ Adauga punct de risc')+' si export Word.']])+
   '<h4>Culorile matricei</h4>'+
   _mUl(['<span class="man-dot" style="background:#0FA976"></span>Toate conforme','<span class="man-dot" style="background:#F59E0B"></span>Cu neconformitati, pana la 25 %','<span class="man-dot" style="background:#EF4444"></span>Peste 25 % neconforme','<span class="man-dot" style="background:#CBD5E1"></span>„—” Netestat — <strong>cea mai importanta celula</strong>: arata unde nu s-a recoltat','N/A — tipul de proba nu se aplica sectiei (setat in Configurare)'])+
-  '<p>Pastilele de deasupra fiecarei matrice filtreaza celulele: Toate / Conforme / Cu neconformitati / NC &gt;25 % / Netestat. Click pe o celula arata probele.</p>'+
+  '<p>Pastilele de deasupra fiecarei matrice filtreaza celulele: Toate / Conforme / Cu neconformitati / NC &gt;25 % / Netestat. Click pe o celula arata probele, iar <strong>click pe o proba din fereastra</strong> te duce la ea in fila Probe (filtrata pe acea celula, cu randul evidentiat).</p>'+
   '<h4>Dialogul unei probe</h4>'+
   _mUl(['Nr. inregistrare, data, sectia, tipul, rezultatul; la neconforme UFC si germenul (lista sau „Altul”); daca proba e recoltata de DSP.',
    _mUi('Salveaza + Noua')+' pastreaza tipul, sectia, data, marcajul DSP si numarul — util cand introduci un buletin cu multe probe.'])+
   '<h4>ATP, teste de proteine si UV</h4>'+
   _mUl(['<strong>ATP</strong>: rezultatul e conform cand RLU e sub pragul suprafetei (praguri in '+_mUi('Configureaza suprafete')+'), cu citire repetata optionala.',
-   '<strong>Teste rapide de proteine</strong> (colorimetric, de ex. Pro-Check): in aceeasi fila, cu '+_mUi('+ Adauga test')+' si „Tipul testului” = proteine. Se alege culoarea citita pe tampon: <strong>curat</strong> = conform; <strong>atentie</strong> si <strong>proteine prezente</strong> = neconform. Optional: retestul dupa recuratare si lotul kitului.',
+   '<strong>Teste rapide de proteine</strong> (colorimetric, de ex. Pro-Check): in aceeasi fila, cu '+_mUi('+ Adauga test')+' si „Tipul testului” = proteine. „Tip proba” se alege din aceeasi lista ca la probele microbiologice (Configurare → Tipuri probe), fara cele la care testul nu are sens: apa, aeromicroflora, testele biologice de sterilizare. Se alege culoarea citita pe tampon: <strong>curat</strong> = conform; <strong>atentie</strong> si <strong>proteine prezente</strong> = neconform. Optional: retestul dupa recuratare, lotul kitului si nr. de inregistrare. Ca la probele microbiologice, '+_mUi('Salveaza + Noua')+' salveaza testul si deschide imediat altul cu tipul, data, sectia, suprafata, nr. de inregistrare si lotul pastrate.',
    '<strong>UV</strong>: Pass / Fail ales de evaluator, fara prag.'])+
   _mWhy('Testul de proteine arata <strong>reziduurile proteice</strong> ramase dupa curatare, deci <strong>curatenia, nu dezinfectia</strong>, si nu inlocuieste probele microbiologice. „Atentie” inseamna ca suprafata se recurata si se retesteaza: se numara la neconforme, dar apare si separat („din care atentie”). ATP-ul si proteinele au carduri si randuri separate in rapoarte — nu se aduna niciodata intr-o singura cifra.')+
   _mTip('Rapoartele (Word, Excel cu date brute si pivot pe tipuri si pe sectii, analiza AI) sunt in <strong>Generare Rapoarte &rarr; Analiza Autocontrol</strong>. Raportul Word cuprinde si ATP, si UV.')},
@@ -31768,17 +31832,17 @@ var MAN_SECTIONS=[
   _mTbl(null,[
    ['Overview','Cards (Total samples, Compliance, Ward coverage, Type coverage, Recurrent non-compliance) and the <strong>coverage matrix</strong>: wards in rows, sample types in columns, separately for Hospital / Day hospital / Outpatients.'],
    ['Planning','To-do list for the chosen period: (1) non-compliances to re-test, (2) combinations not sampled in the period, (3) combinations not sampled for over 6 months or never. Each with a date and '+_mUi('&#128197; Save')+', or '+_mUi('Save planning to Calendar')+' for all.'],
-   ['Samples','The sample table, 50 per page, sortable, with filters (including “with / without public health”). '+_mUi('+ Add sample')+', '+_mUi('Import CSV')+', '+_mUi('Export CSV')+'.'],
+   ['Samples','The sample table, 50 per page, sortable, with filters (including “with / without public health”) and a search by <strong>registration number</strong> — part of the number also works, ignoring spaces and case. '+_mUi('+ Add sample')+', '+_mUi('Import CSV')+', '+_mUi('Export CSV')+'.'],
    ['Risk map','Risk points per ward: level (high / medium / low), zone, critical points, sampling frequency, control measures, review date. '+_mUi('+ Add risk point')+' and Word export.']])+
   '<h4>Matrix colours</h4>'+
   _mUl(['<span class="man-dot" style="background:#0FA976"></span>All compliant','<span class="man-dot" style="background:#F59E0B"></span>Non-compliant, up to 25 %','<span class="man-dot" style="background:#EF4444"></span>Over 25 % non-compliant','<span class="man-dot" style="background:#CBD5E1"></span>“—” Not tested — <strong>the most important cell</strong>: shows where nothing was sampled','N/A — the sample type does not apply to the ward (set in Settings)'])+
-  '<p>The pills above each matrix filter the cells. Clicking a cell shows its samples.</p>'+
+  '<p>The pills above each matrix filter the cells. Clicking a cell shows its samples, and <strong>clicking a sample in that window</strong> takes you to it in the Samples tab (filtered on that cell, with the row highlighted).</p>'+
   '<h4>The sample dialog</h4>'+
   _mUl(['Register no., date, ward, type, result; for non-compliant CFU and organism (list or “Other”); whether the sample was taken by public health.',
    _mUi('Save + New')+' keeps type, ward, date, public health flag and number — useful when entering a report with many samples.'])+
   '<h4>ATP, protein tests and UV</h4>'+
   _mUl(['<strong>ATP</strong>: compliant when RLU is below the surface threshold (thresholds in '+_mUi('Configure surfaces')+'), with an optional repeat reading.',
-   '<strong>Rapid protein tests</strong> (colorimetric, e.g. Pro-Check): in the same tab, with '+_mUi('+ Add test')+' and “Test type” = protein. Choose the colour read on the swab: <strong>clean</strong> = compliant; <strong>caution</strong> and <strong>protein present</strong> = non-compliant. Optional: the retest after re-cleaning and the kit lot.',
+   '<strong>Rapid protein tests</strong> (colorimetric, e.g. Pro-Check): in the same tab, with '+_mUi('+ Add test')+' and “Test type” = protein. “Sample type” comes from the same list as microbiological samples (Settings → Sample types), without those where the test makes no sense: water, air sampling, biological sterilisation tests. Choose the colour read on the swab: <strong>clean</strong> = compliant; <strong>caution</strong> and <strong>protein present</strong> = non-compliant. Optional: the retest after re-cleaning, the kit lot and the registration number. As with microbiological samples, '+_mUi('Save + New')+' saves the test and opens another one keeping the type, date, ward, surface, registration number and lot.',
    '<strong>UV</strong>: Pass / Fail chosen by the evaluator, no threshold.'])+
   _mWhy('The protein test shows <strong>protein residues</strong> left after cleaning, so it checks <strong>cleaning, not disinfection</strong>, and does not replace microbiological samples. “Caution” means the surface is re-cleaned and retested: it counts as non-compliant but is also shown separately (“of which caution”). ATP and protein tests have separate cards and rows in reports — they are never added into one figure.')+
   _mTip('Reports (Word, Excel with raw data and pivots by type and ward, AI analysis) are in <strong>Generate reports &rarr; Quality control analysis</strong>. The Word report includes ATP and UV.')}},

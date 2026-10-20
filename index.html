@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v14.20</title>
+<title>CPIAAM Management v14.21</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -123,10 +123,13 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 
 /* ── KPI Cards ── */
 .kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:24px}
-.kc{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04);border-left:5px solid var(--navy);transition:all .25s ease;position:relative;overflow:hidden;cursor:pointer}
-.kc:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.kc{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04);border-left:5px solid var(--navy);transition:all .25s ease;position:relative;overflow:hidden;cursor:default}
+/* A7 - cursorul de mana si ridicarea la hover doar pe cardurile care fac ceva (onclick sau buton); un card fara actiune nu se
+   mai prezinta ca buton (~200 de carduri, doar 10 cu actiune) */
+.kc[onclick],button.kc{cursor:pointer}
+.kc[onclick]:hover,button.kc:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
 .kc::after{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;opacity:.04;transform:translate(20px,-20px);pointer-events:none}
-.kc:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.kc[onclick]:hover,button.kc:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
 .kc .kl{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--txtL);font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}.kc .kl span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kc .kv{font-size:30px;font-weight:800;color:var(--navy);line-height:1;letter-spacing:-.5px}
 .kc .ks{font-size:11px;color:var(--txtL);margin-top:6px}
@@ -2778,7 +2781,7 @@ function _extractCfg0(c){
   return null;
 }
 
-const APP_VERSION='14.20';
+const APP_VERSION='14.21';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -4630,6 +4633,16 @@ function getActivityLog(){return JSON.parse(localStorage.getItem('cpiaam_activit
 // Numele de fisier au helper separat (_orphanFile), pentru ca eticheta cu spatii si paranteze
 // ar deveni „_sters_din_configurare_" dupa curatarea caracterelor.
 function _orphanLabel(){return CFG.lang==='en'?'(deleted from settings)':'(sters din configurare)'}
+// v14.21 - numele unui element de configurare dupa id (A11, semnalare EU 20.10.2026), cu doua nuante RO: inregistrarile vechi de UV
+// (si datele demo) tin NUMELE suprafetei, nu id-ul (editUv selecteaza si dupa nume), deci se cauta si dupa nume; iar o valoare care
+// nu arata ca un id (prefix_cod) e un nume vechi si se afiseaza ca atare — „(sters din configurare)” ar fi sters informatia.
+// Doar un id care nu mai exista primeste _orphanLabel(). Text simplu: cine il pune in HTML il trece prin esc().
+function _cfgItemName(list,v){
+  if(!v)return '';var l=list||[],k=String(v);
+  var s=l.find(function(x){return x&&x.id===k})||l.find(function(x){return x&&String(x.name||'').toLowerCase()===k.toLowerCase()});
+  if(s)return s.name;
+  return /^[a-z]+_[A-Za-z0-9]+$/.test(k)?_orphanLabel():k;
+}
 function _orphanFile(){return CFG.lang==='en'?'deleted_item':'element_sters'}
 // Numele sectiei, curatat pentru un nume de fisier. O sectie stearsa nu produce
 // "_sters_din_configurare_", ci o eticheta scurta si lizibila.
@@ -10054,7 +10067,7 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
     h+='</div>';
     h+='<div class="ac-collapse-body'+(_autoChartOpen?' open':'')+'">';
     h+='<div style="padding:14px;background:var(--card);border:1px solid var(--brd);border-top:none;border-radius:0 0 8px 8px">';
-    h+='<canvas id="ac-type-chart" style="max-height:300px;width:100%"></canvas>';
+    h+='<div class="ac-type-chart-box" style="position:relative;height:300px"><canvas id="ac-type-chart"></canvas></div>';   // A4 - inaltimea o pune renderAutoChart, dupa numarul de tipuri
     h+='</div></div></div>';
   }
 
@@ -10134,11 +10147,17 @@ function renderAutoChart(data,probeTypes,sections,matrix,isEN){
     dConf.push(c);dYel.push(y);dRed.push(r);
   });
   if(window._acChart)window._acChart.destroy();
+  // A4 - fiecare tip de proba are eticheta: fara autoSkip pe axa tipurilor (sarea peste o eticheta din doua, 7 din 14), iar caseta
+  // creste cu numarul de tipuri (~24 px pe rand + axa si legenda), ca etichetele sa nu se suprapuna
+  const box=canvas.parentNode&&canvas.parentNode.classList.contains('ac-type-chart-box')?canvas.parentNode:null;
+  if(box)box.style.height=Math.max(300,labels.length*24+80)+'px';
+  // A6 din semnalarea EU 20.10.2026 (culorile matricei si ale barelor) NU e preluat in 14.21: legenda RO are culorile scrise inline,
+  // deci ar fi ramas pe culorile vechi, iar matricea face parte din aspectul aprobat — decizia e la user
   window._acChart=new Chart(canvas,{type:'bar',data:{labels,datasets:[
     {label:isEN?'Conformant':'Conforme',data:dConf,backgroundColor:'#C0DD97'},
     {label:isEN?'NC ≤25%':'NC ≤25%',data:dYel,backgroundColor:'#FAEEDA'},
     {label:isEN?'NC >25%':'NC >25%',data:dRed,backgroundColor:'#F7C1C1'}
-  ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{display:false}}}}});
+  ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{display:false},ticks:{autoSkip:false}}}}});
 }
 
 // ═══ TAB 2 — PLANIFICARE ═══
@@ -10457,7 +10476,7 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
         '<td>'+rSec(r.section)+'</td>'+
         '<td>'+(r.result==='conform'?'<span class="bdg bdg-g">Conform</span>':'<span class="bdg bdg-r">Neconform</span>')+'</td>'+
         '<td>'+(r.dsp_parallel?'<span class="bdg bdg-b" title="Proba prelucrata si cu DSP in paralel">&#10003; DSP</span>':'<span style="color:var(--txtL)">—</span>')+'</td>'+
-        '<td style="font-size:11px">'+(r.organism?(r.organism+(r.ufc_count?' ('+r.ufc_count+' UFC)':'')):(r.details||r.notes||'—'))+(r.details&&r.organism?'<br><span style="color:var(--txtL)">'+esc(r.details)+'</span>':'')+'</td>'+
+        '<td style="font-size:11px">'+(r.organism?(r.organism+(r.ufc_count?' ('+r.ufc_count+' UFC)':'')):(r.details||r.notes||'—'))+(r.details&&r.organism?'<br><span style="color:var(--txtL)">'+esc(r.details)+'</span>':'')+(r.notes&&(r.organism||r.details)?'<br><span style="color:var(--txtL)">'+esc(r.notes)+'</span>':'')+'</td>'+   // A13 - observatiile si cand proba are germen / detalii
         '<td class="act"><button onclick="editAuto('+_jsArg(r.id)+')">&#9998;</button><button onclick="delRec(\'autocontrol\','+_jsArg(r.id)+')">&#128465;</button></td></tr>';
     });
     h+='</tbody></table>';
@@ -10875,8 +10894,7 @@ function getAtpSurfaces(){
   return[{id:'atp_017',name:'Alta suprafata',threshold:150}];
 }
 function getAtpSurfaceName(id){
-  const s=getAtpSurfaces().find(x=>x.id===id);
-  return s?s.name:(id||'—')+' (dezactivat)';
+  return id?_cfgItemName(getAtpSurfaces(),id):'—';   // A11 (v14.21) - suprafata stearsa: eticheta orfana, nu id-ul brut; un nume vechi ramane
 }
 function atpThreshold(surface){
   const s=getAtpSurfaces().find(x=>x.id===surface);
@@ -11036,7 +11054,7 @@ async function renderAtpModule(isEN){
     var hasFilters=_atpFilters.reg||_atpFilters.type||_atpFilters.sec||_atpFilters.surface||_atpFilters.result||_atpFilters.dateFrom||_atpFilters.dateTo;
     h+='<div class="es"><p>'+(hasFilters?(isEN?'No test matches the filters.':'Niciun test nu corespunde filtrelor.'):(isEN?'No ATP or protein tests for':'Niciun test ATP sau de proteine pentru')+' '+A.year)+'.</p></div>';
   }else{
-    h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Reg. No.':'Nr. Inreg.')+'</th><th>'+(isEN?'Test':'Test')+'</th><th>'+(isEN?'Section':'Secția')+'</th><th>'+(isEN?'Surface / sample':'Suprafață / probă')+'</th>'+
+    h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Reg. No.':'Nr. Inreg.')+'</th><th>'+(isEN?'Test':'Test')+'</th><th>'+(isEN?'Section':'Secția')+'</th><th>'+(isEN?'Surface / sample':'Suprafață / probă')+'</th><th>'+(isEN?'Details':'Detalii')+'</th>'+
       '<th>'+(isEN?'Reading':'Citire')+'</th><th>'+(isEN?'Result':'Rezultat')+'</th><th>'+(isEN?'Repeat':'Repetiție')+'</th><th>'+(isEN?'After repeat':'După rep.')+'</th><th>'+(isEN?'Actions':'Acțiuni')+'</th></tr></thead><tbody>';
     allAtp.forEach((r,i)=>{
       const prot=atpTestType(r)==='protein';
@@ -11046,6 +11064,8 @@ async function renderAtpModule(isEN){
       const rep=prot?(r.protein_repeat?_atpProtChip(r.protein_repeat):'—'):(r.rlu_repeat!=null&&r.rlu_repeat!==''?'<strong>'+esc(r.rlu_repeat)+'</strong> RLU':'—');
       h+='<tr><td>'+(i+1)+'</td><td>'+fmtDate(r.date)+'</td><td style="font-size:11px">'+esc(r.reg_number||'\u2014')+'</td><td>'+(prot?(isEN?'Protein':'Proteine')+(r.kit_lot?'<div style="font-size:10px;color:var(--txtL)">'+(isEN?'lot ':'lot ')+esc(r.kit_lot)+'</div>':''):'ATP')+'</td><td>'+rSec(r.section)+'</td>'+
         '<td>'+esc(sName)+(prot?'':' <span style="font-size:10px;color:var(--txtL)">(≤'+thr+')</span>')+'</td>'+
+        // A13 - locatia, iar observatiile pe al doilea rand, gri (tiparul coloanei „Detalii proba” de la microbiologic)
+        '<td style="font-size:11px">'+esc(r.location||r.notes||'—')+(r.location&&r.notes?'<br><span style="color:var(--txtL)">'+esc(r.notes)+'</span>':'')+'</td>'+
         '<td>'+read+'</td><td>'+_atpBadge(r)+'</td><td>'+rep+'</td><td>'+(atpHasRepeat(r)?_atpBadge(r,true):'—')+'</td>'+
         '<td class="act"><button onclick="editAtp('+_jsArg(r.id)+')" title="'+T('btn_edit')+'">&#9998;</button><button onclick="delRec(\'atp\','+_jsArg(r.id)+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
     });
@@ -11332,7 +11352,7 @@ async function renderUvModule(isEN){
     h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Section':'Sec\u021Bia')+'</th><th>'+(isEN?'Surface / Location':'Suprafa\u021B\u0103 / Locatie')+'</th>'+
       '<th>'+(isEN?'Result':'Rezultat')+'</th><th>'+(isEN?'Notes':'Obs.')+'</th><th>'+(isEN?'Actions':'Ac\u021Biuni')+'</th></tr></thead><tbody>';
     allUv.forEach((r,i)=>{
-      const uvSurfName=(()=>{if(!r.surface)return '\u2014';const s=(CFG.uv_surface_types||[]).find(x=>x.id===r.surface);return s?s.name:(r.surface+' (dezactivat)')})();
+      const uvSurfName=(()=>{if(!r.surface)return '\u2014';return esc(_cfgItemName(CFG.uv_surface_types,r.surface))})();   // A11 (v14.21) - nu id-ul brut; inregistrarile vechi tin numele, care ramane
       h+='<tr><td>'+(i+1)+'</td><td>'+fmtDate(r.date)+'</td><td>'+rSec(r.section)+'</td>'+
         '<td>'+uvSurfName+'</td>'+
         '<td>'+(r.result==='pass'?'<span class="bdg bdg-g">Pass</span>':'<span class="bdg bdg-r">Fail</span>')+'</td>'+
@@ -30396,6 +30416,7 @@ function downloadReportFile(){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'14.21',date:'2026-10-20',summary:"Autocontrol: graficul pe tip de proba arata toate tipurile (sarea peste unele etichete); tabelul ATP / proteine are coloana „Detalii” (locatia si observatiile); la probele microbiologice cu germen, observatiile nu mai dispar; o suprafata UV sau ATP stearsa din configurare apare ca „(sters din configurare)”, nu ca un cod. Cardurile cu cifre care nu fac nimic la click nu mai arata ca butoane."},
   {version:'14.20',date:'2026-10-19',summary:"Datele se pot tasta din nou cifra cu cifra: la Autocontrol (data recoltarii), Instruire (filtrele De la / Pana la), Biocide (datele avizelor, in toate cele patru locuri) si PPS (data studiului) anul ramanea 2000-2009 sau 0002. Un an scurt („26”) devine 2026 la iesirea din camp. In modul englezesc, previzualizarea rezultatului ATP / proteine nu mai arata text romanesc."},
   {version:'14.19',date:'2026-10-16',summary:"Tipurile de proba apar in ordine alfabetica si in Configurare (Introducere date → Tipuri Probe Autocontrol), si la testele de proteine (lista „Tip proba” din dialog si grupa din filtru), ca in restul aplicatiei."},
   {version:'14.18',date:'2026-10-16',summary:"Testele rapide de proteine se inregistreaza pe „Tip proba”, din aceeasi lista ca probele microbiologice (Configurare → Tipuri probe), fara cele la care testul nu are sens: apa, aeromicroflora, testele biologice de sterilizare. ATP-ul ramane pe „Tip suprafata”, cu pragurile RLU. Rapoartele grupeaza testele de proteine pe tipuri de proba."},

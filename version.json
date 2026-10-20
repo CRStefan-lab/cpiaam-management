@@ -1,9 +1,10 @@
 {
-  "version": "14.19",
-  "version_note": "Tipurile de proba in ordine alfabetica in Configurare si la testele de proteine",
+  "version": "14.20",
+  "version_note": "Datele se tasteaza din nou cifra cu cifra (Autocontrol, Instruire, Biocide, PPS)",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Tipurile de proba apar in ordine alfabetica in Configurare (Tipuri Probe Autocontrol) si in lista „Tip proba” de la testele de proteine, ca in restul aplicatiei.",
-    "Include si 14.18: testele de proteine pe „Tip proba”, cautarea dupa nr. de inregistrare, click din matrice la proba, „Salveaza + Noua”."
+    "Datele se pot tasta din nou cifra cu cifra: la data recoltarii (Autocontrol), filtrele de data din Instruire, datele avizelor de la Biocide si data studiului PPS anul ramanea 2000-2009 sau 0002.",
+    "Un an scris scurt („26”) devine 2026 cand iesi din camp.",
+    "In modul englezesc, previzualizarea rezultatului ATP / proteine din dialog e in engleza."
   ]
 }

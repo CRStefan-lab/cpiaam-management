@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v14.19</title>
+<title>CPIAAM Management v14.20</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2778,7 +2778,7 @@ function _extractCfg0(c){
   return null;
 }
 
-const APP_VERSION='14.19';
+const APP_VERSION='14.20';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -4789,6 +4789,11 @@ function dateISO(d){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 function todayISO(){return dateISO(new Date())}
+// Semnalare IPC Manager 15.10.2026 - un <input type="date"> are anul sub 1000 cat timp userul inca il tasteaza: Chrome trimite
+// „change” la fiecare cifra, deci „2026” trece prin 0002, 0020, 0202. Un handler care salveaza, redeseneaza sau rescrie campul la acel
+// moment strica tastarea (anul ramane 0002, sau _autoFixYear il face 2002 si urmatoarea cifra o ia de la capat). Handlerul asteapta
+// anul intreg; onblur aplica _autoFixYear (26 -> 2026) si ce a ramas neaplicat.
+function _dateIncomplete(v){if(!v)return false;var p=String(v).split('-');return p.length===3&&parseInt(p[0],10)<1000}
 // v13.62 - anul unei inregistrari se deduce din DATA ei, nu din anul selectat in bara de sus.
 // Modulele noi (registre, avizari ATB, focare) au un <input type="date"> precompletat cu ziua
 // curenta, dar stampilau `year:A.year`. Daca userul comutase toolbar-ul pe alt an ca sa termine
@@ -10478,13 +10483,18 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
 // Autocontrol germeni predefiniti (pentru neconform)
 const AUTO_GERMENI=['Staphylococcus spp.','Pseudomonas spp.','Enterobacter spp.','Coliformi','E. coli','Klebsiella spp.','Mucegaiuri / Fungi','Bacillus spp.'];
 function autoDateChanged(){
-  // v13.28 - auto-fix year inainte de a calcula trimestru/luna
-  var inp=document.getElementById('f-auto-dt');if(inp)_autoFixYear(inp);
-  const dt=inp?.value;if(!dt)return;
+  // la tastare, campul nu se mai rescrie (_autoFixYear trece in autoDateBlur); luna si trimestrul doar cu anul intreg
+  var inp=document.getElementById('f-auto-dt');
+  const dt=inp?.value;if(!dt||_dateIncomplete(dt))return;
   const d=new Date(dt);if(isNaN(d))return;
   const mo=d.getMonth()+1,q=Math.ceil(mo/3);
   const selMo=document.getElementById('f-auto-mo');if(selMo)selMo.value=mo;
   const selQ=document.getElementById('f-auto-q');if(selQ)selQ.value=q;
+}
+// la iesirea din camp: anul scurt se corecteaza (26 -> 2026, v13.28), apoi luna si trimestrul
+function autoDateBlur(){
+  var inp=document.getElementById('f-auto-dt');if(inp)_autoFixYear(inp);
+  autoDateChanged();
 }
 // v13.33 - handler pentru input-urile date din filtru autocontrol probe.
 // Aplica filtrul DOAR cand anul are >=4 cifre (parseInt >= 1000) pentru a evita re-render in mijlocul tastarii.
@@ -10548,7 +10558,7 @@ async function editAuto(id){
   openM(id?(isEN?'Edit Sample':'Editare Proba'):(isEN?'New Sample':'Proba Noua'),
     '<div class="fr"><div class="fg"><label>'+(isEN?'Sample Type':'Tip proba')+'</label><select id="f-auto-tp">'+optsId(CFG.probe_types,r.probe_type)+'</select></div>'+
     '<div class="fg"><label>'+(isEN?'Section':'Sectie')+'</label><select id="f-auto-sec"><option value="">—</option>'+secOptsGrouped(r.section)+'</select></div></div>'+
-    '<div class="fr3"><div class="fg"><label>'+(isEN?'Sample Date':'Data recoltare')+'</label><input type="date" id="f-auto-dt" value="'+(r.date||'')+'" onchange="autoDateChanged()"></div>'+
+    '<div class="fr3"><div class="fg"><label>'+(isEN?'Sample Date':'Data recoltare')+'</label><input type="date" id="f-auto-dt" value="'+(r.date||'')+'" onchange="autoDateChanged()" onblur="autoDateBlur()"></div>'+
     '<div class="fg"><label>'+(isEN?'Quarter':'Trimestru')+'</label><select id="f-auto-q">'+[1,2,3,4].map(q=>'<option value="'+q+'" '+(r.quarter===q?'selected':'')+'>T'+q+'</option>').join('')+'</select></div>'+
     '<div class="fg"><label>'+(isEN?'Month':'Luna')+'</label><select id="f-auto-mo">'+moOpts(r.month)+'</select></div></div>'+
     '<div class="fg"><label>'+(isEN?'Registration No.':'Nr. inregistrare')+'</label><input id="f-auto-reg" value="'+esc(r.reg_number||'')+'" placeholder="'+(isEN?'e.g. 1234/2025':'ex: 1234/2025')+'"></div>'+
@@ -11120,7 +11130,7 @@ function updateAtpResult(){
     // acelasi verdict ca la salvare si in rapoarte: atpVerdict pe o inregistrare de proba
     const p1=document.getElementById('f-atp-pres')?.value||'',p2=document.getElementById('f-atp-prep')?.value||'';
     const rec={test_type:'protein',protein_result:p1,protein_repeat:p2};
-    const L=function(v,c){return v==='conform'?'CONFORM':(c?(isEN?'NON-CONFORM (caution)':'NECONFORM (atenție)'):'NECONFORM')};
+    const L=function(v,c){return v==='conform'?'CONFORM':(c?(isEN?'NON-CONFORM (caution)':'NECONFORM (atenție)'):(isEN?'NON-CONFORM':'NECONFORM'))};   // v14.20 - EN (semnalare IPC Manager 19.10.2026)
     if(p1){const v=atpVerdict(rec),c=atpIsCaution(rec);html=_atpPreviewBox(v==='conform',c,(isEN?'Initial result: ':'Rezultat inițial: ')+L(v,c),esc(atpProteinLabel(p1,isEN))+(c?(isEN?' — re-clean and retest':' — se recurăță și se retestează'):''))}
     if(p2){const v=atpVerdict(rec,true),c=atpIsCaution(rec,true);html+=_atpPreviewBox(v==='conform',c,(isEN?'Retest: ':'Retest: ')+L(v,c),esc(atpProteinLabel(p2,isEN)))}
     if(!html)html='<span style="font-size:11px;color:var(--txtL)">'+(isEN?'Choose the colour read on the swab: clean = conform; caution and protein present = non-conform.':'Alege culoarea citita pe tampon: curat = conform; atenție și proteine prezente = neconform.')+'</span>';
@@ -11129,15 +11139,16 @@ function updateAtpResult(){
   const rlu=+(document.getElementById('f-atp-rlu')?.value||'');
   const rlu2=document.getElementById('f-atp-rlu2')?.value||'';
   const thr=atpThreshold(surf);
+  const L=function(ok){return ok?'CONFORM':(isEN?'NON-CONFORM':'NECONFORM')},prag=isEN?' (threshold)':' (prag)';   // v14.20 - EN
   if(rlu>=0&&!isNaN(rlu)&&String((document.getElementById('f-atp-rlu')||{}).value||'').trim()!==''){   // v13.96 - RLU 0 e o citire valida
     const res=atpResult(rlu,surf);
-    html=_atpPreviewBox(res==='conform',false,'Rezultat initial: '+(res==='conform'?'CONFORM':'NECONFORM'),rlu+' RLU '+(res==='conform'?'≤':'>')+' '+thr+' (prag)');
+    html=_atpPreviewBox(res==='conform',false,(isEN?'Initial result: ':'Rezultat initial: ')+L(res==='conform'),rlu+' RLU '+(res==='conform'?'≤':'>')+' '+thr+prag);
   }
   if(rlu2!==''){
     const r2=+rlu2;const res2=atpResult(r2,surf);
-    html+=_atpPreviewBox(res2==='conform',false,'Repetitie: '+(res2==='conform'?'CONFORM':'NECONFORM'),r2+' RLU '+(res2==='conform'?'≤':'>')+' '+thr+' (prag)');
+    html+=_atpPreviewBox(res2==='conform',false,(isEN?'Repeat: ':'Repetitie: ')+L(res2==='conform'),r2+' RLU '+(res2==='conform'?'≤':'>')+' '+thr+prag);
   }
-  if(!html)html='<span style="font-size:11px;color:var(--txtL)">Introdu valoarea RLU pentru a vedea rezultatul automat (prag: ≤'+thr+' RLU)</span>';
+  if(!html)html='<span style="font-size:11px;color:var(--txtL)">'+(isEN?'Enter the RLU value to see the result (threshold: ≤':'Introdu valoarea RLU pentru a vedea rezultatul automat (prag: ≤')+thr+' RLU)</span>';
   el.innerHTML=html;
 }
 async function saveAtp(id){
@@ -12246,6 +12257,19 @@ async function _bioKeepAndRerender(pid){
   try{if(document.getElementById('bep-mfr'))await bioSaveProduct(pid,true);else await saveCfg()}catch(e){console.warn('[CPIAAM] bioKeep',e);await saveCfg()}
   bioEditProduct(pid);
 }
+// Semnalare IPC Manager 15.10.2026 - data unui aviz (panoul de avize din pagina si dialogul produsului): se scrie in CFG, se
+// salveaza si se redeseneaza doar cu anul intreg. Inainte, la prima cifra a anului, „0002” se salva (si pleca prin sincronizare) iar
+// redesenarea lua focusul, deci data ramanea cu anul 0002. La iesirea din camp (_bioAvizDateBlur) anul scurt se corecteaza (26 -> 2026).
+// pid = produsul din dialog (_bioKeepAndRerender), null = panoul din pagina (saveCfg + render).
+// only==='save': dialogul miscarii (_renderBioAvizeInDialog) si editBioAvize (_renderBioAvizeRows) doar salveaza, fara redesenare,
+// ca inainte; acolo un an scurt se salva ca 0026, acum asteapta anul intreg si se corecteaza la iesirea din camp.
+function _bioAvizDate(input,idx,ai,field,pid,only){
+  var v=input.value||'';if(_dateIncomplete(v))return;
+  var a=((CFG.biocide_products[idx]||{}).avize||[])[ai];if(!a||(a[field]||'')===v)return;
+  a[field]=v;
+  if(only==='save')saveCfg();else if(pid)_bioKeepAndRerender(pid);else{saveCfg();render()}
+}
+function _bioAvizDateBlur(input,idx,ai,field,pid,only){_autoFixYear(input);_bioAvizDate(input,idx,ai,field,pid,only)}
 function bioAddAviz(pid){
   if(!pid)return;
   var prod=(CFG.biocide_products||[]).find(function(p){return p.id===pid});
@@ -12534,8 +12558,8 @@ async function rBio(el){
         }
         avizPanel+='<tr>'+
           '<td style="padding:3px 4px"><input value="'+esc(a.nr||a.number||'')+'" placeholder="Nr." onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].nr=this.value;saveCfg()" style="width:120px;padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
-          '<td style="padding:3px 4px"><input type="date" value="'+(a.date_issued||'')+'" onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].date_issued=this.value;saveCfg();render()" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
-          '<td style="padding:3px 4px"><input type="date" value="'+(a.date_expiry||'')+'" onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].date_expiry=this.value;saveCfg();render()" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
+          '<td style="padding:3px 4px"><input type="date" value="'+(a.date_issued||'')+'" onchange="_bioAvizDate(this,'+pidx+','+ai+',\'date_issued\')" onblur="_bioAvizDateBlur(this,'+pidx+','+ai+',\'date_issued\')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
+          '<td style="padding:3px 4px"><input type="date" value="'+(a.date_expiry||'')+'" onchange="_bioAvizDate(this,'+pidx+','+ai+',\'date_expiry\')" onblur="_bioAvizDateBlur(this,'+pidx+','+ai+',\'date_expiry\')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
           '<td style="padding:3px 4px">'+stat+'</td>'+
           '<td style="padding:3px 4px"><button onclick="if(confirm(\''+_M('Stergi acest aviz?')+'\')){CFG.biocide_products['+pidx+'].avize.splice('+ai+',1);saveCfg();render()}" title="Sterge aviz" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">&#128465;</button></td>'+
           '</tr>';
@@ -12699,8 +12723,8 @@ function _renderBioAvizeInDialog(prodId){
     avize.forEach(function(a,ai){
       var status='—';if(a.date_expiry){var exp=new Date(a.date_expiry);status=exp<now?'<span style="color:var(--red);font-weight:700">'+(isEN?'Expired':'Expirat')+'</span>':exp<soon?'<span style="color:#D97706;font-weight:700">'+(isEN?'Expiring soon':'Expira curand')+'</span>':'<span style="color:#059669">'+(isEN?'Valid':'Valabil')+'</span>'}
       h+='<tr><td><input value="'+esc(a.nr||'')+'" placeholder="Nr. aviz" onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].nr=this.value;saveCfg()" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px;width:90px"></td>'+
-        '<td><input type="date" value="'+(a.date_issued||'')+'" onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].date_issued=this.value;saveCfg()" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px"></td>'+
-        '<td><input type="date" value="'+(a.date_expiry||'')+'" onchange="CFG.biocide_products['+pidx+'].avize['+ai+'].date_expiry=this.value;saveCfg()" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px"></td>'+
+        '<td><input type="date" value="'+(a.date_issued||'')+'" onchange="_bioAvizDate(this,'+pidx+','+ai+',\'date_issued\',null,\'save\')" onblur="_bioAvizDateBlur(this,'+pidx+','+ai+',\'date_issued\',null,\'save\')" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px"></td>'+
+        '<td><input type="date" value="'+(a.date_expiry||'')+'" onchange="_bioAvizDate(this,'+pidx+','+ai+',\'date_expiry\',null,\'save\')" onblur="_bioAvizDateBlur(this,'+pidx+','+ai+',\'date_expiry\',null,\'save\')" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px"></td>'+
         '<td>'+status+'</td>'+
         '<td class="act"><button onclick="CFG.biocide_products['+pidx+'].avize.splice('+ai+',1);saveCfg();editBio(_editBioRec?.id)" title="Sterge aviz">&#128465;</button></td></tr>';
     });
@@ -12951,8 +12975,8 @@ function bioEditProduct(pid){
         stat=exp<now?'<span style="color:var(--red);font-weight:700">&#9888; Expirat</span>':exp<soon?'<span style="color:#D97706;font-weight:700">&#9203; Curand</span>':'<span style="color:#059669">&#10004; Valabil</span>';}
       avizHtml+='<tr>'+
         '<td style="padding:3px 4px"><input value="'+esc(a.nr||a.number||'')+'" placeholder="Nr." onchange="CFG.biocide_products['+idx+'].avize['+ai+'].nr=this.value;saveCfg()" style="width:110px;padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
-        '<td style="padding:3px 4px"><input type="date" value="'+(a.date_issued||'')+'" onchange="CFG.biocide_products['+idx+'].avize['+ai+'].date_issued=this.value;_bioKeepAndRerender(\''+String(pid).replace(/\x27/g,"\\x27")+'\')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
-        '<td style="padding:3px 4px"><input type="date" value="'+(a.date_expiry||'')+'" onchange="CFG.biocide_products['+idx+'].avize['+ai+'].date_expiry=this.value;_bioKeepAndRerender(\''+String(pid).replace(/\x27/g,"\\x27")+'\')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
+        '<td style="padding:3px 4px"><input type="date" value="'+(a.date_issued||'')+'" onchange="_bioAvizDate(this,'+idx+','+ai+',\'date_issued\','+_jsArg(pid)+')" onblur="_bioAvizDateBlur(this,'+idx+','+ai+',\'date_issued\','+_jsArg(pid)+')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
+        '<td style="padding:3px 4px"><input type="date" value="'+(a.date_expiry||'')+'" onchange="_bioAvizDate(this,'+idx+','+ai+',\'date_expiry\','+_jsArg(pid)+')" onblur="_bioAvizDateBlur(this,'+idx+','+ai+',\'date_expiry\','+_jsArg(pid)+')" style="padding:3px 6px;border:1px solid var(--brd);border-radius:4px;font-size:11px"></td>'+
         '<td style="padding:3px 4px">'+stat+'</td>'+
         '<td style="padding:3px 4px"><button onclick="if(confirm(\''+_M('Stergi aviz?')+'\')){CFG.biocide_products['+idx+'].avize.splice('+ai+',1);_bioKeepAndRerender(\''+String(pid).replace(/\x27/g,"\\x27")+'\')}" title="Sterge" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">&#128465;</button></td>'+
       '</tr>';
@@ -13613,8 +13637,8 @@ function _renderBioAvizeRows(prodIdx){
   p.avize.forEach(function(a,ai){
     h+='<tr>'+
       '<td><input value="'+esc(a.nr||'')+'" onchange="CFG.biocide_products['+prodIdx+'].avize['+ai+'].nr=this.value;saveCfg()" placeholder="Nr. aviz" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;width:100%;font-size:11px"></td>'+
-      '<td><input type="date" value="'+(a.date_issued||'')+'" onchange="CFG.biocide_products['+prodIdx+'].avize['+ai+'].date_issued=this.value;saveCfg()" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px"></td>'+
-      '<td><input type="date" value="'+(a.date_expiry||'')+'" onchange="CFG.biocide_products['+prodIdx+'].avize['+ai+'].date_expiry=this.value;saveCfg()" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px"></td>'+
+      '<td><input type="date" value="'+(a.date_issued||'')+'" onchange="_bioAvizDate(this,'+prodIdx+','+ai+',\'date_issued\',null,\'save\')" onblur="_bioAvizDateBlur(this,'+prodIdx+','+ai+',\'date_issued\',null,\'save\')" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px"></td>'+
+      '<td><input type="date" value="'+(a.date_expiry||'')+'" onchange="_bioAvizDate(this,'+prodIdx+','+ai+',\'date_expiry\',null,\'save\')" onblur="_bioAvizDateBlur(this,'+prodIdx+','+ai+',\'date_expiry\',null,\'save\')" style="border:1px solid var(--brd);border-radius:4px;padding:3px 6px;font-size:11px"></td>'+
       '<td class="act"><button onclick="CFG.biocide_products['+prodIdx+'].avize.splice('+ai+',1);saveCfg();editBioAvize('+prodIdx+')">&#128465;</button></td></tr>';
   });
   h+='</tbody></table>';
@@ -15208,7 +15232,7 @@ async function rPPS(el){
   // ── Metadata studiu ──
   h+='<div class="pn" style="margin-bottom:16px"><div class="pb">'+
     '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">'+
-    '<div class="fg" style="min-width:160px"><label>Data studiului PPS</label><input type="date" id="pps-meta-date" value="'+(meta.study_date||'')+'" onchange="savePPSMeta()"></div>'+
+    '<div class="fg" style="min-width:160px"><label>Data studiului PPS</label><input type="date" id="pps-meta-date" value="'+(meta.study_date||'')+'" onchange="savePPSMeta()" onblur="_autoFixYear(this);savePPSMeta()"></div>'+
     '<div class="fg" style="min-width:200px"><label>Coordonator studiu</label><select id="pps-meta-coord" onchange="savePPSMeta()"><option value="">— selecteaza —</option>'+
     (function(){var ppl=(CFG.personnel||[]).filter(function(p){return p&&p.name});   // v14.1 CFG.people nu exista: lista era goala
       var o=ppl.map(function(p){return '<option value="'+esc(p.name)+'"'+(meta.coordinator===p.name?' selected':'')+'>'+esc(p.name)+'</option>'}).join('');
@@ -15325,12 +15349,18 @@ async function savePPSMeta(){
   var dEl=el('pps-meta-date'),cEl=el('pps-meta-coord'),nEl=el('pps-meta-notes');
   if(!dEl&&!cEl&&!nEl)return;
   var vDate=dEl?dEl.value||'':null,vCoord=cEl?cEl.value||'':null,vNotes=nEl?nEl.value||'':null;
+  // v14.20 - data cu anul inca in tastare (0002, 0020, 0202) nu se salveaza; un an scurt („26”) se corecteaza la iesirea din camp
+  // (onblur). Inainte fiecare cifra scria in baza si pleca prin sincronizare, iar „26” ramanea 0026 (tiparul semnalarii EU din 15.10.2026).
+  // Nici restul nu se rescrie atunci: handlerul a pornit din campul de data, iar onblur salveaza tot imediat ce anul e intreg.
+  if(vDate!==null&&_dateIncomplete(vDate))return;
   var allPps=await ga('pps');
   var existing=allPps.find(r=>r.year===y&&r.type==='study_meta');
   var rec=existing?{...existing}:{year:y,type:'study_meta'};
   if(vDate!==null)rec.study_date=vDate;
   if(vCoord!==null)rec.coordinator=vCoord;
   if(vNotes!==null)rec.study_notes=vNotes;
+  // v14.20 - onblur cheama salvarea si dupa un change deja salvat: fara nimic schimbat nu se rescrie (si nu pleaca prin sincronizare)
+  if(existing&&rec.study_date===existing.study_date&&rec.coordinator===existing.coordinator&&rec.study_notes===existing.study_notes)return;
   await pt('pps',rec);
 }
 
@@ -23474,6 +23504,17 @@ async function genObiectiveWord(){
 
 // ═══════════════════════════════════════════════════════════════
 var _instrFilters={sec:'',dateFrom:'',dateTo:'',search:''};
+// filtrele de data asteapta anul intreg (ca la Autocontrol, ATP, UV); la iesirea din camp, anul scurt se corecteaza
+function _instrDateInput(input,field){
+  var v=input.value||'';if(_dateIncomplete(v))return;
+  if(_instrFilters[field]===v)return;
+  _instrFilters[field]=v;render();
+}
+function _instrDateBlur(input,field){
+  _autoFixYear(input);
+  var v=input.value||'';if(_instrFilters[field]===v)return;
+  _instrFilters[field]=v;render();
+}
 var _instrParticipants=[];
 
 function _getTrainers(r){
@@ -23582,8 +23623,8 @@ async function rInstr(el){
     '<input type="text" placeholder="Cauta..." value="'+esc(f.search)+'" id="instr-search" oninput="_instrFilters.search=this.value;_renderKeepFocus()" style="padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;width:160px">'+
     '<select onchange="_instrFilters.sec=this.value;render()" style="padding:6px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
       '<option value="">Toate sectiile</option>'+secOptsGrouped(f.sec)+'</select>'+
-    '<input type="date" value="'+esc(f.dateFrom)+'" onchange="_instrFilters.dateFrom=this.value;render()" title="De la" style="padding:5px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
-    '<input type="date" value="'+esc(f.dateTo)+'" onchange="_instrFilters.dateTo=this.value;render()" title="Pana la" style="padding:5px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+    '<input type="date" value="'+esc(f.dateFrom)+'" onchange="_instrDateInput(this,\'dateFrom\')" onblur="_instrDateBlur(this,\'dateFrom\')" title="De la" style="padding:5px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
+    '<input type="date" value="'+esc(f.dateTo)+'" onchange="_instrDateInput(this,\'dateTo\')" onblur="_instrDateBlur(this,\'dateTo\')" title="Pana la" style="padding:5px;border:1px solid var(--brd);border-radius:6px;font-size:12px">'+
     '<button class="btn bo bsm" onclick="_instrFilters={sec:\'\',dateFrom:\'\',dateTo:\'\',search:\'\'};render()">Reset</button>'+
   '</div>';
 
@@ -30355,6 +30396,7 @@ function downloadReportFile(){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'14.20',date:'2026-10-19',summary:"Datele se pot tasta din nou cifra cu cifra: la Autocontrol (data recoltarii), Instruire (filtrele De la / Pana la), Biocide (datele avizelor, in toate cele patru locuri) si PPS (data studiului) anul ramanea 2000-2009 sau 0002. Un an scurt („26”) devine 2026 la iesirea din camp. In modul englezesc, previzualizarea rezultatului ATP / proteine nu mai arata text romanesc."},
   {version:'14.19',date:'2026-10-16',summary:"Tipurile de proba apar in ordine alfabetica si in Configurare (Introducere date → Tipuri Probe Autocontrol), si la testele de proteine (lista „Tip proba” din dialog si grupa din filtru), ca in restul aplicatiei."},
   {version:'14.18',date:'2026-10-16',summary:"Testele rapide de proteine se inregistreaza pe „Tip proba”, din aceeasi lista ca probele microbiologice (Configurare → Tipuri probe), fara cele la care testul nu are sens: apa, aeromicroflora, testele biologice de sterilizare. ATP-ul ramane pe „Tip suprafata”, cu pragurile RLU. Rapoartele grupeaza testele de proteine pe tipuri de proba."},
   {version:'14.17',date:'2026-10-16',summary:"Autocontrol: cautare dupa nr. de inregistrare in fila Probe si in fila ATP / Proteine; un click pe o proba din fereastra unei celule a matricei te duce la ea in fila Probe; testele de proteine (si ATP) au nr. de inregistrare si butonul „Salveaza + Noua”, ca probele microbiologice."},

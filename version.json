@@ -1,11 +1,10 @@
 {
-  "version": "14.22",
-  "version_note": "Autocontrol: graficul pe tip de proba sus, cu lista Structuri; paginarea si deasupra tabelului; culorile matricei mai clare",
+  "version": "14.23",
+  "version_note": "Matricea de la Autocontrol arata starea si prin simbol (✓ / ! / !!), nu doar prin culoare",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Autocontrol › Prezentare: graficul probelor pe tip de proba e primul in pagina, deschis, si se poate restrange la Spital, Ambulatoriu sau Spitalizare de zi (lista „Structuri”).",
-    "Autocontrol › Probe: butoanele de pagina sunt si deasupra tabelului, nu doar dedesubt.",
-    "Culorile matricei de acoperire se deosebesc mai bine (verde / chihlimbar / roz), iar legenda are aceleasi culori ca celulele.",
-    "Importul de laborator: „Colistina” primeste codul sistemic J01XB01, nu pe cel al colistinei orale."
+    "Matricea de la Autocontrol arata starea si printr-un simbol langa cifra: ✓ toate conforme, ! cu neconformitati, !! peste 25 % neconforme. Legenda are aceleasi simboluri.",
+    "Starea se poate citi si fara culori; cu mouse-ul peste o celula apare in cuvinte.",
+    "Include si 14.22: graficul pe tip de proba sus, cu lista Structuri; paginarea si deasupra tabelului; culorile noi ale matricei; Colistina J01XB01 la import."
   ]
 }

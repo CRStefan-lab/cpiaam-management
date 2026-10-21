@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v14.22</title>
+<title>CPIAAM Management v14.23</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -233,6 +233,14 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 /* Legend */
 .ac-legend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 14px;font-size:11px;color:var(--txtL)}
 .ac-legend-dot{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:4px}
+/* (IPC Manager 0.32, punctul 38) - culoarea nu e singurul semn: simbolul starii inaintea cifrei din celula (✓ conform, ! NC <=25 %, !! NC >25 %)
+   si acelasi simbol in punctul legendei; celulele netestate si N/A raman cum sunt. Titlul celulei spune starea in cuvinte. Simbolul are 9px
+   (ca N/A) si un spatiu ingust, ca o celula de 32px sa ramana de 32px pana la 99 de probe; peste, coloana creste cu 2-7px, pe un singur rand. */
+.ac-matrix td.ac-cell-gn::before{content:'\2713\2009'}.ac-matrix td.ac-cell-yl::before{content:'!\2009'}.ac-matrix td.ac-cell-rd::before{content:'!!\2009'}
+.ac-matrix td.ac-cell-gn::before,.ac-matrix td.ac-cell-yl::before,.ac-matrix td.ac-cell-rd::before{font-size:9px}
+.ac-matrix td.ac-cell-gn,.ac-matrix td.ac-cell-yl,.ac-matrix td.ac-cell-rd{white-space:nowrap}
+.ac-legend-sym .ac-legend-dot{width:auto;min-width:14px;padding:0 3px;box-sizing:border-box;text-align:center;font-size:11px;font-weight:700;line-height:14px;color:var(--txt)}
+.ac-legend-sym .ac-cell-gn::before{content:'\2713'}.ac-legend-sym .ac-cell-yl::before{content:'!'}.ac-legend-sym .ac-cell-rd::before{content:'!!'}
 /* Plan tab */
 .ac-plan-section{margin-bottom:18px}
 .ac-plan-section h4{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--brd)}
@@ -2787,7 +2795,7 @@ function _extractCfg0(c){
   return null;
 }
 
-const APP_VERSION='14.22';
+const APP_VERSION='14.23';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -10040,17 +10048,19 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
       o+='<tr><td>'+sn(s)+'</td>';
       probeTypes.forEach(function(pt){
         var cell=matrix[pt.id]&&matrix[pt.id][s.id]?matrix[pt.id][s.id]:{total:0,conf:0,nc:0};
-        var cls,txt;
+        var cls,txt,tt='';
         if(!isProbeApplicable(s.id,pt.id)){cls='ac-cell-na';txt='N/A'}
         else if(cell.total===0){cls='ac-cell-gr';txt='—'}
         else{
           var ncPct=cell.nc/cell.total*100;
-          if(ncPct===0){cls='ac-cell-gn';txt=cell.total}
-          else if(ncPct<=25){cls='ac-cell-yl';txt=cell.total}
-          else{cls='ac-cell-rd';txt=cell.total}
+          // (IPC Manager 0.32, punctul 38) - al doilea semn langa culoare: simbolul ✓ / ! / !! il pune CSS-ul inaintea cifrei, iar title-ul
+          // spune starea in cuvinte (textele legendei). La deuteranopie fundalurile „conform” si „NC >25%” ajung la dE 4,6 (cererea din 21.10.2026).
+          if(ncPct===0){cls='ac-cell-gn';txt=cell.total;tt=isEN?'All conformant':'Toate conforme'}
+          else if(ncPct<=25){cls='ac-cell-yl';txt=cell.total;tt=isEN?'Non-conformities':'Cu neconformitati'}
+          else{cls='ac-cell-rd';txt=cell.total;tt='NC >25%'}
         }
         var isClickable=cell.total>0;
-        o+='<td class="'+cls+(isClickable?' ac-cell-c':'')+'"'+(isClickable?' onclick="showAutoPopup(event,'+_jsArg(pt.id)+','+_jsArg(s.id)+')"':'')+'>'+txt+'</td>';
+        o+='<td class="'+cls+(isClickable?' ac-cell-c':'')+'"'+(tt?' title="'+tt+'"':'')+(isClickable?' onclick="showAutoPopup(event,'+_jsArg(pt.id)+','+_jsArg(s.id)+')"':'')+'>'+txt+'</td>';
       });
       o+='</tr>';
     });
@@ -10064,7 +10074,7 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
     if(secAmbul.length>0)h+=renderMatrix(secAmbul,isEN?'Outpatient':'Ambulatoriu');
 
     // C. LEGENDA
-    h+='<div class="ac-legend">';
+    h+='<div class="ac-legend ac-legend-sym">';   // (IPC Manager 0.32, punctul 38) - acelasi simbol ca pe celula, langa fiecare stare
     // v14.22 - punctele legendei poarta clasele celulelor (A6): inainte aveau culorile vechi inline si nu urmau matricea
     h+='<span><span class="ac-legend-dot ac-cell-gn"></span>'+(isEN?'All conformant':'Toate conforme')+'</span>';
     h+='<span><span class="ac-legend-dot ac-cell-yl"></span>'+(isEN?'Non-conformities':'Cu neconformitati')+'</span>';
@@ -30454,6 +30464,7 @@ function downloadReportFile(){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'14.23',date:'2026-10-21',summary:"Matricea de la Autocontrol arata starea si printr-un simbol langa cifra — ✓ toate conforme, ! cu neconformitati, !! peste 25 % neconforme —, iar legenda are aceleasi simboluri. Cine nu deosebeste verdele de rosu citeste acum starea fara culori. Cu mouse-ul peste celula, starea apare in cuvinte."},
   {version:'14.22',date:'2026-10-21',summary:"Autocontrol: graficul probelor pe tip de proba e primul in Prezentare, deschis, cu lista „Structuri” (Toate / Spital / Ambulatoriu / Spitalizare de zi); butoanele de pagina din fila Probe sunt si deasupra tabelului; culorile matricei se deosebesc mai bine (verde / chihlimbar / roz, cifra in culoarea textului), iar legenda are aceleasi culori ca celulele. La importul de laborator, „Colistina” primeste codul sistemic J01XB01, nu colistina orala."},
   {version:'14.21',date:'2026-10-20',summary:"Autocontrol: graficul pe tip de proba arata toate tipurile (sarea peste unele etichete); tabelul ATP / proteine are coloana „Detalii” (locatia si observatiile); la probele microbiologice cu germen, observatiile nu mai dispar; o suprafata UV sau ATP stearsa din configurare apare ca „(sters din configurare)”, nu ca un cod. Cardurile cu cifre care nu fac nimic la click nu mai arata ca butoane."},
   {version:'14.20',date:'2026-10-19',summary:"Datele se pot tasta din nou cifra cu cifra: la Autocontrol (data recoltarii), Instruire (filtrele De la / Pana la), Biocide (datele avizelor, in toate cele patru locuri) si PPS (data studiului) anul ramanea 2000-2009 sau 0002. Un an scurt („26”) devine 2026 la iesirea din camp. In modul englezesc, previzualizarea rezultatului ATP / proteine nu mai arata text romanesc."},
@@ -31922,7 +31933,8 @@ var MAN_SECTIONS=[
    ['Probe','Tabelul probelor, 50 pe pagina (butoanele de pagina sunt si deasupra, si sub tabel), sortabil, cu filtre (inclusiv „cu DSP / fara DSP”) si cautare dupa <strong>Nr. inregistrare</strong> — merge si o parte din numar, fara spatii sau majuscule. '+_mUi('+ Adauga Proba')+', '+_mUi('Import CSV')+', '+_mUi('Export CSV')+'.'],
    ['Harta de risc','Punctele de risc pe sectii: nivel (inalt / mediu / scazut), zona, puncte critice, frecventa de recoltare, masuri de control, data revizuirii. '+_mUi('+ Adauga punct de risc')+' si export Word.']])+
   '<h4>Culorile matricei</h4>'+
-  _mUl(['<span class="man-dot" style="background:#0FA976"></span>Toate conforme','<span class="man-dot" style="background:#F59E0B"></span>Cu neconformitati, pana la 25 %','<span class="man-dot" style="background:#EF4444"></span>Peste 25 % neconforme','<span class="man-dot" style="background:#CBD5E1"></span>„—” Netestat — <strong>cea mai importanta celula</strong>: arata unde nu s-a recoltat','N/A — tipul de proba nu se aplica sectiei (setat in Configurare)'])+
+  _mUl(['<span class="man-dot" style="background:#0FA976"></span><strong>✓</strong> Toate conforme','<span class="man-dot" style="background:#F59E0B"></span><strong>!</strong> Cu neconformitati, pana la 25 %','<span class="man-dot" style="background:#EF4444"></span><strong>!!</strong> Peste 25 % neconforme','<span class="man-dot" style="background:#CBD5E1"></span>„—” Netestat — <strong>cea mai importanta celula</strong>: arata unde nu s-a recoltat','N/A — tipul de proba nu se aplica sectiei (setat in Configurare)'])+
+  '<p>Langa cifra (numarul de probe) fiecare celula are si simbolul starii — ✓, ! sau !! —, ca starea sa se poata citi si fara culori (de exemplu de catre cineva care nu deosebeste verdele de rosu). Cu mouse-ul peste celula apare starea in cuvinte.</p>'+
   '<p>Pastilele de deasupra fiecarei matrice filtreaza celulele: Toate / Conforme / Cu neconformitati / NC &gt;25 % / Netestat. Click pe o celula arata probele, iar <strong>click pe o proba din fereastra</strong> te duce la ea in fila Probe (filtrata pe acea celula, cu randul evidentiat).</p>'+
   '<h4>Dialogul unei probe</h4>'+
   _mUl(['Nr. inregistrare, data, sectia, tipul, rezultatul; la neconforme UFC si germenul (lista sau „Altul”); daca proba e recoltata de DSP.',
@@ -31942,7 +31954,8 @@ var MAN_SECTIONS=[
    ['Samples','The sample table, 50 per page (page buttons both above and below the table), sortable, with filters (including “with / without public health”) and a search by <strong>registration number</strong> — part of the number also works, ignoring spaces and case. '+_mUi('+ Add sample')+', '+_mUi('Import CSV')+', '+_mUi('Export CSV')+'.'],
    ['Risk map','Risk points per ward: level (high / medium / low), zone, critical points, sampling frequency, control measures, review date. '+_mUi('+ Add risk point')+' and Word export.']])+
   '<h4>Matrix colours</h4>'+
-  _mUl(['<span class="man-dot" style="background:#0FA976"></span>All compliant','<span class="man-dot" style="background:#F59E0B"></span>Non-compliant, up to 25 %','<span class="man-dot" style="background:#EF4444"></span>Over 25 % non-compliant','<span class="man-dot" style="background:#CBD5E1"></span>“—” Not tested — <strong>the most important cell</strong>: shows where nothing was sampled','N/A — the sample type does not apply to the ward (set in Settings)'])+
+  _mUl(['<span class="man-dot" style="background:#0FA976"></span><strong>✓</strong> All compliant','<span class="man-dot" style="background:#F59E0B"></span><strong>!</strong> Non-compliant, up to 25 %','<span class="man-dot" style="background:#EF4444"></span><strong>!!</strong> Over 25 % non-compliant','<span class="man-dot" style="background:#CBD5E1"></span>“—” Not tested — <strong>the most important cell</strong>: shows where nothing was sampled','N/A — the sample type does not apply to the ward (set in Settings)'])+
+  '<p>Next to the number (of samples) each cell also shows the status symbol — ✓, ! or !! — so the status can be read without colours (for example by someone who cannot tell green from red). Hovering over a cell shows the status in words.</p>'+
   '<p>The pills above each matrix filter the cells. Clicking a cell shows its samples, and <strong>clicking a sample in that window</strong> takes you to it in the Samples tab (filtered on that cell, with the row highlighted).</p>'+
   '<h4>The sample dialog</h4>'+
   _mUl(['Register no., date, ward, type, result; for non-compliant CFU and organism (list or “Other”); whether the sample was taken by public health.',

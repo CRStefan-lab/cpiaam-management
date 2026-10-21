@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v14.23</title>
+<title>CPIAAM Management v14.24</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -210,6 +210,8 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .ac-cell-gr{background:var(--bg);color:#6B7673}
 .ac-cell-na{background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(107,118,115,.1) 3px,rgba(107,118,115,.1) 6px);color:#6B7673;font-size:9px;font-style:italic}
 .ac-legend-dot.ac-cell-gn{box-shadow:inset 0 0 0 1px #1A7F5A}.ac-legend-dot.ac-cell-yl{box-shadow:inset 0 0 0 1px #B7791F}.ac-legend-dot.ac-cell-rd{box-shadow:inset 0 0 0 1px #C2410C}
+/* v14.24 - punctul Netestat din legenda are fundalul var(--bg) pe fundalul paginii (tot var(--bg)), deci nu se vedea; conturul de 1px il arata, in ambele teme (nota EU 21.10.2026, observatia 5) */
+.ac-legend-dot.ac-cell-gr{box-shadow:inset 0 0 0 1px var(--brd)}
 /* Cell popup */
 .ac-popup{position:absolute;z-index:999;background:var(--card);border:1px solid var(--brd);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:12px 14px;min-width:220px;max-width:340px;font-size:12px}
 .ac-popup-title{font-weight:700;color:var(--navy);margin-bottom:8px;font-size:13px;display:flex;justify-content:space-between;align-items:center}
@@ -2795,7 +2797,7 @@ function _extractCfg0(c){
   return null;
 }
 
-const APP_VERSION='14.23';
+const APP_VERSION='14.24';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -30464,6 +30466,7 @@ function downloadReportFile(){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'14.24',date:'2026-10-21',summary:"Legenda matricei de la Autocontrol: punctul „Netestat” se vede acum (are un contur subtire); inainte avea culoarea fundalului paginii si se citea doar eticheta."},
   {version:'14.23',date:'2026-10-21',summary:"Matricea de la Autocontrol arata starea si printr-un simbol langa cifra — ✓ toate conforme, ! cu neconformitati, !! peste 25 % neconforme —, iar legenda are aceleasi simboluri. Cine nu deosebeste verdele de rosu citeste acum starea fara culori. Cu mouse-ul peste celula, starea apare in cuvinte."},
   {version:'14.22',date:'2026-10-21',summary:"Autocontrol: graficul probelor pe tip de proba e primul in Prezentare, deschis, cu lista „Structuri” (Toate / Spital / Ambulatoriu / Spitalizare de zi); butoanele de pagina din fila Probe sunt si deasupra tabelului; culorile matricei se deosebesc mai bine (verde / chihlimbar / roz, cifra in culoarea textului), iar legenda are aceleasi culori ca celulele. La importul de laborator, „Colistina” primeste codul sistemic J01XB01, nu colistina orala."},
   {version:'14.21',date:'2026-10-20',summary:"Autocontrol: graficul pe tip de proba arata toate tipurile (sarea peste unele etichete); tabelul ATP / proteine are coloana „Detalii” (locatia si observatiile); la probele microbiologice cu germen, observatiile nu mai dispar; o suprafata UV sau ATP stearsa din configurare apare ca „(sters din configurare)”, nu ca un cod. Cardurile cu cifre care nu fac nimic la click nu mai arata ca butoane."},

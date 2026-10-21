@@ -1,10 +1,9 @@
 {
-  "version": "14.23",
-  "version_note": "Matricea de la Autocontrol arata starea si prin simbol (✓ / ! / !!), nu doar prin culoare",
+  "version": "14.24",
+  "version_note": "Legenda matricei Autocontrol: punctul Netestat se vede",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Matricea de la Autocontrol arata starea si printr-un simbol langa cifra: ✓ toate conforme, ! cu neconformitati, !! peste 25 % neconforme. Legenda are aceleasi simboluri.",
-    "Starea se poate citi si fara culori; cu mouse-ul peste o celula apare in cuvinte.",
-    "Include si 14.22: graficul pe tip de proba sus, cu lista Structuri; paginarea si deasupra tabelului; culorile noi ale matricei; Colistina J01XB01 la import."
+    "Legenda matricei de la Autocontrol: punctul „Netestat” are acum un contur subtire si se vede (inainte avea culoarea fundalului).",
+    "Include si 14.23: simbolurile ✓ / ! / !! in celulele matricei, ca starea sa nu depinda doar de culoare."
   ]
 }

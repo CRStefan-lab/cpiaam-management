@@ -1,12 +1,11 @@
 {
-  "version": "14.21",
-  "version_note": "Autocontrol: graficul pe tip de proba complet, coloana Detalii la ATP / proteine, observatiile la probele cu germen",
+  "version": "14.22",
+  "version_note": "Autocontrol: graficul pe tip de proba sus, cu lista Structuri; paginarea si deasupra tabelului; culorile matricei mai clare",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Autocontrol: graficul pe tip de proba arata toate tipurile de proba (sarea peste unele etichete).",
-    "Tabelul ATP / proteine are coloana „Detalii”, cu locatia si observatiile testului.",
-    "La probele microbiologice cu germen, observatiile nu mai dispar din coloana „Detalii proba”.",
-    "O suprafata UV sau ATP stearsa din configurare apare ca „(sters din configurare)”, nu ca un cod.",
-    "Cardurile cu cifre care nu fac nimic la click nu mai arata ca butoane."
+    "Autocontrol › Prezentare: graficul probelor pe tip de proba e primul in pagina, deschis, si se poate restrange la Spital, Ambulatoriu sau Spitalizare de zi (lista „Structuri”).",
+    "Autocontrol › Probe: butoanele de pagina sunt si deasupra tabelului, nu doar dedesubt.",
+    "Culorile matricei de acoperire se deosebesc mai bine (verde / chihlimbar / roz), iar legenda are aceleasi culori ca celulele.",
+    "Importul de laborator: „Colistina” primeste codul sistemic J01XB01, nu pe cel al colistinei orale."
   ]
 }

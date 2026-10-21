@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v14.21</title>
+<title>CPIAAM Management v14.22</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -200,11 +200,16 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .ac-matrix td{padding:4px 3px;text-align:center;border:1px solid var(--brd);font-weight:700;font-size:11px;transition:.15s;min-width:32px}
 .ac-matrix td:first-child{text-align:left;font-weight:500;background:#F8FAFC;cursor:default;white-space:nowrap;padding-left:8px;font-size:11px;position:sticky;left:0;z-index:1;box-shadow:2px 0 4px rgba(0,0,0,.06)}
 .ac-matrix td.ac-cell-c{cursor:pointer}.ac-matrix td.ac-cell-c:hover{opacity:.85;box-shadow:inset 0 0 0 2px rgba(0,0,0,.15)}
-.ac-cell-gn{background:#C0DD97;color:#27500A}
-.ac-cell-yl{background:#FAEEDA;color:#633806}
-.ac-cell-rd{background:#F7C1C1;color:#791F1F}
-.ac-cell-gr{background:var(--bg);color:#9CA3AF}
-.ac-cell-na{background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 6px);color:#D1D5DB;font-size:9px;font-style:italic}
+/* A6 (refacut 21.10.2026) - celulele matricei in nuantele de CELULA ale IPC Manager 0.38 (--c-ok-cell / --c-warn-cell / --c-alarm-cell),
+   scrise aici ca hex pentru ca 14.19 nu are variabilele de paleta; perechea .dark mai jos. Masurat: dE (CIE76) >= 15 intre oricare doua
+   stari (conform, NC <= 25 %, NC > 25 %, netestat) in ambele teme (minim 18,1 deschis / 18,9 intunecat); cifra in culoarea textului
+   (--txt), >= 4,5:1 deschis / 6,35:1 intunecat. Punctul din legenda primeste conturul culorii de stare. */
+.ac-cell-gn{background:#D5F6DC;color:var(--txt)}
+.ac-cell-yl{background:#FEE1B8;color:var(--txt)}
+.ac-cell-rd{background:#F9D4D0;color:var(--txt)}
+.ac-cell-gr{background:var(--bg);color:#6B7673}
+.ac-cell-na{background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(107,118,115,.1) 3px,rgba(107,118,115,.1) 6px);color:#6B7673;font-size:9px;font-style:italic}
+.ac-legend-dot.ac-cell-gn{box-shadow:inset 0 0 0 1px #1A7F5A}.ac-legend-dot.ac-cell-yl{box-shadow:inset 0 0 0 1px #B7791F}.ac-legend-dot.ac-cell-rd{box-shadow:inset 0 0 0 1px #C2410C}
 /* Cell popup */
 .ac-popup{position:absolute;z-index:999;background:var(--card);border:1px solid var(--brd);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:12px 14px;min-width:220px;max-width:340px;font-size:12px}
 .ac-popup-title{font-weight:700;color:var(--navy);margin-bottom:8px;font-size:13px;display:flex;justify-content:space-between;align-items:center}
@@ -464,8 +469,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);display:flex;min
 .dark .dt .act button:hover{background:#334155}
 /* old dash-cfg-bar/panel dark overrides eliminated in v13.14 (replaced by dash-cfg-btn-pretty + group toggles, dark theme handled in main rules) */
 .dark .cal-nav button{border-color:#475569;color:#CBD5E1}.dark .cal-nav button:hover{background:#334155;border-color:#2DD4BF}
-.dark .ac-cell-gn{background:#1A3D1A;color:#86EFAC}.dark .ac-cell-yl{background:#3D2E0A;color:#FCD34D}
-.dark .ac-cell-rd{background:#450A0A;color:#FCA5A5}.dark .ac-cell-gr{background:#1E293B;color:#64748B}.dark .ac-cell-na{background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(255,255,255,.04) 3px,rgba(255,255,255,.04) 6px);color:#475569}
+.dark .ac-cell-gn{background:#212F25;color:var(--txt)}.dark .ac-cell-yl{background:#3B2906;color:var(--txt)}
+.dark .ac-cell-rd{background:#3D2624;color:var(--txt)}.dark .ac-cell-gr{background:var(--bg);color:#A8B4C4}.dark .ac-cell-na{background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(168,180,196,.1) 3px,rgba(168,180,196,.1) 6px);color:#A8B4C4}
+.dark .ac-legend-dot.ac-cell-gn{box-shadow:inset 0 0 0 1px #6EE7B7}.dark .ac-legend-dot.ac-cell-yl{box-shadow:inset 0 0 0 1px #FCD34D}.dark .ac-legend-dot.ac-cell-rd{box-shadow:inset 0 0 0 1px #FDA47A}
 .dark .ac-matrix td:first-child{background:#0F172A;color:#CBD5E1}
 .dark .ac-matrix th{background:#0F172A}
 .dark .ac-collapse-hdr{color:var(--txt)}.dark .ac-summary-hdr{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:#FCD34D}.dark .ac-summary-hdr strong{color:#FBBF24}
@@ -2781,7 +2787,7 @@ function _extractCfg0(c){
   return null;
 }
 
-const APP_VERSION='14.21';
+const APP_VERSION='14.22';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -4700,6 +4706,8 @@ function getApplicableCombinations(probeTypes,sections){
 function _secDisplayName(s){var n=sn(s);if(s.type==='cabinet'&&!/^cab/i.test(n))return 'Cab. '+n;if(s.type==='spitalizare_zi'&&!/^(spzi|spitalizare de zi)/i.test(n))return 'SpZi '+n;return n}   // v14.3 fara „Cab. Cabinet …”
 function secOpts(selId){return CFG.sections.slice().sort(function(a,b){return _secDisplayName(a).localeCompare(_secDisplayName(b))}).map(s=>'<option value="'+s.id+'" '+(s.id===selId?'selected':'')+'>'+esc(_secDisplayName(s))+'</option>').join('')}
 // v13.23 - 3 grupuri: Spital sectii/structuri, Spitalizare de Zi, Ambulatoriu cabinete
+// (IPC Manager 0.37 B) grupa unei structuri, aceeasi impartire ca secOptsGrouped: 'ambul' (cabinet), 'spzi' (spitalizare de zi), 'spital' (restul)
+function secGroupOf(s){return s&&s.type==='cabinet'?'ambul':s&&s.type==='spitalizare_zi'?'spzi':'spital'}
 function secOptsGrouped(selId){
   var sp=[],sz=[],am=[];
   CFG.sections.forEach(function(s){
@@ -9798,7 +9806,11 @@ async function _autoGoToSample(id){
   var row=document.getElementById('ac-row-'+id);if(row)row.scrollIntoView({block:'center'});
 }
 var _autoSummaryOpen=false;
-var _autoChartOpen=false;
+var _autoChartOpen=true;   // (IPC Manager 0.37 B) graficul pe tip de proba e deschis implicit
+// (IPC Manager 0.37 B) grupa de structuri a graficului pe tip de proba ('all' | 'spital' | 'ambul' | 'spzi', secGroupOf)
+var _autoChartGrp='all';
+function setAutoChartGrp(g){_autoChartGrp=g;render()}
+function _autoChartSecs(sections){return _autoChartGrp==='all'?sections:sections.filter(function(s){return secGroupOf(s)===_autoChartGrp})}
 var AC_PAGE_SIZE=50;
 
 function setAutoQ(q){_autoQ=q;_autoPopup=null;_autoPage=0;render()}
@@ -9921,13 +9933,15 @@ async function rAuto(el){
 
   // Post-render: chart if open
   if(_autoTab==='prezentare'&&_autoChartOpen){
-    setTimeout(()=>renderAutoChart(data,probeTypes,sections,matrix,isEN),50);
+    setTimeout(()=>renderAutoChart(data,probeTypes,_autoChartSecs(sections),matrix,isEN),50);
   }
 }
 
 // ═══ TAB 1 — PREZENTARE ═══
 function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
   let h='';
+  // (IPC Manager 0.37 B) graficul pe tip de proba primul in pagina, inaintea rezumatului si a matricei
+  if(probeTypes.length>0)h+=_autoChartBlock(isEN);
   // Count untested (skip non-applicable combinations)
   let untestedCount=0;const untestedByType={};
   probeTypes.forEach(pt=>{sections.forEach(s=>{
@@ -10051,26 +10065,34 @@ function renderAutoTab1(data,allData,matrix,probeTypes,sections,isEN,qLabel){
 
     // C. LEGENDA
     h+='<div class="ac-legend">';
-    h+='<span><span class="ac-legend-dot" style="background:#C0DD97"></span>'+(isEN?'All conformant':'Toate conforme')+'</span>';
-    h+='<span><span class="ac-legend-dot" style="background:#FAEEDA"></span>'+(isEN?'Non-conformities':'Cu neconformitati')+'</span>';
-    h+='<span><span class="ac-legend-dot" style="background:#F7C1C1"></span>'+(isEN?'NC >25%':'NC >25%')+'</span>';
-    h+='<span><span class="ac-legend-dot" style="background:var(--bg)"></span>'+(isEN?'Not sampled':'Netestat')+'</span>';
+    // v14.22 - punctele legendei poarta clasele celulelor (A6): inainte aveau culorile vechi inline si nu urmau matricea
+    h+='<span><span class="ac-legend-dot ac-cell-gn"></span>'+(isEN?'All conformant':'Toate conforme')+'</span>';
+    h+='<span><span class="ac-legend-dot ac-cell-yl"></span>'+(isEN?'Non-conformities':'Cu neconformitati')+'</span>';
+    h+='<span><span class="ac-legend-dot ac-cell-rd"></span>'+(isEN?'NC >25%':'NC >25%')+'</span>';
+    h+='<span><span class="ac-legend-dot ac-cell-gr"></span>'+(isEN?'Not sampled':'Netestat')+'</span>';
     h+='</div>';
   }
 
-  // D. GRAFIC CATEGORII — colapsabil
-  if(probeTypes.length>0){
-    h+='<div style="margin-top:14px">';
-    h+='<div class="ac-collapse-hdr ac-chart-hdr" onclick="toggleAutoChart()">';
-    h+='<span style="font-weight:700">'+(isEN?'Chart per sample type':'Grafic per tip proba')+'</span>';
-    h+='<span class="ac-arrow'+(_autoChartOpen?' open':'')+'">&#9654;</span>';
-    h+='</div>';
-    h+='<div class="ac-collapse-body'+(_autoChartOpen?' open':'')+'">';
-    h+='<div style="padding:14px;background:var(--card);border:1px solid var(--brd);border-top:none;border-radius:0 0 8px 8px">';
-    h+='<div class="ac-type-chart-box" style="position:relative;height:300px"><canvas id="ac-type-chart"></canvas></div>';   // A4 - inaltimea o pune renderAutoChart, dupa numarul de tipuri
-    h+='</div></div></div>';
-  }
+  // D. GRAFIC CATEGORII — de la IPC Manager 0.37 (B) e primul in pagina (_autoChartBlock, mai sus)
 
+  return h;
+}
+// (IPC Manager 0.37 B) - blocul graficului pe tip de proba: deasupra paginii, deschis implicit, cu lista Toate / Spital / Ambulatoriu /
+// Spitalizare de zi (secGroupOf, aceeasi impartire ca secOptsGrouped) si titlul care spune ce numara: probele MICROBIOLOGICE din
+// registrul de autocontrol, pe tip de proba; ATP si testele de proteine sunt alt registru si nu intra. Graficul ramane cel din 14.21
+// (renderAutoChart, A4), pe structurile grupei alese.
+function _autoChartBlock(isEN){
+  var h='<div style="margin-bottom:14px">';
+  h+='<div class="ac-filters" style="margin-bottom:8px"><div class="fg"><label>'+(isEN?'Structures':'Structuri')+'</label><select id="ac-chart-grp" onchange="setAutoChartGrp(this.value)">'+
+    [['all',isEN?'All':'Toate'],['spital',isEN?'Hospital':'Spital'],['ambul',isEN?'Outpatient':'Ambulatoriu'],['spzi',isEN?'Day hospital':'Spitalizare de zi']].map(function(o){return '<option value="'+o[0]+'"'+(_autoChartGrp===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div></div>';
+  h+='<div class="ac-collapse-hdr ac-chart-hdr" onclick="toggleAutoChart()">';
+  h+='<span style="font-weight:700">'+(isEN?'Microbiological samples by sample type (quality control register; ATP and protein tests are a separate register)':'Probe microbiologice pe tip de proba (registrul de autocontrol; ATP si testele de proteine sunt alt registru)')+'</span>';
+  h+='<span class="ac-arrow'+(_autoChartOpen?' open':'')+'">&#9654;</span>';
+  h+='</div>';
+  h+='<div class="ac-collapse-body'+(_autoChartOpen?' open':'')+'">';
+  h+='<div style="padding:14px;background:var(--card);border:1px solid var(--brd);border-top:none;border-radius:0 0 8px 8px">';
+  h+='<div class="ac-type-chart-box" style="position:relative;height:300px"><canvas id="ac-type-chart"></canvas></div>';   // A4 - inaltimea o pune renderAutoChart, dupa numarul de tipuri
+  h+='</div></div></div>';
   return h;
 }
 
@@ -10104,6 +10126,9 @@ function showAutoPopup(evt,ptId,secId){
     if(mx){mx.style.position='relative';mx.appendChild(popup)}
     else{document.body.appendChild(popup)}
 
+    // (IPC Manager 0.37 B) graficul de deasupra impinge matricea spre josul ecranului; o fereastra care nu incape sub celula urca si
+    // se taia de marginea de sus a matricei (overflow), deci celula se aduce intai la mijlocul ecranului
+    if(evt.target.getBoundingClientRect().top+popup.offsetHeight>window.innerHeight-20&&evt.target.scrollIntoView)evt.target.scrollIntoView({block:'center'});
     const rect=evt.target.getBoundingClientRect();
     const vw=window.innerWidth,vh=window.innerHeight;
     let left=rect.right+8,top=rect.top;
@@ -10151,12 +10176,11 @@ function renderAutoChart(data,probeTypes,sections,matrix,isEN){
   // creste cu numarul de tipuri (~24 px pe rand + axa si legenda), ca etichetele sa nu se suprapuna
   const box=canvas.parentNode&&canvas.parentNode.classList.contains('ac-type-chart-box')?canvas.parentNode:null;
   if(box)box.style.height=Math.max(300,labels.length*24+80)+'px';
-  // A6 din semnalarea EU 20.10.2026 (culorile matricei si ale barelor) NU e preluat in 14.21: legenda RO are culorile scrise inline,
-  // deci ar fi ramas pe culorile vechi, iar matricea face parte din aspectul aprobat — decizia e la user
+  // A6 (refacut 21.10.2026, v14.22) - barele in culorile de stare cu transparenta .45, ca in IPC Manager (palA(rol,.45))
   window._acChart=new Chart(canvas,{type:'bar',data:{labels,datasets:[
-    {label:isEN?'Conformant':'Conforme',data:dConf,backgroundColor:'#C0DD97'},
-    {label:isEN?'NC ≤25%':'NC ≤25%',data:dYel,backgroundColor:'#FAEEDA'},
-    {label:isEN?'NC >25%':'NC >25%',data:dRed,backgroundColor:'#F7C1C1'}
+    {label:isEN?'Conformant':'Conforme',data:dConf,backgroundColor:'rgba(26,127,90,.45)'},
+    {label:isEN?'NC ≤25%':'NC ≤25%',data:dYel,backgroundColor:'rgba(183,121,31,.45)'},
+    {label:isEN?'NC >25%':'NC >25%',data:dRed,backgroundColor:'rgba(194,65,12,.45)'}
   ]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{display:false},ticks:{autoSkip:false}}}}});
 }
 
@@ -10452,6 +10476,9 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
   const pageData=filtered.slice(_autoPage*AC_PAGE_SIZE,(_autoPage+1)*AC_PAGE_SIZE);
   const sortArr=function(col){return '<span class="ac-sort-arrow">'+(sc===col?(sd===1?'&#9650;':'&#9660;'):'&#9670;')+'</span>'};
 
+  // Semnalare IPC Manager 19.10.2026 - aceeasi paginare si deasupra tabelului (cerut dupa testul cu colegele: cu 50 de randuri pe
+  // pagina, butoanele de jos nu se vedeau fara derulare); acelasi bloc, aceeasi functie setAutoPage.
+  h+=_acPagHTML(filtered.length,totalPages,isEN);
   h+='<div style="overflow-x:auto">';
   if(filtered.length===0){
     h+='<div class="es"><p>'+(_autoProbeFilters.reg?(isEN?'No sample has this registration number in the selected period.':'Nicio proba cu acest nr. de inregistrare in perioada aleasa.'):(isEN?'No samples match the filters.':'Nicio proba nu corespunde filtrelor.'))+'</p></div>';
@@ -10484,9 +10511,16 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
   h+='</div>';
 
   // Pagination controls
-  if(filtered.length>AC_PAGE_SIZE){
+  h+=_acPagHTML(filtered.length,totalPages,isEN);
+
+  return h;
+}
+// Butoanele de paginare ale tabelului de probe (sus si jos); nimic sub o pagina.
+function _acPagHTML(n,totalPages,isEN){
+  var h='';
+  if(n>AC_PAGE_SIZE){
     h+='<div class="ac-pag">';
-    h+='<span>'+(isEN?'Page':'Pagina')+' '+(_autoPage+1)+'/'+totalPages+' ('+filtered.length+' '+(isEN?'samples':'probe')+')</span>';
+    h+='<span>'+(isEN?'Page':'Pagina')+' '+(_autoPage+1)+'/'+totalPages+' ('+n+' '+(isEN?'samples':'probe')+')</span>';
     h+='<div style="display:flex;gap:4px">';
     h+='<button onclick="setAutoPage(0)"'+ (_autoPage===0?' disabled':'')+'>&#171;</button>';
     h+='<button onclick="setAutoPage('+(_autoPage-1)+')"'+(_autoPage===0?' disabled':'')+'>&#8249;</button>';
@@ -10494,7 +10528,6 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
     h+='<button onclick="setAutoPage('+(totalPages-1)+')"'+(_autoPage>=totalPages-1?' disabled':'')+'>&#187;</button>';
     h+='</div></div>';
   }
-
   return h;
 }
 
@@ -17275,7 +17308,7 @@ function assignSIR(org,atbLines,atbLabels){
         // comun cel mai lung si, la egalitate, cu lungimea cea mai apropiata de denumirea laboratorului.
         let atbCode='';
         if(typeof ATB_LIST!=='undefined'){
-          let best=null,bestScore=-1;const ln=_abgNorm(atbName);
+          let best=null,bestScore=-1,bestJ=null,bestJScore=-1;const ln=_abgNorm(atbName);
           // Semnalare IPC Manager 07.10.2026 (a treia) - un cod de dinainte scris in fisier (J01DD62, J01XX05) primeste codul din lista (atcCanon, data_atb.js)
           const cod=atcCanon(String(atbName).trim().toUpperCase());
           (typeof getAtbList==='function'?getAtbList():ATB_LIST).forEach(grp=>{grp.items.forEach(a=>{
@@ -17284,7 +17317,12 @@ function assignSIR(org,atbLines,atbLabels){
             else if(_abgSameName(a.n,atbName))sc=9000;
             else if(matchAtbName(a.n,atbName)){const an=_abgNorm(a.n);let p=0;while(p<an.length&&p<ln.length&&an[p]===ln[p])p++;sc=p*100-Math.abs(an.length-ln.length)}
             if(sc>bestScore){bestScore=sc;best=a}
+            if(sc>=0&&/^J01/.test(a.a)&&(!bestJ||sc>bestJScore)){bestJScore=sc;bestJ=a}
           })});
+          // Semnalare IPC Manager 19.10.2026 - o substanta din lista cu cod si in A07 (anti-infectioase intestinale, forma orala) si in
+          // J01 (sistemic) primeste la importul antibiogramei codul J01: prin prefix, „Colistina” iesea A07AA10 „Colistina (oral)”.
+          // Cand castiga un cod A07 fara sa fie scris exact si exista un candidat J01 care se potriveste numelui, castiga J01.
+          if(best&&/^A07/.test(best.a)&&bestScore<10000&&bestJ)best=bestJ;
           if(best&&bestScore>=0)atbCode=best.a;
         }
         org.susceptibility.push({atb_code:atbCode,atb_name:atbName,result});
@@ -30416,6 +30454,7 @@ function downloadReportFile(){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'14.22',date:'2026-10-21',summary:"Autocontrol: graficul probelor pe tip de proba e primul in Prezentare, deschis, cu lista „Structuri” (Toate / Spital / Ambulatoriu / Spitalizare de zi); butoanele de pagina din fila Probe sunt si deasupra tabelului; culorile matricei se deosebesc mai bine (verde / chihlimbar / roz, cifra in culoarea textului), iar legenda are aceleasi culori ca celulele. La importul de laborator, „Colistina” primeste codul sistemic J01XB01, nu colistina orala."},
   {version:'14.21',date:'2026-10-20',summary:"Autocontrol: graficul pe tip de proba arata toate tipurile (sarea peste unele etichete); tabelul ATP / proteine are coloana „Detalii” (locatia si observatiile); la probele microbiologice cu germen, observatiile nu mai dispar; o suprafata UV sau ATP stearsa din configurare apare ca „(sters din configurare)”, nu ca un cod. Cardurile cu cifre care nu fac nimic la click nu mai arata ca butoane."},
   {version:'14.20',date:'2026-10-19',summary:"Datele se pot tasta din nou cifra cu cifra: la Autocontrol (data recoltarii), Instruire (filtrele De la / Pana la), Biocide (datele avizelor, in toate cele patru locuri) si PPS (data studiului) anul ramanea 2000-2009 sau 0002. Un an scurt („26”) devine 2026 la iesirea din camp. In modul englezesc, previzualizarea rezultatului ATP / proteine nu mai arata text romanesc."},
   {version:'14.19',date:'2026-10-16',summary:"Tipurile de proba apar in ordine alfabetica si in Configurare (Introducere date → Tipuri Probe Autocontrol), si la testele de proteine (lista „Tip proba” din dialog si grupa din filtru), ca in restul aplicatiei."},
@@ -31878,9 +31917,9 @@ var MAN_SECTIONS=[
   lead:'Probele de autocontrol si unde lipsesc. Pagina are trei file de tip — '+_mUi('&#128300; Probe Microbiologice')+', '+_mUi('&#9889; ATP / Proteine')+', '+_mUi('&#128161; Testare UV')+' — iar deasupra filtrul de perioada: Anul complet, T1–T4.',
   b:'<h4>Probele microbiologice — patru file</h4>'+
   _mTbl(null,[
-   ['Prezentare','Carduri (Total probe, Conformitate, Acoperire sectii, Acoperire tipuri, NC recurente) si <strong>matricea de acoperire</strong>: sectiile pe randuri, tipurile de probe pe coloane, separat pentru Spital / Spitalizare de zi / Ambulatoriu.'],
+   ['Prezentare','Carduri (Total probe, Conformitate, Acoperire sectii, Acoperire tipuri, NC recurente), apoi <strong>graficul probelor microbiologice pe tip de proba</strong> (deschis; lista <strong>Structuri</strong> il restrange la Spital, Ambulatoriu sau Spitalizare de zi; ATP-ul si testele de proteine nu intra, sunt alt registru) si <strong>matricea de acoperire</strong>: sectiile pe randuri, tipurile de probe pe coloane, separat pentru Spital / Spitalizare de zi / Ambulatoriu.'],
    ['Planificare','Lista de facut pentru perioada aleasa: (1) neconformitati de re-testat, (2) combinatii nerecoltate in perioada, (3) combinatii nerecoltate de peste 6 luni sau niciodata. Fiecare cu data si '+_mUi('&#128197; Salveaza')+', sau '+_mUi('Salveaza planificarea in Calendar')+' pentru toate.'],
-   ['Probe','Tabelul probelor, 50 pe pagina, sortabil, cu filtre (inclusiv „cu DSP / fara DSP”) si cautare dupa <strong>Nr. inregistrare</strong> — merge si o parte din numar, fara spatii sau majuscule. '+_mUi('+ Adauga Proba')+', '+_mUi('Import CSV')+', '+_mUi('Export CSV')+'.'],
+   ['Probe','Tabelul probelor, 50 pe pagina (butoanele de pagina sunt si deasupra, si sub tabel), sortabil, cu filtre (inclusiv „cu DSP / fara DSP”) si cautare dupa <strong>Nr. inregistrare</strong> — merge si o parte din numar, fara spatii sau majuscule. '+_mUi('+ Adauga Proba')+', '+_mUi('Import CSV')+', '+_mUi('Export CSV')+'.'],
    ['Harta de risc','Punctele de risc pe sectii: nivel (inalt / mediu / scazut), zona, puncte critice, frecventa de recoltare, masuri de control, data revizuirii. '+_mUi('+ Adauga punct de risc')+' si export Word.']])+
   '<h4>Culorile matricei</h4>'+
   _mUl(['<span class="man-dot" style="background:#0FA976"></span>Toate conforme','<span class="man-dot" style="background:#F59E0B"></span>Cu neconformitati, pana la 25 %','<span class="man-dot" style="background:#EF4444"></span>Peste 25 % neconforme','<span class="man-dot" style="background:#CBD5E1"></span>„—” Netestat — <strong>cea mai importanta celula</strong>: arata unde nu s-a recoltat','N/A — tipul de proba nu se aplica sectiei (setat in Configurare)'])+
@@ -31898,9 +31937,9 @@ var MAN_SECTIONS=[
   lead:'Quality control samples and where they are missing. The page has three type tabs — '+_mUi('&#128300; Microbiological samples')+', '+_mUi('&#9889; ATP / Proteins')+', '+_mUi('&#128161; UV testing')+' — with the period filter above: Full year, Q1–Q4.',
   b:'<h4>Microbiological samples — four tabs</h4>'+
   _mTbl(null,[
-   ['Overview','Cards (Total samples, Compliance, Ward coverage, Type coverage, Recurrent non-compliance) and the <strong>coverage matrix</strong>: wards in rows, sample types in columns, separately for Hospital / Day hospital / Outpatients.'],
+   ['Overview','Cards (Total samples, Compliance, Ward coverage, Type coverage, Recurrent non-compliance), then the <strong>chart of microbiological samples by sample type</strong> (open; the <strong>Structures</strong> list narrows it to Hospital, Outpatient or Day hospital; ATP and protein tests are a separate register and are not counted) and the <strong>coverage matrix</strong>: wards in rows, sample types in columns, separately for Hospital / Day hospital / Outpatients.'],
    ['Planning','To-do list for the chosen period: (1) non-compliances to re-test, (2) combinations not sampled in the period, (3) combinations not sampled for over 6 months or never. Each with a date and '+_mUi('&#128197; Save')+', or '+_mUi('Save planning to Calendar')+' for all.'],
-   ['Samples','The sample table, 50 per page, sortable, with filters (including “with / without public health”) and a search by <strong>registration number</strong> — part of the number also works, ignoring spaces and case. '+_mUi('+ Add sample')+', '+_mUi('Import CSV')+', '+_mUi('Export CSV')+'.'],
+   ['Samples','The sample table, 50 per page (page buttons both above and below the table), sortable, with filters (including “with / without public health”) and a search by <strong>registration number</strong> — part of the number also works, ignoring spaces and case. '+_mUi('+ Add sample')+', '+_mUi('Import CSV')+', '+_mUi('Export CSV')+'.'],
    ['Risk map','Risk points per ward: level (high / medium / low), zone, critical points, sampling frequency, control measures, review date. '+_mUi('+ Add risk point')+' and Word export.']])+
   '<h4>Matrix colours</h4>'+
   _mUl(['<span class="man-dot" style="background:#0FA976"></span>All compliant','<span class="man-dot" style="background:#F59E0B"></span>Non-compliant, up to 25 %','<span class="man-dot" style="background:#EF4444"></span>Over 25 % non-compliant','<span class="man-dot" style="background:#CBD5E1"></span>“—” Not tested — <strong>the most important cell</strong>: shows where nothing was sampled','N/A — the sample type does not apply to the ward (set in Settings)'])+

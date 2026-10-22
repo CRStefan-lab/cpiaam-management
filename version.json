@@ -1,9 +1,10 @@
 {
-  "version": "14.26",
-  "version_note": "Rapoartele de autocontrol: fara randul TOTAL care aduna metode diferite",
+  "version": "14.27",
+  "version_note": "Paginare la ATP / Proteine si UV; analiza multianuala pe toate metodele de autocontrol",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Raportul Anual (cap. 2) si Analiza Autocontrol (cap. 1): tabelul de sumar al metodelor nu mai are randul TOTAL. Microbiologic, ATP, proteine si UV raman fiecare pe randul lor, cu conformitatea lor.",
-    "Include si 14.25: aplicatia asteapta pagina noua dupa o redesenare (click pe o proba din matrice duce sigur la ea)."
+    "Autocontrol: listele ATP / Proteine si Testare UV au butoane de pagina sus si jos, 50 de randuri pe pagina, ca tabelul de probe.",
+    "Analiza multianuala: conformitatea si totalul de teste pentru fiecare metoda de autocontrol (microbiologic, ATP, proteine, UV), cate un rand pe metoda, in pagina si in Word.",
+    "Include si 14.26: fara randul TOTAL care aduna metodele in rapoartele de autocontrol."
   ]
 }

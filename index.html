@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v14.26</title>
+<title>CPIAAM Management v14.27</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2797,7 +2797,7 @@ function _extractCfg0(c){
   return null;
 }
 
-const APP_VERSION='14.26';
+const APP_VERSION='14.27';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -10529,16 +10529,18 @@ function renderAutoTab3(data,allData,probeTypes,sections,isEN,qLabel){
   return h;
 }
 // Butoanele de paginare ale tabelului de probe (sus si jos); nimic sub o pagina.
-function _acPagHTML(n,totalPages,isEN){
-  var h='';
+// v14.27 - acelasi pager si pentru listele ATP / Proteine si UV: pagina curenta, functia care o schimba si unitatea sunt parametri
+// (implicit tabelul de probe: _autoPage, setAutoPage, „probe”).
+function _acPagHTML(n,totalPages,isEN,page,setter,unitRo,unitEn){
+  var h='',pg=page==null?_autoPage:page,fn=setter||'setAutoPage';
   if(n>AC_PAGE_SIZE){
     h+='<div class="ac-pag">';
-    h+='<span>'+(isEN?'Page':'Pagina')+' '+(_autoPage+1)+'/'+totalPages+' ('+n+' '+(isEN?'samples':'probe')+')</span>';
+    h+='<span>'+(isEN?'Page':'Pagina')+' '+(pg+1)+'/'+totalPages+' ('+n+' '+(isEN?(unitEn||'samples'):(unitRo||'probe'))+')</span>';
     h+='<div style="display:flex;gap:4px">';
-    h+='<button onclick="setAutoPage(0)"'+ (_autoPage===0?' disabled':'')+'>&#171;</button>';
-    h+='<button onclick="setAutoPage('+(_autoPage-1)+')"'+(_autoPage===0?' disabled':'')+'>&#8249;</button>';
-    h+='<button onclick="setAutoPage('+(_autoPage+1)+')"'+(_autoPage>=totalPages-1?' disabled':'')+'>&#8250;</button>';
-    h+='<button onclick="setAutoPage('+(totalPages-1)+')"'+(_autoPage>=totalPages-1?' disabled':'')+'>&#187;</button>';
+    h+='<button onclick="'+fn+'(0)"'+ (pg===0?' disabled':'')+'>&#171;</button>';
+    h+='<button onclick="'+fn+'('+(pg-1)+')"'+(pg===0?' disabled':'')+'>&#8249;</button>';
+    h+='<button onclick="'+fn+'('+(pg+1)+')"'+(pg>=totalPages-1?' disabled':'')+'>&#8250;</button>';
+    h+='<button onclick="'+fn+'('+(totalPages-1)+')"'+(pg>=totalPages-1?' disabled':'')+'>&#187;</button>';
     h+='</div></div>';
   }
   return h;
@@ -11012,6 +11014,10 @@ function atpStats(list,type){
 
 // v13.34 - state filtre ATP (sec, surface, result, dateFrom, dateTo); v14.15 + type (ATP / proteine)
 var _atpFilters={reg:'',type:'',sec:'',surface:'',result:'',dateFrom:'',dateTo:''};   // v14.17 + reg
+// v14.27 - paginarea listei (50 pe pagina, ca la Probe). Pagina revine la 0 cand se schimba ORICE filtru sau anul: semnatura
+// filtrelor se compara la fiecare randare, deci nu depinde de fiecare handler (cautare, liste, date, Reset).
+var _atpPage=0,_atpPageSig='';
+function setAtpPage(p){_atpPage=p;render()}
 function _handleAtpDateInput(input,field){
   var v=input.value||'';
   if(v){var p=v.split('-');if(p.length===3 && parseInt(p[0],10)<1000) return}
@@ -11057,6 +11063,9 @@ async function renderAtpModule(isEN){
   if(_atpFilters.result)allAtp=allAtp.filter(r=>atpVerdict(r)===_atpFilters.result);
   if(_atpFilters.dateFrom)allAtp=allAtp.filter(r=>r.date&&r.date>=_atpFilters.dateFrom);
   if(_atpFilters.dateTo)allAtp=allAtp.filter(r=>r.date&&r.date<=_atpFilters.dateTo);
+  var _sig=JSON.stringify([A.year,_atpFilters]);if(_sig!==_atpPageSig){_atpPageSig=_sig;_atpPage=0}
+  const atpPages=Math.max(1,Math.ceil(allAtp.length/AC_PAGE_SIZE));if(_atpPage>atpPages-1)_atpPage=atpPages-1;
+  const atpPageData=allAtp.slice(_atpPage*AC_PAGE_SIZE,(_atpPage+1)*AC_PAGE_SIZE);
 
   // KPIs pe TOATE datele anului (nu pe filtrate), SEPARAT pe tip: ATP si proteinele nu se aduna niciodata
   const sa=atpStats(allAtpRaw,'atp'),sp=atpStats(allAtpRaw,'protein');
@@ -11100,15 +11109,16 @@ async function renderAtpModule(isEN){
     var hasFilters=_atpFilters.reg||_atpFilters.type||_atpFilters.sec||_atpFilters.surface||_atpFilters.result||_atpFilters.dateFrom||_atpFilters.dateTo;
     h+='<div class="es"><p>'+(hasFilters?(isEN?'No test matches the filters.':'Niciun test nu corespunde filtrelor.'):(isEN?'No ATP or protein tests for':'Niciun test ATP sau de proteine pentru')+' '+A.year)+'.</p></div>';
   }else{
+    h+=_acPagHTML(allAtp.length,atpPages,isEN,_atpPage,'setAtpPage','teste','tests');
     h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Reg. No.':'Nr. Inreg.')+'</th><th>'+(isEN?'Test':'Test')+'</th><th>'+(isEN?'Section':'Secția')+'</th><th>'+(isEN?'Surface / sample':'Suprafață / probă')+'</th><th>'+(isEN?'Details':'Detalii')+'</th>'+
       '<th>'+(isEN?'Reading':'Citire')+'</th><th>'+(isEN?'Result':'Rezultat')+'</th><th>'+(isEN?'Repeat':'Repetiție')+'</th><th>'+(isEN?'After repeat':'După rep.')+'</th><th>'+(isEN?'Actions':'Acțiuni')+'</th></tr></thead><tbody>';
-    allAtp.forEach((r,i)=>{
+    atpPageData.forEach((r,i)=>{
       const prot=atpTestType(r)==='protein';
       const sName=atpSampleName(r);
       const thr=atpThreshold(r.surface_type);
       const read=prot?_atpProtChip(r.protein_result):'<strong>'+esc(r.rlu_value)+'</strong> RLU';
       const rep=prot?(r.protein_repeat?_atpProtChip(r.protein_repeat):'—'):(r.rlu_repeat!=null&&r.rlu_repeat!==''?'<strong>'+esc(r.rlu_repeat)+'</strong> RLU':'—');
-      h+='<tr><td>'+(i+1)+'</td><td>'+fmtDate(r.date)+'</td><td style="font-size:11px">'+esc(r.reg_number||'\u2014')+'</td><td>'+(prot?(isEN?'Protein':'Proteine')+(r.kit_lot?'<div style="font-size:10px;color:var(--txtL)">'+(isEN?'lot ':'lot ')+esc(r.kit_lot)+'</div>':''):'ATP')+'</td><td>'+rSec(r.section)+'</td>'+
+      h+='<tr><td>'+(_atpPage*AC_PAGE_SIZE+i+1)+'</td><td>'+fmtDate(r.date)+'</td><td style="font-size:11px">'+esc(r.reg_number||'\u2014')+'</td><td>'+(prot?(isEN?'Protein':'Proteine')+(r.kit_lot?'<div style="font-size:10px;color:var(--txtL)">'+(isEN?'lot ':'lot ')+esc(r.kit_lot)+'</div>':''):'ATP')+'</td><td>'+rSec(r.section)+'</td>'+
         '<td>'+esc(sName)+(prot?'':' <span style="font-size:10px;color:var(--txtL)">(≤'+thr+')</span>')+'</td>'+
         // A13 - locatia, iar observatiile pe al doilea rand, gri (tiparul coloanei „Detalii proba” de la microbiologic)
         '<td style="font-size:11px">'+esc(r.location||r.notes||'—')+(r.location&&r.notes?'<br><span style="color:var(--txtL)">'+esc(r.notes)+'</span>':'')+'</td>'+
@@ -11116,6 +11126,7 @@ async function renderAtpModule(isEN){
         '<td class="act"><button onclick="editAtp('+_jsArg(r.id)+')" title="'+T('btn_edit')+'">&#9998;</button><button onclick="delRec(\'atp\','+_jsArg(r.id)+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
     });
     h+='</tbody></table></div>';
+    h+=_acPagHTML(allAtp.length,atpPages,isEN,_atpPage,'setAtpPage','teste','tests');
   }
 
   // Legend: ATP si cele trei culori ale testului de proteine
@@ -11330,6 +11341,9 @@ async function saveAtpSurfaces(){
 // ═══════════════════════════════════════════════════════════════
 // v13.34 - state filtre UV (sec, surface, result, dateFrom, dateTo)
 var _uvFilters={sec:'',surface:'',result:'',dateFrom:'',dateTo:''};
+// v14.27 - paginarea listei UV (50 pe pagina, ca la Probe); pagina revine la 0 cand se schimba un filtru sau anul (semnatura filtrelor)
+var _uvPage=0,_uvPageSig='';
+function setUvPage(p){_uvPage=p;render()}
 function _handleUvDateInput(input,field){
   var v=input.value||'';
   if(v){var p=v.split('-');if(p.length===3 && parseInt(p[0],10)<1000) return}
@@ -11355,6 +11369,9 @@ async function renderUvModule(isEN){
   if(_uvFilters.result)allUv=allUv.filter(r=>r.result===_uvFilters.result);
   if(_uvFilters.dateFrom)allUv=allUv.filter(r=>r.date&&r.date>=_uvFilters.dateFrom);
   if(_uvFilters.dateTo)allUv=allUv.filter(r=>r.date&&r.date<=_uvFilters.dateTo);
+  var _sig=JSON.stringify([A.year,_uvFilters]);if(_sig!==_uvPageSig){_uvPageSig=_sig;_uvPage=0}
+  const uvPages=Math.max(1,Math.ceil(allUv.length/AC_PAGE_SIZE));if(_uvPage>uvPages-1)_uvPage=uvPages-1;
+  const uvPageData=allUv.slice(_uvPage*AC_PAGE_SIZE,(_uvPage+1)*AC_PAGE_SIZE);
 
   // KPIs (calculate pe TOATE datele anului, nu pe filtrate)
   const total=allUvRaw.length;
@@ -11395,17 +11412,19 @@ async function renderUvModule(isEN){
     var hasFilters=_uvFilters.sec||_uvFilters.surface||_uvFilters.result||_uvFilters.dateFrom||_uvFilters.dateTo;
     h+='<div class="es"><p>'+(hasFilters?(isEN?'No UV checks match the filters.':'Nicio verificare UV nu corespunde filtrelor.'):(isEN?'No UV checks for':'Nicio verificare UV pentru')+' '+A.year)+'.</p></div>';
   }else{
+    h+=_acPagHTML(allUv.length,uvPages,isEN,_uvPage,'setUvPage','teste','tests');
     h+='<div style="overflow-x:auto"><table class="dt"><thead><tr><th>#</th><th>'+(isEN?'Date':'Data')+'</th><th>'+(isEN?'Section':'Sec\u021Bia')+'</th><th>'+(isEN?'Surface / Location':'Suprafa\u021B\u0103 / Locatie')+'</th>'+
       '<th>'+(isEN?'Result':'Rezultat')+'</th><th>'+(isEN?'Notes':'Obs.')+'</th><th>'+(isEN?'Actions':'Ac\u021Biuni')+'</th></tr></thead><tbody>';
-    allUv.forEach((r,i)=>{
+    uvPageData.forEach((r,i)=>{
       const uvSurfName=(()=>{if(!r.surface)return '\u2014';return esc(_cfgItemName(CFG.uv_surface_types,r.surface))})();   // A11 (v14.21) - nu id-ul brut; inregistrarile vechi tin numele, care ramane
-      h+='<tr><td>'+(i+1)+'</td><td>'+fmtDate(r.date)+'</td><td>'+rSec(r.section)+'</td>'+
+      h+='<tr><td>'+(_uvPage*AC_PAGE_SIZE+i+1)+'</td><td>'+fmtDate(r.date)+'</td><td>'+rSec(r.section)+'</td>'+
         '<td>'+uvSurfName+'</td>'+
         '<td>'+(r.result==='pass'?'<span class="bdg bdg-g">Pass</span>':'<span class="bdg bdg-r">Fail</span>')+'</td>'+
         '<td style="font-size:11px">'+(r.notes||'\u2014')+'</td>'+
         '<td class="act"><button onclick="editUv('+_jsArg(r.id)+')" title="'+T('btn_edit')+'">&#9998;</button><button onclick="delRec(\'uvcheck\','+_jsArg(r.id)+')" title="'+T('btn_delete')+'">&#128465;</button></td></tr>';
     });
     h+='</tbody></table></div>';
+    h+=_acPagHTML(allUv.length,uvPages,isEN,_uvPage,'setUvPage','teste','tests');
   }
 
   h+='<div class="ib inf" style="margin-top:14px">'+(isEN?'UV Check verifies the effectiveness of cleaning using fluorescent markers. Apply UV marker before cleaning, then check under UV light after. Pass = marker removed, Fail = marker still visible.':'Verificarea UV evalueaz\u0103 eficacitatea cur\u0103\u021Beniei folosind markeri fluorescen\u021Bi. Se aplic\u0103 markerul UV \u00EEnainte de cur\u0103\u021Benie, apoi se verific\u0103 sub lumin\u0103 UV dup\u0103. Pass = marker \u00EEndep\u0103rtat, Fail = marker \u00EEnc\u0103 vizibil.')+'</div>';
@@ -30469,6 +30488,7 @@ function downloadReportFile(){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'14.27',date:'2026-10-22',summary:"Autocontrol: listele ATP / Proteine si Testare UV au butoane de pagina sus si jos, 50 de randuri pe pagina, ca tabelul de probe. Analiza multianuala (pagina si Word, „1. Sumar”) arata conformitatea si totalul de teste pentru fiecare metoda de autocontrol — microbiologic, ATP, teste de proteine, UV —, cate un rand pe metoda, fara total intre metode."},
   {version:'14.26',date:'2026-10-22',summary:"Raportul Anual (capitolul 2) si Analiza Autocontrol (capitolul 1): tabelul de sumar al metodelor de autocontrol nu mai are randul TOTAL. Microbiologic, ATP, teste de proteine si UV masoara lucruri diferite, deci fiecare ramane pe randul lui, cu conformitatea lui; totalul repeta cifra probelor microbiologice si ascundea ATP-ul si UV-ul."},
   {version:'14.25',date:'2026-10-22',summary:"Reparatie interna: dupa o redesenare, aplicatia astepta acum pagina noua inainte sa caute in ea. Click pe o proba din fereastra unei celule (Autocontrol) deruleaza sigur la randul ei in fila Probe, iar ecranul de incarcare dispare abia dupa ce pagina e desenata. Nimic altceva nu se schimba pe ecran sau in documente."},
   {version:'14.24',date:'2026-10-21',summary:"Legenda matricei de la Autocontrol: punctul „Netestat” se vede acum (are un contur subtire); inainte avea culoarea fundalului paginii si se citea doar eticheta."},
@@ -31950,7 +31970,8 @@ var MAN_SECTIONS=[
   '<h4>ATP, teste de proteine si UV</h4>'+
   _mUl(['<strong>ATP</strong>: rezultatul e conform cand RLU e sub pragul suprafetei (praguri in '+_mUi('Configureaza suprafete')+'), cu citire repetata optionala.',
    '<strong>Teste rapide de proteine</strong> (colorimetric, de ex. Pro-Check): in aceeasi fila, cu '+_mUi('+ Adauga test')+' si „Tipul testului” = proteine. „Tip proba” se alege din aceeasi lista ca la probele microbiologice (Configurare → Tipuri probe), fara cele la care testul nu are sens: apa, aeromicroflora, testele biologice de sterilizare. Se alege culoarea citita pe tampon: <strong>curat</strong> = conform; <strong>atentie</strong> si <strong>proteine prezente</strong> = neconform. Optional: retestul dupa recuratare, lotul kitului si nr. de inregistrare. Ca la probele microbiologice, '+_mUi('Salveaza + Noua')+' salveaza testul si deschide imediat altul cu tipul, data, sectia, suprafata, nr. de inregistrare si lotul pastrate.',
-   '<strong>UV</strong>: Pass / Fail ales de evaluator, fara prag.'])+
+   '<strong>UV</strong>: Pass / Fail ales de evaluator, fara prag.',
+   'Listele ATP / Proteine si Testare UV au, ca tabelul de probe, cate 50 de randuri pe pagina, cu butoanele de pagina deasupra si sub tabel; cand schimbi un filtru, lista revine la prima pagina.'])+
   _mWhy('Testul de proteine arata <strong>reziduurile proteice</strong> ramase dupa curatare, deci <strong>curatenia, nu dezinfectia</strong>, si nu inlocuieste probele microbiologice. „Atentie” inseamna ca suprafata se recurata si se retesteaza: se numara la neconforme, dar apare si separat („din care atentie”). ATP-ul si proteinele au carduri si randuri separate in rapoarte — nu se aduna niciodata intr-o singura cifra.')+
   _mTip('Rapoartele (Word, Excel cu date brute si pivot pe tipuri si pe sectii, analiza AI) sunt in <strong>Generare Rapoarte &rarr; Analiza Autocontrol</strong>. Raportul Word cuprinde si ATP, si UV.')},
  en:{t:'Microbiological quality control (with ATP, UV and risk map)',
@@ -31971,7 +31992,8 @@ var MAN_SECTIONS=[
   '<h4>ATP, protein tests and UV</h4>'+
   _mUl(['<strong>ATP</strong>: compliant when RLU is below the surface threshold (thresholds in '+_mUi('Configure surfaces')+'), with an optional repeat reading.',
    '<strong>Rapid protein tests</strong> (colorimetric, e.g. Pro-Check): in the same tab, with '+_mUi('+ Add test')+' and “Test type” = protein. “Sample type” comes from the same list as microbiological samples (Settings → Sample types), without those where the test makes no sense: water, air sampling, biological sterilisation tests. Choose the colour read on the swab: <strong>clean</strong> = compliant; <strong>caution</strong> and <strong>protein present</strong> = non-compliant. Optional: the retest after re-cleaning, the kit lot and the registration number. As with microbiological samples, '+_mUi('Save + New')+' saves the test and opens another one keeping the type, date, ward, surface, registration number and lot.',
-   '<strong>UV</strong>: Pass / Fail chosen by the evaluator, no threshold.'])+
+   '<strong>UV</strong>: Pass / Fail chosen by the evaluator, no threshold.',
+   'The ATP / Proteins and UV testing lists have, like the sample table, 50 rows per page, with the page buttons above and below the table; changing a filter returns the list to the first page.'])+
   _mWhy('The protein test shows <strong>protein residues</strong> left after cleaning, so it checks <strong>cleaning, not disinfection</strong>, and does not replace microbiological samples. “Caution” means the surface is re-cleaned and retested: it counts as non-compliant but is also shown separately (“of which caution”). ATP and protein tests have separate cards and rows in reports — they are never added into one figure.')+
   _mTip('Reports (Word, Excel with raw data and pivots by type and ward, AI analysis) are in <strong>Generate reports &rarr; Quality control analysis</strong>. The Word report includes ATP and UV.')}},
 
@@ -32355,14 +32377,14 @@ var MAN_SECTIONS=[
   lead:'Compararea mai multor ani, pentru raportul anual si evaluarea programului. Are nevoie de date din cel putin doi ani.',
   b:_mUl(['Alegi anii din butoanele „Ani:” (toti selectati la inceput, minimum doi).',
    'Patru grafice: cazuri IAAM pe luni, conformitatea autocontrolului pe trimestre, deseuri pe luni, DDD la 100 zile-pacient pe luni.',
-   'Tabelul „Sumar comparativ”: total cazuri IAAM, % MDR, conformitate autocontrol, total deseuri, total probe — cu tendinta intre ultimii doi ani.',
+   'Tabelul „Sumar comparativ”: total cazuri IAAM, % MDR, conformitatea si totalul de teste pentru <strong>fiecare metoda de autocontrol</strong> (microbiologic, ATP, teste de proteine, UV — cate un rand pe metoda, fara un total intre metode, pentru ca masoara lucruri diferite), total deseuri — cu tendinta intre ultimii doi ani. Un an fara teste la o metoda arata „—” la conformitate, nu 0 %. Acelasi tabel e si in documentul Word, la „1. Sumar”.',
    _mUi('Export Word')+': tabelul sumar si cazurile IAAM pe luni (graficele raman in aplicatie).'])+
   _mWhy('Anul in curs apare ca „2026 (ian–oct)”, lunile viitoare raman goale, iar tendinta se calculeaza pe aceeasi perioada. O luna fara om-zile nu are punct pe graficul DDD, in loc sa apara cu zero.')},
  en:{t:'Multi-year analysis',
   lead:'Comparing several years, for the annual report and programme evaluation. Needs data from at least two years.',
   b:_mUl(['Choose years from the “Years:” chips (all selected at first, minimum two).',
    'Four charts: HAI cases by month, quality control compliance by quarter, waste by month, DDD per 100 patient-days by month.',
-   'The “Comparative summary” table: total HAI cases, % MDR, quality control compliance, total waste, total samples — with the trend between the last two years.',
+   'The “Comparative summary” table: total HAI cases, % MDR, compliance and number of tests for <strong>each quality control method</strong> (microbiological, ATP, protein tests, UV — one row per method, with no total across methods, because they measure different things), total waste — with the trend between the last two years. A year without tests for a method shows “—” for compliance, not 0 %. The same table is in the Word document, under “1. Summary”.',
    _mUi('Export Word')+': the summary table and HAI cases by month (charts stay in the application).'])+
   _mWhy('The current year appears as “2026 (Jan–Oct)”, future months stay empty and the trend uses the same period. A month without patient-days has no point on the DDD chart instead of showing zero.')}},
 
@@ -32566,6 +32588,20 @@ var MAN_SECTIONS=[
 
 // ═══════════════════════════════════════════════════════════════
 var _multiAnCharts={};var _maSelectedYears=null;
+// v14.27 - toate metodele de autocontrol in sumarul multi-an, cate un rand pe metoda (Conformitate si Total teste), FARA rand total
+// intre metode (aceeasi regula ca la 14.26: metodele masoara lucruri diferite). Conformitatea fara teste in an e null („—”), nu 0 %.
+// ATP si proteinele trec prin atpStats (acelasi verdict ca in rapoarte); UV: result==='pass'. Testele ATP / UV nu au camp de luna,
+// deci pentru comparatia pe aceeasi perioada luna se ia din data (_maMonth).
+const MA_AC_METHODS=[{k:'micro',ro:'microbiologic',en:'microbiological'},{k:'atp',ro:'ATP',en:'ATP'},{k:'protein',ro:'teste de proteine',en:'protein tests'},{k:'uv',ro:'UV',en:'UV'}];
+function _maMonth(r){return +r.month||(r.date?+String(r.date).slice(5,7):0)}
+function _maAcStat(m,src,y,lm){
+  var list=m==='micro'?src.auto:(m==='uv'?src.uv:src.atp);
+  var yd=list.filter(function(r){return r.year===y&&(!lm||_maMonth(r)<=lm)});
+  var n,conf;
+  if(m==='atp'||m==='protein'){var s=atpStats(yd,m);n=s.n;conf=s.conf}
+  else{n=yd.length;conf=yd.filter(function(r){return m==='uv'?r.result==='pass':r.result==='conform'}).length}
+  return {n:n,pct:n?Math.round(conf/n*100):null};
+}
 async function getAvailableYears(){
   const all=await ga('iaam');const au=await ga('autocontrol');const de=await ga('deseuri');const atb=await ga('atb_consum');
   const years=new Set();
@@ -32599,6 +32635,7 @@ async function rMultiAn(el){
     el.innerHTML=ySel+'<div class="ib wrn">'+(isEN?'Select at least 2 years for comparison':'Selecteaza cel putin 2 ani pentru comparatie')+'</div>';return;
   }
   const allIAAM=await ga('iaam'),allAuto=await ga('autocontrol'),allDes=await ga('deseuri'),allATB=await ga('atb_consum');
+  const _acSrc={auto:allAuto,atp:await ga('atp'),uv:await ga('uvcheck')};   // v14.27
   // v14.4 - anul in curs nu e un an intreg: eticheta „2026 (ian–oct)”, lunile viitoare goale, tendinta pe aceleasi luni.
   const _lmA=yearLastMonth(years[years.length-1]),_partA=_lmA>0&&_lmA<12;
   const _yl=function(y){var lm=yearLastMonth(y);return String(y)+((lm>0&&lm<12)?' ('+periodLabel(1,lm)+')':'')};
@@ -32647,18 +32684,22 @@ async function rMultiAn(el){
   // v13.94 (G-16) - fara cazuri procentul e „—", nu 0% (regula „Rate si numitori").
   const mdrPcts=years.map(y=>{const yd=allIAAM.filter(r=>r.year===y);return yd.length>0?Math.round(yd.filter(r=>r.mdr).length/yd.length*100):null});
   mdrPcts.forEach(v=>{th+='<td>'+(v===null?'—':v+'%')+'</td>'});th+='<td>'+_maTrendSP(years,y=>{const yd=allIAAM.filter(r=>r.year===y&&_inP(r));return yd.length>0?Math.round(yd.filter(r=>r.mdr).length/yd.length*100):null},false,_partA,_lmA,'%')+'</td></tr>';
-  // Row: Autocontrol conformity
-  th+='<tr><td><strong>'+(isEN?'QC Compliance':'Conformitate autocontrol')+'</strong></td>';
-  const autoPcts=years.map(y=>{const yd=allAuto.filter(r=>r.year===y);return yd.length>0?Math.round(yd.filter(r=>r.result==='conform').length/yd.length*100):null});
-  autoPcts.forEach(v=>{th+='<td>'+(v===null?'—':v+'%')+'</td>'});th+='<td>'+_maTrendSP(years,y=>{const yd=allAuto.filter(r=>r.year===y&&_inP(r));return yd.length>0?Math.round(yd.filter(r=>r.result==='conform').length/yd.length*100):null},true,_partA,_lmA,'%')+'</td></tr>';
+  // Rows: conformitatea fiecarei metode de autocontrol (v14.27; fara rand total intre metode)
+  MA_AC_METHODS.forEach(function(m){
+    th+='<tr><td><strong>'+(isEN?'QC compliance — '+m.en:'Conformitate autocontrol — '+m.ro)+'</strong></td>';
+    years.forEach(function(y){var v=_maAcStat(m.k,_acSrc,y).pct;th+='<td>'+(v===null?'—':v+'%')+'</td>'});
+    th+='<td>'+_maTrendSP(years,function(y){return _maAcStat(m.k,_acSrc,y,_partA?_lmA:0).pct},true,_partA,_lmA,'%')+'</td></tr>';
+  });
   // Row: Total waste
   th+='<tr><td><strong>'+(isEN?'Total waste (kg)':'Total deseuri (kg)')+'</strong></td>';
   const desTotals=years.map(y=>{const yd=allDes.filter(r=>r.year===y);return Math.round(yd.reduce((s,r)=>s+CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0),0)*10)/10});
   desTotals.forEach(v=>{th+='<td>'+fn(v)+'</td>'});th+='<td>'+_maTrendSP(years,y=>Math.round(allDes.filter(r=>r.year===y&&_inP(r)).reduce((s,r)=>s+CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0),0)*10)/10,false,_partA,_lmA,' kg')+'</td></tr>';
-  // Row: Total probes
-  th+='<tr><td><strong>'+(isEN?'Total QC samples':'Total probe autocontrol')+'</strong></td>';
-  const probeTotals=years.map(y=>allAuto.filter(r=>r.year===y).length);
-  probeTotals.forEach(v=>{th+='<td>'+v+'</td>'});th+='<td>'+_maTrendSP(years,y=>allAuto.filter(r=>r.year===y&&_inP(r)).length,true,_partA,_lmA)+'</td></tr>';
+  // Rows: totalul de teste al fiecarei metode (v14.27; fara rand total intre metode)
+  MA_AC_METHODS.forEach(function(m){
+    th+='<tr><td><strong>'+(isEN?'Total tests — '+m.en:'Total teste — '+m.ro)+'</strong></td>';
+    years.forEach(function(y){th+='<td>'+_maAcStat(m.k,_acSrc,y).n+'</td>'});
+    th+='<td>'+_maTrendSP(years,function(y){return _maAcStat(m.k,_acSrc,y,_partA?_lmA:0).n},true,_partA,_lmA)+'</td></tr>';
+  });
   th+='</tbody></table>';tbl.innerHTML=th;
 }
 // v14.4 - tendinta intre ultimii doi ani, pe ACEEASI perioada cand ultimul an nu e incheiat; valorile comparate in paranteza.
@@ -32681,6 +32722,7 @@ async function exportMultiAnWord(){
     // v13.94 (G-16) - exportul respecta anii bifati pe pagina, nu toti anii disponibili.
     const isEN=CFG.lang==='en';const _allAv=await getAvailableYears();const years=_maSelectedYears?[..._allAv].filter(y=>_maSelectedYears.has(y)).sort():_allAv;
     const allIAAM=await ga('iaam'),allAuto=await ga('autocontrol'),allDes=await ga('deseuri');
+    const _acSrc={auto:allAuto,atp:await ga('atp'),uv:await ga('uvcheck')};   // v14.27
     const children=[...wCover(isEN?'Multi-Year Comparative Analysis':'Analiza Comparativa Multi-An',CFG.cpiaam_name+' — '+years.join(', '))];
     children.push(wH1(isEN?'1. Summary':'1. Sumar'));children.push(wSp(40));
     // Summary table
@@ -32689,9 +32731,12 @@ async function exportMultiAnWord(){
     const hdr=[isEN?'Indicator':'Indicator',...years.map(_ylW)];
     const iaamRow=[isEN?'Total HAI':'Total IAAM',...years.map(y=>String(allIAAM.filter(r=>r.year===y).length))];
     const mdrRow=['% MDR',...years.map(y=>{const yd=allIAAM.filter(r=>r.year===y);return yd.length>0?Math.round(yd.filter(r=>r.mdr).length/yd.length*100)+'%':'—'})];
-    const autoRow=[isEN?'QC Compliance':'Conformitate AC',...years.map(y=>{const yd=allAuto.filter(r=>r.year===y);return yd.length>0?Math.round(yd.filter(r=>r.result==='conform').length/yd.length*100)+'%':'—'})];
+    // v14.27 - cate un rand pe metoda (conformitate, apoi total teste), ca in tabelul din pagina; fara rand total intre metode
+    const acConfRows=MA_AC_METHODS.map(m=>[isEN?'QC compliance — '+m.en:'Conformitate AC — '+m.ro,...years.map(y=>{const v=_maAcStat(m.k,_acSrc,y).pct;return v===null?'—':v+'%'})]);
+    const acTotRows=MA_AC_METHODS.map(m=>[isEN?'Total tests — '+m.en:'Total teste — '+m.ro,...years.map(y=>String(_maAcStat(m.k,_acSrc,y).n))]);
     const desRow=[isEN?'Total waste (kg)':'Total deseuri (kg)',...years.map(y=>{const yd=allDes.filter(r=>r.year===y);return String(Math.round(yd.reduce((s,r)=>s+CFG.waste_codes.reduce((a,w)=>a+(+r[w.id]||0),0),0)*10)/10)})];
-    children.push(new Table({width:{size:9026,type:WidthType.DXA},rows:[wTblHead(hdr,cols),wTblRow(iaamRow,cols),wTblRow(mdrRow,cols,true),wTblRow(autoRow,cols),wTblRow(desRow,cols,true)]}));
+    const _maRows=[iaamRow,mdrRow,...acConfRows,desRow,...acTotRows];
+    children.push(new Table({width:{size:9026,type:WidthType.DXA},rows:[wTblHead(hdr,cols),..._maRows.map((r,i)=>wTblRow(r,cols,i%2===1))]}));
     children.push(wSp(80));
     // IAAM per year per month
     children.push(wH1(isEN?'2. HAI Cases by Month':'2. Cazuri IAAM pe Luna'));children.push(wSp(40));

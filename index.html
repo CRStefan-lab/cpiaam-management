@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v14.25</title>
+<title>CPIAAM Management v14.26</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2797,7 +2797,7 @@ function _extractCfg0(c){
   return null;
 }
 
-const APP_VERSION='14.25';
+const APP_VERSION='14.26';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -24671,7 +24671,8 @@ async function genRaportAnualWord(){
     wTblRow(['ATP (bioluminescenta)',String(_rpAtp.length),String(_rpAtpC),String(_rpAtp.length-_rpAtpC),_rpAtp.length>0?fp(_rpAtpC,_rpAtp.length):'—'],WAS,true,_rpAtp.length-_rpAtpC>0),
     _wProtRow('Teste rapide de proteine',_rpProt,WAS,false),
     wTblRow(['UV Check (marker fluorescent)',String(_rpUv.length),String(_rpUvP),String(_rpUv.length-_rpUvP),_rpUv.length>0?fp(_rpUvP,_rpUv.length):'—'],WAS,false,_rpUv.length-_rpUvP>0),
-    wTblRow([{text:'TOTAL',bold:true},{text:String(au.length+_rpAtp.length+_rpProt.n+_rpUv.length),bold:true},{text:String(conf+_rpAtpC+_rpProt.conf+_rpUvP),bold:true},{text:String((au.length-conf)+(_rpAtp.length-_rpAtpC)+_rpProt.nc+(_rpUv.length-_rpUvP)),bold:true},{text:(au.length+_rpAtp.length+_rpProt.n+_rpUv.length)>0?fp(conf+_rpAtpC+_rpProt.conf+_rpUvP,au.length+_rpAtp.length+_rpProt.n+_rpUv.length):'—',bold:true}],WAS)
+    // v14.26 - fara rand TOTAL (decizia userului, semnalare EU 22.10.2026 (2)): metodele masoara lucruri diferite (UFC, RLU,
+    // treapta kitului, marker UV) si nu se aduna intr-o conformitate; totalul repeta cifra probelor microbiologice si ascundea ATP-ul si UV-ul
   ]}));
   _wProtPush(children,_wProtNote(_rpProt,false),{size:18,italics:true});
   children.push(wSp(60));
@@ -25161,7 +25162,8 @@ async function genAnalizaAutoWord(){
     wTblRow(['ATP (bioluminescenta)',String(atp.length),String(atpC),String(atp.length-atpC),atp.length>0?fp(atpC,atp.length):'—'],WS,true,atp.length-atpC>0),
     _wProtRow('Teste rapide de proteine',prot,WS,false),
     wTblRow(['UV Check (marker fluorescent)',String(uv.length),String(uvP),String(uv.length-uvP),uv.length>0?fp(uvP,uv.length):'—'],WS,false,uv.length-uvP>0),
-    wTblRow([{text:'TOTAL',bold:true},{text:String(au.length+atp.length+prot.n+uv.length),bold:true},{text:String(c+atpC+prot.conf+uvP),bold:true},{text:String((au.length-c)+(atp.length-atpC)+prot.nc+(uv.length-uvP)),bold:true},{text:(au.length+atp.length+prot.n+uv.length)>0?fp(c+atpC+prot.conf+uvP,au.length+atp.length+prot.n+uv.length):'—',bold:true}],WS)
+    // v14.26 - fara rand TOTAL (decizia userului, semnalare EU 22.10.2026 (2)): metodele masoara lucruri diferite (UFC, RLU,
+    // treapta kitului, marker UV) si nu se aduna intr-o conformitate; totalul repeta cifra probelor microbiologice si ascundea ATP-ul si UV-ul
   ]}));
 
   // 2. Autocontrol Microbiologic (structura existenta)
@@ -30467,6 +30469,7 @@ function downloadReportFile(){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'14.26',date:'2026-10-22',summary:"Raportul Anual (capitolul 2) si Analiza Autocontrol (capitolul 1): tabelul de sumar al metodelor de autocontrol nu mai are randul TOTAL. Microbiologic, ATP, teste de proteine si UV masoara lucruri diferite, deci fiecare ramane pe randul lui, cu conformitatea lui; totalul repeta cifra probelor microbiologice si ascundea ATP-ul si UV-ul."},
   {version:'14.25',date:'2026-10-22',summary:"Reparatie interna: dupa o redesenare, aplicatia astepta acum pagina noua inainte sa caute in ea. Click pe o proba din fereastra unei celule (Autocontrol) deruleaza sigur la randul ei in fila Probe, iar ecranul de incarcare dispare abia dupa ce pagina e desenata. Nimic altceva nu se schimba pe ecran sau in documente."},
   {version:'14.24',date:'2026-10-21',summary:"Legenda matricei de la Autocontrol: punctul „Netestat” se vede acum (are un contur subtire); inainte avea culoarea fundalului paginii si se citea doar eticheta."},
   {version:'14.23',date:'2026-10-21',summary:"Matricea de la Autocontrol arata starea si printr-un simbol langa cifra — ✓ toate conforme, ! cu neconformitati, !! peste 25 % neconforme —, iar legenda are aceleasi simboluri. Cine nu deosebeste verdele de rosu citeste acum starea fara culori. Cu mouse-ul peste celula, starea apare in cuvinte."},

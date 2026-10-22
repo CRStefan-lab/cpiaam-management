@@ -1,10 +1,9 @@
 {
-  "version": "14.25",
-  "version_note": "Reparatie interna: aplicatia asteapta pagina noua dupa o redesenare",
+  "version": "14.26",
+  "version_note": "Rapoartele de autocontrol: fara randul TOTAL care aduna metode diferite",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Autocontrol: click pe o proba din fereastra unei celule duce sigur la randul ei in fila Probe.",
-    "Ecranul de incarcare de la pornire dispare abia dupa ce pagina e desenata.",
-    "Nimic altceva nu se schimba pe ecran sau in documente."
+    "Raportul Anual (cap. 2) si Analiza Autocontrol (cap. 1): tabelul de sumar al metodelor nu mai are randul TOTAL. Microbiologic, ATP, proteine si UV raman fiecare pe randul lor, cu conformitatea lor.",
+    "Include si 14.25: aplicatia asteapta pagina noua dupa o redesenare (click pe o proba din matrice duce sigur la ea)."
   ]
 }

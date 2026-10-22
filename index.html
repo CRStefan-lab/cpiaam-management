@@ -10,7 +10,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CPIAAM Management v14.24</title>
+<title>CPIAAM Management v14.25</title>
 <meta name="theme-color" content="#0D9488">
 <meta name="description" content="CPIAAM Management — Aplicatie pentru Compartimentul de Prevenire a Infectiilor Asociate Asistentei Medicale">
 <link rel="manifest" href="manifest.json">
@@ -2797,7 +2797,7 @@ function _extractCfg0(c){
   return null;
 }
 
-const APP_VERSION='14.24';
+const APP_VERSION='14.25';
 // v13.48 - factorul de risc care se auto-bifeaza din "Internari anterioare" (pas 2 Spitalizare)
 const RF_PREV_ADMISSION='Internare anterioara (ultimele 6 luni)';
 // v13.48 - factori de risc care sunt STARI, nu evenimente cu durata → nu primesc rand de detalii.
@@ -7744,8 +7744,9 @@ function _renderTimeline(allData,isEN){
   var _origRender=window.render;
   if(_origRender){
     window.render=function(){
-      _origRender();
+      var r=_origRender();
       if(_tlOpen)setTimeout(function(){_tlPaintLegend(A.darkMode)},50);
+      return r;
     };
   }
 })()
@@ -30466,6 +30467,7 @@ function downloadReportFile(){
 
 // ═══════════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {version:'14.25',date:'2026-10-22',summary:"Reparatie interna: dupa o redesenare, aplicatia astepta acum pagina noua inainte sa caute in ea. Click pe o proba din fereastra unei celule (Autocontrol) deruleaza sigur la randul ei in fila Probe, iar ecranul de incarcare dispare abia dupa ce pagina e desenata. Nimic altceva nu se schimba pe ecran sau in documente."},
   {version:'14.24',date:'2026-10-21',summary:"Legenda matricei de la Autocontrol: punctul „Netestat” se vede acum (are un contur subtire); inainte avea culoarea fundalului paginii si se citea doar eticheta."},
   {version:'14.23',date:'2026-10-21',summary:"Matricea de la Autocontrol arata starea si printr-un simbol langa cifra — ✓ toate conforme, ! cu neconformitati, !! peste 25 % neconforme —, iar legenda are aceleasi simboluri. Cine nu deosebeste verdele de rosu citeste acum starea fara culori. Cu mouse-ul peste celula, starea apare in cuvinte."},
   {version:'14.22',date:'2026-10-21',summary:"Autocontrol: graficul probelor pe tip de proba e primul in Prezentare, deschis, cu lista „Structuri” (Toate / Spital / Ambulatoriu / Spitalizare de zi); butoanele de pagina din fila Probe sunt si deasupra tabelului; culorile matricei se deosebesc mai bine (verde / chihlimbar / roz, cifra in culoarea textului), iar legenda are aceleasi culori ca celulele. La importul de laborator, „Colistina” primeste codul sistemic J01XB01, nu colistina orala."},

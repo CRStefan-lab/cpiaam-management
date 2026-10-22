@@ -1,9 +1,10 @@
 {
-  "version": "14.24",
-  "version_note": "Legenda matricei Autocontrol: punctul Netestat se vede",
+  "version": "14.25",
+  "version_note": "Reparatie interna: aplicatia asteapta pagina noua dupa o redesenare",
   "url": "https://crstefan-lab.github.io/cpiaam-management/",
   "changelog": [
-    "Legenda matricei de la Autocontrol: punctul „Netestat” are acum un contur subtire si se vede (inainte avea culoarea fundalului).",
-    "Include si 14.23: simbolurile ✓ / ! / !! in celulele matricei, ca starea sa nu depinda doar de culoare."
+    "Autocontrol: click pe o proba din fereastra unei celule duce sigur la randul ei in fila Probe.",
+    "Ecranul de incarcare de la pornire dispare abia dupa ce pagina e desenata.",
+    "Nimic altceva nu se schimba pe ecran sau in documente."
   ]
 }
